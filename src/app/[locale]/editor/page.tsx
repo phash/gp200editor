@@ -5,11 +5,13 @@ import { EffectSlot } from '@/components/EffectSlot';
 import { usePreset } from '@/hooks/usePreset';
 import { PRSTDecoder } from '@/core/PRSTDecoder';
 import { PRSTEncoder } from '@/core/PRSTEncoder';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 
 export default function EditorPage() {
   const t = useTranslations('editor');
-  const { preset, loadPreset, setPatchName, toggleEffect } = usePreset();
+  const { preset, loadPreset, setPatchName, toggleEffect, reorderEffects } = usePreset();
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const handleFile = useCallback((buffer: Uint8Array, _filename: string) => {
     try {
@@ -33,6 +35,23 @@ export default function EditorPage() {
     URL.revokeObjectURL(url);
   }
 
+  const handleDragStart = useCallback((index: number) => {
+    setDragIndex(index);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+  }, []);
+
+  const handleDrop = useCallback((toIndex: number) => {
+    if (dragIndex !== null) {
+      reorderEffects(dragIndex, toIndex);
+    }
+    setDragIndex(null);
+    setDragOverIndex(null);
+  }, [dragIndex, reorderEffects]);
+
   if (!preset) {
     return (
       <div className="p-8 max-w-2xl mx-auto">
@@ -54,17 +73,22 @@ export default function EditorPage() {
           type="text"
           value={preset.patchName}
           onChange={(e) => setPatchName(e.target.value)}
-          maxLength={12}
+          maxLength={32}
           data-testid="patch-name-input"
           className="border rounded px-3 py-2 w-full max-w-xs"
         />
       </div>
-      <div className="grid gap-3 mb-6">
-        {preset.effects.map((slot) => (
+      <div className="grid gap-3 mb-6" onDragEnd={() => { setDragIndex(null); setDragOverIndex(null); }}>
+        {preset.effects.map((slot, i) => (
           <EffectSlot
-            key={slot.slotIndex}
+            key={`${i}-${slot.effectId}`}
             slot={slot}
+            index={i}
             onToggle={toggleEffect}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            isDragOver={dragOverIndex === i && dragIndex !== i}
           />
         ))}
       </div>
