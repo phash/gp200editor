@@ -24,9 +24,9 @@ model Preset {
   id            String   @id @default(cuid())
   userId        String
   presetKey     String   // Garage object key: "preset-<userId>-<cuid>.prst"
-  name          String   // Patch name from PRST file, editable (max 32 chars)
+  name          String   @db.VarChar(32)  // Patch name from PRST file, editable (max 32 chars)
   description   String?  // Optional description (max 500 chars)
-  tags          String[] // User-defined tags (max 10, each max 30 chars)
+  tags          String[] // User-defined tags (max 10, each max 30 chars, alphanumeric + spaces + hyphens)
   shareToken    String   @unique @default(cuid())
   downloadCount Int      @default(0)
   createdAt     DateTime @default(now())
@@ -53,12 +53,12 @@ All routes are Next.js Route Handlers under `src/app/api/`.
 - Body: `multipart/form-data`, fields: `preset` (file, required), `description?` (string), `tags?` (comma-separated string or JSON array)
 - Validation:
   - File size must be exactly 1224 bytes
-  - Magic header `TSRP` verified via `PRSTDecoder.hasMagic()`
+  - Magic header `TSRP` verified by instantiating `new PRSTDecoder(buffer)` and calling `.hasMagic()` on the instance (`hasMagic` is an instance method, not static)
   - description: max 500 chars
-  - tags: max 10 items, each max 30 chars, alphanumeric + spaces + hyphens
+  - tags: max 10 items, each max 30 chars, alphanumeric + spaces + hyphens (`/^[a-zA-Z0-9 -]+$/`)
 - Flow:
   1. Validate session + file
-  2. Decode PRST to extract `patchName`
+  2. Instantiate `new PRSTDecoder(buffer)`, call `.decode()` to extract `patchName` (`.decode()` also calls `.hasMagic()` internally — use this as the single validation + decode step)
   3. Generate key: `preset-{userId}-{cuid()}.prst`
   4. Upload to Garage `presets` bucket
   5. Create `Preset` DB record (shareToken auto-generated)
@@ -77,7 +77,7 @@ All routes are Next.js Route Handlers under `src/app/api/`.
   - `description?`: string max 500 chars, or empty string to clear
   - `tags?`: comma-separated or JSON array
   - `preset?`: new `.prst` file (replaces existing binary)
-- If `preset` file is provided: validates + uploads new file to Garage with new key, deletes old key
+- If `preset` file is provided: safe replacement order — (1) upload new file to Garage with new key, (2) update `presetKey` in DB, (3) best-effort delete old key from Garage (`.catch(() => {})` — same pattern as avatar replacement)
 - Success: `200 { id, name, description, tags, shareToken, downloadCount, createdAt, updatedAt }`
 - Errors: `400` (validation), `403` (not owner), `404` (not found)
 
@@ -90,7 +90,7 @@ All routes are Next.js Route Handlers under `src/app/api/`.
 **`GET /api/presets/[id]/download`**
 - Auth: Yes (owner only)
 - Streams binary from Garage
-- Response headers: `Content-Type: application/octet-stream`, `Content-Disposition: attachment; filename="<name>.prst"`
+- Response headers: `Content-Type: application/octet-stream`, `Content-Disposition: attachment; filename="<name>.prst"`, `Content-Length: 1224`
 - Errors: `403`, `404`
 
 **`POST /api/presets/[id]/share/revoke`**
@@ -103,14 +103,15 @@ All routes are Next.js Route Handlers under `src/app/api/`.
 
 **`GET /api/share/[token]`**
 - Auth: No
+- Query: `prisma.preset.findUnique({ where: { shareToken: token }, include: { user: { select: { username: true } } } })`
 - Response: `200 { name, description, tags, username, downloadCount, createdAt }`
 - Errors: `404` if token not found
 
 **`GET /api/share/[token]/download`**
 - Auth: No
-- Atomically increments `downloadCount`
+- Atomically increments `downloadCount` via `prisma.preset.update({ where: { shareToken: token }, data: { downloadCount: { increment: 1 } } })`
 - Streams binary from Garage
-- Response headers: `Content-Type: application/octet-stream`, `Content-Disposition: attachment; filename="<name>.prst"`
+- Response headers: `Content-Type: application/octet-stream`, `Content-Disposition: attachment; filename="<name>.prst"`, `Content-Length: 1224`
 - Errors: `404` if token not found
 
 ---
@@ -164,12 +165,20 @@ No login required. If token is not found: 404 page.
 
 ### Middleware
 
-`middleware.ts` matcher extended:
+**Do not change the `matcher` config** — the existing broad next-intl matcher is required for locale detection on all pages. Instead, add a second auth guard inside the `middleware` function body, mirroring the existing `profilePattern` guard:
+
 ```typescript
-export const config = {
-  matcher: ['/(en|de)/(profile|presets)/:path*'],
-};
+const presetsPattern = /^\/(de|en)(\/presets)(\/|$)/;
+if (presetsPattern.test(request.nextUrl.pathname)) {
+  const sessionCookie = request.cookies.get(SESSION_COOKIE);
+  if (!sessionCookie) {
+    const locale = request.nextUrl.pathname.split('/')[1];
+    return NextResponse.redirect(new URL(`/${locale}/auth/login`, request.url));
+  }
+}
 ```
+
+Add this block before the `return intlMiddleware(request)` call.
 
 ---
 
@@ -193,7 +202,7 @@ deletePreset(key: string): Promise<void>
 getPresetStream(key: string): Promise<Readable>
 ```
 
-Pattern identical to existing `uploadAvatar` / `deleteAvatar` / `getAvatarStream`.
+Same pattern as the existing avatar functions, but using a separate `presetBucket()` helper that reads `process.env.GARAGE_PRESET_BUCKET` (not the existing `bucket()` helper which reads `GARAGE_BUCKET` for avatars). The two helpers must not be shared.
 
 ### `.env.local.example` additions
 
@@ -209,16 +218,16 @@ New schemas in `src/lib/validators.ts`:
 
 **`uploadPresetSchema`**
 - `description`: `string().max(500).optional()`
-- `tags`: `string().max(30).array().max(10).optional()`
+- `tags`: `string().regex(/^[a-zA-Z0-9 -]+$/).max(30).array().max(10).optional()`
 
 **`patchPresetSchema`**
 - `name`: `string().min(1).max(32).optional()`
 - `description`: `string().max(500).nullable().optional()`
-- `tags`: `string().max(30).array().max(10).optional()`
+- `tags`: `string().regex(/^[a-zA-Z0-9 -]+$/).max(30).array().max(10).optional()`
 
 File validation (outside Zod, in route handler):
 - Size === 1224 bytes
-- `PRSTDecoder.hasMagic(buffer)` returns true
+- `new PRSTDecoder(buffer).decode()` succeeds — this validates magic header and structure in one step; catch thrown errors and return `400 { error: "Invalid PRST file" }`
 
 ---
 
