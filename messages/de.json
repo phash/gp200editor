@@ -2,7 +2,10 @@
   "nav": {
     "title": "GP-200 Editor",
     "home": "Start",
-    "editor": "Editor"
+    "editor": "Editor",
+    "login": "Anmelden",
+    "profile": "Profil",
+    "logout": "Abmelden"
   },
   "home": {
     "headline": "Valeton GP-200 Preset Editor",
@@ -25,5 +28,43 @@
     "effectSlotLabel": "Slot",
     "effectId": "Effekt-ID",
     "parameterCount": "Parameter"
+  },
+  "auth": {
+    "loginTitle": "Anmelden",
+    "registerTitle": "Konto erstellen",
+    "forgotPasswordTitle": "Passwort zurücksetzen",
+    "resetPasswordTitle": "Neues Passwort setzen",
+    "email": "E-Mail",
+    "username": "Benutzername",
+    "password": "Passwort",
+    "newPassword": "Neues Passwort",
+    "loginButton": "Anmelden",
+    "registerButton": "Konto erstellen",
+    "sendResetButton": "Reset-E-Mail senden",
+    "resetButton": "Neues Passwort setzen",
+    "loading": "Laden…",
+    "loginFailed": "Ungültige E-Mail oder falsches Passwort",
+    "forgotPasswordSent": "Falls deine E-Mail registriert ist, erhältst du in Kürze einen Reset-Link.",
+    "resetSuccess": "Passwort aktualisiert. Anmeldung läuft…",
+    "noAccount": "Noch kein Konto?",
+    "register": "Registrieren",
+    "haveAccount": "Bereits ein Konto?",
+    "login": "Anmelden",
+    "forgotPassword": "Passwort vergessen?",
+    "backToLogin": "Zurück zur Anmeldung",
+    "registrationError": "Registrierung fehlgeschlagen. Bitte erneut versuchen.",
+    "resetError": "Token ungültig oder abgelaufen"
+  },
+  "profile": {
+    "title": "Mein Profil",
+    "bio": "Bio",
+    "website": "Website",
+    "avatarLabel": "Profilbild",
+    "saveButton": "Änderungen speichern",
+    "saving": "Speichern…",
+    "saved": "Gespeichert!",
+    "saveFailed": "Speichern fehlgeschlagen.",
+    "changeAvatar": "Avatar ändern",
+    "memberSince": "Mitglied seit"
   }
 }
