@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const EffectSlotSchema = z.object({
   slotIndex: z.number().int().min(0).max(10), // GP-200 has 11 slots (0–10)
-  effectId: z.number().int().min(0),
+  effectId: z.number().int().min(0).max(0xFFFFFFFF), // LE uint32 effect code
   enabled: z.boolean(),
   /** Raw parameter bytes from the effect block (60 bytes per slot) */
   params: z.array(z.number().int().min(0).max(255)),

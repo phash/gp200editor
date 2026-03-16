@@ -53,7 +53,7 @@ export class PRSTEncoder {
       if (slot) {
         gen.writeUint8(base + 4, slot.slotIndex);
         gen.writeUint8(base + 5, slot.enabled ? 1 : 0);
-        gen.writeUint16LE(base + 8, slot.effectId);
+        gen.writeUint32LE(base + 8, slot.effectId);
         for (let p = 0; p < PARAMS_LENGTH && p < slot.params.length; p++) {
           gen.writeUint8(base + PARAMS_OFFSET + p, slot.params[p]);
         }

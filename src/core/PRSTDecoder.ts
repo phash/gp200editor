@@ -15,7 +15,7 @@ const EFFECT_BLOCK_SIZE   = 0x48;  // 72 bytes per block
 // Within each block:
 const SLOT_OFFSET         = 4;     // slot index (0–10)
 const ACTIVE_OFFSET       = 5;     // 0 = bypassed, 1 = active
-const MODEL_OFFSET        = 8;     // LE uint16: effect model id
+const MODEL_OFFSET        = 8;     // LE uint32: effect model code (high byte = module type)
 const PARAMS_OFFSET       = 0x0c;  // 60 raw parameter bytes
 const PARAMS_LENGTH       = 60;
 
@@ -43,7 +43,7 @@ export class PRSTDecoder {
       const base = EFFECT_BLOCK_START + i * EFFECT_BLOCK_SIZE;
       const slotIndex = this.parser.readUint8(base + SLOT_OFFSET);
       const enabled   = this.parser.readUint8(base + ACTIVE_OFFSET) === 1;
-      const effectId  = this.parser.readUint16LE(base + MODEL_OFFSET);
+      const effectId  = this.parser.readUint32LE(base + MODEL_OFFSET);
       const params    = this.parser.readBytes(base + PARAMS_OFFSET, PARAMS_LENGTH);
       effects.push({ slotIndex, enabled, effectId, params });
     }
