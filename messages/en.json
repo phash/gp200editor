@@ -16,6 +16,7 @@
     "title": "Edit Preset",
     "patchName": "Patch Name",
     "download": "Download preset",
+    "loadError": "Error loading file",
     "placeholder": "Editor will be implemented in Chunk 3.",
     "effectOn": "ON",
     "effectOff": "OFF",

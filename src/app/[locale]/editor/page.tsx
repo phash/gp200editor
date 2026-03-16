@@ -16,9 +16,9 @@ export default function EditorPage() {
       const decoder = new PRSTDecoder(buffer);
       loadPreset(decoder.decode());
     } catch (err) {
-      alert(`Fehler beim Laden: ${err instanceof Error ? err.message : String(err)}`);
+      alert(`${t('loadError')}: ${err instanceof Error ? err.message : String(err)}`);
     }
-  }, [loadPreset]);
+  }, [loadPreset, t]);
 
   function handleDownload() {
     if (!preset) return;
