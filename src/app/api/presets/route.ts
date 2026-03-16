@@ -1,0 +1,114 @@
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { validateSession, refreshSessionCookie } from '@/lib/session';
+import { uploadPreset } from '@/lib/storage';
+import { uploadPresetSchema } from '@/lib/validators';
+import { PRSTDecoder } from '@/core/PRSTDecoder';
+import type { GP200Preset } from '@/core/types';
+
+export async function POST(request: Request) {
+  const { user, session } = await validateSession();
+  if (!user || !session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  await refreshSessionCookie(session);
+
+  const formData = await request.formData().catch(() => null);
+  if (!formData) {
+    return NextResponse.json({ error: 'Invalid form data' }, { status: 400 });
+  }
+
+  const file = formData.get('preset');
+  if (!file || !(file instanceof File)) {
+    return NextResponse.json({ error: 'No preset file provided' }, { status: 400 });
+  }
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+
+  // 1. Check size (actual format is 512 bytes)
+  if (buffer.length !== 512) {
+    return NextResponse.json(
+      { error: 'Invalid PRST file: must be exactly 512 bytes' },
+      { status: 400 },
+    );
+  }
+
+  // 2. Validate + decode in one step
+  let decoded: GP200Preset;
+  try {
+    decoded = new PRSTDecoder(buffer).decode();
+  } catch {
+    return NextResponse.json({ error: 'Invalid PRST file' }, { status: 400 });
+  }
+
+  // 3. Parse and validate metadata fields
+  const rawTags = formData.get('tags');
+  let tagsArray: string[] = [];
+  if (rawTags && typeof rawTags === 'string') {
+    try {
+      tagsArray = JSON.parse(rawTags);
+    } catch {
+      tagsArray = rawTags.split(',').map((t) => t.trim()).filter(Boolean);
+    }
+  }
+
+  const parsed = uploadPresetSchema.safeParse({
+    description: formData.get('description') ?? undefined,
+    tags: tagsArray.length > 0 ? tagsArray : undefined,
+  });
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+  }
+
+  // 4. Generate key and upload to Garage
+  const key = `preset-${user.id}-${crypto.randomUUID().replace(/-/g, '')}.prst`;
+
+  try {
+    await uploadPreset(key, buffer);
+  } catch {
+    return NextResponse.json({ error: 'Failed to upload preset file' }, { status: 500 });
+  }
+
+  // 5. Create DB record
+  const preset = await prisma.preset.create({
+    data: {
+      userId: user.id,
+      presetKey: key,
+      name: decoded.patchName.trim() || file.name.replace(/\.prst$/i, '').slice(0, 32) || 'Untitled',
+      description: parsed.data.description ?? null,
+      tags: parsed.data.tags ?? [],
+    },
+    select: {
+      id: true,
+      name: true,
+      shareToken: true,
+    },
+  });
+
+  return NextResponse.json(preset, { status: 201 });
+}
+
+export async function GET() {
+  const { user, session } = await validateSession();
+  if (!user || !session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  await refreshSessionCookie(session);
+
+  const presets = await prisma.preset.findMany({
+    where: { userId: user.id },
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      tags: true,
+      shareToken: true,
+      downloadCount: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  return NextResponse.json(presets);
+}
