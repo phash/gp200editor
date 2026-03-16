@@ -368,3 +368,29 @@ export function getEffectName(effectId: number): string {
 export function getModuleName(effectId: number): string {
   return EFFECT_MAP[effectId]?.module ?? 'Unknown';
 }
+
+/** Returns all effects for a given module type, sorted by name. */
+export function getEffectsByModule(module: string): { effectId: number; name: string }[] {
+  const results: { effectId: number; name: string }[] = [];
+  for (const [id, info] of Object.entries(EFFECT_MAP)) {
+    if (info.module === module) {
+      results.push({ effectId: Number(id), name: info.name });
+    }
+  }
+  return results.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** Tailwind color classes for each module type. */
+export const MODULE_COLORS: Record<string, { bg: string; bgActive: string; border: string; borderActive: string; badge: string; btn: string }> = {
+  PRE:     { bg: 'bg-amber-50',   bgActive: 'bg-amber-100',   border: 'border-gray-300',   borderActive: 'border-amber-500',   badge: 'bg-amber-200 text-amber-800',     btn: 'bg-amber-600' },
+  WAH:     { bg: 'bg-purple-50',  bgActive: 'bg-purple-100',  border: 'border-gray-300',   borderActive: 'border-purple-500',  badge: 'bg-purple-200 text-purple-800',   btn: 'bg-purple-600' },
+  DST:     { bg: 'bg-red-50',     bgActive: 'bg-red-100',     border: 'border-gray-300',   borderActive: 'border-red-500',     badge: 'bg-red-200 text-red-800',         btn: 'bg-red-600' },
+  AMP:     { bg: 'bg-orange-50',  bgActive: 'bg-orange-100',  border: 'border-gray-300',   borderActive: 'border-orange-500',  badge: 'bg-orange-200 text-orange-800',   btn: 'bg-orange-600' },
+  NR:      { bg: 'bg-slate-50',   bgActive: 'bg-slate-100',   border: 'border-gray-300',   borderActive: 'border-slate-500',   badge: 'bg-slate-200 text-slate-800',     btn: 'bg-slate-600' },
+  CAB:     { bg: 'bg-emerald-50', bgActive: 'bg-emerald-100', border: 'border-gray-300',   borderActive: 'border-emerald-500', badge: 'bg-emerald-200 text-emerald-800', btn: 'bg-emerald-600' },
+  EQ:      { bg: 'bg-cyan-50',    bgActive: 'bg-cyan-100',    border: 'border-gray-300',   borderActive: 'border-cyan-500',    badge: 'bg-cyan-200 text-cyan-800',       btn: 'bg-cyan-600' },
+  MOD:     { bg: 'bg-blue-50',    bgActive: 'bg-blue-100',    border: 'border-gray-300',   borderActive: 'border-blue-500',    badge: 'bg-blue-200 text-blue-800',       btn: 'bg-blue-600' },
+  DLY:     { bg: 'bg-indigo-50',  bgActive: 'bg-indigo-100',  border: 'border-gray-300',   borderActive: 'border-indigo-500',  badge: 'bg-indigo-200 text-indigo-800',   btn: 'bg-indigo-600' },
+  RVB:     { bg: 'bg-violet-50',  bgActive: 'bg-violet-100',  border: 'border-gray-300',   borderActive: 'border-violet-500',  badge: 'bg-violet-200 text-violet-800',   btn: 'bg-violet-600' },
+  VOL:     { bg: 'bg-gray-50',    bgActive: 'bg-gray-100',    border: 'border-gray-300',   borderActive: 'border-gray-500',    badge: 'bg-gray-200 text-gray-800',       btn: 'bg-gray-600' },
+};

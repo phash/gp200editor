@@ -6,6 +6,7 @@ interface PresetActions {
   loadPreset: (preset: GP200Preset) => void;
   setPatchName: (name: string) => void;
   toggleEffect: (slotIndex: number) => void;
+  changeEffect: (slotIndex: number, effectId: number) => void;
   reorderEffects: (fromIndex: number, toIndex: number) => void;
   reset: () => void;
 }
@@ -33,6 +34,18 @@ export function usePreset(): PresetActions {
     });
   }, []);
 
+  const changeEffect = useCallback((slotIndex: number, effectId: number) => {
+    setPreset((prev) => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        effects: prev.effects.map((slot) =>
+          slot.slotIndex === slotIndex ? { ...slot, effectId } : slot
+        ),
+      };
+    });
+  }, []);
+
   const reorderEffects = useCallback((fromIndex: number, toIndex: number) => {
     setPreset((prev) => {
       if (!prev || fromIndex === toIndex) return prev;
@@ -49,5 +62,5 @@ export function usePreset(): PresetActions {
     setPreset(null);
   }, []);
 
-  return { preset, loadPreset, setPatchName, toggleEffect, reorderEffects, reset };
+  return { preset, loadPreset, setPatchName, toggleEffect, changeEffect, reorderEffects, reset };
 }
