@@ -34,17 +34,17 @@ describe('GP200PresetSchema', () => {
 });
 
 describe('EffectSlotSchema', () => {
-  it('validates a valid effect slot', () => {
+  it('validates a valid effect slot with float32 params', () => {
     const result = EffectSlotSchema.safeParse({
       slotIndex: 0,
       effectId: 5,
       enabled: true,
-      params: [127, 64, 0],
+      params: [50.0, 30.5, 0.0],
     });
     expect(result.success).toBe(true);
   });
 
-  it('akzeptiert slotIndex 10 (11 Slots total, 0–10)', () => {
+  it('akzeptiert slotIndex 10 (11 Slots total, 0-10)', () => {
     const result = EffectSlotSchema.safeParse({
       slotIndex: 10,
       effectId: 0,
@@ -64,13 +64,24 @@ describe('EffectSlotSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('rejects param value out of byte range (max 255)', () => {
+  it('accepts float32 param values (not limited to 0-255)', () => {
     const result = EffectSlotSchema.safeParse({
       slotIndex: 0,
       effectId: 0,
       enabled: true,
-      params: [256],
+      params: [256, -12.5, 0.1, 10000],
     });
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts 15 float32 params (full slot)', () => {
+    const params = Array.from({ length: 15 }, (_, i) => i * 6.67);
+    const result = EffectSlotSchema.safeParse({
+      slotIndex: 0,
+      effectId: 0,
+      enabled: true,
+      params,
+    });
+    expect(result.success).toBe(true);
   });
 });

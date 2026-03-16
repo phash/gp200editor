@@ -22,6 +22,18 @@ function buildTestBuffer(): Uint8Array {
   return buf;
 }
 
+/** Builds a buffer with known float32 param values at slot 0 */
+function buildTestBufferWithParams(): Uint8Array {
+  const buf = buildTestBuffer();
+  const view = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+  // Write float32 LE values into slot 0 params (offset 0xa0 + 0x0c = 0xac)
+  const base = 0xa0 + 0x0c;
+  view.setFloat32(base + 0, 50.0, true);
+  view.setFloat32(base + 4, 25.5, true);
+  view.setFloat32(base + 8, 100.0, true);
+  return buf;
+}
+
 describe('PRSTDecoder', () => {
   it('PRST_MAGIC ist "TSRP"', () => {
     expect(PRST_MAGIC).toBe('TSRP');
@@ -33,7 +45,7 @@ describe('PRSTDecoder', () => {
     expect(decoder.hasMagic()).toBe(true);
   });
 
-  it('hasMagic() gibt false zurück bei leerem Buffer', () => {
+  it('hasMagic() gibt false zurueck bei leerem Buffer', () => {
     const empty = new Uint8Array(1224).fill(0);
     const decoder = new PRSTDecoder(empty);
     expect(decoder.hasMagic()).toBe(false);
@@ -45,13 +57,13 @@ describe('PRSTDecoder', () => {
     expect(decoder.decode().patchName).toBe('TestPatch');
   });
 
-  it('wirft bei ungültigem Magic', () => {
+  it('wirft bei ungueltigem Magic', () => {
     const bad = new Uint8Array(1224).fill(0);
     const decoder = new PRSTDecoder(bad);
     expect(() => decoder.decode()).toThrow('Invalid .prst file');
   });
 
-  it('dekodiert 11 Effect-Slots', () => {
+  it('dekodiert 11 Effect-Slots mit 15 float32 params', () => {
     const buf = buildTestBuffer();
     const decoder = new PRSTDecoder(buf);
     const preset = decoder.decode();
@@ -59,8 +71,22 @@ describe('PRSTDecoder', () => {
     preset.effects.forEach((e, i) => {
       expect(e.slotIndex).toBe(i);
       expect(e.enabled).toBe(false);
-      expect(e.params).toHaveLength(60);
+      expect(e.params).toHaveLength(15);
     });
+  });
+
+  it('reads float32 param values correctly', () => {
+    const buf = buildTestBufferWithParams();
+    const decoder = new PRSTDecoder(buf);
+    const preset = decoder.decode();
+    const params = preset.effects[0].params;
+    expect(params[0]).toBeCloseTo(50.0, 5);
+    expect(params[1]).toBeCloseTo(25.5, 5);
+    expect(params[2]).toBeCloseTo(100.0, 5);
+    // Remaining params should be 0
+    for (let i = 3; i < 15; i++) {
+      expect(params[i]).toBe(0);
+    }
   });
 });
 
@@ -80,6 +106,9 @@ describe('PRSTDecoder mit echten .prst Dateien', () => {
       const preset = decoder.decode();
       expect(preset.patchName).toBe(name);
       expect(preset.effects).toHaveLength(11);
+      preset.effects.forEach((e) => {
+        expect(e.params).toHaveLength(15);
+      });
     });
   }
 });

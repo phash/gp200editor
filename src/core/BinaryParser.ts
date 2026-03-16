@@ -28,6 +28,11 @@ export class BinaryParser {
     return this.view.getUint32(offset, true);
   }
 
+  readFloat32LE(offset: number): number {
+    this.assertBounds(offset, 4);
+    return this.view.getFloat32(offset, true);
+  }
+
   readBytes(offset: number, length: number): number[] {
     this.assertBounds(offset, length);
     const result: number[] = [];

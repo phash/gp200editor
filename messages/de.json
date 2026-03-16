@@ -28,7 +28,9 @@
     "effectDisabled": "deaktiviert",
     "effectSlotLabel": "Slot",
     "effectId": "Effekt-ID",
-    "parameterCount": "Parameter"
+    "parameterCount": "Parameter",
+    "parameters": "Parameter",
+    "noParams": "Keine Parameter verfügbar"
   },
   "auth": {
     "loginTitle": "Anmelden",

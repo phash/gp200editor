@@ -21,7 +21,7 @@ const EFFECT_BLOCK_SIZE  = 0x48;
 const EFFECT_MARKER_0    = 0x14;   // block marker bytes: 14 00 44 00
 const EFFECT_MARKER_2    = 0x44;
 const PARAMS_OFFSET      = 0x0c;
-const PARAMS_LENGTH      = 60;
+const PARAMS_COUNT       = 15;
 
 export class PRSTEncoder {
   encode(preset: GP200Preset): ArrayBuffer {
@@ -54,8 +54,8 @@ export class PRSTEncoder {
         gen.writeUint8(base + 4, slot.slotIndex);
         gen.writeUint8(base + 5, slot.enabled ? 1 : 0);
         gen.writeUint32LE(base + 8, slot.effectId);
-        for (let p = 0; p < PARAMS_LENGTH && p < slot.params.length; p++) {
-          gen.writeUint8(base + PARAMS_OFFSET + p, slot.params[p]);
+        for (let p = 0; p < PARAMS_COUNT && p < slot.params.length; p++) {
+          gen.writeFloat32LE(base + PARAMS_OFFSET + p * 4, slot.params[p]);
         }
       } else {
         gen.writeUint8(base + 4, i); // slot index = position

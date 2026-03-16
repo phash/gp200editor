@@ -31,6 +31,11 @@ export class BufferGenerator {
     this.view.setUint32(offset, value, true);
   }
 
+  writeFloat32LE(offset: number, value: number): void {
+    this.assertBounds(offset, 4);
+    this.view.setFloat32(offset, value, true);
+  }
+
   writeAscii(offset: number, value: string, fieldLength: number): void {
     this.assertBounds(offset, fieldLength);
     for (let i = 0; i < fieldLength; i++) {

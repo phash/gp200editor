@@ -4,7 +4,7 @@ import { PRSTDecoder, PRST_MAGIC } from '@/core/PRSTDecoder';
 import type { GP200Preset } from '@/core/types';
 
 /** A preset with 11 effect slots — the real GP-200 format always has exactly 11 */
-const EMPTY_PARAMS = Array(60).fill(0);
+const EMPTY_PARAMS = Array(15).fill(0);
 const samplePreset: GP200Preset = {
   version: '1',
   patchName: 'MyPatch',
@@ -31,7 +31,7 @@ describe('PRSTEncoder', () => {
     expect(encoder.encode(samplePreset).byteLength).toBe(1224);
   });
 
-  it('encode → decode ergibt das gleiche Preset (round-trip)', () => {
+  it('encode -> decode ergibt das gleiche Preset (round-trip)', () => {
     const encoder = new PRSTEncoder();
     const buf = new Uint8Array(encoder.encode(samplePreset));
     const decoder = new PRSTDecoder(buf);
@@ -42,5 +42,29 @@ describe('PRSTEncoder', () => {
     expect(decoded.effects).toHaveLength(11);
     expect(decoded.effects[0].enabled).toBe(false);
     expect(decoded.effects[0].slotIndex).toBe(0);
+    expect(decoded.effects[0].params).toHaveLength(15);
+  });
+
+  it('round-trips float32 param values', () => {
+    const preset: GP200Preset = {
+      ...samplePreset,
+      effects: samplePreset.effects.map((slot, i) => ({
+        ...slot,
+        params: i === 0
+          ? [50.0, 25.5, 100.0, 0.0, -12.0, 0.1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+          : EMPTY_PARAMS,
+      })),
+    };
+    const encoder = new PRSTEncoder();
+    const buf = new Uint8Array(encoder.encode(preset));
+    const decoder = new PRSTDecoder(buf);
+    const decoded = decoder.decode();
+    const params = decoded.effects[0].params;
+    expect(params[0]).toBeCloseTo(50.0, 5);
+    expect(params[1]).toBeCloseTo(25.5, 5);
+    expect(params[2]).toBeCloseTo(100.0, 5);
+    expect(params[3]).toBeCloseTo(0.0, 5);
+    expect(params[4]).toBeCloseTo(-12.0, 5);
+    expect(params[5]).toBeCloseTo(0.1, 5);
   });
 });

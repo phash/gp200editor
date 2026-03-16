@@ -9,7 +9,7 @@ import { useCallback, useState } from 'react';
 
 export default function EditorPage() {
   const t = useTranslations('editor');
-  const { preset, loadPreset, setPatchName, toggleEffect, changeEffect, reorderEffects } = usePreset();
+  const { preset, loadPreset, setPatchName, toggleEffect, changeEffect, reorderEffects, setParam } = usePreset();
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
@@ -86,6 +86,7 @@ export default function EditorPage() {
             index={i}
             onToggle={toggleEffect}
             onChangeEffect={changeEffect}
+            onParamChange={setParam}
             onDragStart={handleDragStart}
             onDragOver={handleDragOver}
             onDrop={handleDrop}

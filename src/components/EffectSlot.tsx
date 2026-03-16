@@ -1,21 +1,25 @@
 'use client';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { EffectSlot as EffectSlotType } from '@/core/types';
 import { getEffectName, getModuleName, getEffectsByModule, MODULE_COLORS } from '@/core/effectNames';
+import { EffectParams } from '@/components/EffectParams';
 
 interface EffectSlotProps {
   slot: EffectSlotType;
   index: number;
   onToggle: (index: number) => void;
   onChangeEffect: (slotIndex: number, effectId: number) => void;
+  onParamChange: (slotIndex: number, paramIdx: number, value: number) => void;
   onDragStart: (index: number) => void;
   onDragOver: (e: React.DragEvent, index: number) => void;
   onDrop: (index: number) => void;
   isDragOver: boolean;
 }
 
-export function EffectSlot({ slot, index, onToggle, onChangeEffect, onDragStart, onDragOver, onDrop, isDragOver }: EffectSlotProps) {
+export function EffectSlot({ slot, index, onToggle, onChangeEffect, onParamChange, onDragStart, onDragOver, onDrop, isDragOver }: EffectSlotProps) {
   const t = useTranslations('editor');
+  const [expanded, setExpanded] = useState(false);
   const effectName = getEffectName(slot.effectId);
   const moduleName = getModuleName(slot.effectId);
   const colors = MODULE_COLORS[moduleName] ?? MODULE_COLORS.VOL;
@@ -34,13 +38,23 @@ export function EffectSlot({ slot, index, onToggle, onChangeEffect, onDragStart,
       }`}
       data-testid={`effect-slot-${slot.slotIndex}`}
     >
-      <div className="flex items-center justify-between gap-2">
+      <div
+        className="flex items-center justify-between gap-2 cursor-pointer select-none"
+        onClick={() => setExpanded(!expanded)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(!expanded); } }}
+        aria-expanded={expanded}
+        aria-label={`${effectName} ${t('parameters')}`}
+        data-testid={`effect-slot-header-${slot.slotIndex}`}
+      >
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-gray-400 cursor-grab flex-shrink-0" aria-hidden="true">&#x2630;</span>
           <span className={`text-xs px-1.5 py-0.5 rounded font-medium flex-shrink-0 ${colors.badge}`}>{moduleName}</span>
           <select
             value={slot.effectId}
             onChange={(e) => onChangeEffect(slot.slotIndex, Number(e.target.value))}
+            onClick={(e) => e.stopPropagation()}
             data-testid={`effect-select-${slot.slotIndex}`}
             className="font-medium text-black bg-transparent border-none cursor-pointer truncate min-w-0 focus:outline-none focus:ring-2 focus:ring-blue-300 rounded"
           >
@@ -53,9 +67,12 @@ export function EffectSlot({ slot, index, onToggle, onChangeEffect, onDragStart,
               <option value={slot.effectId}>{effectName}</option>
             )}
           </select>
+          <span className={`text-gray-400 transition-transform ${expanded ? 'rotate-180' : ''}`} aria-hidden="true">
+            &#x25BE;
+          </span>
         </div>
         <button
-          onClick={() => onToggle(slot.slotIndex)}
+          onClick={(e) => { e.stopPropagation(); onToggle(slot.slotIndex); }}
           aria-pressed={slot.enabled}
           aria-label={`${effectName} ${slot.enabled ? t('effectEnabled') : t('effectDisabled')}`}
           data-testid={`effect-slot-toggle-${slot.slotIndex}`}
@@ -68,6 +85,13 @@ export function EffectSlot({ slot, index, onToggle, onChangeEffect, onDragStart,
           {slot.enabled ? t('effectOn') : t('effectOff')}
         </button>
       </div>
+      {expanded && (
+        <EffectParams
+          effectId={slot.effectId}
+          params={slot.params}
+          onParamChange={(paramIdx, value) => onParamChange(slot.slotIndex, paramIdx, value)}
+        />
+      )}
     </div>
   );
 }

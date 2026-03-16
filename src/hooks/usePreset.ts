@@ -8,6 +8,7 @@ interface PresetActions {
   toggleEffect: (slotIndex: number) => void;
   changeEffect: (slotIndex: number, effectId: number) => void;
   reorderEffects: (fromIndex: number, toIndex: number) => void;
+  setParam: (slotIndex: number, paramIdx: number, value: number) => void;
   reset: () => void;
 }
 
@@ -58,9 +59,26 @@ export function usePreset(): PresetActions {
     });
   }, []);
 
+  const setParam = useCallback((slotIndex: number, paramIdx: number, value: number) => {
+    setPreset((prev) => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        effects: prev.effects.map((slot) => {
+          if (slot.slotIndex !== slotIndex) return slot;
+          const params = [...slot.params];
+          // Ensure params array is big enough (15 float32 values)
+          while (params.length <= paramIdx) params.push(0);
+          params[paramIdx] = value;
+          return { ...slot, params };
+        }),
+      };
+    });
+  }, []);
+
   const reset = useCallback(() => {
     setPreset(null);
   }, []);
 
-  return { preset, loadPreset, setPatchName, toggleEffect, changeEffect, reorderEffects, reset };
+  return { preset, loadPreset, setPatchName, toggleEffect, changeEffect, reorderEffects, setParam, reset };
 }
