@@ -37,8 +37,8 @@ function parseAttrs(str) {
 function parseParams(body) {
   const params = [];
 
-  // Parse Knob elements
-  const knobRegex = /<Knob\s+([^>]+)\/>/g;
+  // Parse Knob and Slider elements (same structure, both render as sliders)
+  const knobRegex = /<(?:Knob|Slider)\s+([^>]+)\/>/g;
   let m;
   while ((m = knobRegex.exec(body)) !== null) {
     const a = parseAttrs(m[1]);
