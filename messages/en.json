@@ -21,6 +21,8 @@
     "effectOff": "OFF",
     "effectEnabled": "enabled",
     "effectDisabled": "disabled",
-    "effectSlotLabel": "Slot"
+    "effectSlotLabel": "Slot",
+    "effectId": "Effect ID",
+    "parameterCount": "Parameter"
   }
 }
