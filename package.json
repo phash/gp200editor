@@ -13,11 +13,18 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1009.0",
+    "@lucia-auth/adapter-prisma": "^1.0.0",
+    "@node-rs/argon2": "^2.0.2",
+    "@prisma/client": "^5.22.0",
     "@radix-ui/react-slot": "^1.2.4",
+    "lucia": "^3.2.2",
     "next": "14.2.35",
     "next-intl": "^4.8.3",
+    "nodemailer": "^8.0.2",
     "react": "^18",
     "react-dom": "^18",
+    "sharp": "^0.34.5",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -26,6 +33,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^20",
+    "@types/nodemailer": "^7.0.11",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@vitejs/plugin-react": "^6.0.1",
@@ -35,6 +43,7 @@
     "jsdom": "^29.0.0",
     "playwright": "^1.58.2",
     "postcss": "^8",
+    "prisma": "^5.22.0",
     "tailwindcss": "^3.4.1",
     "typescript": "^5",
     "vitest": "^4.1.0"
