@@ -121,9 +121,9 @@ export function EffectSlot({ slot, index, onToggle, onChangeEffect, onParamChang
         </button>
       </div>
 
-      {/* Expanded params */}
+      {/* Expanded params — stop drag so sliders work */}
       {expanded && (
-        <div className="px-4 pb-4">
+        <div className="px-4 pb-4" draggable onDragStart={(e) => { e.preventDefault(); e.stopPropagation(); }}>
           <EffectParams
             effectId={slot.effectId}
             params={slot.params}
