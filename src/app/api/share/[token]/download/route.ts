@@ -24,7 +24,7 @@ export async function GET(_request: Request, context: RouteContext) {
     data: { downloadCount: { increment: 1 } },
   });
 
-  const safeFilename = preset.name.replace(/[\\\"]/g, '_').slice(0, 64);
+  const safeFilename = preset.name.replace(/[\\\"\/\x00]/g, '_').slice(0, 64);
 
   return new NextResponse(stream as unknown as ReadableStream, {
     headers: {
