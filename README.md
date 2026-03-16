@@ -5,6 +5,10 @@ Inoffizieller Browser-Editor für Valeton GP-200 Gitarren-Multi-Effektpedal Pres
 ## Features
 
 - `.prst` Preset-Dateien im Browser laden, bearbeiten und speichern
+- **305 Effekte** mit Namen und Parametern aus der offiziellen Valeton-Software
+- Effekt-Auswahl per Dropdown, Parameter-Slider, Switches und Dropdowns
+- Drag & Drop zum Umordnen der Effektkette
+- Dark pedalboard UI mit farbcodierten Modul-Badges und LED-Buttons
 - Account-System mit Profil und Avatar-Upload
 - Presets persistent speichern und per Link teilen
 - Öffentliche Share-Seite ohne Login (inkl. Download-Zähler)
@@ -14,12 +18,12 @@ Inoffizieller Browser-Editor für Valeton GP-200 Gitarren-Multi-Effektpedal Pres
 ## Stack
 
 - **Next.js 14** App Router + TypeScript strict
-- **Tailwind CSS**
+- **Tailwind CSS** (Dark theme, JetBrains Mono + DM Sans)
 - **Prisma 5** + PostgreSQL 16
 - **Lucia v3** (Session-Auth, Argon2id)
 - **Garage** (S3-kompatibler Object Store) für Avatare und Presets
 - **next-intl 4** (DE/EN)
-- **Vitest** (Unit) + **Playwright** (E2E + A11y)
+- **Vitest** (98 Unit-Tests) + **Playwright** (E2E + A11y)
 
 ## Entwicklung
 
@@ -56,7 +60,7 @@ npm run dev       # http://localhost:3000
 ### Tests
 
 ```bash
-npm run test          # 65 Unit-Tests (Vitest)
+npm run test          # 98 Unit-Tests (Vitest)
 npm run test:coverage # Coverage-Report
 npm run test:e2e      # Playwright E2E (App + Garage + DB erforderlich)
 ```
@@ -70,6 +74,16 @@ npm run build
 docker build -t gp200editor .
 docker run -d -p 3000:3000 gp200editor
 ```
+
+## .prst Binärformat
+
+Alle User-Presets sind exakt **1224 Bytes**. Das Format wurde per Reverse Engineering dokumentiert:
+
+- Magic `TSRP` (reversed "PRST") + Device ID `2-PG` (reversed "GP-2")
+- 11 Effekt-Blöcke à 72 Bytes mit Effekt-Code (uint32), Active-Flag und 15× float32 Parametern
+- 305 Effekte mit Namen und Parameter-Definitionen aus der offiziellen Valeton GP-200 Editor Software (`algorithm.xml`)
+
+Details: [CLAUDE.md](./CLAUDE.md#prst-binärformat-reverse-engineered-2026-03-16)
 
 ## Umgebungsvariablen
 

@@ -9,6 +9,7 @@ Inoffizieller Browser-Editor für Valeton GP-200 Gitarren-Multi-Effektpedal Pres
 - **Stack:** Next.js 14 App Router · TypeScript strict · Tailwind CSS · Prisma 5 · PostgreSQL 16 · Lucia v3 · Garage S3 · next-intl 4 (DE/EN)
 - **Tests:** Vitest (Unit) · Playwright + @axe-core/playwright (E2E + A11y)
 - **Ziel:** WCAG 2.1 AA
+- **UI:** Dark pedalboard theme (JetBrains Mono + DM Sans, Amber-Akzente, LED-Style Buttons)
 
 ---
 
@@ -17,7 +18,7 @@ Inoffizieller Browser-Editor für Valeton GP-200 Gitarren-Multi-Effektpedal Pres
 ```bash
 npm install --legacy-peer-deps   # legacy-peer-deps wegen lokaler npm-Version (11.x vs lock-file)
 npm run dev                      # http://localhost:3000
-npm run test                     # Vitest Unit-Tests (65 Tests)
+npm run test                     # Vitest Unit-Tests (98 Tests)
 npm run test:e2e                 # Playwright E2E (App muss laufen + Garage + DB)
 npm run build                    # Production Build
 ```
@@ -60,6 +61,7 @@ docker run -d -p 3000:3000 --name gp200editor gp200editor
 
 - Basis-Image: `node:23-alpine` (drei Stages: deps → builder → runner)
 - `output: 'standalone'` in `next.config.mjs` für Docker-kompatiblen Build
+- `@node-rs/argon2` in `serverComponentsExternalPackages` (native binary)
 - Non-root User `nextjs:nodejs` (UID/GID 1001)
 
 ---
@@ -94,18 +96,23 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 src/
 ├── core/                    # Pure TypeScript, framework-unabhängig
 │   ├── types.ts             # Zod-Schemas: GP200PresetSchema, EffectSlotSchema
-│   ├── BinaryParser.ts      # DataView-basierter Reader
-│   ├── BufferGenerator.ts   # DataView-basierter Writer
-│   ├── PRSTDecoder.ts       # .prst → GP200Preset (⚠ PLACEHOLDER, s.u.)
-│   └── PRSTEncoder.ts       # GP200Preset → .prst (⚠ PLACEHOLDER, s.u.)
+│   ├── BinaryParser.ts      # DataView-basierter Reader (uint8/16/32, float32, ASCII, bytes)
+│   ├── BufferGenerator.ts   # DataView-basierter Writer (uint8/16/32, float32, ASCII)
+│   ├── PRSTDecoder.ts       # .prst → GP200Preset (1224 Bytes, echtes Format)
+│   ├── PRSTEncoder.ts       # GP200Preset → .prst (1224 Bytes, echtes Format)
+│   ├── effectNames.ts       # 305 Effekt-ID→Name Mappings + MODULE_COLORS (aus algorithm.xml)
+│   └── effectParams.ts      # Parameter-Definitionen pro Effekt (Knob/Slider/Switch/Combox)
 │
 ├── hooks/
-│   └── usePreset.ts         # React-State: loadPreset, setPatchName, toggleEffect, reset
+│   └── usePreset.ts         # React-State: loadPreset, setPatchName, toggleEffect,
+│                            #   changeEffect, reorderEffects, setParam, reset
 │
 ├── components/
 │   ├── Navbar.tsx            # Auth-Status, Locale-Switcher, Links (Profile, Presets)
 │   ├── FileUpload.tsx        # Drag & Drop + Keyboard (WCAG)
-│   ├── EffectSlot.tsx        # Ein Effekt-Slot (aria-pressed, data-testid)
+│   ├── EffectSlot.tsx        # Effekt-Slot: Modul-Badge, Effekt-Dropdown, LED-Toggle,
+│   │                        #   Drag & Drop Reorder, aufklappbare Parameter
+│   ├── EffectParams.tsx      # Parameter-Controls: Slider, Switch, Combox
 │   └── Footer.tsx
 │
 ├── lib/
@@ -119,7 +126,7 @@ src/
 ├── app/[locale]/
 │   ├── layout.tsx            # NextIntlClientProvider, Navbar, Footer
 │   ├── page.tsx              # Home-Seite
-│   ├── editor/page.tsx       # Editor: FileUpload + 11x EffectSlot
+│   ├── editor/page.tsx       # Editor: FileUpload + 11x EffectSlot + Drag & Drop
 │   ├── auth/                 # Login, Register, Forgot-Password, Reset-Password
 │   ├── profile/              # Eigenes Profil (edit), /[username] (read-only)
 │   ├── presets/              # Preset-Liste + Upload, /[id]/edit
@@ -137,6 +144,9 @@ src/
 │   └── request.ts            # getRequestConfig für next-intl
 │
 └── middleware.ts             # next-intl + Auth-Guards (profile, presets)
+
+scripts/
+└── generate-effect-params.mjs  # Parst algorithm.xml → src/core/effectParams.ts
 ```
 
 ---
@@ -177,7 +187,7 @@ Preset        id, userId, presetKey, name(VarChar32), description, tags(String[]
 
 | Route | Auth | Beschreibung |
 |-------|------|--------------|
-| `POST /api/presets` | Ja | Upload + PRST-Validierung (512 Bytes) |
+| `POST /api/presets` | Ja | Upload + PRST-Validierung (1224 Bytes) |
 | `GET /api/presets` | Ja | Alle Presets des Users |
 | `PATCH /api/presets/[id]` | Ja (Owner) | Metadaten/File ersetzen |
 | `DELETE /api/presets/[id]` | Ja (Owner) | Löschen |
@@ -198,11 +208,9 @@ Preset        id, userId, presetKey, name(VarChar32), description, tags(String[]
 
 ---
 
-## .prst Binärformat — Echte Dateien (Reverse Engineered, 2026-03-16)
+## .prst Binärformat (Reverse Engineered, 2026-03-16)
 
 **Alle bekannten echten .prst-Dateien sind exakt 1224 Bytes** (User-Presets; Factory-Presets: 1176 Bytes).
-
-> ⚠️ **Code-Hinweis:** `PRSTDecoder.ts` und `PRSTEncoder.ts` verwenden aktuell Platzhalter-Werte (512 Bytes, Magic `'PRST'` an Offset 0). Das ist noch nicht das finale Format — die TODOs in diesen Dateien markieren die offenen Punkte. Die unten stehende Dokumentation beschreibt das **echte Hardware-Format**.
 
 ### Datei-Header (0x00–0x2F, 48 Bytes)
 
@@ -215,10 +223,10 @@ Preset        id, userId, presetKey, name(VarChar32), description, tags(String[]
 | 0x28   | 4     | Chunk-Marker: `MRAP`            |
 | 0x2C   | 4     | Chunk-Größe (LE uint32 = 1172)  |
 
-### Preset-Name (0x44–0x7F)
+### Preset-Name (0x44–0x63)
 
 - Null-terminierter ASCII-String ab Offset 0x44
-- Max. ~48 Zeichen
+- Max. 32 Zeichen
 
 ### Effekt-Blöcke (0xa0–0x3AF, 11× 72 Bytes)
 
@@ -227,11 +235,35 @@ Preset        id, userId, presetKey, name(VarChar32), description, tags(String[]
 +4   1  Slot-Index (0–10)
 +5   1  Aktiv-Flag (0 = bypass, 1 = aktiv)
 +6   2  Konstante: 0x000F
-+8   2  Model-ID (LE uint16)
-+12  60 Parameter-Bytes (LE float32 × 15)
++8   4  Effekt-Code (LE uint32) — High-Byte = Modul-Typ, Low-Bytes = Variante
++12  60 Parameter (15× LE float32)
 ```
 
 **Wichtig:** Blockgröße = **72 Bytes (0x48)**, nicht 64 (0x40).
+
+### Effekt-Code Struktur (uint32)
+
+| High-Byte | Modul | Beispiele |
+|-----------|-------|-----------|
+| 0x00 | PRE/NR | COMP, Gate, Boost |
+| 0x01 | PRE/EQ/MOD | AC Sim, Guitar EQ, Detune |
+| 0x03 | DST | Green OD, Force, Scream OD |
+| 0x04 | MOD | Chorus, Flanger, Phaser, Tremolo |
+| 0x05 | WAH | V-Wah, C-Wah |
+| 0x06 | VOL | Volume |
+| 0x07 | AMP | UK 800, Mess DualV, Eagle 120+ |
+| 0x08 | AMP (extra) | AC Pre, Mini Bass |
+| 0x0A | CAB | UK GRN 2, EV, User IR |
+| 0x0B | DLY | Pure, Analog, Tape |
+| 0x0C | RVB | Room, Hall, Shimmer |
+| 0x0F | SnapTone | SnapTone (AMP/DST) |
+
+### Effekt-Datenbank
+
+- **305 Effekte** mit Namen aus der offiziellen Valeton GP-200 Editor Software (`algorithm.xml`)
+- **322 Parameter-Definitionen** (Knob, Slider, Switch, Combox) pro Effekt
+- Quelle: `~/.wine/drive_c/Program Files/Valeton/GP-200/Resource/GP-200/File/algorithm.xml`
+- Generator: `scripts/generate-effect-params.mjs` → `src/core/effectParams.ts`
 
 ### Checksum (letzte 2 Bytes, 0x4C6)
 
@@ -242,16 +274,19 @@ LE uint16; Algorithmus unbekannt.
 ## Tests
 
 ```bash
-npm run test              # 65 Unit-Tests (Vitest)
+npm run test              # 98 Unit-Tests (Vitest)
 npm run test:coverage     # Coverage-Report
 npm run test:e2e          # Playwright E2E (App + Garage + DB erforderlich)
 ```
 
 Unit-Tests in `tests/unit/`:
 - `BinaryParser.test.ts`, `BufferGenerator.test.ts`, `types.test.ts`
-- `PRSTDecoder.test.ts`, `PRSTEncoder.test.ts`, `usePreset.test.ts`, `smoke.test.ts`
+- `PRSTDecoder.test.ts`, `PRSTEncoder.test.ts` — inkl. Tests gegen echte .prst-Dateien
+- `effectNames.test.ts` — Effekt-ID→Name Auflösung
+- `effectParams.test.ts` — Parameter-Definitionen
+- `usePreset.test.ts`, `smoke.test.ts`
 - `lib/validators.test.ts` – Auth + Profile Schemas
-- `validators.preset.test.ts` – uploadPresetSchema + patchPresetSchema (18 Tests)
+- `validators.preset.test.ts` – uploadPresetSchema + patchPresetSchema
 
 E2E-Tests in `tests/e2e/`:
 - `editor.spec.ts` – Datei-Upload, Preset-Anzeige, Effekt-Toggle
