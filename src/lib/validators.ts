@@ -36,3 +36,24 @@ export type LoginInput = z.infer<typeof loginSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type PatchProfileInput = z.infer<typeof patchProfileSchema>;
+
+const tagSchema = z
+  .string()
+  .regex(/^[a-zA-Z0-9 -]+$/, 'Tags can only contain letters, numbers, spaces and hyphens')
+  .max(30, 'Tag must be at most 30 characters');
+
+// Note: `name` is NOT part of this schema — it is extracted from the uploaded
+// .prst binary via `new PRSTDecoder(buffer).decode().patchName` in the route handler.
+export const uploadPresetSchema = z.object({
+  description: z.string().max(500).optional(),
+  tags: tagSchema.array().max(10, 'At most 10 tags allowed').optional(),
+});
+
+export const patchPresetSchema = z.object({
+  name: z.string().min(1).max(32).optional(),
+  description: z.string().max(500).nullable().optional(),
+  tags: tagSchema.array().max(10, 'At most 10 tags allowed').optional(),
+});
+
+export type UploadPresetInput = z.infer<typeof uploadPresetSchema>;
+export type PatchPresetInput = z.infer<typeof patchPresetSchema>;
