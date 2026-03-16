@@ -20,6 +20,12 @@ docker compose exec -T garage /garage bucket create avatars
 echo "→ Granting bucket access..."
 docker compose exec -T garage /garage bucket allow avatars --read --write --key gp200editor-key
 
+echo "→ Creating bucket 'presets'..."
+docker compose exec -T garage /garage bucket create presets
+
+echo "→ Granting presets bucket access..."
+docker compose exec -T garage /garage bucket allow presets --read --write --key gp200editor-key
+
 echo ""
 echo "✅ Garage initialized! Add these values to .env.local:"
 echo ""

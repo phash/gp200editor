@@ -19,6 +19,23 @@ model User {
 
   sessions    Session[]
   resetTokens PasswordResetToken[]
+  presets     Preset[]
+}
+
+model Preset {
+  id            String   @id @default(cuid())
+  userId        String
+  presetKey     String
+  name          String   @db.VarChar(32)
+  description   String?
+  tags          String[]
+  shareToken    String   @unique @default(cuid())
+  downloadCount Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Session {

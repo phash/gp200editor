@@ -25,6 +25,16 @@ export async function middleware(request: NextRequest) {
     // Full session validation happens inside each profile page/route.
   }
 
+  // Protect /[locale]/presets and /[locale]/presets/* routes.
+  const presetsPattern = /^\/(de|en)(\/presets)(\/|$)/;
+  if (presetsPattern.test(pathname)) {
+    const sessionCookie = request.cookies.get(SESSION_COOKIE);
+    if (!sessionCookie) {
+      const locale = pathname.startsWith('/en') ? 'en' : 'de';
+      return NextResponse.redirect(new URL(`/${locale}/auth/login`, request.url));
+    }
+  }
+
   return intlMiddleware(request);
 }
 

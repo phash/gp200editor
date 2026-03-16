@@ -45,3 +45,31 @@ export async function getAvatarStream(key: string): Promise<Readable> {
   );
   return response.Body as Readable;
 }
+
+function presetBucket() {
+  return process.env.GARAGE_PRESET_BUCKET!;
+}
+
+export async function uploadPreset(key: string, buffer: Buffer): Promise<void> {
+  await getClient().send(
+    new PutObjectCommand({
+      Bucket: presetBucket(),
+      Key: key,
+      Body: buffer,
+      ContentType: 'application/octet-stream',
+    }),
+  );
+}
+
+export async function deletePreset(key: string): Promise<void> {
+  await getClient().send(
+    new DeleteObjectCommand({ Bucket: presetBucket(), Key: key }),
+  );
+}
+
+export async function getPresetStream(key: string): Promise<Readable> {
+  const response = await getClient().send(
+    new GetObjectCommand({ Bucket: presetBucket(), Key: key }),
+  );
+  return response.Body as Readable;
+}
