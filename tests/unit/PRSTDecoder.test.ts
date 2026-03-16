@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { PRSTDecoder, PRST_MAGIC } from '@/core/PRSTDecoder';
 
@@ -98,9 +98,9 @@ describe('PRSTDecoder mit echten .prst Dateien', () => {
   ];
 
   for (const { file, name } of fixtures) {
-    it(`dekodiert "${name}" ohne Fehler`, () => {
-      const path = join(process.cwd(), file);
-      const data = new Uint8Array(readFileSync(path));
+    const filePath = join(process.cwd(), file);
+    it.skipIf(!existsSync(filePath))(`dekodiert "${name}" ohne Fehler`, () => {
+      const data = new Uint8Array(readFileSync(filePath));
       const decoder = new PRSTDecoder(data);
       expect(decoder.hasMagic()).toBe(true);
       const preset = decoder.decode();
