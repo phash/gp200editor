@@ -5,7 +5,8 @@
     "editor": "Editor",
     "login": "Sign In",
     "profile": "Profile",
-    "logout": "Logout"
+    "logout": "Logout",
+    "presets": "Presets"
   },
   "home": {
     "headline": "Valeton GP-200 Preset Editor",
@@ -66,5 +67,33 @@
     "saveFailed": "Failed to save. Please try again.",
     "changeAvatar": "Change Avatar",
     "memberSince": "Member since"
+  },
+  "presets": {
+    "title": "My Presets",
+    "upload": "Upload Preset",
+    "noPresets": "No presets yet. Upload your first one.",
+    "name": "Preset Name",
+    "description": "Description",
+    "tags": "Tags",
+    "addTag": "Add tag…",
+    "save": "Save Changes",
+    "saving": "Saving…",
+    "saved": "Saved!",
+    "saveFailed": "Failed to save. Please try again.",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this preset? This cannot be undone.",
+    "download": "Download",
+    "copyLink": "Copy Link",
+    "linkCopied": "Link copied!",
+    "resetLink": "Reset Link",
+    "resetLinkConfirm": "Reset the share link? The old link will stop working.",
+    "uploadError": "Upload failed. Please try again.",
+    "invalidFile": "Invalid file. Must be a .prst file for the GP-200.",
+    "memberSince": "Uploaded by",
+    "downloads": "downloads",
+    "editPreset": "Edit Preset",
+    "replaceFile": "Replace File",
+    "backToPresets": "Back to my presets",
+    "uploadedOn": "Uploaded on"
   }
 }

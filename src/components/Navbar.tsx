@@ -55,6 +55,9 @@ export function Navbar() {
             <Link href="/profile" className="hover:underline" data-testid="nav-link-profile">
               {t('profile')}
             </Link>
+            <Link href="/presets" className="hover:underline" data-testid="nav-link-presets">
+              {t('presets')}
+            </Link>
             <button
               onClick={handleLogout}
               data-testid="nav-logout"
