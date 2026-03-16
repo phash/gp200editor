@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import '../globals.css'; // globals.css stays in src/app/, so relative path goes up
 import { Footer } from '@/components/Footer';
+import { Navbar } from '@/components/Navbar';
 
 export const metadata: Metadata = {
   title: 'GP-200 Editor',
@@ -24,6 +25,7 @@ export default async function LocaleLayout({ children, params }: Props) {
     <html lang={locale}>
       <body className="flex flex-col min-h-screen">
         <NextIntlClientProvider messages={messages}>
+          <Navbar />
           <main className="flex-1">{children}</main>
           <Footer />
         </NextIntlClientProvider>
