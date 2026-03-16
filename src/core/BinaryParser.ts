@@ -28,6 +28,15 @@ export class BinaryParser {
     return this.view.getUint32(offset, true);
   }
 
+  readBytes(offset: number, length: number): number[] {
+    this.assertBounds(offset, length);
+    const result: number[] = [];
+    for (let i = 0; i < length; i++) {
+      result.push(this.view.getUint8(offset + i));
+    }
+    return result;
+  }
+
   readAscii(offset: number, length: number): string {
     this.assertBounds(offset, length);
     let result = '';

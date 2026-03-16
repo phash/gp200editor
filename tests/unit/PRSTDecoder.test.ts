@@ -1,19 +1,32 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { PRSTDecoder, PRST_MAGIC } from '@/core/PRSTDecoder';
 
-/** Creates a minimal test buffer with known content */
+/** Builds a minimal valid test buffer matching the real .prst format */
 function buildTestBuffer(): Uint8Array {
-  const buf = new Uint8Array(512).fill(0);
-  // Magic-Header "PRST" (placeholder — real bytes TBD)
-  buf[0] = 0x50; buf[1] = 0x52; buf[2] = 0x53; buf[3] = 0x54; // "PRST"
-  // Version (placeholder offset 4)
-  buf[4] = 0x01;
-  // Patch name at offset 8, max 12 bytes (placeholder)
-  'TestPatch'.split('').forEach((c, i) => { buf[8 + i] = c.charCodeAt(0); });
+  const buf = new Uint8Array(1224).fill(0);
+  // Magic "TSRP" at 0x00
+  buf[0x00] = 0x54; buf[0x01] = 0x53; buf[0x02] = 0x52; buf[0x03] = 0x50;
+  // Version at 0x15
+  buf[0x15] = 0x01;
+  // Patch name at 0x44
+  'TestPatch'.split('').forEach((c, i) => { buf[0x44 + i] = c.charCodeAt(0); });
+  // 11 effect blocks: marker 14 00 44 00 + slot index + bypass
+  for (let slot = 0; slot < 11; slot++) {
+    const base = 0xa0 + slot * 0x48;
+    buf[base + 0] = 0x14; buf[base + 1] = 0x00; buf[base + 2] = 0x44; buf[base + 3] = 0x00;
+    buf[base + 4] = slot;  // slot index
+    buf[base + 5] = 0x00;  // bypassed
+  }
   return buf;
 }
 
 describe('PRSTDecoder', () => {
+  it('PRST_MAGIC ist "TSRP"', () => {
+    expect(PRST_MAGIC).toBe('TSRP');
+  });
+
   it('erkennt den Magic-Header', () => {
     const buf = buildTestBuffer();
     const decoder = new PRSTDecoder(buf);
@@ -21,7 +34,7 @@ describe('PRSTDecoder', () => {
   });
 
   it('hasMagic() gibt false zurück bei leerem Buffer', () => {
-    const empty = new Uint8Array(512).fill(0);
+    const empty = new Uint8Array(1224).fill(0);
     const decoder = new PRSTDecoder(empty);
     expect(decoder.hasMagic()).toBe(false);
   });
@@ -33,8 +46,40 @@ describe('PRSTDecoder', () => {
   });
 
   it('wirft bei ungültigem Magic', () => {
-    const bad = new Uint8Array(512).fill(0);
+    const bad = new Uint8Array(1224).fill(0);
     const decoder = new PRSTDecoder(bad);
     expect(() => decoder.decode()).toThrow('Invalid .prst file');
   });
+
+  it('dekodiert 11 Effect-Slots', () => {
+    const buf = buildTestBuffer();
+    const decoder = new PRSTDecoder(buf);
+    const preset = decoder.decode();
+    expect(preset.effects).toHaveLength(11);
+    preset.effects.forEach((e, i) => {
+      expect(e.slotIndex).toBe(i);
+      expect(e.enabled).toBe(false);
+      expect(e.params).toHaveLength(60);
+    });
+  });
+});
+
+describe('PRSTDecoder mit echten .prst Dateien', () => {
+  const fixtures = [
+    { file: 'planung/36-C CHUGG.prst',          name: 'CHUGG' },
+    { file: 'planung/57-A Stone in Love.prst',   name: 'Stone in Love' },
+    { file: 'planung/ZZ-WokeUp.prst',            name: 'ZZ-WokeUp' },
+  ];
+
+  for (const { file, name } of fixtures) {
+    it(`dekodiert "${name}" ohne Fehler`, () => {
+      const path = join(process.cwd(), file);
+      const data = new Uint8Array(readFileSync(path));
+      const decoder = new PRSTDecoder(data);
+      expect(decoder.hasMagic()).toBe(true);
+      const preset = decoder.decode();
+      expect(preset.patchName).toBe(name);
+      expect(preset.effects).toHaveLength(11);
+    });
+  }
 });

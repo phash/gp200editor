@@ -1,14 +1,23 @@
 import { BinaryParser } from './BinaryParser';
 import { GP200PresetSchema, type GP200Preset } from './types';
 
-// TODO: Confirm actual byte offsets via reverse engineering of real .prst files
-export const PRST_MAGIC = 'PRST';
-const OFFSET_MAGIC = 0;
-const OFFSET_VERSION = 4;
-const OFFSET_PATCH_NAME = 8;
-const PATCH_NAME_LENGTH = 12;
-// const OFFSET_EFFECTS = 20; // TODO: determine
-// const OFFSET_CHECKSUM = ???; // TODO: determine
+// Confirmed offsets from reverse engineering real .prst files (2026-03-16)
+export const PRST_MAGIC = 'TSRP';
+const OFFSET_MAGIC       = 0x00;  // 4 bytes: "TSRP"
+const OFFSET_VERSION     = 0x15;  // 1 byte: version minor (e.g. 1)
+const OFFSET_PATCH_NAME  = 0x44;  // null-terminated, max 32 bytes
+const PATCH_NAME_MAX     = 32;
+const OFFSET_CHECKSUM    = 0x4C6; // LE uint16 (last 2 bytes of 1224-byte file)
+
+const EFFECT_BLOCK_COUNT  = 11;    // GP-200 has 11 effect slots
+const EFFECT_BLOCK_START  = 0xa0;  // first block offset
+const EFFECT_BLOCK_SIZE   = 0x48;  // 72 bytes per block
+// Within each block:
+const SLOT_OFFSET         = 4;     // slot index (0–10)
+const ACTIVE_OFFSET       = 5;     // 0 = bypassed, 1 = active
+const MODEL_OFFSET        = 8;     // LE uint16: effect model id
+const PARAMS_OFFSET       = 0x0c;  // 60 raw parameter bytes
+const PARAMS_LENGTH       = 60;
 
 export class PRSTDecoder {
   private parser: BinaryParser;
@@ -27,15 +36,20 @@ export class PRSTDecoder {
     }
 
     const version = String(this.parser.readUint8(OFFSET_VERSION));
-    const patchName = this.parser.readAscii(OFFSET_PATCH_NAME, PATCH_NAME_LENGTH);
+    const patchName = this.parser.readAscii(OFFSET_PATCH_NAME, PATCH_NAME_MAX);
 
-    // TODO: Decode effect slots once format is known
     const effects: GP200Preset['effects'] = [];
+    for (let i = 0; i < EFFECT_BLOCK_COUNT; i++) {
+      const base = EFFECT_BLOCK_START + i * EFFECT_BLOCK_SIZE;
+      const slotIndex = this.parser.readUint8(base + SLOT_OFFSET);
+      const enabled   = this.parser.readUint8(base + ACTIVE_OFFSET) === 1;
+      const effectId  = this.parser.readUint16LE(base + MODEL_OFFSET);
+      const params    = this.parser.readBytes(base + PARAMS_OFFSET, PARAMS_LENGTH);
+      effects.push({ slotIndex, enabled, effectId, params });
+    }
 
-    // TODO: Determine checksum offset
-    const checksum = 0;
+    const checksum = this.parser.readUint16LE(OFFSET_CHECKSUM);
 
-    const preset = { version, patchName, effects, checksum };
-    return GP200PresetSchema.parse(preset);
+    return GP200PresetSchema.parse({ version, patchName, effects, checksum });
   }
 }
