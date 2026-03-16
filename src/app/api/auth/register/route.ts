@@ -4,13 +4,14 @@ import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { lucia } from '@/lib/auth';
 import { registerSchema } from '@/lib/validators';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
   const parsed = registerSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.errors[0].message },
+      { error: parsed.error.issues[0].message },
       { status: 400 },
     );
   }
@@ -32,9 +33,19 @@ export async function POST(request: NextRequest) {
   const passwordHash = await hash(password);
 
   // Let Prisma generate the CUID via @default(cuid()) in the schema
-  const user = await prisma.user.create({
-    data: { email, username, passwordHash },
-  });
+  let user;
+  try {
+    user = await prisma.user.create({
+      data: { email, username, passwordHash },
+    });
+  } catch (e) {
+    if (e instanceof PrismaClientKnownRequestError && e.code === 'P2002') {
+      const field = (e.meta?.target as string[] | undefined)?.[0] ?? 'field';
+      const message = field === 'email' ? 'Email already taken' : 'Username already taken';
+      return NextResponse.json({ error: message }, { status: 409 });
+    }
+    throw e;
+  }
 
   const session = await lucia.createSession(user.id, {});
   const sessionCookie = lucia.createSessionCookie(session.id);

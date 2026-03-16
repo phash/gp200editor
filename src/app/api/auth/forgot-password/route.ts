@@ -19,13 +19,24 @@ export async function POST(request: NextRequest) {
     const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
-    await prisma.passwordResetToken.create({
+    // Invalidate any previous unused tokens for this user
+    await prisma.passwordResetToken.deleteMany({
+      where: { userId: user.id, usedAt: null },
+    });
+
+    const token = await prisma.passwordResetToken.create({
       data: { tokenHash, userId: user.id, expiresAt },
     });
 
     const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/en/auth/reset-password?token=${rawToken}`;
     // SMTP errors propagate as 500 (intentional — user knows to retry)
-    await sendPasswordResetEmail(email, resetUrl);
+    try {
+      await sendPasswordResetEmail(email, resetUrl);
+    } catch (err) {
+      // Clean up the orphaned token before propagating the error
+      await prisma.passwordResetToken.delete({ where: { id: token.id } }).catch(() => {});
+      throw err;
+    }
   }
 
   return NextResponse.json({});

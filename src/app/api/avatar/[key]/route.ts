@@ -7,6 +7,12 @@ export async function GET(
 ) {
   const { key } = await params;
 
+  // Validate key format to prevent probing arbitrary bucket paths
+  const KEY_PATTERN = /^user-[a-z0-9]+-\d+\.webp$/;
+  if (!KEY_PATTERN.test(key)) {
+    return new NextResponse(null, { status: 404 });
+  }
+
   try {
     const stream = await getAvatarStream(key);
 
