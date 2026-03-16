@@ -1,0 +1,26 @@
+{
+  "nav": {
+    "title": "GP-200 Editor",
+    "home": "Start",
+    "editor": "Editor"
+  },
+  "home": {
+    "headline": "Valeton GP-200 Preset Editor",
+    "subtitle": "Lade deine .prst-Datei, bearbeite Effekte und speichere zurück.",
+    "uploadCta": "Preset laden"
+  },
+  "footer": {
+    "disclaimer": "Inoffizielles Tool. Nicht von Valeton."
+  },
+  "editor": {
+    "title": "Preset bearbeiten",
+    "patchName": "Patch-Name",
+    "download": "Preset herunterladen",
+    "placeholder": "Editor wird in Chunk 3 implementiert.",
+    "effectOn": "AN",
+    "effectOff": "AUS",
+    "effectEnabled": "aktiviert",
+    "effectDisabled": "deaktiviert",
+    "effectSlotLabel": "Slot"
+  }
+}
