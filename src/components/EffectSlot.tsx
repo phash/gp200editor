@@ -42,7 +42,7 @@ export function EffectSlot({ slot, index, onToggle, onChangeEffect, onDragStart,
             value={slot.effectId}
             onChange={(e) => onChangeEffect(slot.slotIndex, Number(e.target.value))}
             data-testid={`effect-select-${slot.slotIndex}`}
-            className="font-medium bg-transparent border-none cursor-pointer truncate min-w-0 focus:outline-none focus:ring-2 focus:ring-blue-300 rounded"
+            className="font-medium text-black bg-transparent border-none cursor-pointer truncate min-w-0 focus:outline-none focus:ring-2 focus:ring-blue-300 rounded"
           >
             {effects.map((eff) => (
               <option key={eff.effectId} value={eff.effectId}>
