@@ -2,7 +2,10 @@
   "nav": {
     "title": "GP-200 Editor",
     "home": "Home",
-    "editor": "Editor"
+    "editor": "Editor",
+    "login": "Sign In",
+    "profile": "Profile",
+    "logout": "Logout"
   },
   "home": {
     "headline": "Valeton GP-200 Preset Editor",
@@ -25,5 +28,43 @@
     "effectSlotLabel": "Slot",
     "effectId": "Effect ID",
     "parameterCount": "Parameter"
+  },
+  "auth": {
+    "loginTitle": "Sign In",
+    "registerTitle": "Create Account",
+    "forgotPasswordTitle": "Reset Password",
+    "resetPasswordTitle": "Set New Password",
+    "email": "Email",
+    "username": "Username",
+    "password": "Password",
+    "newPassword": "New Password",
+    "loginButton": "Sign In",
+    "registerButton": "Create Account",
+    "sendResetButton": "Send Reset Email",
+    "resetButton": "Set New Password",
+    "loading": "Loading…",
+    "loginFailed": "Invalid email or password",
+    "forgotPasswordSent": "If your email is registered, you will receive a reset link shortly.",
+    "resetSuccess": "Password updated. Signing you in…",
+    "noAccount": "Don't have an account?",
+    "register": "Sign up",
+    "haveAccount": "Already have an account?",
+    "login": "Sign in",
+    "forgotPassword": "Forgot password?",
+    "backToLogin": "Back to sign in",
+    "registrationError": "Registration failed. Please try again.",
+    "resetError": "Token invalid or expired"
+  },
+  "profile": {
+    "title": "My Profile",
+    "bio": "Bio",
+    "website": "Website",
+    "avatarLabel": "Profile Picture",
+    "saveButton": "Save Changes",
+    "saving": "Saving…",
+    "saved": "Saved!",
+    "saveFailed": "Failed to save. Please try again.",
+    "changeAvatar": "Change Avatar",
+    "memberSince": "Member since"
   }
 }
