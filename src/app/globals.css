@@ -2,26 +2,133 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --bg-primary: #0f0f0f;
+  --bg-surface: #1a1a1a;
+  --bg-elevated: #242424;
+  --bg-hover: #2e2e2e;
+  --text-primary: #e8e4df;
+  --text-secondary: #8a8580;
+  --text-muted: #5a5550;
+  --border-subtle: #2a2724;
+  --border-active: #3a3530;
+  --accent-amber: #d4a24e;
+  --accent-amber-dim: #8a6a30;
+  --accent-red: #c44e4e;
+  --accent-green: #4ec46a;
+  --glow-amber: rgba(212, 162, 78, 0.15);
+  --glow-red: rgba(196, 78, 78, 0.12);
+  --glow-green: rgba(78, 196, 106, 0.12);
+  --knob-track: #2a2724;
+  --knob-fill: #d4a24e;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  font-family: 'DM Sans', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Noise texture overlay ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ── Custom scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--border-active); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ── Range slider (knob tracks) ── */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  height: 28px;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--knob-track);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--knob-fill);
+  margin-top: -6px;
+  box-shadow: 0 0 8px rgba(212, 162, 78, 0.4), 0 1px 3px rgba(0,0,0,0.6);
+  transition: box-shadow 0.15s;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 14px rgba(212, 162, 78, 0.6), 0 1px 3px rgba(0,0,0,0.6);
+}
+
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--knob-track);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 50%;
+  background: var(--knob-fill);
+  box-shadow: 0 0 8px rgba(212, 162, 78, 0.4), 0 1px 3px rgba(0,0,0,0.6);
+}
+
+/* ── Select styling ── */
+select {
+  color: var(--text-primary);
+}
+
+select option {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+/* ── LED glow animation ── */
+@keyframes led-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.led-active {
+  animation: led-pulse 2s ease-in-out infinite;
+}
+
+/* ── Slot enter animation ── */
+@keyframes slot-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.slot-enter {
+  animation: slot-enter 0.3s ease-out both;
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+  .font-mono-display {
+    font-family: 'JetBrains Mono', monospace;
   }
 }

@@ -55,7 +55,10 @@ export default function EditorPage() {
   if (!preset) {
     return (
       <div className="p-8 max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">{t('title')}</h1>
+        <h1 className="font-mono-display text-2xl font-bold mb-8 tracking-tight"
+          style={{ color: 'var(--text-primary)' }}>
+          {t('title')}
+        </h1>
         <FileUpload onFile={handleFile} />
       </div>
     );
@@ -63,11 +66,12 @@ export default function EditorPage() {
 
   return (
     <div className="p-8 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">{t('title')}</h1>
-      <div className="mb-6">
-        <label htmlFor="patch-name" className="block text-sm font-medium mb-1">
+      {/* Header with patch name */}
+      <div className="flex items-center gap-4 mb-8">
+        <h1 className="font-mono-display text-lg font-bold tracking-tight flex-shrink-0"
+          style={{ color: 'var(--text-muted)' }}>
           {t('patchName')}
-        </label>
+        </h1>
         <input
           id="patch-name"
           type="text"
@@ -75,10 +79,13 @@ export default function EditorPage() {
           onChange={(e) => setPatchName(e.target.value)}
           maxLength={32}
           data-testid="patch-name-input"
-          className="border rounded px-3 py-2 w-full max-w-xs"
+          className="font-mono-display text-xl font-bold tracking-tight bg-transparent border-none outline-none w-full"
+          style={{ color: 'var(--accent-amber)' }}
         />
       </div>
-      <div className="grid gap-3 mb-6" onDragEnd={() => { setDragIndex(null); setDragOverIndex(null); }}>
+
+      {/* Signal chain */}
+      <div className="flex flex-col gap-2 mb-8" onDragEnd={() => { setDragIndex(null); setDragOverIndex(null); }}>
         {preset.effects.map((slot, i) => (
           <EffectSlot
             key={`${i}-${slot.effectId}`}
@@ -94,10 +101,25 @@ export default function EditorPage() {
           />
         ))}
       </div>
+
+      {/* Download button */}
       <button
         onClick={handleDownload}
         data-testid="download-btn"
-        className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+        className="font-mono-display text-sm font-bold tracking-wider uppercase px-8 py-3 rounded-lg transition-all duration-200"
+        style={{
+          background: 'var(--glow-amber)',
+          border: '1px solid var(--accent-amber)',
+          color: 'var(--accent-amber)',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.boxShadow = '0 0 20px var(--glow-amber)';
+          e.currentTarget.style.background = 'rgba(212,162,78,0.25)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.boxShadow = 'none';
+          e.currentTarget.style.background = 'var(--glow-amber)';
+        }}
       >
         {t('download')}
       </button>

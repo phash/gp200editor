@@ -5,7 +5,8 @@ export function Footer() {
   return (
     <footer
       role="contentinfo"
-      className="px-6 py-4 bg-gray-900 text-gray-400 text-sm text-center"
+      className="px-6 py-3 text-xs text-center"
+      style={{ color: 'var(--text-muted)', borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-surface)' }}
       data-testid="footer"
     >
       {t('disclaimer')}

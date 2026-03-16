@@ -31,15 +31,21 @@ export function EffectSlot({ slot, index, onToggle, onChangeEffect, onParamChang
       onDragStart={() => onDragStart(index)}
       onDragOver={(e) => onDragOver(e, index)}
       onDrop={() => onDrop(index)}
-      className={`rounded-lg border p-4 cursor-grab active:cursor-grabbing transition-all ${
-        isDragOver ? 'border-dashed border-blue-400 bg-blue-50/50'
-        : slot.enabled ? `${colors.borderActive} ${colors.bgActive}`
-        : `${colors.border} ${colors.bg}`
-      }`}
+      className="slot-enter rounded-lg transition-all duration-200 active:cursor-grabbing"
+      style={{
+        animationDelay: `${index * 40}ms`,
+        background: 'var(--bg-surface)',
+        border: `1px solid ${isDragOver ? colors.accent : slot.enabled ? colors.accentDim : 'var(--border-subtle)'}`,
+        boxShadow: slot.enabled
+          ? `0 0 20px ${colors.glow}, inset 0 1px 0 rgba(255,255,255,0.03)`
+          : 'inset 0 1px 0 rgba(255,255,255,0.02)',
+        opacity: isDragOver ? 0.7 : 1,
+      }}
       data-testid={`effect-slot-${slot.slotIndex}`}
     >
+      {/* Header row */}
       <div
-        className="flex items-center justify-between gap-2 cursor-pointer select-none"
+        className="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer select-none"
         onClick={() => setExpanded(!expanded)}
         role="button"
         tabIndex={0}
@@ -48,15 +54,33 @@ export function EffectSlot({ slot, index, onToggle, onChangeEffect, onParamChang
         aria-label={`${effectName} ${t('parameters')}`}
         data-testid={`effect-slot-header-${slot.slotIndex}`}
       >
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="text-gray-400 cursor-grab flex-shrink-0" aria-hidden="true">&#x2630;</span>
-          <span className={`text-xs px-1.5 py-0.5 rounded font-medium flex-shrink-0 ${colors.badge}`}>{moduleName}</span>
+        <div className="flex items-center gap-3 min-w-0">
+          {/* Drag handle */}
+          <span className="cursor-grab flex-shrink-0 text-sm leading-none"
+            style={{ color: 'var(--text-muted)' }}
+            aria-hidden="true"
+            onMouseDown={(e) => e.stopPropagation()}>
+            &#x2630;
+          </span>
+
+          {/* Module badge */}
+          <span className="font-mono-display text-[10px] font-bold tracking-widest px-2 py-0.5 rounded flex-shrink-0 uppercase"
+            style={{
+              color: colors.accent,
+              background: colors.glow,
+              border: `1px solid ${colors.accentDim}`,
+            }}>
+            {moduleName}
+          </span>
+
+          {/* Effect selector */}
           <select
             value={slot.effectId}
             onChange={(e) => onChangeEffect(slot.slotIndex, Number(e.target.value))}
             onClick={(e) => e.stopPropagation()}
             data-testid={`effect-select-${slot.slotIndex}`}
-            className="font-medium text-black bg-transparent border-none cursor-pointer truncate min-w-0 focus:outline-none focus:ring-2 focus:ring-blue-300 rounded"
+            className="text-sm font-medium bg-transparent border-none cursor-pointer truncate min-w-0 focus:outline-none rounded"
+            style={{ color: 'var(--text-primary)' }}
           >
             {effects.map((eff) => (
               <option key={eff.effectId} value={eff.effectId}>
@@ -67,30 +91,45 @@ export function EffectSlot({ slot, index, onToggle, onChangeEffect, onParamChang
               <option value={slot.effectId}>{effectName}</option>
             )}
           </select>
-          <span className={`text-gray-400 transition-transform ${expanded ? 'rotate-180' : ''}`} aria-hidden="true">
+
+          {/* Expand arrow */}
+          <span className="text-xs transition-transform duration-200"
+            style={{
+              color: 'var(--text-muted)',
+              transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+            }}
+            aria-hidden="true">
             &#x25BE;
           </span>
         </div>
+
+        {/* LED-style ON/OFF toggle */}
         <button
           onClick={(e) => { e.stopPropagation(); onToggle(slot.slotIndex); }}
           aria-pressed={slot.enabled}
           aria-label={`${effectName} ${slot.enabled ? t('effectEnabled') : t('effectDisabled')}`}
           data-testid={`effect-slot-toggle-${slot.slotIndex}`}
-          className={`px-3 py-1 rounded text-sm transition flex-shrink-0 ${
-            slot.enabled
-              ? `${colors.btn} text-white hover:opacity-80`
-              : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
-          }`}
+          className="font-mono-display text-[10px] font-bold tracking-wider px-3 py-1.5 rounded transition-all duration-150 flex-shrink-0 uppercase"
+          style={{
+            background: slot.enabled ? colors.glow : 'var(--bg-primary)',
+            border: `1px solid ${slot.enabled ? colors.accent : 'var(--border-subtle)'}`,
+            color: slot.enabled ? colors.accent : 'var(--text-muted)',
+            boxShadow: slot.enabled ? `0 0 10px ${colors.glow}` : 'none',
+          }}
         >
           {slot.enabled ? t('effectOn') : t('effectOff')}
         </button>
       </div>
+
+      {/* Expanded params */}
       {expanded && (
-        <EffectParams
-          effectId={slot.effectId}
-          params={slot.params}
-          onParamChange={(paramIdx, value) => onParamChange(slot.slotIndex, paramIdx, value)}
-        />
+        <div className="px-4 pb-4">
+          <EffectParams
+            effectId={slot.effectId}
+            params={slot.params}
+            onParamChange={(paramIdx, value) => onParamChange(slot.slotIndex, paramIdx, value)}
+          />
+        </div>
       )}
     </div>
   );

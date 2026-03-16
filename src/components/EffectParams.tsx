@@ -13,23 +13,41 @@ function KnobControl({ param, value, onChange }: {
   value: number;
   onChange: (value: number) => void;
 }) {
+  const pct = param.max > param.min
+    ? ((value - param.min) / (param.max - param.min)) * 100
+    : 0;
+
   return (
-    <div className="flex flex-col gap-1">
-      <label className="text-xs font-medium text-gray-600" htmlFor={`param-${param.idx}`}>
-        {param.name}
-      </label>
-      <input
-        id={`param-${param.idx}`}
-        type="range"
-        min={param.min}
-        max={param.max}
-        step={param.step}
-        value={value}
-        onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-        data-testid={`param-knob-${param.idx}`}
-      />
-      <span className="text-xs text-gray-500 text-center tabular-nums">{value}</span>
+    <div className="flex flex-col gap-1.5 px-1">
+      <div className="flex items-center justify-between">
+        <label className="text-[11px] font-medium uppercase tracking-wider"
+          style={{ color: 'var(--text-muted)' }}
+          htmlFor={`param-${param.idx}`}>
+          {param.name}
+        </label>
+        <span className="font-mono-display text-xs tabular-nums"
+          style={{ color: 'var(--accent-amber)' }}>
+          {Math.round(value)}
+        </span>
+      </div>
+      <div className="relative">
+        <div className="absolute top-[12px] left-0 right-0 h-[4px] rounded-full"
+          style={{ background: 'var(--knob-track)' }}>
+          <div className="h-full rounded-full transition-all duration-75"
+            style={{ width: `${pct}%`, background: `linear-gradient(90deg, var(--accent-amber-dim), var(--accent-amber))` }} />
+        </div>
+        <input
+          id={`param-${param.idx}`}
+          type="range"
+          min={param.min}
+          max={param.max}
+          step={param.step}
+          value={value}
+          onChange={(e) => onChange(parseFloat(e.target.value))}
+          className="relative w-full z-10"
+          data-testid={`param-knob-${param.idx}`}
+        />
+      </div>
     </div>
   );
 }
@@ -41,18 +59,23 @@ function SwitchControl({ param, value, onChange }: {
 }) {
   const isOn = value !== 0;
   return (
-    <div className="flex flex-col gap-1">
-      <span className="text-xs font-medium text-gray-600">{param.name}</span>
+    <div className="flex flex-col gap-1.5 px-1">
+      <span className="text-[11px] font-medium uppercase tracking-wider"
+        style={{ color: 'var(--text-muted)' }}>
+        {param.name}
+      </span>
       <button
         type="button"
         role="switch"
         aria-checked={isOn}
         onClick={() => onChange(isOn ? 0 : 1)}
-        className={`px-3 py-1 rounded text-xs font-medium transition ${
-          isOn
-            ? 'bg-blue-600 text-white hover:bg-blue-700'
-            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-        }`}
+        className="h-8 rounded text-xs font-medium transition-all duration-150 border"
+        style={{
+          background: isOn ? 'var(--glow-green)' : 'var(--bg-primary)',
+          borderColor: isOn ? 'var(--accent-green)' : 'var(--border-subtle)',
+          color: isOn ? 'var(--accent-green)' : 'var(--text-muted)',
+          boxShadow: isOn ? '0 0 12px var(--glow-green)' : 'none',
+        }}
         data-testid={`param-switch-${param.idx}`}
       >
         {isOn ? param.options.find(o => o.id !== 0)?.name ?? 'ON' : param.options.find(o => o.id === 0)?.name ?? 'OFF'}
@@ -67,15 +90,22 @@ function ComboxControl({ param, value, onChange }: {
   onChange: (value: number) => void;
 }) {
   return (
-    <div className="flex flex-col gap-1">
-      <label className="text-xs font-medium text-gray-600" htmlFor={`param-${param.idx}`}>
+    <div className="flex flex-col gap-1.5 px-1">
+      <label className="text-[11px] font-medium uppercase tracking-wider"
+        style={{ color: 'var(--text-muted)' }}
+        htmlFor={`param-${param.idx}`}>
         {param.name}
       </label>
       <select
         id={`param-${param.idx}`}
         value={value}
         onChange={(e) => onChange(parseInt(e.target.value, 10))}
-        className="text-sm border rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-300"
+        className="h-8 text-sm rounded px-2 border cursor-pointer transition-colors focus:outline-none"
+        style={{
+          background: 'var(--bg-primary)',
+          borderColor: 'var(--border-subtle)',
+          color: 'var(--text-primary)',
+        }}
         data-testid={`param-combox-${param.idx}`}
       >
         {param.options.map((opt) => (
@@ -94,13 +124,14 @@ export function EffectParams({ effectId, params, onParamChange }: EffectParamsPr
 
   if (paramDefs.length === 0) {
     return (
-      <p className="text-sm text-gray-400 italic py-2">{t('noParams')}</p>
+      <p className="text-xs italic py-3" style={{ color: 'var(--text-muted)' }}>{t('noParams')}</p>
     );
   }
 
   return (
     <div
-      className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-3"
+      className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3 pt-4 mt-3"
+      style={{ borderTop: '1px solid var(--border-subtle)' }}
       data-testid="effect-params"
     >
       {paramDefs.map((param) => {

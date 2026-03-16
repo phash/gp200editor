@@ -38,36 +38,43 @@ export function Navbar() {
     <nav
       role="navigation"
       aria-label={t('title')}
-      className="flex items-center justify-between px-6 py-4 bg-gray-900 text-white"
+      className="flex items-center justify-between px-6 py-3 border-b"
+      style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
     >
-      <Link href="/" className="text-xl font-bold" data-testid="nav-home-link">
+      <Link href="/" className="font-mono-display text-lg font-bold tracking-tight" data-testid="nav-home-link"
+        style={{ color: 'var(--accent-amber)' }}>
         {t('title')}
       </Link>
-      <div className="flex gap-4 items-center">
-        <Link href="/" className="hover:underline" data-testid="nav-link-home">
+      <div className="flex gap-5 items-center text-sm">
+        <Link href="/" className="transition-colors hover:text-[var(--accent-amber)]"
+          style={{ color: pathname === '/' ? 'var(--accent-amber)' : 'var(--text-secondary)' }}
+          data-testid="nav-link-home">
           {t('home')}
         </Link>
-        <Link href="/editor" className="hover:underline" data-testid="nav-link-editor">
+        <Link href="/editor" className="transition-colors hover:text-[var(--accent-amber)]"
+          style={{ color: pathname === '/editor' ? 'var(--accent-amber)' : 'var(--text-secondary)' }}
+          data-testid="nav-link-editor">
           {t('editor')}
         </Link>
         {username ? (
           <>
-            <Link href="/profile" className="hover:underline" data-testid="nav-link-profile">
+            <Link href="/profile" className="transition-colors hover:text-[var(--accent-amber)]"
+              style={{ color: 'var(--text-secondary)' }} data-testid="nav-link-profile">
               {t('profile')}
             </Link>
-            <Link href="/presets" className="hover:underline" data-testid="nav-link-presets">
+            <Link href="/presets" className="transition-colors hover:text-[var(--accent-amber)]"
+              style={{ color: 'var(--text-secondary)' }} data-testid="nav-link-presets">
               {t('presets')}
             </Link>
-            <button
-              onClick={handleLogout}
-              data-testid="nav-logout"
-              className="hover:underline text-sm"
-            >
+            <button onClick={handleLogout} data-testid="nav-logout"
+              className="transition-colors hover:text-[var(--accent-amber)]"
+              style={{ color: 'var(--text-secondary)' }}>
               {t('logout')}
             </button>
           </>
         ) : (
-          <Link href="/auth/login" className="hover:underline" data-testid="nav-link-login">
+          <Link href="/auth/login" className="transition-colors hover:text-[var(--accent-amber)]"
+            style={{ color: 'var(--text-secondary)' }} data-testid="nav-link-login">
             {tAuth('login')}
           </Link>
         )}
@@ -75,7 +82,19 @@ export function Navbar() {
           onClick={switchLocale}
           aria-label={`Switch to ${otherLocale.toUpperCase()}`}
           data-testid="nav-locale-switcher"
-          className="px-3 py-1 border border-white rounded hover:bg-white hover:text-gray-900 transition"
+          className="font-mono-display text-xs px-2.5 py-1 rounded transition-all"
+          style={{
+            border: '1px solid var(--border-active)',
+            color: 'var(--text-secondary)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = 'var(--accent-amber)';
+            e.currentTarget.style.color = 'var(--accent-amber)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'var(--border-active)';
+            e.currentTarget.style.color = 'var(--text-secondary)';
+          }}
         >
           {otherLocale.toUpperCase()}
         </button>
