@@ -29,11 +29,17 @@ test.describe('Editor Page', () => {
   test('zeigt Editor-UI nach Preset-Upload', async ({ page }) => {
     await page.goto('/de/editor');
 
-    // Create minimal test buffer: "PRST" magic + version + PatchName "TestPatch"
-    const testPreset = Buffer.alloc(512, 0);
-    testPreset.write('PRST', 0, 'ascii');  // Magic Header
-    testPreset[4] = 0x01;                  // Version byte
-    testPreset.write('TestPatch', 8, 'ascii'); // Patch Name at offset 8
+    // Create minimal test buffer matching real .prst format (1224 bytes)
+    const testPreset = Buffer.alloc(1224, 0);
+    testPreset.write('TSRP', 0x00, 'ascii');  // Magic Header (reversed)
+    testPreset[0x15] = 0x01;                  // Version byte
+    testPreset.write('TestPatch', 0x44, 'ascii'); // Patch Name at offset 0x44
+    // Write effect block markers for 11 slots
+    for (let i = 0; i < 11; i++) {
+      const base = 0xa0 + i * 0x48;
+      testPreset[base] = 0x14; testPreset[base + 2] = 0x44;
+      testPreset[base + 4] = i; // slot index
+    }
 
     // Upload via hidden file input
     const fileInput = page.locator('[data-testid="file-input"]');
