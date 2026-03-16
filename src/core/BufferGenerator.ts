@@ -43,6 +43,6 @@ export class BufferGenerator {
   }
 
   toArrayBuffer(): ArrayBuffer {
-    return this.uint8.buffer.slice(0);
+    return this.uint8.buffer.slice(0) as ArrayBuffer;
   }
 }
