@@ -36,7 +36,12 @@ export default async function EditPresetPage({ params }: Props) {
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">{t('editPreset')}</h1>
+      <h1
+        className="font-mono-display text-xl font-bold tracking-tight mb-6"
+        style={{ color: 'var(--accent-amber)' }}
+      >
+        {t('editPreset')}
+      </h1>
       <PresetEditForm preset={preset} />
     </main>
   );

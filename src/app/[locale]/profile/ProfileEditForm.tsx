@@ -49,25 +49,49 @@ export default function ProfileEditForm({ initialData, username }: Props) {
     <form onSubmit={handleSave} className="flex flex-col gap-5">
       {/* Avatar */}
       <div>
-        <p className="text-sm font-medium mb-2">{t('avatarLabel')}</p>
+        <p
+          className="font-mono-display text-[11px] font-medium tracking-wider uppercase mb-2"
+          style={{ color: 'var(--text-secondary)' }}
+        >
+          {t('avatarLabel')}
+        </p>
         <div className="flex items-center gap-4">
           {avatarUrl ? (
-            <Image
-              src={avatarUrl}
-              alt={username}
-              width={80}
-              height={80}
-              className="rounded-full object-cover"
-            />
+            <div
+              className="rounded-full p-0.5 flex-shrink-0"
+              style={{
+                background: 'linear-gradient(135deg, var(--accent-amber), var(--accent-amber-dim))',
+                boxShadow: '0 0 16px var(--glow-amber)',
+              }}
+            >
+              <Image
+                src={avatarUrl}
+                alt={username}
+                width={80}
+                height={80}
+                className="rounded-full object-cover"
+                style={{ border: '2px solid var(--bg-surface)' }}
+              />
+            </div>
           ) : (
-            <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center text-2xl text-gray-500">
+            <div
+              className="w-20 h-20 rounded-full flex items-center justify-center font-mono-display text-2xl font-bold flex-shrink-0"
+              style={{
+                background: 'var(--bg-elevated)',
+                border: '2px solid var(--border-active)',
+                color: 'var(--accent-amber-dim)',
+              }}
+            >
               {username[0]?.toUpperCase()}
             </div>
           )}
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="text-sm text-blue-600 hover:underline"
+            className="text-sm font-mono-display transition-colors"
+            style={{ color: 'var(--accent-amber)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--accent-amber)')}
           >
             {t('changeAvatar')}
           </button>
@@ -83,7 +107,11 @@ export default function ProfileEditForm({ initialData, username }: Props) {
 
       {/* Bio */}
       <div>
-        <label className="block text-sm font-medium mb-1" htmlFor="bio">
+        <label
+          className="block font-mono-display text-[11px] font-medium tracking-wider uppercase mb-1.5"
+          htmlFor="bio"
+          style={{ color: 'var(--text-secondary)' }}
+        >
           {t('bio')}
         </label>
         <textarea
@@ -93,13 +121,30 @@ export default function ProfileEditForm({ initialData, username }: Props) {
           onChange={(e) => setBio(e.target.value)}
           maxLength={500}
           rows={3}
-          className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          className="w-full rounded px-3 py-2 text-sm focus:outline-none transition-shadow resize-none"
+          style={{
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border-active)',
+            color: 'var(--text-primary)',
+          }}
+          onFocus={(e) => {
+            e.currentTarget.style.borderColor = 'var(--accent-amber)';
+            e.currentTarget.style.boxShadow = '0 0 0 2px var(--glow-amber)';
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = 'var(--border-active)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
         />
       </div>
 
       {/* Website */}
       <div>
-        <label className="block text-sm font-medium mb-1" htmlFor="website">
+        <label
+          className="block font-mono-display text-[11px] font-medium tracking-wider uppercase mb-1.5"
+          htmlFor="website"
+          style={{ color: 'var(--text-secondary)' }}
+        >
           {t('website')}
         </label>
         <input
@@ -108,7 +153,20 @@ export default function ProfileEditForm({ initialData, username }: Props) {
           type="url"
           value={website}
           onChange={(e) => setWebsite(e.target.value)}
-          className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded px-3 py-2 text-sm focus:outline-none transition-shadow"
+          style={{
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border-active)',
+            color: 'var(--text-primary)',
+          }}
+          onFocus={(e) => {
+            e.currentTarget.style.borderColor = 'var(--accent-amber)';
+            e.currentTarget.style.boxShadow = '0 0 0 2px var(--glow-amber)';
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = 'var(--border-active)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
         />
       </div>
 
@@ -117,17 +175,41 @@ export default function ProfileEditForm({ initialData, username }: Props) {
           type="submit"
           disabled={status === 'saving'}
           data-testid="save-profile"
-          className="bg-blue-600 text-white rounded px-4 py-2 hover:bg-blue-700 disabled:opacity-50 transition"
+          className="font-mono-display text-sm font-bold tracking-wider uppercase rounded px-5 py-2.5 transition-all duration-150 disabled:opacity-50"
+          style={{
+            background: 'var(--glow-amber)',
+            border: '1px solid var(--accent-amber)',
+            color: 'var(--accent-amber)',
+            boxShadow: '0 0 12px var(--glow-amber)',
+          }}
+          onMouseEnter={(e) => {
+            if (status !== 'saving') {
+              e.currentTarget.style.background = 'var(--accent-amber)';
+              e.currentTarget.style.color = 'var(--bg-primary)';
+              e.currentTarget.style.boxShadow = '0 0 20px var(--glow-amber)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'var(--glow-amber)';
+            e.currentTarget.style.color = 'var(--accent-amber)';
+            e.currentTarget.style.boxShadow = '0 0 12px var(--glow-amber)';
+          }}
         >
           {status === 'saving' ? t('saving') : t('saveButton')}
         </button>
         {status === 'saved' && (
-          <span className="text-green-600 text-sm" data-testid="save-success">
+          <span
+            className="text-sm font-mono-display"
+            data-testid="save-success"
+            style={{ color: 'var(--accent-green)' }}
+          >
             {t('saved')}
           </span>
         )}
         {status === 'error' && (
-          <span className="text-red-600 text-sm">{t('saveFailed')}</span>
+          <span className="text-sm font-mono-display" style={{ color: 'var(--accent-red)' }}>
+            {t('saveFailed')}
+          </span>
         )}
       </div>
     </form>

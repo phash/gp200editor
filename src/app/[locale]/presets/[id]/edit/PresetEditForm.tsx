@@ -68,114 +68,205 @@ export function PresetEditForm({ preset }: Props) {
     }
   }
 
+  const inputStyle = {
+    background: 'var(--bg-elevated)',
+    border: '1px solid var(--border-active)',
+    color: 'var(--text-primary)',
+  };
+
+  function handleInputFocus(e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) {
+    e.currentTarget.style.borderColor = 'var(--accent-amber)';
+    e.currentTarget.style.boxShadow = '0 0 0 2px var(--glow-amber)';
+  }
+
+  function handleInputBlur(e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) {
+    e.currentTarget.style.borderColor = 'var(--border-active)';
+    e.currentTarget.style.boxShadow = 'none';
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Name */}
-      <div>
-        <label className="block text-sm font-medium mb-1" htmlFor="preset-name">
-          {t('name')}
-        </label>
-        <input
-          id="preset-name"
-          type="text"
-          data-testid="preset-name-input"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          maxLength={32}
-          required
-          className="w-full border rounded px-3 py-2"
-        />
-      </div>
-
-      {/* Description */}
-      <div>
-        <label className="block text-sm font-medium mb-1" htmlFor="preset-description">
-          {t('description')}
-        </label>
-        <textarea
-          id="preset-description"
-          data-testid="preset-description-input"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          maxLength={500}
-          rows={4}
-          className="w-full border rounded px-3 py-2"
-        />
-      </div>
-
-      {/* Tags */}
-      <div>
-        <label className="block text-sm font-medium mb-1">{t('tags')}</label>
-        <div className="flex flex-wrap gap-1 mb-2">
-          {tags.map((tag) => (
-            <span
-              key={tag}
-              className="flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-700 text-sm rounded"
-            >
-              {tag}
-              <button
-                type="button"
-                onClick={() => removeTag(tag)}
-                className="ml-1 text-gray-400 hover:text-gray-700"
-                aria-label={`Remove tag ${tag}`}
-              >
-                &times;
-              </button>
-            </span>
-          ))}
+    <div
+      className="rounded-lg p-6"
+      style={{
+        background: 'var(--bg-surface)',
+        border: '1px solid var(--border-subtle)',
+        boxShadow: '0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03)',
+      }}
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Name */}
+        <div>
+          <label
+            className="block font-mono-display text-[11px] font-medium tracking-wider uppercase mb-1.5"
+            htmlFor="preset-name"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            {t('name')}
+          </label>
+          <input
+            id="preset-name"
+            type="text"
+            data-testid="preset-name-input"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            maxLength={32}
+            required
+            className="w-full rounded px-3 py-2 text-sm font-mono-display focus:outline-none transition-shadow"
+            style={inputStyle}
+            onFocus={handleInputFocus}
+            onBlur={handleInputBlur}
+          />
         </div>
-        <input
-          type="text"
-          data-testid="preset-tag-input"
-          value={tagInput}
-          onChange={(e) => setTagInput(e.target.value)}
-          onKeyDown={handleTagKeyDown}
-          placeholder={t('addTag')}
-          className="border rounded px-3 py-2 w-full"
-          disabled={tags.length >= 10}
-        />
-      </div>
 
-      {/* Replace file */}
-      <div>
-        <label className="block text-sm font-medium mb-1" htmlFor="preset-replace-file">
-          {t('replaceFile')}
-        </label>
-        <input
-          ref={fileInputRef}
-          id="preset-replace-file"
-          type="file"
-          accept=".prst"
-          data-testid="preset-replace-file-input"
-          onChange={(e) => setReplaceFile(e.target.files?.[0] ?? null)}
-          className="block"
-        />
-      </div>
+        {/* Description */}
+        <div>
+          <label
+            className="block font-mono-display text-[11px] font-medium tracking-wider uppercase mb-1.5"
+            htmlFor="preset-description"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            {t('description')}
+          </label>
+          <textarea
+            id="preset-description"
+            data-testid="preset-description-input"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            maxLength={500}
+            rows={4}
+            className="w-full rounded px-3 py-2 text-sm focus:outline-none transition-shadow resize-none"
+            style={inputStyle}
+            onFocus={handleInputFocus}
+            onBlur={handleInputBlur}
+          />
+        </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-4">
-        <button
-          type="submit"
-          data-testid="preset-save-button"
-          disabled={status === 'saving'}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+        {/* Tags */}
+        <div>
+          <label
+            className="block font-mono-display text-[11px] font-medium tracking-wider uppercase mb-1.5"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            {t('tags')}
+          </label>
+          <div className="flex flex-wrap gap-1 mb-2">
+            {tags.map((tag) => (
+              <span
+                key={tag}
+                className="flex items-center gap-1 font-mono-display text-[10px] tracking-wider px-2 py-0.5 rounded uppercase"
+                style={{
+                  color: 'var(--accent-amber)',
+                  background: 'var(--glow-amber)',
+                  border: '1px solid var(--accent-amber-dim)',
+                }}
+              >
+                {tag}
+                <button
+                  type="button"
+                  onClick={() => removeTag(tag)}
+                  className="ml-0.5 transition-colors"
+                  style={{ color: 'var(--accent-amber-dim)' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent-amber)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--accent-amber-dim)')}
+                  aria-label={`Remove tag ${tag}`}
+                >
+                  &times;
+                </button>
+              </span>
+            ))}
+          </div>
+          <input
+            type="text"
+            data-testid="preset-tag-input"
+            value={tagInput}
+            onChange={(e) => setTagInput(e.target.value)}
+            onKeyDown={handleTagKeyDown}
+            placeholder={t('addTag')}
+            className="w-full rounded px-3 py-2 text-sm focus:outline-none transition-shadow"
+            style={inputStyle}
+            onFocus={handleInputFocus}
+            onBlur={handleInputBlur}
+            disabled={tags.length >= 10}
+          />
+        </div>
+
+        {/* Replace file */}
+        <div>
+          <label
+            className="block font-mono-display text-[11px] font-medium tracking-wider uppercase mb-1.5"
+            htmlFor="preset-replace-file"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            {t('replaceFile')}
+          </label>
+          <input
+            ref={fileInputRef}
+            id="preset-replace-file"
+            type="file"
+            accept=".prst"
+            data-testid="preset-replace-file-input"
+            onChange={(e) => setReplaceFile(e.target.files?.[0] ?? null)}
+            className="block text-sm"
+            style={{ color: 'var(--text-secondary)' }}
+          />
+        </div>
+
+        {/* Actions */}
+        <div
+          className="flex items-center gap-4 pt-4"
+          style={{ borderTop: '1px solid var(--border-subtle)' }}
         >
-          {status === 'saving' ? t('saving') : t('save')}
-        </button>
+          <button
+            type="submit"
+            data-testid="preset-save-button"
+            disabled={status === 'saving'}
+            className="font-mono-display text-sm font-bold tracking-wider uppercase rounded px-5 py-2.5 transition-all duration-150 disabled:opacity-50"
+            style={{
+              background: 'var(--glow-amber)',
+              border: '1px solid var(--accent-amber)',
+              color: 'var(--accent-amber)',
+              boxShadow: '0 0 12px var(--glow-amber)',
+            }}
+            onMouseEnter={(e) => {
+              if (status !== 'saving') {
+                e.currentTarget.style.background = 'var(--accent-amber)';
+                e.currentTarget.style.color = 'var(--bg-primary)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'var(--glow-amber)';
+              e.currentTarget.style.color = 'var(--accent-amber)';
+            }}
+          >
+            {status === 'saving' ? t('saving') : t('save')}
+          </button>
 
-        <Link href="/presets" className="text-sm text-gray-500 hover:underline">
-          {t('backToPresets')}
-        </Link>
+          <Link
+            href="/presets"
+            className="text-sm transition-colors"
+            style={{ color: 'var(--text-muted)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent-amber)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+          >
+            {t('backToPresets')}
+          </Link>
 
-        {status === 'saved' && (
-          <span data-testid="preset-saved-indicator" className="text-green-600 text-sm">
-            {t('saved')}
-          </span>
-        )}
-        {status === 'error' && (
-          <span className="text-red-500 text-sm">{t('saveFailed')}</span>
-        )}
-      </div>
-    </form>
+          {status === 'saved' && (
+            <span
+              data-testid="preset-saved-indicator"
+              className="text-sm font-mono-display"
+              style={{ color: 'var(--accent-green)' }}
+            >
+              {t('saved')}
+            </span>
+          )}
+          {status === 'error' && (
+            <span className="text-sm font-mono-display" style={{ color: 'var(--accent-red)' }}>
+              {t('saveFailed')}
+            </span>
+          )}
+        </div>
+      </form>
+    </div>
   );
 }

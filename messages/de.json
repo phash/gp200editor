@@ -6,7 +6,8 @@
     "login": "Anmelden",
     "profile": "Profil",
     "logout": "Abmelden",
-    "presets": "Presets"
+    "presets": "Presets",
+    "gallery": "Galerie"
   },
   "home": {
     "headline": "Valeton GP-200 Preset Editor",
@@ -30,7 +31,12 @@
     "effectId": "Effekt-ID",
     "parameterCount": "Parameter",
     "parameters": "Parameter",
-    "noParams": "Keine Parameter verfügbar"
+    "noParams": "Keine Parameter verfügbar",
+    "saveToPresets": "In Presets speichern",
+    "savingPreset": "Speichern…",
+    "presetSaved": "Gespeichert!",
+    "presetSaveFailed": "Speichern fehlgeschlagen. Bitte anmelden.",
+    "loginToSave": "Anmelden, um zu speichern"
   },
   "auth": {
     "loginTitle": "Anmelden",
@@ -96,6 +102,20 @@
     "editPreset": "Preset bearbeiten",
     "replaceFile": "Datei ersetzen",
     "backToPresets": "Zurück zu meinen Presets",
-    "uploadedOn": "Hochgeladen am"
+    "uploadedOn": "Hochgeladen am",
+    "publish": "Veröffentlichen",
+    "unpublish": "Zurückziehen",
+    "published": "In Galerie"
+  },
+  "gallery": {
+    "title": "Preset-Galerie",
+    "search": "Presets durchsuchen…",
+    "sortNewest": "Neueste",
+    "sortPopular": "Beliebteste",
+    "allModules": "Alle Module",
+    "noResults": "Keine Presets gefunden.",
+    "downloads": "Downloads",
+    "by": "von",
+    "loadMore": "Mehr laden"
   }
 }

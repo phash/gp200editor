@@ -14,19 +14,34 @@ export default async function ProfilePage() {
 
   return (
     <div className="max-w-xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-2">{t('title')}</h1>
-      <p className="text-gray-500 text-sm mb-6">
-        @{dbUser.username} · {t('memberSince')}{' '}
-        {dbUser.createdAt.toLocaleDateString()}
-      </p>
-      <ProfileEditForm
-        initialData={{
-          bio: dbUser.bio ?? '',
-          website: dbUser.website ?? '',
-          avatarUrl: dbUser.avatarKey ? `/api/avatar/${dbUser.avatarKey}` : null,
+      <div
+        className="rounded-lg p-6"
+        style={{
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border-subtle)',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03)',
         }}
-        username={dbUser.username}
-      />
+      >
+        <h1
+          className="font-mono-display text-xl font-bold tracking-tight mb-1"
+          style={{ color: 'var(--accent-amber)' }}
+        >
+          {t('title')}
+        </h1>
+        <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
+          <span className="font-mono-display">@{dbUser.username}</span>
+          <span className="mx-2" style={{ color: 'var(--border-active)' }}>&middot;</span>
+          {t('memberSince')} {dbUser.createdAt.toLocaleDateString()}
+        </p>
+        <ProfileEditForm
+          initialData={{
+            bio: dbUser.bio ?? '',
+            website: dbUser.website ?? '',
+            avatarUrl: dbUser.avatarKey ? `/api/avatar/${dbUser.avatarKey}` : null,
+          }}
+          username={dbUser.username}
+        />
+      </div>
     </div>
   );
 }

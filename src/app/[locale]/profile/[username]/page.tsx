@@ -35,42 +35,81 @@ export default async function UserProfilePage({ params }: Props) {
 
   return (
     <div className="max-w-xl mx-auto px-4 py-8">
-      <div className="flex items-center gap-4 mb-6">
-        {avatarUrl ? (
-          <Image
-            src={avatarUrl}
-            alt={profileUser.username}
-            width={80}
-            height={80}
-            className="rounded-full object-cover"
-          />
-        ) : (
-          <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center text-2xl text-gray-500">
-            {profileUser.username[0]?.toUpperCase()}
+      <div
+        className="rounded-lg p-6"
+        style={{
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border-subtle)',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03)',
+        }}
+      >
+        <div className="flex items-center gap-4 mb-6">
+          {avatarUrl ? (
+            <div
+              className="rounded-full p-0.5 flex-shrink-0"
+              style={{
+                background: 'linear-gradient(135deg, var(--accent-amber), var(--accent-amber-dim))',
+                boxShadow: '0 0 16px var(--glow-amber)',
+              }}
+            >
+              <Image
+                src={avatarUrl}
+                alt={profileUser.username}
+                width={80}
+                height={80}
+                className="rounded-full object-cover"
+                style={{ border: '2px solid var(--bg-surface)' }}
+              />
+            </div>
+          ) : (
+            <div
+              className="w-20 h-20 rounded-full flex items-center justify-center font-mono-display text-2xl font-bold flex-shrink-0"
+              style={{
+                background: 'var(--bg-elevated)',
+                border: '2px solid var(--border-active)',
+                color: 'var(--accent-amber-dim)',
+              }}
+            >
+              {profileUser.username[0]?.toUpperCase()}
+            </div>
+          )}
+          <div>
+            <h1
+              className="font-mono-display text-xl font-bold tracking-tight"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              @{profileUser.username}
+            </h1>
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+              {t('memberSince')} {profileUser.createdAt.toLocaleDateString()}
+            </p>
           </div>
-        )}
-        <div>
-          <h1 className="text-2xl font-bold">@{profileUser.username}</h1>
-          <p className="text-gray-500 text-sm">
-            {t('memberSince')} {profileUser.createdAt.toLocaleDateString()}
-          </p>
         </div>
+
+        {profileUser.bio && (
+          <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
+            {profileUser.bio}
+          </p>
+        )}
+
+        {profileUser.website && (
+          <a
+            href={profileUser.website}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm transition-colors"
+            style={{ color: 'var(--accent-amber)' }}
+            onMouseEnter={(e: React.MouseEvent<HTMLAnchorElement>) =>
+              (e.currentTarget.style.color = 'var(--text-primary)')
+            }
+            onMouseLeave={(e: React.MouseEvent<HTMLAnchorElement>) =>
+              (e.currentTarget.style.color = 'var(--accent-amber)')
+            }
+          >
+            {profileUser.website}
+          </a>
+        )}
       </div>
-
-      {profileUser.bio && (
-        <p className="text-gray-700 mb-3">{profileUser.bio}</p>
-      )}
-
-      {profileUser.website && (
-        <a
-          href={profileUser.website}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-600 hover:underline text-sm"
-        >
-          {profileUser.website}
-        </a>
-      )}
     </div>
   );
 }

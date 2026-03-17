@@ -5,13 +5,23 @@ import { EffectSlot } from '@/components/EffectSlot';
 import { usePreset } from '@/hooks/usePreset';
 import { PRSTDecoder } from '@/core/PRSTDecoder';
 import { PRSTEncoder } from '@/core/PRSTEncoder';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
+import { useRouter } from '@/i18n/routing';
 
 export default function EditorPage() {
   const t = useTranslations('editor');
+  const router = useRouter();
   const { preset, loadPreset, setPatchName, toggleEffect, changeEffect, reorderEffects, setParam } = usePreset();
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    fetch('/api/profile')
+      .then((r) => setIsLoggedIn(r.ok))
+      .catch(() => setIsLoggedIn(false));
+  }, []);
 
   const handleFile = useCallback((buffer: Uint8Array, _filename: string) => {
     try {
@@ -22,10 +32,15 @@ export default function EditorPage() {
     }
   }, [loadPreset, t]);
 
-  function handleDownload() {
-    if (!preset) return;
+  function encodePreset(): ArrayBuffer | null {
+    if (!preset) return null;
     const encoder = new PRSTEncoder();
-    const ab = encoder.encode(preset);
+    return encoder.encode(preset);
+  }
+
+  function handleDownload() {
+    const ab = encodePreset();
+    if (!ab || !preset) return;
     const blob = new Blob([ab], { type: 'application/octet-stream' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -33,6 +48,34 @@ export default function EditorPage() {
     a.download = `${preset.patchName}.prst`;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  async function handleSaveToPresets() {
+    const ab = encodePreset();
+    if (!ab || !preset) return;
+
+    setSaveStatus('saving');
+    try {
+      const blob = new Blob([ab], { type: 'application/octet-stream' });
+      const file = new File([blob], `${preset.patchName}.prst`, { type: 'application/octet-stream' });
+      const formData = new FormData();
+      formData.append('preset', file);
+
+      const res = await fetch('/api/presets', { method: 'POST', body: formData });
+      if (res.ok) {
+        setSaveStatus('saved');
+        setTimeout(() => {
+          router.push('/presets');
+          router.refresh();
+        }, 800);
+      } else {
+        setSaveStatus('error');
+        setTimeout(() => setSaveStatus('idle'), 3000);
+      }
+    } catch {
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    }
   }
 
   const handleDragStart = useCallback((index: number) => {
@@ -102,27 +145,70 @@ export default function EditorPage() {
         ))}
       </div>
 
-      {/* Download button */}
-      <button
-        onClick={handleDownload}
-        data-testid="download-btn"
-        className="font-mono-display text-sm font-bold tracking-wider uppercase px-8 py-3 rounded-lg transition-all duration-200"
-        style={{
-          background: 'var(--glow-amber)',
-          border: '1px solid var(--accent-amber)',
-          color: 'var(--accent-amber)',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.boxShadow = '0 0 20px var(--glow-amber)';
-          e.currentTarget.style.background = 'rgba(212,162,78,0.25)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.boxShadow = 'none';
-          e.currentTarget.style.background = 'var(--glow-amber)';
-        }}
-      >
-        {t('download')}
-      </button>
+      {/* Action buttons */}
+      <div className="flex items-center gap-4 flex-wrap">
+        <button
+          onClick={handleDownload}
+          data-testid="download-btn"
+          className="font-mono-display text-sm font-bold tracking-wider uppercase px-8 py-3 rounded-lg transition-all duration-200"
+          style={{
+            background: 'var(--glow-amber)',
+            border: '1px solid var(--accent-amber)',
+            color: 'var(--accent-amber)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = '0 0 20px var(--glow-amber)';
+            e.currentTarget.style.background = 'rgba(212,162,78,0.25)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = 'none';
+            e.currentTarget.style.background = 'var(--glow-amber)';
+          }}
+        >
+          {t('download')}
+        </button>
+
+        {isLoggedIn ? (
+          <>
+            <button
+              onClick={handleSaveToPresets}
+              disabled={saveStatus === 'saving' || saveStatus === 'saved'}
+              data-testid="save-to-presets-btn"
+              className="font-mono-display text-sm font-bold tracking-wider uppercase px-8 py-3 rounded-lg transition-all duration-200 disabled:opacity-50"
+              style={{
+                background: saveStatus === 'saved' ? 'var(--glow-green)' : 'var(--bg-elevated)',
+                border: `1px solid ${saveStatus === 'saved' ? 'var(--accent-green)' : 'var(--border-active)'}`,
+                color: saveStatus === 'saved' ? 'var(--accent-green)' : 'var(--text-secondary)',
+              }}
+              onMouseEnter={(e) => {
+                if (saveStatus === 'idle') {
+                  e.currentTarget.style.borderColor = 'var(--accent-amber)';
+                  e.currentTarget.style.color = 'var(--accent-amber)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (saveStatus === 'idle') {
+                  e.currentTarget.style.borderColor = 'var(--border-active)';
+                  e.currentTarget.style.color = 'var(--text-secondary)';
+                }
+              }}
+            >
+              {saveStatus === 'saving' ? t('savingPreset') :
+               saveStatus === 'saved' ? t('presetSaved') :
+               t('saveToPresets')}
+            </button>
+            {saveStatus === 'error' && (
+              <span className="text-sm font-mono-display" style={{ color: 'var(--accent-red)' }}>
+                {t('presetSaveFailed')}
+              </span>
+            )}
+          </>
+        ) : isLoggedIn === false ? (
+          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+            {t('loginToSave')}
+          </span>
+        ) : null}
+      </div>
     </div>
   );
 }
