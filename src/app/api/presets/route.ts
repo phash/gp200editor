@@ -5,6 +5,7 @@ import { uploadPreset } from '@/lib/storage';
 import { uploadPresetSchema } from '@/lib/validators';
 import { PRSTDecoder } from '@/core/PRSTDecoder';
 import type { GP200Preset } from '@/core/types';
+import { extractModules } from '@/core/extractModules';
 
 export async function POST(request: Request) {
   const { user, session } = await validateSession();
@@ -25,10 +26,10 @@ export async function POST(request: Request) {
 
   const buffer = Buffer.from(await file.arrayBuffer());
 
-  // 1. Check size (actual format is 512 bytes)
-  if (buffer.length !== 512) {
+  // 1. Check size (user presets = 1224 bytes, factory presets = 1176 bytes)
+  if (buffer.length !== 1224 && buffer.length !== 1176) {
     return NextResponse.json(
-      { error: 'Invalid PRST file: must be exactly 512 bytes' },
+      { error: 'Invalid PRST file: unexpected size' },
       { status: 400 },
     );
   }
@@ -77,10 +78,12 @@ export async function POST(request: Request) {
       name: decoded.patchName.trim() || file.name.replace(/\.prst$/i, '').slice(0, 32) || 'Untitled',
       description: parsed.data.description ?? null,
       tags: parsed.data.tags ?? [],
+      modules: extractModules(decoded),
     },
     select: {
       id: true,
       name: true,
+      modules: true,
       shareToken: true,
     },
   });
@@ -103,6 +106,8 @@ export async function GET() {
       name: true,
       description: true,
       tags: true,
+      modules: true,
+      public: true,
       shareToken: true,
       downloadCount: true,
       createdAt: true,

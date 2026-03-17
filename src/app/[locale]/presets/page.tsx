@@ -21,6 +21,8 @@ export default async function PresetsPage() {
       name: true,
       description: true,
       tags: true,
+      modules: true,
+      public: true,
       shareToken: true,
       downloadCount: true,
       createdAt: true,
@@ -30,7 +32,12 @@ export default async function PresetsPage() {
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">{t('title')}</h1>
+      <h1
+        className="font-mono-display text-xl font-bold tracking-tight mb-6"
+        style={{ color: 'var(--accent-amber)' }}
+      >
+        {t('title')}
+      </h1>
       <PresetList initialPresets={presets} />
     </main>
   );

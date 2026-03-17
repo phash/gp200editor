@@ -5,6 +5,7 @@ import { uploadPreset, deletePreset } from '@/lib/storage';
 import { patchPresetSchema } from '@/lib/validators';
 import { PRSTDecoder } from '@/core/PRSTDecoder';
 import type { GP200Preset } from '@/core/types';
+import { extractModules } from '@/core/extractModules';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -63,6 +64,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     name?: string;
     description?: string | null;
     tags?: string[];
+    modules?: string[];
     presetKey?: string;
   } = {};
 
@@ -77,9 +79,9 @@ export async function PATCH(request: Request, context: RouteContext) {
   if (file && file instanceof File) {
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    if (buffer.length !== 512) {
+    if (buffer.length !== 1224 && buffer.length !== 1176) {
       return NextResponse.json(
-        { error: 'Invalid PRST file: must be exactly 512 bytes' },
+        { error: 'Invalid PRST file: unexpected size' },
         { status: 400 },
       );
     }
@@ -107,6 +109,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     if (!parsed.data.name) {
       updateData.name = decoded.patchName.trim() || 'Untitled';
     }
+    updateData.modules = extractModules(decoded);
   }
 
   // 2. Update DB

@@ -55,5 +55,14 @@ export const patchPresetSchema = z.object({
   tags: tagSchema.array().max(10, 'At most 10 tags allowed').optional(),
 });
 
+export const galleryQuerySchema = z.object({
+  q: z.string().max(100).optional(),
+  modules: z.string().optional().transform((v) => v ? v.split(',').filter(Boolean) : undefined),
+  sort: z.enum(['newest', 'popular']).default('newest'),
+  page: z.string().optional().transform((v) => Math.max(1, parseInt(v ?? '1', 10) || 1)),
+  limit: z.string().optional().transform((v) => Math.min(50, Math.max(1, parseInt(v ?? '20', 10) || 20))),
+});
+
 export type UploadPresetInput = z.infer<typeof uploadPresetSchema>;
 export type PatchPresetInput = z.infer<typeof patchPresetSchema>;
+export type GalleryQuery = z.infer<typeof galleryQuerySchema>;
