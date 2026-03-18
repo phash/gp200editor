@@ -117,5 +117,23 @@
     "downloads": "downloads",
     "by": "by",
     "loadMore": "Load More"
+  },
+  "device": {
+    "connect": "Connect",
+    "disconnect": "Disconnect",
+    "connecting": "Connecting…",
+    "noDevice": "No device",
+    "connected": "GP-200 connected",
+    "pull": "← Pull",
+    "push": "Push →",
+    "pullFrom": "Pull from {slot}",
+    "pushTo": "Push to {slot}",
+    "loadingNames": "Loading preset names…",
+    "browserTitle": "Select Preset",
+    "search": "Search presets…",
+    "chromeOnly": "Chrome/Edge only",
+    "error": "Connection error",
+    "retry": "Reconnect",
+    "cancel": "Cancel"
   }
 }
