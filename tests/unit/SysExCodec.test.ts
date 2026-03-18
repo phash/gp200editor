@@ -1,5 +1,57 @@
 import { describe, it, expect } from 'vitest';
 import { SysExCodec } from '@/core/SysExCodec';
+import type { GP200Preset } from '@/core/types';
+
+/** Build a synthetic 1176-byte decoded preset buffer */
+function buildDecodedPreset(name: string, slot: number): Uint8Array {
+  const buf = new Uint8Array(1176).fill(0);
+  const view = new DataView(buf.buffer);
+  // Header: slot at [6:8]
+  view.setUint16(6, slot, true);
+  // Name at [28:60]
+  for (let i = 0; i < name.length && i < 31; i++) {
+    buf[28 + i] = name.charCodeAt(i);
+  }
+  buf[28 + name.length] = 0; // null terminator
+  // 11 effect blocks at offset 120, each 72 bytes
+  for (let b = 0; b < 11; b++) {
+    const base = 120 + b * 72;
+    buf[base + 0] = 0x14; buf[base + 1] = 0x00; buf[base + 2] = 0x44; buf[base + 3] = 0x00;
+    buf[base + 4] = b;    // slot index
+    buf[base + 5] = 1;    // active
+    buf[base + 6] = 0x00; buf[base + 7] = 0x0F;
+    view.setUint32(base + 8, 0x03000001 + b, true); // effect ID
+    // 15 float32 params: param[0] = b * 10.0
+    view.setFloat32(base + 12, b * 10.0, true);
+  }
+  return buf;
+}
+
+/** Wrap nibble-encoded bytes into a fake sub=0x18 SysEx message */
+function makeChunk(slot: number, offset: number, nibbleData: Uint8Array): Uint8Array {
+  const HEADER = [0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x18];
+  const offLo = offset & 0xFF;
+  const offHi = (offset >> 8) & 0xFF;
+  const parts = [HEADER, [slot, offLo, offHi], Array.from(nibbleData), [0xF7]];
+  return new Uint8Array(parts.flat());
+}
+
+/** Build 7 fake sub=0x18 chunks from a 1176-byte decoded buffer */
+function buildFakeChunks(decoded: Uint8Array, slot: number): Uint8Array[] {
+  const nibble = SysExCodec.nibbleEncode(decoded); // 2352 bytes
+  // Real chunk offsets: 0, 313, 626, 1067, 1380, 1821, 2134
+  // For testing, split nibble data at these byte offsets into 7 parts
+  const chunkNibbleLengths = [370, 370, 370, 370, 370, 370, 132]; // sum = 2352
+  const chunkOffsets       = [0,   313, 626, 1067, 1380, 1821, 2134];
+  const chunks: Uint8Array[] = [];
+  let pos = 0;
+  for (let i = 0; i < 7; i++) {
+    const nibbleSlice = nibble.slice(pos, pos + chunkNibbleLengths[i]);
+    chunks.push(makeChunk(slot, chunkOffsets[i], nibbleSlice));
+    pos += chunkNibbleLengths[i];
+  }
+  return chunks;
+}
 
 describe('SysExCodec: nibble encoding', () => {
   it('nibbleDecode: two nibble bytes → one decoded byte', () => {
@@ -70,5 +122,66 @@ describe('SysExCodec: buildReadRequest', () => {
     expect(req[16]).toBe(0);
     expect(req[29]).toBe(0);
     expect(req[33]).toBe(0);
+  });
+});
+
+describe('SysExCodec: parseReadChunks', () => {
+  it('parses preset name correctly', () => {
+    const decoded = buildDecodedPreset('Pretender', 9);
+    const chunks = buildFakeChunks(decoded, 9);
+    const preset = SysExCodec.parseReadChunks(chunks);
+    expect(preset.patchName).toBe('Pretender');
+  });
+
+  it('parses 11 effect blocks', () => {
+    const decoded = buildDecodedPreset('Test', 0);
+    const chunks = buildFakeChunks(decoded, 0);
+    const preset = SysExCodec.parseReadChunks(chunks);
+    expect(preset.effects).toHaveLength(11);
+  });
+
+  it('effect blocks have correct slot indices', () => {
+    const decoded = buildDecodedPreset('Test', 0);
+    const chunks = buildFakeChunks(decoded, 0);
+    const preset = SysExCodec.parseReadChunks(chunks);
+    preset.effects.forEach((e, i) => expect(e.slotIndex).toBe(i));
+  });
+
+  it('effect blocks have correct enabled flag', () => {
+    const decoded = buildDecodedPreset('Test', 0);
+    const chunks = buildFakeChunks(decoded, 0);
+    const preset = SysExCodec.parseReadChunks(chunks);
+    preset.effects.forEach(e => expect(e.enabled).toBe(true));
+  });
+
+  it('parses float32 params correctly', () => {
+    const decoded = buildDecodedPreset('Test', 0);
+    const chunks = buildFakeChunks(decoded, 0);
+    const preset = SysExCodec.parseReadChunks(chunks);
+    expect(preset.effects[3].params[0]).toBeCloseTo(30.0, 4);
+  });
+
+  it('sets checksum to 0 (SysEx has no checksum)', () => {
+    const decoded = buildDecodedPreset('Test', 0);
+    const chunks = buildFakeChunks(decoded, 0);
+    const preset = SysExCodec.parseReadChunks(chunks);
+    expect(preset.checksum).toBe(0);
+  });
+
+  it('sorts chunks by offset (handles out-of-order delivery)', () => {
+    const decoded = buildDecodedPreset('Pretender', 9);
+    const chunks = buildFakeChunks(decoded, 9);
+    const shuffled = [chunks[6], chunks[2], chunks[0], chunks[4], chunks[1], chunks[5], chunks[3]];
+    const preset = SysExCodec.parseReadChunks(shuffled);
+    expect(preset.patchName).toBe('Pretender');
+  });
+});
+
+describe('SysExCodec: parsePresetName', () => {
+  it('extracts name from first chunk (offset=0)', () => {
+    const decoded = buildDecodedPreset('JCM 800', 0);
+    const chunks = buildFakeChunks(decoded, 0);
+    const firstChunk = chunks[0]; // offset=0
+    expect(SysExCodec.parsePresetName(firstChunk)).toBe('JCM 800');
   });
 });
