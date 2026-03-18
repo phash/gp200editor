@@ -1,6 +1,6 @@
 // src/components/DeviceSlotBrowser.tsx
 'use client';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { SysExCodec } from '@/core/SysExCodec';
 
@@ -39,7 +39,7 @@ export function DeviceSlotBrowser({
   }, [onCancel, onConfirm, selected]);
 
   // Filter: build a Set of visible slots
-  const filteredSlots = useCallback((): Set<number> => {
+  const visible = useMemo((): Set<number> => {
     if (!search.trim()) return new Set(Array.from({ length: 256 }, (_, i) => i));
     const q = search.toLowerCase();
     const result = new Set<number>();
@@ -50,8 +50,6 @@ export function DeviceSlotBrowser({
     }
     return result;
   }, [search, presetNames]);
-
-  const visible = filteredSlots();
   const confirmLabel = selected !== null
     ? mode === 'pull'
       ? t('pullFrom', { slot: SysExCodec.slotToLabel(selected) })
@@ -86,11 +84,16 @@ export function DeviceSlotBrowser({
             {t('browserTitle')}
           </span>
           {namesLoadProgress < 256 && (
-            <div className="flex-1 h-1 rounded-full overflow-hidden ml-4" style={{ background: 'rgba(255,255,255,0.1)' }}>
-              <div
-                className="h-full rounded-full transition-all"
-                style={{ width: `${(namesLoadProgress / 256) * 100}%`, background: 'var(--accent-amber)' }}
-              />
+            <div className="flex-1 flex items-center gap-2 ml-4">
+              <span className="font-mono-display shrink-0" style={{ fontSize: '0.7em', color: 'var(--text-muted)' }}>
+                {t('loadingNames')}
+              </span>
+              <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.1)' }}>
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{ width: `${(namesLoadProgress / 256) * 100}%`, background: 'var(--accent-amber)' }}
+                />
+              </div>
             </div>
           )}
           <button onClick={onCancel} className="ml-auto" style={{ color: 'var(--text-muted)' }}>✕</button>

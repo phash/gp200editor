@@ -59,8 +59,9 @@ export function useMidiDevice(): UseMidiDeviceReturn {
   const [presetNames, setPresetNames] = useState<(string | null)[]>(new Array(256).fill(null));
   const [namesLoadProgress, setNamesLoadProgress] = useState(0);
 
-  const outputRef = useRef<GP200Output | null>(null);
-  const inputRef  = useRef<GP200Input | null>(null);
+  const outputRef      = useRef<GP200Output | null>(null);
+  const inputRef       = useRef<GP200Input | null>(null);
+  const presetNamesRef = useRef<(string | null)[]>(new Array(256).fill(null));
 
   const onMidiMessage = useCallback((event: { data: unknown }) => {
     const data = getBytes(event.data);
@@ -137,6 +138,8 @@ export function useMidiDevice(): UseMidiDeviceReturn {
             tryRequest();
           } else {
             if (inputRef.current) inputRef.current.onmidimessage = onMidiMessage;
+            setStatus('error');
+            setErrorMessage('Read timeout');
             reject(new Error('Read timeout'));
           }
         }, READ_TIMEOUT_MS);
@@ -176,8 +179,12 @@ export function useMidiDevice(): UseMidiDeviceReturn {
 
   const loadPresetNames = useCallback(async (): Promise<void> => {
     if (!outputRef.current || !inputRef.current) return;
-    const names = new Array<string | null>(256).fill(null);
     for (let s = 0; s < 256; s++) {
+      // Skip already-loaded names (supports resuming interrupted loads)
+      if (presetNamesRef.current[s] !== null) {
+        setNamesLoadProgress(s + 1);
+        continue;
+      }
       const name = await new Promise<string | null>((resolve) => {
         const slotNum = s;
         const timer = setTimeout(() => resolve(null), READ_TIMEOUT_MS);
@@ -197,8 +204,8 @@ export function useMidiDevice(): UseMidiDeviceReturn {
         }
         outputRef.current!.send(SysExCodec.buildReadRequest(slotNum));
       });
-      names[s] = name;
-      setPresetNames([...names]);
+      presetNamesRef.current[s] = name;
+      setPresetNames([...presetNamesRef.current]);
       setNamesLoadProgress(s + 1);
     }
     if (inputRef.current) inputRef.current.onmidimessage = onMidiMessage;
