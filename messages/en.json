@@ -22,6 +22,7 @@
     "patchName": "Patch Name",
     "download": "Download preset",
     "loadError": "Error loading file",
+    "pushError": "Push failed",
     "placeholder": "Editor will be implemented in Chunk 3.",
     "effectOn": "ON",
     "effectOff": "OFF",

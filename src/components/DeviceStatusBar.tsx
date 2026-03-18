@@ -2,6 +2,7 @@
 import { useTranslations } from 'next-intl';
 import type { UseMidiDeviceReturn } from '@/hooks/useMidiDevice';
 import { SysExCodec } from '@/core/SysExCodec';
+import { useState, useEffect } from 'react';
 
 interface DeviceStatusBarProps {
   midiDevice: UseMidiDeviceReturn;
@@ -20,6 +21,11 @@ export function DeviceStatusBar({
 }: DeviceStatusBarProps) {
   const t = useTranslations('device');
   const { status, errorMessage, currentSlot, connect, disconnect } = midiDevice;
+  const [webMidiSupported, setWebMidiSupported] = useState(false);
+
+  useEffect(() => {
+    setWebMidiSupported('requestMIDIAccess' in navigator);
+  }, []);
 
   const ledColor =
     status === 'connected'   ? 'var(--accent-green)' :
@@ -80,12 +86,12 @@ export function DeviceStatusBar({
 
       {/* Actions */}
       <div className="ml-auto flex gap-2">
-        {status === 'disconnected' && !('requestMIDIAccess' in navigator) && (
+        {status === 'disconnected' && !webMidiSupported && (
           <span className="font-mono-display" style={{ color: 'var(--text-muted)', fontSize: '0.75em' }}>
             {t('chromeOnly')}
           </span>
         )}
-        {status === 'disconnected' && 'requestMIDIAccess' in navigator && (
+        {status === 'disconnected' && webMidiSupported && (
           <button
             onClick={connect}
             className="font-mono-display text-xs font-bold uppercase px-3 py-1 rounded"

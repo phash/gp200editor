@@ -22,6 +22,7 @@
     "patchName": "Patch-Name",
     "download": "Preset herunterladen",
     "loadError": "Fehler beim Laden",
+    "pushError": "Push fehlgeschlagen",
     "placeholder": "Editor wird in Chunk 3 implementiert.",
     "effectOn": "AN",
     "effectOff": "AUS",

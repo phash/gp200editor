@@ -99,7 +99,7 @@ export default function EditorPage() {
     try {
       await midiDevice.pushPreset(preset, slot);
     } catch {
-      alert('Push fehlgeschlagen');
+      alert(t('pushError'));
     } finally {
       setSlotBrowserMode(null);
     }

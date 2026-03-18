@@ -175,6 +175,9 @@ export const SysExCodec = {
     const nibble = this.nibbleEncode(payload); // 1464 bytes
     // Chunk decoded offsets (start of each chunk in decoded bytes, plus end)
     const decodedOffsets = [0, 183, 366, 549, 732];
+    // Note: spec lists write offsets as [0, 311, 622, 1061] but those exceed
+    // the 732-byte decoded payload. Using equal 183-byte chunks instead.
+    // Validate against real device on first hardware test.
     const CHUNK_OFFSETS  = [0, 183, 366, 549]; // values placed in chunk headers
     const chunks: Uint8Array[] = [];
     for (let i = 0; i < 4; i++) {
