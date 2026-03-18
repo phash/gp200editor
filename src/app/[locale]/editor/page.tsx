@@ -7,11 +7,16 @@ import { PRSTDecoder } from '@/core/PRSTDecoder';
 import { PRSTEncoder } from '@/core/PRSTEncoder';
 import { useCallback, useState, useEffect } from 'react';
 import { useRouter } from '@/i18n/routing';
+import { useMidiDevice } from '@/hooks/useMidiDevice';
+import { DeviceStatusBar } from '@/components/DeviceStatusBar';
+import { DeviceSlotBrowser } from '@/components/DeviceSlotBrowser';
 
 export default function EditorPage() {
   const t = useTranslations('editor');
   const router = useRouter();
   const { preset, loadPreset, setPatchName, toggleEffect, changeEffect, reorderEffects, setParam } = usePreset();
+  const midiDevice = useMidiDevice();
+  const [slotBrowserMode, setSlotBrowserMode] = useState<'pull' | 'push' | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -78,6 +83,35 @@ export default function EditorPage() {
     }
   }
 
+  async function handlePullConfirm(slot: number) {
+    try {
+      const loaded = await midiDevice.pullPreset(slot);
+      loadPreset(loaded);
+    } catch {
+      alert(t('loadError'));
+    } finally {
+      setSlotBrowserMode(null);
+    }
+  }
+
+  async function handlePushConfirm(slot: number) {
+    if (!preset) return;
+    try {
+      await midiDevice.pushPreset(preset, slot);
+    } catch {
+      alert('Push fehlgeschlagen');
+    } finally {
+      setSlotBrowserMode(null);
+    }
+  }
+
+  function handleOpenBrowser(mode: 'pull' | 'push') {
+    setSlotBrowserMode(mode);
+    if (midiDevice.presetNames.every(n => n === null)) {
+      midiDevice.loadPresetNames();
+    }
+  }
+
   const handleDragStart = useCallback((index: number) => {
     setDragIndex(index);
   }, []);
@@ -103,6 +137,15 @@ export default function EditorPage() {
           {t('title')}
         </h1>
         <FileUpload onFile={handleFile} />
+        <div className="mt-4">
+          <DeviceStatusBar
+            midiDevice={midiDevice}
+            currentPresetName={null}
+            hasPreset={false}
+            onPullRequest={() => handleOpenBrowser('pull')}
+            onPushRequest={() => {}}
+          />
+        </div>
       </div>
     );
   }
@@ -124,6 +167,17 @@ export default function EditorPage() {
           data-testid="patch-name-input"
           className="font-mono-display text-xl font-bold tracking-tight bg-transparent border-none outline-none w-full"
           style={{ color: 'var(--accent-amber)' }}
+        />
+      </div>
+
+      {/* Device sync */}
+      <div className="mb-4">
+        <DeviceStatusBar
+          midiDevice={midiDevice}
+          currentPresetName={preset?.patchName ?? null}
+          hasPreset={!!preset}
+          onPullRequest={() => handleOpenBrowser('pull')}
+          onPushRequest={() => handleOpenBrowser('push')}
         />
       </div>
 
@@ -209,6 +263,17 @@ export default function EditorPage() {
           </span>
         ) : null}
       </div>
+
+      {slotBrowserMode && (
+        <DeviceSlotBrowser
+          mode={slotBrowserMode}
+          presetNames={midiDevice.presetNames}
+          namesLoadProgress={midiDevice.namesLoadProgress}
+          currentSlot={midiDevice.currentSlot}
+          onConfirm={slotBrowserMode === 'pull' ? handlePullConfirm : handlePushConfirm}
+          onCancel={() => setSlotBrowserMode(null)}
+        />
+      )}
     </div>
   );
 }
