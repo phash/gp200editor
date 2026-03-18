@@ -200,6 +200,7 @@ export function useMidiDevice(): UseMidiDeviceReturn {
         if (inputRef.current) {
           inputRef.current.onmidimessage = (event: { data: unknown }) => {
             const data = getBytes(event.data);
+            console.log('[GP-200] names rx:', Array.from(data).map(b => b.toString(16).padStart(2,'0')).join(' '));
             onMidiMessage(event);
             if (isSysEx(data, 0x12, 0x18) && data[10] === slotNum) {
               const off = data[11] | (data[12] << 8);
@@ -211,7 +212,9 @@ export function useMidiDevice(): UseMidiDeviceReturn {
             }
           };
         }
-        outputRef.current!.send(SysExCodec.buildReadRequest(slotNum));
+        const req = SysExCodec.buildReadRequest(slotNum);
+        console.log('[GP-200] names tx s=' + slotNum + ':', Array.from(req).map(b => b.toString(16).padStart(2,'0')).join(' '));
+        outputRef.current!.send(req);
       });
       if (namesLoadAbortRef.current) break;
       presetNamesRef.current[s] = name;
