@@ -297,6 +297,59 @@ E2E-Tests in `tests/e2e/`:
 
 ---
 
+## USB-Gerätekommunikation (Issue #5 + #6)
+
+Das GP-200 ist USB-MIDI class-compliant. Die offizielle Valeton-Software kommuniziert per proprietärem **MIDI SysEx** über USB-MIDI zum Gerät.
+
+### Status
+
+- **Issue #5** (Sniffing): SysEx-Protokoll reverse-engineered ✓
+- **Issue #6** (Feature): Web MIDI Push/Pull implementiert ✓ — `src/core/SysExCodec.ts`, `src/hooks/useMidiDevice.ts`, `src/components/DeviceStatusBar.tsx`, `src/components/DeviceSlotBrowser.tsx`
+
+### Hardware-Testing (Web MIDI)
+
+```bash
+# Vor jedem Hardware-Test: valeton-windows Container stoppen!
+# Läuft im Hintergrund (dockur/windows) und löst selbstständig Firmware-Updates aus
+docker stop valeton-windows
+
+# App für Hardware-Test starten
+docker build -t gp200editor . && docker rm -f gp200editor && docker run -d -p 3000:3000 --name gp200editor --env-file .env.local gp200editor
+```
+
+- Web MIDI funktioniert nur in Chrome/Edge (kein Firefox, kein Safari)
+- Playwright-Browser hat Zugriff auf echte MIDI-Geräte des Hosts
+
+### Wenn das Gerät eintrifft: Capture-Workflow
+
+```bash
+# 1. Einmalig (falls noch nicht in wireshark-Gruppe)
+sudo usermod -aG wireshark manuel   # dann neu einloggen
+sudo modprobe usbmon
+
+# 2. Gerät anschließen, Bus identifizieren
+lsusb | grep -i valeton
+# → z.B. "Bus 003 Device 007" → usbmon3
+
+# 3. Capture starten (tshark ist installiert)
+tshark -i usbmon3 -w gp200-capture.pcap
+
+# 4. Offizielle Valeton-Software unter Wine starten
+wine ~/.wine/drive_c/Program\ Files/Valeton/GP-200/GP-200.exe
+
+# 5. Im Valeton-Editor: "Vom Gerät laden" + "Auf Gerät speichern" ausführen
+# 6. Capture stoppen, SysEx-Pakete analysieren (beginnen mit F0, enden mit F7)
+```
+
+### Bekannte Infos zum Protokoll
+
+- Gerät arbeitet im **Normal-Modus** (6-In/4-Out) — nur in diesem Modus funktioniert der Editor
+- Wahrscheinliche SysEx-Struktur: `F0 <manufacturer-id> <device-id> <cmd> <1224-Byte-Payload> F7`
+- GP-5-SysEx-Referenz (Geschwistergerät): https://www.scribd.com/document/963614194/GP-5-SysEx-1
+- Valeton-Software lokal installiert unter Wine
+
+---
+
 ## Nicht tun
 
 - `npm ci` verwenden (Lock-File-Inkompatibilität mit Docker-npm-Version)

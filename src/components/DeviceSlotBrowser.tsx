@@ -1,6 +1,6 @@
 // src/components/DeviceSlotBrowser.tsx
 'use client';
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { SysExCodec } from '@/core/SysExCodec';
 

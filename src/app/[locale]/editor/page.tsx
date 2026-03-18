@@ -146,6 +146,16 @@ export default function EditorPage() {
             onPushRequest={() => {}}
           />
         </div>
+        {slotBrowserMode && (
+          <DeviceSlotBrowser
+            mode={slotBrowserMode}
+            presetNames={midiDevice.presetNames}
+            namesLoadProgress={midiDevice.namesLoadProgress}
+            currentSlot={midiDevice.currentSlot}
+            onConfirm={slotBrowserMode === 'pull' ? handlePullConfirm : handlePushConfirm}
+            onCancel={() => setSlotBrowserMode(null)}
+          />
+        )}
       </div>
     );
   }

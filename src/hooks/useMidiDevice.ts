@@ -67,7 +67,9 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     const data = getBytes(event.data);
     // sub=0x4E: current slot notification
     if (isSysEx(data, 0x12, 0x4E)) {
+      console.log('[GP-200] sub=0x4E raw:', Array.from(data).map(b => b.toString(16).padStart(2,'0')).join(' '));
       const slot = data[10];
+      console.log('[GP-200] currentSlot candidate:', slot, '(byte 10)');
       if (slot >= 0 && slot < 256) setCurrentSlot(slot);
     }
   }, []);
