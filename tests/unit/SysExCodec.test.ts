@@ -26,8 +26,8 @@ describe('SysExCodec: nibble encoding', () => {
   it('nibbleEncode all values stay in 0x00–0x0F range', () => {
     const input = new Uint8Array(256).map((_, i) => i);
     const encoded = SysExCodec.nibbleEncode(input);
-    for (const b of encoded) {
-      expect(b).toBeLessThanOrEqual(0x0F);
+    for (let i = 0; i < encoded.length; i++) {
+      expect(encoded[i]).toBeLessThanOrEqual(0x0F);
     }
   });
 });
