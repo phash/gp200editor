@@ -1,0 +1,26 @@
+services:
+  windows:
+    image: ghcr.io/dockur/windows
+    container_name: valeton-windows
+    environment:
+      VERSION: "11"
+      RAM_SIZE: "4G"
+      CPU_CORES: "4"
+      DISK_SIZE: "32G"
+      # USB passthrough via QEMU: Valeton GP-200 (VID 84ef PID 002a)
+      ARGUMENTS: "-device usb-host,vendorid=0x84ef,productid=0x002a"
+    devices:
+      - /dev/kvm
+      - /dev/bus/usb
+    device_cgroup_rules:
+      - "c 189:* rmw"
+    ports:
+      - "8006:8006"
+    volumes:
+      - windows-data:/storage
+    cap_add:
+      - NET_ADMIN
+    stop_grace_period: 2m
+
+volumes:
+  windows-data:
