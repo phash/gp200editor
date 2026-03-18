@@ -31,3 +31,44 @@ describe('SysExCodec: nibble encoding', () => {
     }
   });
 });
+
+describe('SysExCodec: slot labels', () => {
+  it('slotToLabel: 0 → "1A"', () => expect(SysExCodec.slotToLabel(0)).toBe('1A'));
+  it('slotToLabel: 1 → "1B"', () => expect(SysExCodec.slotToLabel(1)).toBe('1B'));
+  it('slotToLabel: 3 → "1D"', () => expect(SysExCodec.slotToLabel(3)).toBe('1D'));
+  it('slotToLabel: 4 → "2A"', () => expect(SysExCodec.slotToLabel(4)).toBe('2A'));
+  it('slotToLabel: 255 → "64D"', () => expect(SysExCodec.slotToLabel(255)).toBe('64D'));
+  it('labelToSlot: "1A" → 0', () => expect(SysExCodec.labelToSlot('1A')).toBe(0));
+  it('labelToSlot: "64D" → 255', () => expect(SysExCodec.labelToSlot('64D')).toBe(255));
+  it('round-trip: slotToLabel → labelToSlot', () => {
+    for (let s = 0; s < 256; s++) {
+      expect(SysExCodec.labelToSlot(SysExCodec.slotToLabel(s))).toBe(s);
+    }
+  });
+});
+
+describe('SysExCodec: buildReadRequest', () => {
+  it('returns a 46-byte message starting with F0 header', () => {
+    const req = SysExCodec.buildReadRequest(0);
+    expect(req.length).toBe(46);
+    expect(req[0]).toBe(0xF0);
+    expect(req[1]).toBe(0x21);
+    expect(req[8]).toBe(0x11); // CMD
+    expect(req[9]).toBe(0x10); // sub
+    expect(req[45]).toBe(0xF7); // end
+  });
+
+  it('places slot number at bytes 16, 29, 33', () => {
+    const req = SysExCodec.buildReadRequest(9);
+    expect(req[16]).toBe(9);
+    expect(req[29]).toBe(9);
+    expect(req[33]).toBe(9);
+  });
+
+  it('slot 0 has zeros at positions 16, 29, 33', () => {
+    const req = SysExCodec.buildReadRequest(0);
+    expect(req[16]).toBe(0);
+    expect(req[29]).toBe(0);
+    expect(req[33]).toBe(0);
+  });
+});
