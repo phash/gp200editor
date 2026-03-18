@@ -115,4 +115,85 @@ export const SysExCodec = {
 
     return GP200PresetSchema.parse({ version: '1', patchName, effects, checksum: 0 });
   },
+
+  buildWriteChunks(preset: GP200Preset, slot: number): Uint8Array[] {
+    const SYSEX_HEADER = [0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x20];
+
+    // Build 732-byte decoded write payload
+    const payload = new Uint8Array(732).fill(0);
+    const view = new DataView(payload.buffer);
+
+    // Write header (36 bytes) — constant template with slot at [8:10]
+    const WRITE_HEADER = [
+      0x00, 0x00, 0x04, 0x00, 0x01, 0x00, // bytes 0–5
+      0x27, 0x00,                          // bytes 6–7 (0x27 marker)
+      slot & 0xFF, 0x00,                   // bytes 8–9 (slot LE16)
+      0x04, 0x00,                          // bytes 10–11
+      0x27, 0x00,                          // bytes 12–13 (0x27 marker)
+      0x27, 0x00,                          // bytes 14–15 (0x27 marker)
+      0x00, 0x00, 0x00, 0x00,              // bytes 16–19
+      0x27, 0x00,                          // bytes 20–21 (0x27 marker)
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // bytes 22–35
+    ];
+    WRITE_HEADER.forEach((b, i) => { payload[i] = b; });
+
+    // Preset name at bytes 36–67 (null-terminated, 32 bytes)
+    for (let i = 0; i < 32; i++) {
+      payload[36 + i] = i < preset.patchName.length ? preset.patchName.charCodeAt(i) : 0;
+    }
+
+    // Effect blocks 0–7 complete at bytes 128–703 (8 × 72 = 576 bytes)
+    for (let b = 0; b < 8; b++) {
+      const base = 128 + b * 72;
+      const slot_e = preset.effects[b];
+      if (!slot_e) continue;
+      payload[base + 0] = 0x14; payload[base + 1] = 0x00;
+      payload[base + 2] = 0x44; payload[base + 3] = 0x00;
+      payload[base + 4] = slot_e.slotIndex;
+      payload[base + 5] = slot_e.enabled ? 1 : 0;
+      payload[base + 6] = 0x00; payload[base + 7] = 0x0F;
+      view.setUint32(base + 8, slot_e.effectId, true);
+      for (let p = 0; p < 15; p++) {
+        view.setFloat32(base + 12 + p * 4, slot_e.params[p] ?? 0, true);
+      }
+    }
+
+    // Block 8 partial at bytes 704–731 (28 bytes: header + slotIdx + active + const + effectId + 4 params)
+    const blk8 = preset.effects[8];
+    if (blk8) {
+      payload[704] = 0x14; payload[705] = 0x00; payload[706] = 0x44; payload[707] = 0x00;
+      payload[708] = blk8.slotIndex;
+      payload[709] = blk8.enabled ? 1 : 0;
+      payload[710] = 0x00; payload[711] = 0x0F;
+      view.setUint32(712, blk8.effectId, true);
+      for (let p = 0; p < 4; p++) {
+        view.setFloat32(716 + p * 4, blk8.params[p] ?? 0, true);
+      }
+    }
+
+    // Nibble-encode and split into 4 chunks
+    const nibble = this.nibbleEncode(payload); // 1464 bytes
+    // Chunk decoded offsets (start of each chunk in decoded bytes, plus end)
+    const decodedOffsets = [0, 183, 366, 549, 732];
+    const CHUNK_OFFSETS  = [0, 183, 366, 549]; // values placed in chunk headers
+    const chunks: Uint8Array[] = [];
+    for (let i = 0; i < 4; i++) {
+      const nibbleStart = decodedOffsets[i] * 2;
+      const nibbleEnd   = decodedOffsets[i + 1] * 2;
+      const nibbleData  = nibble.slice(nibbleStart, nibbleEnd);
+      const offLo = CHUNK_OFFSETS[i] & 0xFF;
+      const offHi = (CHUNK_OFFSETS[i] >> 8) & 0xFF;
+
+      // Build chunk bytes: header + slot + offsets + nibble data + end
+      const chunkBytes: number[] = [];
+      chunkBytes.push(...SYSEX_HEADER);
+      chunkBytes.push(slot & 0xFF);
+      chunkBytes.push(offLo);
+      chunkBytes.push(offHi);
+      chunkBytes.push(...Array.from(nibbleData));
+      chunkBytes.push(0xF7);
+      chunks.push(new Uint8Array(chunkBytes));
+    }
+    return chunks;
+  },
 };

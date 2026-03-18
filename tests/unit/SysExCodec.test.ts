@@ -185,3 +185,68 @@ describe('SysExCodec: parsePresetName', () => {
     expect(SysExCodec.parsePresetName(firstChunk)).toBe('JCM 800');
   });
 });
+
+describe('SysExCodec: buildWriteChunks', () => {
+  const samplePreset: GP200Preset = {
+    version: '1',
+    patchName: 'MyPreset',
+    checksum: 0,
+    effects: Array.from({ length: 11 }, (_, i) => ({
+      slotIndex: i,
+      enabled: i % 2 === 0,
+      effectId: 0x03000001 + i,
+      params: Array.from({ length: 15 }, (_, p) => p * 1.5),
+    })),
+  };
+
+  it('returns exactly 4 chunks', () => {
+    const chunks = SysExCodec.buildWriteChunks(samplePreset, 5);
+    expect(chunks).toHaveLength(4);
+  });
+
+  it('each chunk starts with SysEx header CMD=0x12 sub=0x20', () => {
+    const chunks = SysExCodec.buildWriteChunks(samplePreset, 5);
+    const HEADER = [0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x20];
+    for (const chunk of chunks) {
+      HEADER.forEach((b, i) => expect(chunk[i]).toBe(b));
+    }
+  });
+
+  it('each chunk ends with F7', () => {
+    const chunks = SysExCodec.buildWriteChunks(samplePreset, 5);
+    for (const chunk of chunks) expect(chunk[chunk.length - 1]).toBe(0xF7);
+  });
+
+  it('slot number in each chunk header (byte 10)', () => {
+    const chunks = SysExCodec.buildWriteChunks(samplePreset, 7);
+    for (const chunk of chunks) expect(chunk[10]).toBe(7);
+  });
+
+  it('chunks decode to 732 bytes total', () => {
+    const chunks = SysExCodec.buildWriteChunks(samplePreset, 0);
+    // Each chunk: [10-byte header][slot:1][offLo:1][offHi:1][nibbleData...][F7:1]
+    const nibbles = chunks.flatMap(c => Array.from(c.slice(13, c.length - 1)));
+    const decoded = SysExCodec.nibbleDecode(new Uint8Array(nibbles));
+    expect(decoded.length).toBe(732);
+  });
+
+  it('preset name appears at write offset 36', () => {
+    const chunks = SysExCodec.buildWriteChunks(samplePreset, 0);
+    const nibbles = chunks.flatMap(c => Array.from(c.slice(13, c.length - 1)));
+    const decoded = SysExCodec.nibbleDecode(new Uint8Array(nibbles));
+    const name = new TextDecoder().decode(decoded.slice(36, 36 + samplePreset.patchName.length));
+    expect(name).toBe('MyPreset');
+  });
+
+  it('effect blocks start at write offset 128', () => {
+    const chunks = SysExCodec.buildWriteChunks(samplePreset, 0);
+    const nibbles = chunks.flatMap(c => Array.from(c.slice(13, c.length - 1)));
+    const decoded = SysExCodec.nibbleDecode(new Uint8Array(nibbles));
+    const view = new DataView(decoded.buffer);
+    // Block 0 marker: 14 00 44 00 at offset 128
+    expect(decoded[128]).toBe(0x14);
+    expect(decoded[130]).toBe(0x44);
+    // Block 0 effectId
+    expect(view.getUint32(128 + 8, true)).toBe(0x03000001);
+  });
+});
