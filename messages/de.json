@@ -22,6 +22,7 @@
     "patchName": "Patch-Name",
     "download": "Preset herunterladen",
     "loadError": "Fehler beim Laden",
+    "pushError": "Push fehlgeschlagen",
     "placeholder": "Editor wird in Chunk 3 implementiert.",
     "effectOn": "AN",
     "effectOff": "AUS",
@@ -117,5 +118,23 @@
     "downloads": "Downloads",
     "by": "von",
     "loadMore": "Mehr laden"
+  },
+  "device": {
+    "connect": "Verbinden",
+    "disconnect": "Trennen",
+    "connecting": "Verbinde…",
+    "noDevice": "Kein Gerät",
+    "connected": "GP-200 verbunden",
+    "pull": "← Pull",
+    "push": "Push →",
+    "pullFrom": "Pull von {slot}",
+    "pushTo": "Push nach {slot}",
+    "loadingNames": "Lade Preset-Namen…",
+    "browserTitle": "Preset auswählen",
+    "search": "Preset suchen…",
+    "chromeOnly": "Nur Chrome/Edge unterstützt",
+    "error": "Verbindungsfehler",
+    "retry": "Erneut verbinden",
+    "cancel": "Abbrechen"
   }
 }
