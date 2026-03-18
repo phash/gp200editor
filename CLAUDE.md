@@ -319,6 +319,10 @@ docker build -t gp200editor . && docker rm -f gp200editor && docker run -d -p 30
 
 - Web MIDI funktioniert nur in Chrome/Edge (kein Firefox, kein Safari)
 - Playwright-Browser hat Zugriff auf echte MIDI-Geräte des Hosts
+- `loadPresetNames` läuft als async Loop im Browser-JS — überlebt Navigation/Reload wenn nicht abgebrochen
+  → Fix: `namesLoadAbortRef` in `useMidiDevice.ts` + `disconnect()` im Editor-Cleanup-`useEffect`
+- **Nie `loadPresetNames` ohne Abbruchmechanismus laufen lassen** — sendet bis zu 256×3s SysEx-Requests,
+  kann unerwartete Gerätereaktionen auslösen (beobachtet: Firmware-Update-Popup am GP-200)
 
 ### Wenn das Gerät eintrifft: Capture-Workflow
 

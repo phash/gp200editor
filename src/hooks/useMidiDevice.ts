@@ -59,9 +59,10 @@ export function useMidiDevice(): UseMidiDeviceReturn {
   const [presetNames, setPresetNames] = useState<(string | null)[]>(new Array(256).fill(null));
   const [namesLoadProgress, setNamesLoadProgress] = useState(0);
 
-  const outputRef      = useRef<GP200Output | null>(null);
-  const inputRef       = useRef<GP200Input | null>(null);
-  const presetNamesRef = useRef<(string | null)[]>(new Array(256).fill(null));
+  const outputRef          = useRef<GP200Output | null>(null);
+  const inputRef           = useRef<GP200Input | null>(null);
+  const presetNamesRef     = useRef<(string | null)[]>(new Array(256).fill(null));
+  const namesLoadAbortRef  = useRef<boolean>(false);
 
   const onMidiMessage = useCallback((event: { data: unknown }) => {
     const data = getBytes(event.data);
@@ -113,6 +114,7 @@ export function useMidiDevice(): UseMidiDeviceReturn {
   }, [onMidiMessage]);
 
   const disconnect = useCallback(() => {
+    namesLoadAbortRef.current = true;
     if (inputRef.current) inputRef.current.onmidimessage = null;
     outputRef.current = null;
     inputRef.current  = null;
@@ -149,6 +151,7 @@ export function useMidiDevice(): UseMidiDeviceReturn {
         if (inputRef.current) {
           inputRef.current.onmidimessage = (event: { data: unknown }) => {
             const data = getBytes(event.data);
+            console.log('[GP-200] pull rx:', Array.from(data).map(b => b.toString(16).padStart(2,'0')).join(' '));
             onMidiMessage(event);
             if (isSysEx(data, 0x12, 0x18) && data[10] === slot) {
               chunks.push(data);
@@ -162,7 +165,9 @@ export function useMidiDevice(): UseMidiDeviceReturn {
           };
         }
 
-        outputRef.current!.send(SysExCodec.buildReadRequest(slot));
+        const req = SysExCodec.buildReadRequest(slot);
+        console.log('[GP-200] pull tx:', Array.from(req).map(b => b.toString(16).padStart(2,'0')).join(' '));
+        outputRef.current!.send(req);
       }
 
       tryRequest();
@@ -181,7 +186,9 @@ export function useMidiDevice(): UseMidiDeviceReturn {
 
   const loadPresetNames = useCallback(async (): Promise<void> => {
     if (!outputRef.current || !inputRef.current) return;
+    namesLoadAbortRef.current = false;
     for (let s = 0; s < 256; s++) {
+      if (namesLoadAbortRef.current) break;
       // Skip already-loaded names (supports resuming interrupted loads)
       if (presetNamesRef.current[s] !== null) {
         setNamesLoadProgress(s + 1);
@@ -206,6 +213,7 @@ export function useMidiDevice(): UseMidiDeviceReturn {
         }
         outputRef.current!.send(SysExCodec.buildReadRequest(slotNum));
       });
+      if (namesLoadAbortRef.current) break;
       presetNamesRef.current[s] = name;
       setPresetNames([...presetNamesRef.current]);
       setNamesLoadProgress(s + 1);

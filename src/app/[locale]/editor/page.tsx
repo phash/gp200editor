@@ -28,6 +28,11 @@ export default function EditorPage() {
       .catch(() => setIsLoggedIn(false));
   }, []);
 
+  // Disconnect MIDI on page unload to abort any running loadPresetNames loop
+  useEffect(() => {
+    return () => { midiDevice.disconnect(); };
+  }, [midiDevice.disconnect]);
+
   const handleFile = useCallback((buffer: Uint8Array, _filename: string) => {
     try {
       const decoder = new PRSTDecoder(buffer);
