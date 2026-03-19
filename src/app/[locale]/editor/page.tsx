@@ -49,12 +49,15 @@ export default function EditorPage() {
     return () => { midiDevice.disconnect(); };
   }, [midiDevice.disconnect]);
 
-  // Auto-load current preset from device after handshake
+  // Auto-load entire bank from device after handshake
   useEffect(() => {
-    if (midiDevice.currentPreset && !preset) {
-      loadPreset(midiDevice.currentPreset);
+    if (midiDevice.currentPreset && midiDevice.currentSlot !== null && !preset) {
+      const slot = midiDevice.currentSlot;
+      // Pull entire bank containing the current slot
+      handlePullConfirm(slot);
     }
-  }, [midiDevice.currentPreset, preset, loadPreset]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [midiDevice.currentPreset]);
 
   const handleFile = useCallback((buffer: Uint8Array, _filename: string) => {
     try {
