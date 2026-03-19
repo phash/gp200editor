@@ -225,8 +225,6 @@ export default function EditorPage() {
             hasPreset={false}
             onPullRequest={() => handleOpenBrowser('pull')}
             onPushRequest={() => {}}
-            onSlotPull={handlePullConfirm}
-            onBankPull={handleBankPull}
           />
           {midiDevice.status === 'disconnected' && (
             <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
@@ -460,8 +458,6 @@ export default function EditorPage() {
           hasPreset={!!preset}
           onPullRequest={() => handleOpenBrowser('pull')}
           onPushRequest={() => handleOpenBrowser('push')}
-          onSlotPull={handlePullConfirm}
-          onBankPull={handleBankPull}
         />
       </div>
 

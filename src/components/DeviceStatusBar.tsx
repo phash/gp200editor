@@ -10,8 +10,6 @@ interface DeviceStatusBarProps {
   hasPreset: boolean;
   onPullRequest: () => void;
   onPushRequest: () => void;
-  onSlotPull?: (slot: number) => void;
-  onBankPull?: (bank: number) => void;
 }
 
 export function DeviceStatusBar({
@@ -20,14 +18,10 @@ export function DeviceStatusBar({
   hasPreset,
   onPullRequest,
   onPushRequest,
-  onSlotPull,
-  onBankPull,
 }: DeviceStatusBarProps) {
   const t = useTranslations('device');
   const { status, errorMessage, currentSlot, connect, disconnect } = midiDevice;
   const [webMidiSupported, setWebMidiSupported] = useState(false);
-  const [slotInput, setSlotInput] = useState(false);
-  const [slotValue, setSlotValue] = useState('');
 
   useEffect(() => {
     setWebMidiSupported('requestMIDIAccess' in navigator);
