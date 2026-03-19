@@ -11,6 +11,18 @@ import { Navbar } from '@/components/Navbar';
 export const metadata: Metadata = {
   title: 'Preset Forge — GP-200 Editor',
   description: 'Edit, share, and sync Valeton GP-200 presets. Real-time USB MIDI editing, preset gallery, and community sharing.',
+  keywords: [
+    'Valeton GP-200',
+    'preset editor',
+    'guitar effects',
+    'multi-effects pedal',
+    'USB MIDI',
+    'Web MIDI',
+    '.prst editor',
+    'pedalboard',
+    'tone sharing',
+    'guitar presets',
+  ],
   openGraph: {
     title: 'Preset Forge — GP-200 Editor',
     description: 'Edit, share, and sync Valeton GP-200 presets. Real-time USB MIDI editing, preset gallery, and community sharing.',
@@ -18,6 +30,22 @@ export const metadata: Metadata = {
     type: 'website',
     url: 'https://preset-forge.com',
   },
+};
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  name: 'Preset Forge',
+  description: 'Edit, share, and sync Valeton GP-200 presets. Real-time USB MIDI editing, preset gallery, and community sharing.',
+  url: 'https://preset-forge.com',
+  applicationCategory: 'Music',
+  operatingSystem: 'Web',
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'USD',
+  },
+  browserRequirements: 'Requires Chrome or Edge for USB MIDI features',
 };
 
 type Props = {
@@ -31,6 +59,12 @@ export default async function LocaleLayout({ children, params }: Props) {
   const messages = await getMessages();
   return (
     <html lang={locale}>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body className="flex flex-col min-h-screen">
         <NextIntlClientProvider messages={messages}>
           <Navbar />
