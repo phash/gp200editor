@@ -192,14 +192,11 @@ export default function EditorPage() {
   }, [dragIndex, reorderEffects, midiDevice, preset]);
 
   if (!preset) {
+    const td = useTranslations('device');
     return (
       <div className="p-8 max-w-2xl mx-auto">
-        <h1 className="font-mono-display text-2xl font-bold mb-8 tracking-tight"
-          style={{ color: 'var(--text-primary)' }}>
-          {t('title')}
-        </h1>
-        <FileUpload onFile={handleFile} />
-        <div className="mt-4">
+        {/* Device connection — prominent at top */}
+        <div className="mb-8 p-4 rounded-lg" style={{ border: '1px solid rgba(212,162,78,0.2)', background: 'rgba(212,162,78,0.03)' }}>
           <DeviceStatusBar
             midiDevice={midiDevice}
             currentPresetName={null}
@@ -209,7 +206,18 @@ export default function EditorPage() {
             onSlotPull={handlePullConfirm}
             onBankPull={handleBankPull}
           />
+          {midiDevice.status === 'disconnected' && (
+            <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+              {td('connectHint')}
+            </p>
+          )}
         </div>
+
+        <h1 className="font-mono-display text-2xl font-bold mb-8 tracking-tight"
+          style={{ color: 'var(--text-primary)' }}>
+          {t('title')}
+        </h1>
+        <FileUpload onFile={handleFile} />
         {slotBrowserMode && (
           <DeviceSlotBrowser
             mode={slotBrowserMode}
@@ -226,22 +234,29 @@ export default function EditorPage() {
 
   return (
     <div className="p-8 max-w-2xl mx-auto">
-      {/* Header with patch name */}
-      <div className="flex items-center gap-4 mb-8">
-        <h1 className="font-mono-display text-lg font-bold tracking-tight flex-shrink-0"
-          style={{ color: 'var(--text-muted)' }}>
-          {t('patchName')}
-        </h1>
-        <input
-          id="patch-name"
-          type="text"
-          value={preset.patchName}
-          onChange={(e) => setPatchName(e.target.value)}
-          maxLength={32}
-          data-testid="patch-name-input"
-          className="font-mono-display text-xl font-bold tracking-tight bg-transparent border-none outline-none w-full"
-          style={{ color: 'var(--accent-amber)' }}
-        />
+      {/* Header with patch name + slot */}
+      <div className="flex items-center gap-4 mb-8 flex-wrap">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <span className="font-mono-display text-sm font-bold tracking-tight flex-shrink-0"
+            style={{ color: 'var(--text-muted)' }}>
+            {t('patchName')}:
+          </span>
+          <input
+            id="patch-name"
+            type="text"
+            value={preset.patchName}
+            onChange={(e) => setPatchName(e.target.value)}
+            maxLength={32}
+            data-testid="patch-name-input"
+            className="font-mono-display text-xl font-bold tracking-tight bg-transparent border-none outline-none min-w-0 flex-1"
+            style={{ color: 'var(--accent-amber)' }}
+          />
+        </div>
+        {bankBaseSlot !== null && (
+          <span className="font-mono-display text-sm flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
+            {t('slot')}: <strong style={{ color: 'var(--accent-amber)' }}>{SysExCodec.slotToLabel(bankBaseSlot + activeTab)}</strong>
+          </span>
+        )}
       </div>
 
       {/* Bank tabs */}
@@ -308,7 +323,7 @@ export default function EditorPage() {
         <button
           onClick={handleDownload}
           data-testid="download-btn"
-          className="font-mono-display text-sm font-bold tracking-wider uppercase px-8 py-3 rounded-lg transition-all duration-200"
+          className="font-mono-display text-sm font-bold tracking-wider uppercase px-6 py-3 rounded-lg transition-all duration-200"
           style={{
             background: 'var(--glow-amber)',
             border: '1px solid var(--accent-amber)',
@@ -325,6 +340,40 @@ export default function EditorPage() {
         >
           {t('download')}
         </button>
+        <label
+          className="font-mono-display text-sm font-bold tracking-wider uppercase px-6 py-3 rounded-lg transition-all duration-200 cursor-pointer"
+          style={{
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border-active)',
+            color: 'var(--text-secondary)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = 'var(--accent-amber)';
+            e.currentTarget.style.color = 'var(--accent-amber)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'var(--border-active)';
+            e.currentTarget.style.color = 'var(--text-secondary)';
+          }}
+        >
+          {t('loadFromDisk')}
+          <input
+            type="file"
+            accept=".prst"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              const reader = new FileReader();
+              reader.onload = () => {
+                const buf = new Uint8Array(reader.result as ArrayBuffer);
+                handleFile(buf, file.name);
+              };
+              reader.readAsArrayBuffer(file);
+              e.target.value = '';
+            }}
+          />
+        </label>
 
         {isLoggedIn ? (
           <>
