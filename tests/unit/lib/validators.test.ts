@@ -75,8 +75,15 @@ describe('patchProfileSchema', () => {
   it('rejects bio longer than 500 chars', () => {
     expect(patchProfileSchema.safeParse({ bio: 'x'.repeat(501) }).success).toBe(false);
   });
-  it('rejects invalid website URL', () => {
-    expect(patchProfileSchema.safeParse({ website: 'not-a-url' }).success).toBe(false);
+  it('accepts website without protocol (auto-prepends https://)', () => {
+    const result = patchProfileSchema.safeParse({ website: 'www.phash.de' });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.website).toBe('https://www.phash.de');
+    }
+  });
+  it('rejects website longer than 200 chars', () => {
+    expect(patchProfileSchema.safeParse({ website: 'x'.repeat(201) }).success).toBe(false);
   });
   it('preserves null for bio (does not coerce to undefined)', () => {
     const result = patchProfileSchema.safeParse({ bio: null });
