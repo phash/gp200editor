@@ -135,9 +135,12 @@ export default function EditorPage() {
     setBankPresets(pulled);
     setBankBaseSlot(baseSlot);
     setActiveTab(tabIndex);
-    // Load the selected slot into the editor
+    // Load the selected slot into the editor + switch device to that slot
     if (pulled[tabIndex]) {
       loadPreset(pulled[tabIndex]);
+    }
+    if (midiDevice.status === 'connected') {
+      midiDevice.sendSlotChange(slot);
     }
   }
 
@@ -156,6 +159,9 @@ export default function EditorPage() {
     setActiveTab(tabIndex);
     if (bankPresets[tabIndex]) {
       loadPreset(bankPresets[tabIndex]);
+    }
+    if (midiDevice.status === 'connected' && bankBaseSlot !== null) {
+      midiDevice.sendSlotChange(bankBaseSlot + tabIndex);
     }
   }
 

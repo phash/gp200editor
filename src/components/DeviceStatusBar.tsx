@@ -140,58 +140,6 @@ export function DeviceStatusBar({
             >
               {t('pull')}
             </button>
-            {onSlotPull && !slotInput && (
-              <button
-                onClick={() => { setSlotInput(true); setSlotValue(''); }}
-                className="font-mono-display text-xs font-bold px-3 py-1 rounded"
-                style={{ border: '1px solid rgba(212,162,78,0.4)', color: 'var(--accent-amber)', background: 'rgba(212,162,78,0.06)' }}
-              >
-                {t('loadSlot')}
-              </button>
-            )}
-            {onSlotPull && slotInput && (
-              <form
-                className="flex items-center gap-1"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const v = slotValue.trim().toUpperCase();
-                  // Bank number only (e.g. "5") → pull all 4 slots
-                  if (/^\d+$/.test(v) && onBankPull) {
-                    const bank = parseInt(v, 10);
-                    if (bank >= 1 && bank <= 64) {
-                      onBankPull(bank);
-                      setSlotInput(false);
-                      return;
-                    }
-                  }
-                  // Slot label (e.g. "5C")
-                  try {
-                    const slot = SysExCodec.labelToSlot(v);
-                    onSlotPull!(slot);
-                    setSlotInput(false);
-                  } catch {
-                    // invalid format — keep input open
-                  }
-                }}
-              >
-                <input
-                  autoFocus
-                  value={slotValue}
-                  onChange={(e) => setSlotValue(e.target.value)}
-                  placeholder="1A / 5"
-                  className="font-mono-display text-xs font-bold w-16 px-1 py-1 rounded bg-transparent text-center outline-none"
-                  style={{ border: '1px solid rgba(212,162,78,0.6)', color: 'var(--accent-amber)' }}
-                  onKeyDown={(e) => { if (e.key === 'Escape') setSlotInput(false); }}
-                />
-                <button
-                  type="submit"
-                  className="font-mono-display text-xs px-2 py-1 rounded"
-                  style={{ color: 'var(--accent-amber)' }}
-                >
-                  ↵
-                </button>
-              </form>
-            )}
             <button
               onClick={onPushRequest}
               disabled={!hasPreset}

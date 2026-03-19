@@ -42,6 +42,7 @@ export interface UseMidiDeviceReturn {
   sendToggle: (blockIndex: number, enabled: boolean) => void;
   sendParamChange: (blockIndex: number, paramIndex: number, effectId: number, value: number) => void;
   sendReorder: (order: number[]) => void;
+  sendSlotChange: (slot: number) => void;
 }
 
 // Minimal shape we actually use — avoids conflicts with DOM's MIDIInput / MIDIOutput
@@ -396,10 +397,18 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     outputRef.current.send(msg);
   }, []);
 
+  const sendSlotChange = useCallback((slot: number) => {
+    if (!outputRef.current) return;
+    const msg = SysExCodec.buildPresetChange(slot);
+    console.log(`[GP-200] slot change: ${slot} (${SysExCodec.slotToLabel(slot)})`);
+    outputRef.current.send(msg);
+    setCurrentSlot(slot);
+  }, []);
+
   return {
     status, errorMessage, deviceName, currentSlot, presetNames, namesLoadProgress,
     deviceInfo, currentPreset, assignments,
     connect, disconnect, loadPresetNames, pullPreset, pushPreset,
-    sendToggle, sendParamChange, sendReorder,
+    sendToggle, sendParamChange, sendReorder, sendSlotChange,
   };
 }
