@@ -3,6 +3,7 @@ import { getMessages } from 'next-intl/server';
 import { routing } from '@/i18n/routing';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import '../globals.css'; // globals.css stays in src/app/, so relative path goes up
 import { Footer } from '@/components/Footer';
 import { Navbar } from '@/components/Navbar';
@@ -36,6 +37,17 @@ export default async function LocaleLayout({ children, params }: Props) {
           <main className="flex-1">{children}</main>
           <Footer />
         </NextIntlClientProvider>
+        {/* Matomo Analytics — Site ID 2 on musikersuche.org/matomo */}
+        <Script id="matomo" strategy="afterInteractive">{`
+          var _paq=window._paq=window._paq||[];
+          _paq.push(["trackPageView"]);
+          _paq.push(["enableLinkTracking"]);
+          (function(){var u="//musikersuche.org/matomo/";
+          _paq.push(["setTrackerUrl",u+"matomo.php"]);
+          _paq.push(["setSiteId","2"]);
+          var d=document,g=d.createElement("script"),s=d.getElementsByTagName("script")[0];
+          g.async=true;g.src=u+"matomo.js";s.parentNode.insertBefore(g,s)})();
+        `}</Script>
       </body>
     </html>
   );
