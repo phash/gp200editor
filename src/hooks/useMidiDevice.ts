@@ -399,7 +399,8 @@ export function useMidiDevice(): UseMidiDeviceReturn {
 
   const sendSlotChange = useCallback((slot: number) => {
     if (!outputRef.current) return;
-    const msg = SysExCodec.buildPresetChange(slot);
+    // Send a read request for the slot — the device switches to it when it receives this
+    const msg = SysExCodec.buildReadRequest(slot);
     console.log(`[GP-200] slot change: ${slot} (${SysExCodec.slotToLabel(slot)})`);
     outputRef.current.send(msg);
     setCurrentSlot(slot);
