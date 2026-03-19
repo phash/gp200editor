@@ -7,11 +7,12 @@ import { useMidiDevice } from '@/hooks/useMidiDevice';
 type MIDIMessageHandler = (event: { data: Uint8Array }) => void;
 
 function makeMockMidi() {
-  const inputHandlers: MIDIMessageHandler[] = [];
+  let currentHandler: MIDIMessageHandler | null = null;
   const mockInput = {
     name: 'GP-200 MIDI 1',
+    get onmidimessage() { return currentHandler; },
     set onmidimessage(handler: MIDIMessageHandler | null) {
-      if (handler) inputHandlers.push(handler);
+      currentHandler = handler;
     },
   };
   const sentMessages: Uint8Array[] = [];
@@ -25,12 +26,59 @@ function makeMockMidi() {
     inputs: { values: () => [mockInput] },
     outputs: { values: () => [mockOutput] },
   };
-
   function emit(data: Uint8Array) {
-    inputHandlers.forEach(h => h({ data }));
+    if (currentHandler) currentHandler({ data });
   }
-
   return { access, mockInput, mockOutput, sentMessages, emit };
+}
+
+function enableAutoHandshake(mock: ReturnType<typeof makeMockMidi>) {
+  const origSend = mock.mockOutput.send.getMockImplementation()!;
+  mock.mockOutput.send = vi.fn((data: number[] | Uint8Array) => {
+    origSend(data);
+    const d = new Uint8Array(data);
+    // Identity query → identity response
+    if (d[8] === 0x11 && d[9] === 0x04 && d[14] === 0x01) {
+      setTimeout(() => mock.emit(new Uint8Array([
+        0xF0,0x21,0x25,0x7E,0x47,0x50,0x2D,0x32,0x12,0x08,
+        0x00,0x00,0x00,0x00,0x01,0x02,0x00,0x00,0x04,0x00,
+        0x00,0x00,0x01,0x00,0x00,0x00,0x02,0x00,0x00,0xF7,
+      ])), 1);
+    }
+    // State dump request → 5 minimal 0x4E chunks
+    if (d[8] === 0x11 && d[9] === 0x04 && d[14] === 0x06) {
+      setTimeout(() => {
+        for (const off of [0, 313, 626, 1067]) {
+          mock.emit(new Uint8Array([
+            0xF0,0x21,0x25,0x7E,0x47,0x50,0x2D,0x32,0x12,0x4E,
+            0x09, off & 0xFF, (off >> 8) & 0xFF,
+            ...new Array(370).fill(0), 0xF7,
+          ]));
+        }
+        mock.emit(new Uint8Array([
+          0xF0,0x21,0x25,0x7E,0x47,0x50,0x2D,0x32,0x12,0x4E,
+          0x09, 0x64, 0x05,
+          ...new Array(212).fill(0), 0xF7,
+        ]));
+      }, 1);
+    }
+    // Version check → accepted
+    if (d[8] === 0x11 && d[9] === 0x0A) {
+      setTimeout(() => mock.emit(new Uint8Array([
+        0xF0,0x21,0x25,0x7E,0x47,0x50,0x2D,0x32,0x12,0x0A,
+        0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x00,0x06,0x00,0x00,
+        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+        0xF7,
+      ])), 1);
+    }
+    // Assignment query → empty response
+    if (d[8] === 0x11 && d[9] === 0x1C) {
+      setTimeout(() => mock.emit(new Uint8Array([
+        0xF0,0x21,0x25,0x7E,0x47,0x50,0x2D,0x32,0x12,0x1C,
+        ...new Array(59).fill(0), 0xF7,
+      ])), 1);
+    }
+  });
 }
 
 describe('useMidiDevice', () => {
@@ -38,6 +86,7 @@ describe('useMidiDevice', () => {
 
   beforeEach(() => {
     mockMidi = makeMockMidi();
+    enableAutoHandshake(mockMidi);
     vi.stubGlobal('navigator', {
       requestMIDIAccess: vi.fn().mockResolvedValue(mockMidi.access),
     });
@@ -53,9 +102,12 @@ describe('useMidiDevice', () => {
     expect(result.current.status).toBe('disconnected');
     expect(result.current.currentSlot).toBeNull();
     expect(result.current.deviceName).toBeNull();
+    expect(result.current.deviceInfo).toBeNull();
+    expect(result.current.currentPreset).toBeNull();
+    expect(result.current.assignments).toEqual([]);
   });
 
-  it('connect() sets status to connecting then connected', async () => {
+  it('connect() sets status to connecting then handshaking then connected', async () => {
     const { result } = renderHook(() => useMidiDevice());
     await act(async () => {
       result.current.connect();
@@ -92,31 +144,41 @@ describe('useMidiDevice', () => {
     await waitFor(() => expect(result.current.status).toBe('connected'));
     act(() => { result.current.disconnect(); });
     expect(result.current.status).toBe('disconnected');
+    expect(result.current.deviceInfo).toBeNull();
+    expect(result.current.currentPreset).toBeNull();
+    expect(result.current.assignments).toEqual([]);
   });
 
-  it('parses currentSlot from sub=0x4E message', async () => {
+  it('handshake sets currentSlot from state dump', async () => {
+    const { result } = renderHook(() => useMidiDevice());
+    await act(async () => { result.current.connect(); });
+    await waitFor(() => expect(result.current.status).toBe('connected'));
+    expect(result.current.currentSlot).toBe(9); // from auto-handshake slot=0x09
+  });
+
+  it('connect sends identity query as first handshake message', async () => {
+    const { result } = renderHook(() => useMidiDevice());
+    await act(async () => { result.current.connect(); });
+    await waitFor(() => expect(result.current.status).toBe('connected'));
+    const first = mockMidi.sentMessages[0];
+    expect(first[8]).toBe(0x11);
+    expect(first[9]).toBe(0x04); // identity query
+  });
+
+  it('handshake sets deviceInfo after connect', async () => {
+    const { result } = renderHook(() => useMidiDevice());
+    await act(async () => { result.current.connect(); });
+    await waitFor(() => expect(result.current.status).toBe('connected'));
+    expect(result.current.deviceInfo).not.toBeNull();
+    expect(result.current.deviceInfo!.deviceType).toBe(0x04);
+    expect(result.current.deviceInfo!.versionAccepted).toBe(true);
+  });
+
+  it('pullPreset sends a read request after handshake', async () => {
     const { result } = renderHook(() => useMidiDevice());
     await act(async () => { result.current.connect(); });
     await waitFor(() => expect(result.current.status).toBe('connected'));
 
-    // Emit a fake sub=0x4E with slot=9 at payload[1]
-    const sysex4E = new Uint8Array([
-      0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32,
-      0x12, 0x4E,
-      0x09, // slot = 9
-      0x00, 0x00, // offset
-      0xF7,
-    ]);
-    act(() => { mockMidi.emit(sysex4E); });
-    expect(result.current.currentSlot).toBe(9);
-  });
-
-  it('connect() sends a read request (CMD=0x11) for the MIDI port', async () => {
-    const { result } = renderHook(() => useMidiDevice());
-    await act(async () => { result.current.connect(); });
-    await waitFor(() => expect(result.current.status).toBe('connected'));
-    // No request sent on connect — device auto-sends sub=0x4E
-    // pullPreset sends the request:
     const SYSEX_HEADER = [0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x11, 0x10];
     let pullPromise: Promise<unknown>;
     act(() => {
@@ -124,12 +186,13 @@ describe('useMidiDevice', () => {
     });
     await waitFor(() => {
       const sent = mockMidi.sentMessages;
-      expect(sent.length).toBeGreaterThan(0);
-      const req = sent[0];
-      SYSEX_HEADER.forEach((b, i) => expect(req[i]).toBe(b));
+      // Find the read request (sub=0x10) after the handshake messages
+      const readReq = sent.find(m => m[8] === 0x11 && m[9] === 0x10);
+      expect(readReq).toBeDefined();
+      SYSEX_HEADER.forEach((b, i) => expect(readReq![i]).toBe(b));
       // Slot 5 nibble-encoded at [25-26]
-      expect(req[25]).toBe(0x00);
-      expect(req[26]).toBe(0x05);
+      expect(readReq![25]).toBe(0x00);
+      expect(readReq![26]).toBe(0x05);
     });
     // Clean up by aborting the pull (no chunks sent)
     pullPromise!.catch(() => {}); // ignore timeout error

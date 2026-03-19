@@ -24,12 +24,15 @@ function getBytes(data: unknown): Uint8Array {
 }
 
 export interface UseMidiDeviceReturn {
-  status: 'disconnected' | 'connecting' | 'connected' | 'error';
+  status: 'disconnected' | 'connecting' | 'handshaking' | 'connected' | 'error';
   errorMessage: string | null;
   deviceName: string | null;
   currentSlot: number | null;
   presetNames: (string | null)[];
   namesLoadProgress: number;
+  deviceInfo: { deviceType: number; firmwareValues: number[]; versionAccepted: boolean } | null;
+  currentPreset: GP200Preset | null;
+  assignments: { section: number; page: number; block: number; name: string; rawData: Uint8Array }[];
 
   connect: () => Promise<void>;
   disconnect: () => void;
@@ -51,6 +54,58 @@ interface GP200Access {
   outputs: { values: () => Iterable<GP200Output> };
 }
 
+function waitForResponse(
+  input: GP200Input,
+  match: (data: Uint8Array) => boolean,
+  timeoutMs: number,
+  baseHandler: (event: { data: unknown }) => void,
+): Promise<Uint8Array> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      input.onmidimessage = baseHandler;
+      reject(new Error('Response timeout'));
+    }, timeoutMs);
+    input.onmidimessage = (event: { data: unknown }) => {
+      const data = getBytes(event.data);
+      baseHandler(event);
+      if (match(data)) {
+        clearTimeout(timer);
+        input.onmidimessage = baseHandler;
+        resolve(data);
+      }
+    };
+  });
+}
+
+function collectChunks(
+  input: GP200Input,
+  cmd: number,
+  sub: number,
+  expectedCount: number,
+  timeoutMs: number,
+  baseHandler: (event: { data: unknown }) => void,
+): Promise<Uint8Array[]> {
+  return new Promise((resolve, reject) => {
+    const chunks: Uint8Array[] = [];
+    const timer = setTimeout(() => {
+      input.onmidimessage = baseHandler;
+      reject(new Error('Chunk collection timeout'));
+    }, timeoutMs);
+    input.onmidimessage = (event: { data: unknown }) => {
+      const data = getBytes(event.data);
+      baseHandler(event);
+      if (isSysEx(data, cmd, sub)) {
+        chunks.push(new Uint8Array(data));
+        if (chunks.length === expectedCount) {
+          clearTimeout(timer);
+          input.onmidimessage = baseHandler;
+          resolve(chunks);
+        }
+      }
+    };
+  });
+}
+
 export function useMidiDevice(): UseMidiDeviceReturn {
   const [status, setStatus] = useState<UseMidiDeviceReturn['status']>('disconnected');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -58,6 +113,9 @@ export function useMidiDevice(): UseMidiDeviceReturn {
   const [currentSlot, setCurrentSlot] = useState<number | null>(null);
   const [presetNames, setPresetNames] = useState<(string | null)[]>(new Array(256).fill(null));
   const [namesLoadProgress, setNamesLoadProgress] = useState(0);
+  const [deviceInfo, setDeviceInfo] = useState<UseMidiDeviceReturn['deviceInfo']>(null);
+  const [currentPreset, setCurrentPreset] = useState<GP200Preset | null>(null);
+  const [assignments, setAssignments] = useState<UseMidiDeviceReturn['assignments']>([]);
 
   const outputRef          = useRef<GP200Output | null>(null);
   const inputRef           = useRef<GP200Input | null>(null);
@@ -106,7 +164,66 @@ export function useMidiDevice(): UseMidiDeviceReturn {
       inputRef.current  = input;
       input.onmidimessage = onMidiMessage;
       setDeviceName(input.name);
-      setStatus('connected');
+      setStatus('handshaking');
+
+      // --- Handshake sequence ---
+      try {
+        // Step 1-2: Identity
+        output.send(SysExCodec.buildIdentityQuery());
+        const identityMsg = await waitForResponse(
+          input, (d) => isSysEx(d, 0x12, 0x08), READ_TIMEOUT_MS, onMidiMessage
+        );
+        const identity = SysExCodec.parseIdentityResponse(identityMsg);
+
+        // Step 3-4: Enter editor mode
+        output.send(SysExCodec.buildEnterEditorMode());
+        await new Promise(r => setTimeout(r, 100));
+
+        // Step 5-6: State dump
+        output.send(SysExCodec.buildStateDumpRequest());
+        const dumpChunks = await collectChunks(input, 0x12, 0x4E, 5, READ_TIMEOUT_MS, onMidiMessage);
+        const { slot, preset } = SysExCodec.parseStateDump(dumpChunks);
+        setCurrentSlot(slot);
+        setCurrentPreset(preset);
+
+        // Step 7-8: Version check
+        output.send(SysExCodec.buildVersionCheck());
+        const versionMsg = await waitForResponse(
+          input, (d) => isSysEx(d, 0x12, 0x0A), READ_TIMEOUT_MS, onMidiMessage
+        );
+        const { accepted } = SysExCodec.parseVersionResponse(versionMsg);
+        setDeviceInfo({ ...identity, versionAccepted: accepted });
+
+        // Step 9: Assignment polling (non-critical, short timeout, skip on failure)
+        const ASSIGN_TIMEOUT = 1000;
+        const assignmentEntries: UseMidiDeviceReturn['assignments'] = [];
+        const assignmentPlan = [
+          { section: 0, pages: [[0, 16], [1, 4]] },
+          { section: 1, pages: [[0, 10]] },
+        ];
+        for (const { section, pages } of assignmentPlan) {
+          for (const [page, blockCount] of pages) {
+            for (let block = 0; block < blockCount; block++) {
+              try {
+                output.send(SysExCodec.buildAssignmentQuery(section, page, block));
+                const resp = await waitForResponse(
+                  input, (d) => isSysEx(d, 0x12, 0x1C), ASSIGN_TIMEOUT, onMidiMessage
+                );
+                assignmentEntries.push(SysExCodec.parseAssignmentResponse(resp, section, page));
+              } catch {
+                // Skip failed assignment queries
+              }
+            }
+          }
+        }
+        setAssignments(assignmentEntries);
+
+        // Step 10: Done
+        setStatus('connected');
+      } catch (err) {
+        setStatus('error');
+        setErrorMessage(err instanceof Error ? err.message : 'Handshake failed');
+      }
     } catch (err) {
       setStatus('error');
       setErrorMessage(err instanceof Error ? err.message : 'Connection failed');
@@ -122,6 +239,9 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     setDeviceName(null);
     setCurrentSlot(null);
     setErrorMessage(null);
+    setDeviceInfo(null);
+    setCurrentPreset(null);
+    setAssignments([]);
   }, []);
 
   const pullPreset = useCallback((slot: number): Promise<GP200Preset> => {
@@ -226,6 +346,7 @@ export function useMidiDevice(): UseMidiDeviceReturn {
 
   return {
     status, errorMessage, deviceName, currentSlot, presetNames, namesLoadProgress,
+    deviceInfo, currentPreset, assignments,
     connect, disconnect, loadPresetNames, pullPreset, pushPreset,
   };
 }
