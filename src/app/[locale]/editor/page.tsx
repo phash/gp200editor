@@ -33,6 +33,13 @@ export default function EditorPage() {
     return () => { midiDevice.disconnect(); };
   }, [midiDevice.disconnect]);
 
+  // Auto-load current preset from device after handshake
+  useEffect(() => {
+    if (midiDevice.currentPreset && !preset) {
+      loadPreset(midiDevice.currentPreset);
+    }
+  }, [midiDevice.currentPreset, preset, loadPreset]);
+
   const handleFile = useCallback((buffer: Uint8Array, _filename: string) => {
     try {
       const decoder = new PRSTDecoder(buffer);
