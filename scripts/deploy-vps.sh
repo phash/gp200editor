@@ -76,11 +76,16 @@ info "Postgres ready."
 # Step 3: Run database migrations
 # ══════════════════════════════════════════════════════════════════════════════
 info "Running Prisma migrations..."
-# Use a temporary app container to run migrations
+# The app container is a standalone build without prisma/ dir.
+# Use a throwaway node container with the source code mounted instead.
 source .env.prod
-docker compose -f docker-compose.prod.yml --env-file .env.prod run --rm \
+docker run --rm \
+  --network gp200editor_default \
+  -v "$(pwd)":/app \
+  -w /app \
   -e DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}" \
-  app npx prisma migrate deploy
+  node:23-alpine \
+  sh -c "npx prisma migrate deploy"
 info "Migrations complete."
 
 # ══════════════════════════════════════════════════════════════════════════════
