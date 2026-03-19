@@ -11,6 +11,7 @@ interface DeviceStatusBarProps {
   onPullRequest: () => void;
   onPushRequest: () => void;
   onSlotPull?: (slot: number) => void;
+  onBankPull?: (bank: number) => void;
 }
 
 export function DeviceStatusBar({
@@ -20,6 +21,7 @@ export function DeviceStatusBar({
   onPullRequest,
   onPushRequest,
   onSlotPull,
+  onBankPull,
 }: DeviceStatusBarProps) {
   const t = useTranslations('device');
   const { status, errorMessage, currentSlot, connect, disconnect } = midiDevice;
@@ -147,9 +149,20 @@ export function DeviceStatusBar({
                 className="flex items-center gap-1"
                 onSubmit={(e) => {
                   e.preventDefault();
+                  const v = slotValue.trim().toUpperCase();
+                  // Bank number only (e.g. "5") → pull all 4 slots
+                  if (/^\d+$/.test(v) && onBankPull) {
+                    const bank = parseInt(v, 10);
+                    if (bank >= 1 && bank <= 64) {
+                      onBankPull(bank);
+                      setSlotInput(false);
+                      return;
+                    }
+                  }
+                  // Slot label (e.g. "5C")
                   try {
-                    const slot = SysExCodec.labelToSlot(slotValue.toUpperCase());
-                    onSlotPull(slot);
+                    const slot = SysExCodec.labelToSlot(v);
+                    onSlotPull!(slot);
                     setSlotInput(false);
                   } catch {
                     // invalid format — keep input open
@@ -160,8 +173,8 @@ export function DeviceStatusBar({
                   autoFocus
                   value={slotValue}
                   onChange={(e) => setSlotValue(e.target.value)}
-                  placeholder="1A"
-                  className="font-mono-display text-xs font-bold w-12 px-1 py-1 rounded bg-transparent text-center outline-none"
+                  placeholder="1A / 5"
+                  className="font-mono-display text-xs font-bold w-16 px-1 py-1 rounded bg-transparent text-center outline-none"
                   style={{ border: '1px solid rgba(212,162,78,0.6)', color: 'var(--accent-amber)' }}
                   onKeyDown={(e) => { if (e.key === 'Escape') setSlotInput(false); }}
                 />
