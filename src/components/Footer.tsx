@@ -11,13 +11,14 @@ export function Footer() {
     >
       {t('disclaimer')}
       <span style={{ margin: '0 8px' }}>·</span>
+      powered by{' '}
       <a
-        href="https://buymeacoffee.com/phash"
+        href="https://phash.de"
         target="_blank"
         rel="noopener noreferrer"
         style={{ color: 'var(--accent-amber)', textDecoration: 'none' }}
       >
-        Buy me a coffee
+        phash.de
       </a>
     </footer>
   );

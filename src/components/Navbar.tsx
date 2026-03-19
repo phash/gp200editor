@@ -83,6 +83,28 @@ export function Navbar() {
             {tAuth('login')}
           </Link>
         )}
+        <a
+          href="https://buymeacoffee.com/phash"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-mono-display text-xs px-2.5 py-1 rounded transition-all"
+          style={{
+            border: '1px solid rgba(255,221,51,0.3)',
+            color: '#ffdd33',
+            background: 'rgba(255,221,51,0.08)',
+            textDecoration: 'none',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(255,221,51,0.2)';
+            e.currentTarget.style.boxShadow = '0 0 8px rgba(255,221,51,0.3)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'rgba(255,221,51,0.08)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
+        >
+          ☕
+        </a>
         <button
           onClick={switchLocale}
           aria-label={`Switch to ${otherLocale.toUpperCase()}`}
