@@ -61,6 +61,11 @@ export function Navbar() {
           data-testid="nav-link-gallery">
           {t('gallery')}
         </Link>
+        <Link href="/help" className="transition-colors hover:text-[var(--accent-amber)]"
+          style={{ color: pathname === '/help' ? 'var(--accent-amber)' : 'var(--text-secondary)' }}
+          data-testid="nav-link-help">
+          {t('help')}
+        </Link>
         {username ? (
           <>
             <Link href="/profile" className="transition-colors hover:text-[var(--accent-amber)]"

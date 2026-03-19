@@ -8,6 +8,7 @@
     "logout": "Logout",
     "presets": "Presets",
     "gallery": "Gallery",
+    "help": "Help",
     "switchLocale": "Switch language"
   },
   "home": {
@@ -149,6 +150,40 @@
     "handshaking": "Initializing…",
     "firmware": "FW {version}",
     "versionWarning": "Only tested with FW 1.2 — other versions at your own risk",
-    "loadSlot": "Slot"
+    "loadSlot": "Slot",
+    "firmwareBannerText": "This app was only tested with firmware 1.2. Your version ({version}) may cause issues.",
+    "firmwareBannerAck": "I understand the risk",
+    "firmwareBannerContinue": "Continue"
+  },
+  "help": {
+    "title": "Help",
+    "gettingStartedTitle": "Getting Started",
+    "gettingStartedLoad": "Load a .prst file by dragging it into the editor or clicking \"Load preset from disk\".",
+    "gettingStartedEdit": "Click on an effect slot to adjust parameters. Toggle effects on or off with the LED button.",
+    "gettingStartedSave": "Click \"Save preset as file\" to download your edited preset as a .prst file.",
+    "gettingStartedReorder": "Drag and drop effect slots to reorder the signal chain.",
+    "usbMidiTitle": "USB MIDI Connection",
+    "usbMidiBrowser": "Web MIDI is only supported in Chrome and Edge. Firefox and Safari are not compatible.",
+    "usbMidiConnect": "Connect your GP-200 via USB and click \"Connect GP-200\". The browser will ask for permission to access the MIDI device.",
+    "usbMidiLive": "Changes in the editor are sent to the device instantly: toggling effects, changing parameters, and reordering the signal chain.",
+    "usbMidiPullPush": "Use \"Load\" to pull a preset from the device and \"Save\" to push it back.",
+    "galleryTitle": "Gallery",
+    "galleryUpload": "Sign in and upload presets to your profile. Publish them to the gallery so others can discover them.",
+    "galleryShare": "Each preset gets a unique share link. You can reset the link at any time to revoke access.",
+    "galleryDownload": "Browse the gallery for presets from other users and download them directly.",
+    "bankNavTitle": "Bank Navigation",
+    "bankNavTabs": "When you load a preset via USB, the entire bank (A/B/C/D) is loaded. Switch between the four slots using the tabs.",
+    "bankNavPrevNext": "Use the arrow buttons on the left and right of the tabs to navigate to the previous or next bank.",
+    "shortcutsTitle": "Keyboard Shortcuts",
+    "shortcutsNone": "There are currently no dedicated keyboard shortcuts. All features are accessible through the interface.",
+    "faqTitle": "Frequently Asked Questions (FAQ)",
+    "faqBrowserQ": "Which browsers are supported?",
+    "faqBrowserA": "The editor works in all modern browsers. For USB MIDI connections, Chrome or Edge is required.",
+    "faqFirmwareQ": "Which firmware version is supported?",
+    "faqFirmwareA": "The app was tested with firmware 1.2. Other versions may work but are not officially supported.",
+    "faqFormatQ": "What is the .prst format?",
+    "faqFormatA": "The .prst format is the proprietary preset file format of the Valeton GP-200. Each file is exactly 1224 bytes and contains 11 effect slots with up to 15 parameters each.",
+    "faqOfflineQ": "Does the app work offline?",
+    "faqOfflineA": "The editor itself works in the browser, but gallery and profile features require an internet connection."
   }
 }
