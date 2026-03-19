@@ -128,12 +128,14 @@ export function useMidiDevice(): UseMidiDeviceReturn {
 
   const onMidiMessage = useCallback((event: { data: unknown }) => {
     const data = getBytes(event.data);
-    // sub=0x4E: current slot notification
-    if (isSysEx(data, 0x12, 0x4E)) {
-      console.log('[GP-200] sub=0x4E raw:', Array.from(data).map(b => b.toString(16).padStart(2,'0')).join(' '));
-      const slot = data[10];
-      console.log('[GP-200] currentSlot candidate:', slot, '(byte 10)');
-      if (slot >= 0 && slot < 256) setCurrentSlot(slot);
+    // sub=0x08 D→H: device changed slot — byte[26] is the new slot number
+    // Confirmed via capture 222343: device sends this when user switches preset on hardware
+    if (isSysEx(data, 0x12, 0x08) && data.length >= 28) {
+      const slot = data[26];
+      if (slot >= 0 && slot < 256) {
+        console.log(`[GP-200] device slot change: ${slot} (${SysExCodec.slotToLabel(slot)})`);
+        setCurrentSlot(slot);
+      }
     }
   }, []);
 
@@ -399,8 +401,8 @@ export function useMidiDevice(): UseMidiDeviceReturn {
 
   const sendSlotChange = useCallback((slot: number) => {
     if (!outputRef.current) return;
-    // Send a read request for the slot — the device switches to it when it receives this
-    const msg = SysExCodec.buildReadRequest(slot);
+    // sub=0x08 with slot at byte[26] — confirmed via capture 222343
+    const msg = SysExCodec.buildPresetChange(slot);
     console.log(`[GP-200] slot change: ${slot} (${SysExCodec.slotToLabel(slot)})`);
     outputRef.current.send(msg);
     setCurrentSlot(slot);
