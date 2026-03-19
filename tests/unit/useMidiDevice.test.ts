@@ -165,11 +165,11 @@ describe('useMidiDevice', () => {
     expect(result.current.assignments).toEqual([]);
   });
 
-  it('handshake sets currentSlot from state dump', async () => {
+  it('handshake sets currentSlot to 0 (state dump byte[10] is not the slot)', async () => {
     const { result } = renderHook(() => useMidiDevice());
     await act(async () => { result.current.connect(); });
     await waitFor(() => expect(result.current.status).toBe('connected'));
-    expect(result.current.currentSlot).toBe(9); // from auto-handshake slot=0x09
+    expect(result.current.currentSlot).toBe(0); // default — state dump slot parsing TBD
   });
 
   it('connect sends identity query as first handshake message', async () => {

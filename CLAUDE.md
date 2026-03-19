@@ -303,8 +303,9 @@ Das GP-200 ist USB-MIDI class-compliant. Die offizielle Valeton-Software kommuni
 
 ### Status
 
-- **Issue #5** (Sniffing): SysEx-Protokoll reverse-engineered ✓
-- **Issue #6** (Feature): Web MIDI Push/Pull implementiert ✓ — `src/core/SysExCodec.ts`, `src/hooks/useMidiDevice.ts`, `src/components/DeviceStatusBar.tsx`, `src/components/DeviceSlotBrowser.tsx`
+- **Issue #5** (Sniffing): SysEx-Protokoll reverse-engineered ✓ (14 Message-Typen, 10 Captures)
+- **Issue #6** (Feature): Web MIDI implementiert ✓ — Pull, Push, **Live-Editing (Toggle, Param, Reorder) hardware-verifiziert**
+- Dateien: `src/core/SysExCodec.ts`, `src/hooks/useMidiDevice.ts`, `src/components/DeviceStatusBar.tsx`, `src/components/DeviceSlotBrowser.tsx`
 
 ### Hardware-Testing (Web MIDI)
 
@@ -345,12 +346,179 @@ wine ~/.wine/drive_c/Program\ Files/Valeton/GP-200/GP-200.exe
 # 6. Capture stoppen, SysEx-Pakete analysieren (beginnen mit F0, enden mit F7)
 ```
 
-### Bekannte Infos zum Protokoll
+### SysEx-Protokoll (Reverse Engineered, 2026-03-18/19)
+
+Alle Messages: `F0 21 25 7E 47 50 2D 32 <CMD> <SUB> <payload> F7`
+- Manufacturer: `21 25`, Device: `7E 47 50 2D 32` ("GP-2")
+- CMD=0x11: Host-Requests (Read, Identity, Enter Editor)
+- CMD=0x12: Host-Commands + Device-Responses (Write, Toggle, Param, Reorder)
+
+#### Message-Übersicht
+
+Sub-Befehle sind **multipurpose** — gleicher Sub hat verschiedene Bedeutungen je nach Kontext/Payload.
+
+| Sub | Richtung | Bytes | Beschreibung | Encoding |
+|-----|----------|-------|-------------|----------|
+| 0x08 | H→D | 30 | Preset wechseln / Save-Commit | raw |
+| 0x08 | H→D | 30 | Drum-Computer Steuerung (BPM, Pattern, Play/Stop) | raw |
+| 0x08 | D→H | 30 | ACK / Block-State-Response | raw |
+| 0x0C | D→H | 38 | Effekt-Change-Response | raw |
+| 0x10 | H→D | 46 | Toggle Effekt an/aus (byte[40]=0/1) | raw |
+| 0x10 | H→D | 46 | Patch Settings: VOL/PAN/Tempo/Style (byte[40]=0) | raw |
+| 0x10 | H→D | 46 | Read Request (CMD=0x11) | raw |
+| 0x14 | H→D | 54 | Effekt wechseln | raw |
+| 0x14 | H→D | 54 | Controller/EXP-Assignment ändern | raw |
+| 0x14 | D→H | 54 | Reorder-Response (neue Routing-Order) | raw |
+| 0x18 | H→D | 62 | Parameter-Change — decoded[8]=0x05 | nibble |
+| 0x18 | H→D | 62 | Style-Name schreiben — anderer Header | nibble |
+| 0x18 | H→D | 62 | Save-to-Slot (Preset-Name + Commit) | nibble |
+| 0x18 | D→H | var | Read-Response Chunks | nibble |
+| 0x20 | H→D | 78 | Effekt-Reihenfolge — decoded[8]=0x08 | nibble |
+| 0x20 | H→D | 78 | Author-Name schreiben — decoded[8]=0x09 | nibble |
+| 0x20 | H→D | var | Write Chunks (7× für Full Write) | nibble |
+| 0x38 | H→D | 126 | Note-Text schreiben — decoded[8]=0x0B | nibble |
+
+#### sub=0x10 (46 Bytes, raw) — Toggle / Patch Settings / Style
+
+Multipurpose-Befehl, unterschieden durch byte[40] und Kontext:
+
+```
+[0-9]   F0 21 25 7E 47 50 2D 32 12 10   Header + CMD + sub
+[10-37] konstante Bytes                   (siehe SysExCodec.ts)
+[38]    Target-ID                          Toggle: Block-Index (0=PRE..10=VOL)
+                                           Patch: 0x00=VOL, 0x01=Tempo, 0x02=Style, 0x06=PAN
+[40]    State / Flag                       Toggle: 0=OFF, 1=ON
+                                           Patch Settings: immer 0x00
+[41:43] Nibble-encoded Wert               Toggle: 0x09 0x0C (konstant)
+                                           Patch: (high<<4|low) = Wert (z.B. 0x33=51)
+[43:45] Nibble-encoded Wert 2             Patch: für Tempo (>255) auch [43:45] genutzt
+[45]    F7
+```
+
+Verifiziert: Patch VOL=51 (≈Display 50), Tempo=119 (≈Display 120), Style=Index-Nummer
+
+#### Parameter-Change (sub=0x18, 62 Bytes, nibble-encoded)
+
+SysEx: `F0 ... 12 18 00 00 00 [48 nibble bytes] F7`
+Nibble-decoded Payload (24 Bytes):
+
+```
+[0:8]   00 00 04 00 00 00 00 00   Konstanter Header
+[8]     05                         Msg-Typ (Param-Change)
+[10]    0C                         Konstante
+[12]    Block-Index                0-10 (siehe oben)
+[13]    Parameter-Index            0-14 (entspricht effectParams.ts Reihenfolge)
+[14]    6F                         Marker (normal) / FA (Combox-Controls)
+[16:20] Effect-ID                  uint32 LE (aus Preset-Effekt-Block)
+[20:24] Wert                       float32 LE
+```
+
+Verifiziert mit:
+- **AMP Mess4 LD** (0x07000055): Param 0=Gain, 1=Presence, 2=Volume, 3=Bass, 4=Middle, 5=Treble (je 0-100)
+- **DLY Ping Pong** (0x0B000004): Param 0=Mix(0-100), 1=Feedback(0-500), 2=Time(0-10 enum), 3=Sync(1-4), 4=Trail(0/1)
+
+#### Effekt-Reihenfolge ändern (sub=0x20, 78 Bytes, nibble-encoded)
+
+SysEx: `F0 ... 12 20 00 00 00 [64 nibble bytes] F7`
+Nibble-decoded Payload (32 Bytes):
+
+```
+[0:8]   00 00 04 00 00 00 00 00   Konstanter Header
+[8]     08                         Msg-Typ (Reorder)
+[10]    10                         Konstante
+[14:16] 04 04                      Konstante
+[16:27] Routing-Order              11 Slot-Indices (neue Reihenfolge)
+[27]    44                         Terminator
+```
+
+Device antwortet mit sub=0x14 (54 Bytes) und bestätigt die neue Reihenfolge.
+
+#### Author-Name (sub=0x20, 78 Bytes, nibble-encoded)
+
+Gleicher Sub wie Reorder, aber anderer decoded[8] Msg-Typ:
+
+```
+[0:8]   00 00 04 00 00 00 00 00   Konstanter Header
+[8]     09                         Msg-Typ (Author)
+[10]    14                         Konstante
+[14]    7F                         Marker
+[15]    05                         Konstante
+[16:32] Author-Name                Null-terminierter ASCII-String (max 16 Zeichen)
+```
+
+#### Note-Text (sub=0x38, 126 Bytes, nibble-encoded)
+
+SysEx: `F0 ... 12 38 00 00 00 [112 nibble bytes] F7`
+Nibble-decoded Payload (56 Bytes):
+
+```
+[0:8]   00 00 04 00 00 00 00 00   Konstanter Header
+[8]     0B                         Msg-Typ (Note)
+[10]    2C                         Konstante
+[14]    6F                         Marker
+[16:56] Note-Text                  Null-terminierter ASCII-String (max 40 Zeichen)
+```
+
+#### Style (sub=0x10 + sub=0x18)
+
+Style wird in zwei Schritten gesetzt:
+1. **sub=0x10** (46B): Style-Index als nibble-Wert an [41:42], byte[38]=0x02
+2. **sub=0x18** (62B): Style-Name als ASCII-String (anderer Header als Param-Change)
+
+#### Drum-Computer (sub=0x08, 30 Bytes, raw)
+
+Gleicher Sub wie Preset-Commit/ACK, bidirektional:
+
+```
+[13]    Modus                      0x00=BPM/Volume, 0x01=Pattern/Play-Stop
+[14]    0x01                       Konstante
+[22]    BPM-Aktiv-Flag             0x01=BPM-Kontrolle, 0x00=Pattern-Steuerung
+[25:27] Nibble-encoded Wert        BPM oder Pattern-Index
+```
+
+#### Controller/EXP Assignments (sub=0x14, 54 Bytes, raw)
+
+Gleicher Sub wie Effect-Change, für EXP-Pedal und CTRL-Zuordnungen.
+Byte[28] unterscheidet Sektionen (0x00 vs 0x01). Komplexes Format,
+enthält Block-Referenz + Parameter-Referenz + Min/Max-Werte.
+Noch nicht vollständig dekodiert — benötigt weitere Analyse.
+
+#### IR Upload (sub=0x1C, variable Länge, nibble-encoded) — Nachrangig
+
+Impulse-Response Dateien werden als Multi-Chunk Transfer über sub=0x1C gesendet:
+
+```
+[10]    0x20                       Upload-Marker
+[11:13] Chunk-Offset               LE16 (gleiche 311/439 Deltas wie Write-Chunks)
+[13:-1] Nibble-encoded IR-Daten
+```
+
+- 23+ Chunks für eine vollständige IR
+- Capture 105713 zeigt unvollständigen Transfer (1358 von ~4096 Bytes) — Timeout
+- Device hat nie geantwortet (0 D→H Messages) — vermutlich USB-Timing-Problem
+- Nachrangig: funktioniert evtl. mit längeren Timeouts oder Chunk-Bestätigungen
+
+#### Captures (Windows, 2026-03-19)
+
+| Datei | Bytes | Inhalt |
+|-------|-------|--------|
+| 100548 | 8988 | Toggle FX + Save to Slot |
+| 101538 | 14964 | Toggle + Reorder + Effect Change + Save |
+| 101714 | 49680 | Param Change + Effect Change + Reorder + Toggle |
+| 102448 | 23M | DLY Ping Pong: alle Knobs 0→max + Sync/Trail Buttons |
+| 102857 | 22M | AMP Mess4 LD: alle 6 Knobs 0→max |
+| 103852 | 46M | Patch Settings (VOL/PAN/Tempo) + Controller Settings |
+| 104211 | 170M | EXP 1/2 Settings + Quick Access Para + FX Loop |
+| 104836 | 22M | Edit Info: Author "Manuel R", Style "Gnorki", Note "Das ist ein Note" |
+| 105520 | 22M | Drum-Computer: BPM ändern, Pattern wechseln, Play/Stop |
+| 105713 | 27KB | IR Upload (Timeout — 23 Chunks gesendet, keine Antwort) |
+
+#### Weitere Infos
 
 - Gerät arbeitet im **Normal-Modus** (6-In/4-Out) — nur in diesem Modus funktioniert der Editor
-- Wahrscheinliche SysEx-Struktur: `F0 <manufacturer-id> <device-id> <cmd> <1224-Byte-Payload> F7`
 - GP-5-SysEx-Referenz (Geschwistergerät): https://www.scribd.com/document/963614194/GP-5-SysEx-1
 - Valeton-Software lokal installiert unter Wine
+- Capture-Tool: Wireshark 4.6.4 + USBPcap, Analyzer: `scripts/analyze-sysex.py`
 
 ---
 

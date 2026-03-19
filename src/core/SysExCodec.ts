@@ -307,10 +307,123 @@ export const SysExCodec = {
   },
 
   parseStateDump(chunks: Uint8Array[]): { slot: number } {
-    // 0x4E state dump uses a different "live state" format (no 14 00 44 00 markers).
-    // We only extract the current slot number. The actual preset data is loaded
-    // via a normal pullPreset(slot) after the handshake.
-    const slot = chunks[0]?.[10] ?? 0;
-    return { slot };
+    // 0x4E state dump: byte[10] is NOT the slot (it's consistently 0x06, likely chunk count
+    // or protocol version). The actual current slot encoding within the nibble payload is
+    // unknown. Default to slot 0 — user can manually select the correct slot.
+    // TODO: reverse-engineer the actual slot position in the state dump payload
+    return { slot: 0 };
+  },
+
+  // ── Real-time editing commands (reverse-engineered 2026-03-19) ──────────
+
+  buildToggleEffect(blockIndex: number, enabled: boolean): Uint8Array {
+    // CMD=0x12, sub=0x10, 46 bytes — raw SysEx (not nibble-encoded)
+    // Confirmed: captures 100548 (WAH OFF, BOOST OFF, DLY ON, MOD ON) + 101538
+    // Block indices: 0=PRE 1=WAH 2=BOOST 3=AMP 4=NR 5=CAB 6=EQ 7=MOD 8=DLY 9=RVB 10=VOL
+    return new Uint8Array([
+      0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, // [0-7]   header
+      0x12, 0x10,                                        // [8-9]   CMD, sub
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // [10-17] padding
+      0x04, 0x00, 0x00, 0x00,                            // [18-21] constant
+      0x00, 0x00, 0x00,                                  // [22-24] padding
+      0x00, 0x00,                                        // [25-26] zeros
+      0x00, 0x00,                                        // [27-28] padding
+      0x01, 0x05,                                        // [29-30] constant
+      0x00, 0x00, 0x00,                                  // [31-33] padding
+      0x04, 0x00, 0x00, 0x00,                            // [34-37] constant
+      blockIndex & 0x0F,                                 // [38]    block index
+      0x00,                                              // [39]    padding
+      enabled ? 0x01 : 0x00,                             // [40]    state
+      0x09, 0x0C,                                        // [41-42] constant
+      0x00, 0x02,                                        // [43-44] constant
+      0xF7,                                              // [45]    end
+    ]);
+  },
+
+  buildParamChange(blockIndex: number, paramIndex: number, effectId: number, value: number): Uint8Array {
+    // CMD=0x12, sub=0x18, 62 bytes — nibble-encoded 24-byte payload
+    // Confirmed: capture 102448 (DLY Ping Pong: Mix/Feedback/Time/Sync/Trail)
+    //            capture 102857 (AMP Mess4 LD: Gain/Presence/Volume/Bass/Middle/Treble)
+    // ParamIndex matches effectParams.ts definition order
+    // effectId: uint32 LE from preset effect block (e.g. 0x0B000004 = DLY Ping Pong)
+    const decoded = new Uint8Array(24);
+    const view = new DataView(decoded.buffer);
+    decoded[2] = 0x04;                          // constant
+    decoded[8] = 0x05;                          // msg type: param change
+    decoded[10] = 0x0C;                         // constant
+    decoded[12] = blockIndex;                   // 0-10
+    decoded[13] = paramIndex;                   // 0-14
+    decoded[14] = 0x6F;                         // marker (0xFA for Combox controls)
+    view.setUint32(16, effectId, true);         // effect code LE
+    view.setFloat32(20, value, true);           // parameter value
+
+    const nibbles = this.nibbleEncode(decoded);
+    const msg = new Uint8Array(62);
+    msg.set([0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x18, 0x00, 0x00, 0x00]);
+    msg.set(nibbles, 13);
+    msg[61] = 0xF7;
+    return msg;
+  },
+
+  buildReorderEffects(order: number[]): Uint8Array {
+    // CMD=0x12, sub=0x20, 78 bytes — nibble-encoded 32-byte payload
+    // Confirmed: capture 101538 (NR↔AMP swap) + 101714 (NR↔AMP + DLY↔RVB)
+    // order: array of 11 slot indices representing the new chain order
+    // Device responds with sub=0x14 echoing the new routing order
+    const decoded = new Uint8Array(32);
+    decoded[2] = 0x04;                          // constant
+    decoded[8] = 0x08;                          // msg type: reorder
+    decoded[10] = 0x10;                         // constant
+    decoded[14] = 0x04;                         // constant
+    decoded[15] = 0x04;                         // constant
+    for (let i = 0; i < 11 && i < order.length; i++) {
+      decoded[16 + i] = order[i];
+    }
+    decoded[27] = 0x44;                         // terminator
+
+    const nibbles = this.nibbleEncode(decoded);
+    const msg = new Uint8Array(78);
+    msg.set([0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x20, 0x00, 0x00, 0x00]);
+    msg.set(nibbles, 13);
+    msg[77] = 0xF7;
+    return msg;
+  },
+
+  buildSaveCommit(presetName: string): Uint8Array {
+    // CMD=0x12, sub=0x18, 62 bytes — nibble-encoded "save to slot" commit
+    // From captures 100548 + 101538: sent after live edits or write chunks to persist
+    // Decoded payload: [0:3]=03 20 14, [6:8]=varies, [8:]=space + name
+    const decoded = new Uint8Array(24);
+    decoded[0] = 0x03;
+    decoded[1] = 0x20;
+    decoded[2] = 0x14;
+    // [3:6] = zeros, [6:8] = zeros (unknown field, device accepts zeros)
+    decoded[8] = 0x20; // leading space (matches captures)
+    for (let i = 0; i < 15 && i < presetName.length; i++) {
+      decoded[9 + i] = presetName.charCodeAt(i);
+    }
+
+    const nibbles = this.nibbleEncode(decoded);
+    const msg = new Uint8Array(62);
+    msg.set([0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x18, 0x00, 0x00, 0x00]);
+    msg.set(nibbles, 13);
+    msg[61] = 0xF7;
+    return msg;
+  },
+
+  buildPresetChange(slot: number): Uint8Array {
+    // CMD=0x12, sub=0x08, 30 bytes — change/commit preset
+    // From capture 100548: sent after save commit to activate the slot
+    return new Uint8Array([
+      0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, // [0-7]   header
+      0x12, 0x08,                                        // [8-9]   CMD, sub
+      0x00, 0x00, 0x00, 0x00,                            // [10-13] padding
+      0x08, 0x01,                                        // [14-15] constant
+      0x00, 0x00,                                        // [16-17] padding
+      0x04, 0x00, 0x00, 0x00,                            // [18-21] constant
+      0x00, 0x00, 0x00,                                  // [22-24] padding
+      0x00, 0x00, 0x00, 0x00,                            // [25-28] padding
+      0xF7,                                              // [29]    end
+    ]);
   },
 };

@@ -39,6 +39,9 @@ export interface UseMidiDeviceReturn {
   loadPresetNames: () => Promise<void>;
   pullPreset: (slot: number) => Promise<GP200Preset>;
   pushPreset: (preset: GP200Preset, slot: number) => Promise<void>;
+  sendToggle: (blockIndex: number, enabled: boolean) => void;
+  sendParamChange: (blockIndex: number, paramIndex: number, effectId: number, value: number) => void;
+  sendReorder: (order: number[]) => void;
 }
 
 // Minimal shape we actually use — avoids conflicts with DOM's MIDIInput / MIDIOutput
@@ -306,12 +309,24 @@ export function useMidiDevice(): UseMidiDeviceReturn {
 
   const pushPreset = useCallback(async (preset: GP200Preset, slot: number): Promise<void> => {
     if (!outputRef.current) throw new Error('Not connected');
+    console.log(`[GP-200] push: slot=${slot} (${SysExCodec.slotToLabel(slot)}) name="${preset.patchName}"`);
     const chunks = SysExCodec.buildWriteChunks(preset, slot);
-    for (const chunk of chunks) {
-      outputRef.current.send(chunk);
-      // Small delay between chunks to avoid MIDI buffer overflow
+    for (let i = 0; i < chunks.length; i++) {
+      console.log(`[GP-200] push chunk ${i+1}/${chunks.length}: ${chunks[i].length}B, first 20: ${Array.from(chunks[i].slice(0, 20)).map(b => b.toString(16).padStart(2,'0')).join(' ')}`);
+      outputRef.current.send(chunks[i]);
       await new Promise(r => setTimeout(r, 20));
     }
+    // Send save-commit after write chunks (required to persist to flash)
+    // From captures 100548/101538: sub=0x18 (name) + sub=0x08 (commit)
+    await new Promise(r => setTimeout(r, 100)); // wait for device to process writes
+    const saveMsg = SysExCodec.buildSaveCommit(preset.patchName);
+    console.log(`[GP-200] push save-commit: ${saveMsg.length}B`);
+    outputRef.current.send(saveMsg);
+    await new Promise(r => setTimeout(r, 50));
+    const commitMsg = SysExCodec.buildPresetChange(slot);
+    console.log(`[GP-200] push preset-change: ${commitMsg.length}B`);
+    outputRef.current.send(commitMsg);
+    console.log('[GP-200] push complete');
   }, []);
 
   const loadPresetNames = useCallback(async (): Promise<void> => {
@@ -361,9 +376,30 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     if (inputRef.current) inputRef.current.onmidimessage = onMidiMessage;
   }, [onMidiMessage]);
 
+  const sendToggle = useCallback((blockIndex: number, enabled: boolean) => {
+    if (!outputRef.current) return;
+    const msg = SysExCodec.buildToggleEffect(blockIndex, enabled);
+    console.log(`[GP-200] toggle: block=${blockIndex} enabled=${enabled}`);
+    outputRef.current.send(msg);
+  }, []);
+
+  const sendParamChange = useCallback((blockIndex: number, paramIndex: number, effectId: number, value: number) => {
+    if (!outputRef.current) return;
+    const msg = SysExCodec.buildParamChange(blockIndex, paramIndex, effectId, value);
+    outputRef.current.send(msg);
+  }, []);
+
+  const sendReorder = useCallback((order: number[]) => {
+    if (!outputRef.current) return;
+    const msg = SysExCodec.buildReorderEffects(order);
+    console.log('[GP-200] reorder:', order);
+    outputRef.current.send(msg);
+  }, []);
+
   return {
     status, errorMessage, deviceName, currentSlot, presetNames, namesLoadProgress,
     deviceInfo, currentPreset, assignments,
     connect, disconnect, loadPresetNames, pullPreset, pushPreset,
+    sendToggle, sendParamChange, sendReorder,
   };
 }

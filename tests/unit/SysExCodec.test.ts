@@ -414,21 +414,168 @@ describe('SysExCodec: handshake parsers', () => {
 });
 
 describe('SysExCodec: parseStateDump', () => {
-  it('extracts slot number from first chunk byte[10]', () => {
-    // 0x4E uses a different "live state" format — we only extract the slot
+  it('always returns slot 0 (byte[10] is NOT the slot)', () => {
+    // byte[10] is consistently 0x06 in real captures regardless of active slot
     const fakeChunk = new Uint8Array([
       0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x4E,
-      0x06, // slot = 6
-      0x00, 0x00, // offset
-      0x00, 0x00, // minimal nibble data
+      0x06, // NOT the slot — always 0x06
+      0x00, 0x00,
+      0x00, 0x00,
       0xF7,
     ]);
     const result = SysExCodec.parseStateDump([fakeChunk]);
-    expect(result.slot).toBe(6);
+    expect(result.slot).toBe(0);
   });
 
   it('defaults to slot 0 when no chunks provided', () => {
     const result = SysExCodec.parseStateDump([]);
     expect(result.slot).toBe(0);
+  });
+});
+
+describe('SysExCodec: buildToggleEffect', () => {
+  it('returns a 46-byte SysEx with CMD=0x12, sub=0x10', () => {
+    const msg = SysExCodec.buildToggleEffect(0, true);
+    expect(msg.length).toBe(46);
+    expect(msg[0]).toBe(0xF0);
+    expect(msg[8]).toBe(0x12);
+    expect(msg[9]).toBe(0x10);
+    expect(msg[45]).toBe(0xF7);
+  });
+
+  it('WAH OFF matches capture (gp200-capture-20260319-100548)', () => {
+    const msg = SysExCodec.buildToggleEffect(1, false);
+    expect(msg[38]).toBe(1);   // WAH block index
+    expect(msg[40]).toBe(0);   // OFF
+    // Verify full message against captured bytes
+    const expected = new Uint8Array([
+      0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x10,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+      0x05, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01, 0x00,
+      0x00, 0x09, 0x0C, 0x00, 0x02, 0xF7,
+    ]);
+    expect(msg).toEqual(expected);
+  });
+
+  it('AMP ON matches capture (gp200-capture-20260319-101538)', () => {
+    const msg = SysExCodec.buildToggleEffect(3, true);
+    expect(msg[38]).toBe(3);   // AMP block index
+    expect(msg[40]).toBe(1);   // ON
+    const expected = new Uint8Array([
+      0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x10,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+      0x05, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x03, 0x00,
+      0x01, 0x09, 0x0C, 0x00, 0x02, 0xF7,
+    ]);
+    expect(msg).toEqual(expected);
+  });
+
+  it('sets block index for all 11 blocks', () => {
+    for (let b = 0; b <= 10; b++) {
+      const msg = SysExCodec.buildToggleEffect(b, true);
+      expect(msg[38]).toBe(b);
+      expect(msg[40]).toBe(1);
+    }
+  });
+});
+
+describe('SysExCodec: buildParamChange', () => {
+  it('returns a 62-byte SysEx with CMD=0x12, sub=0x18', () => {
+    const msg = SysExCodec.buildParamChange(8, 0, 0x0B000004, 50.0);
+    expect(msg.length).toBe(62);
+    expect(msg[0]).toBe(0xF0);
+    expect(msg[8]).toBe(0x12);
+    expect(msg[9]).toBe(0x18);
+    expect(msg[61]).toBe(0xF7);
+  });
+
+  it('nibble-decoded payload has correct block, param, effectId, value', () => {
+    // DLY Ping Pong, Mix = 43.0
+    const msg = SysExCodec.buildParamChange(8, 0, 0x0B000004, 43.0);
+    const nibbles = msg.slice(13, 61);
+    const decoded = SysExCodec.nibbleDecode(nibbles);
+    expect(decoded.length).toBe(24);
+    // Constants
+    expect(decoded[2]).toBe(0x04);
+    expect(decoded[8]).toBe(0x05);
+    expect(decoded[10]).toBe(0x0C);
+    expect(decoded[14]).toBe(0x6F);
+    // Block + param
+    expect(decoded[12]).toBe(8);   // DLY
+    expect(decoded[13]).toBe(0);   // Mix
+    // EffectId LE bytes
+    expect(decoded[16]).toBe(0x04);  // variant low byte
+    expect(decoded[17]).toBe(0x00);
+    expect(decoded[18]).toBe(0x00);
+    expect(decoded[19]).toBe(0x0B);  // module type
+    // Float value
+    const view = new DataView(decoded.buffer, decoded.byteOffset);
+    expect(view.getFloat32(20, true)).toBeCloseTo(43.0, 4);
+  });
+
+  it('AMP Mess4 LD Gain=50 matches captured structure', () => {
+    // capture 102857: Block=3, Param=0, effectId=0x07000055
+    const msg = SysExCodec.buildParamChange(3, 0, 0x07000055, 50.0);
+    const decoded = SysExCodec.nibbleDecode(msg.slice(13, 61));
+    expect(decoded[12]).toBe(3);    // AMP
+    expect(decoded[13]).toBe(0);    // Gain
+    expect(decoded[16]).toBe(0x55); // variant
+    expect(decoded[19]).toBe(0x07); // AMP module
+    const view = new DataView(decoded.buffer, decoded.byteOffset);
+    expect(view.getFloat32(20, true)).toBeCloseTo(50.0, 4);
+  });
+
+  it('nibble encoding round-trips correctly', () => {
+    const msg = SysExCodec.buildParamChange(5, 3, 0x0A000010, 75.5);
+    const nibbles = msg.slice(13, 61);
+    const decoded = SysExCodec.nibbleDecode(nibbles);
+    const reEncoded = SysExCodec.nibbleEncode(decoded);
+    expect(reEncoded).toEqual(nibbles);
+  });
+});
+
+describe('SysExCodec: buildReorderEffects', () => {
+  it('returns a 78-byte SysEx with CMD=0x12, sub=0x20', () => {
+    const msg = SysExCodec.buildReorderEffects([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(msg.length).toBe(78);
+    expect(msg[0]).toBe(0xF0);
+    expect(msg[8]).toBe(0x12);
+    expect(msg[9]).toBe(0x20);
+    expect(msg[77]).toBe(0xF7);
+  });
+
+  it('NR↔AMP swap matches capture (gp200-capture-20260319-101714)', () => {
+    // Reorder 1: PRE, WAH, BOOST, NR(4), AMP(3), CAB, EQ, MOD, DLY, RVB, VOL
+    const msg = SysExCodec.buildReorderEffects([0, 1, 2, 4, 3, 5, 6, 7, 8, 9, 10]);
+    // Exact bytes from USB capture gp200-capture-20260319-101714 Pkt 457 (t=35.9s)
+    const expected = new Uint8Array([
+      0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x20, // [0-9]   header
+      0x00, 0x00, 0x00,                                              // [10-12] slot/offset
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00,              // [13-20] nibble data
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,              // [21-28]
+      0x00, 0x08, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,              // [29-36]
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0x04,              // [37-44]
+      0x00, 0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x04,              // [45-52]
+      0x00, 0x03, 0x00, 0x05, 0x00, 0x06, 0x00, 0x07,              // [53-60]
+      0x00, 0x08, 0x00, 0x09, 0x00, 0x0A, 0x04, 0x04,              // [61-68]
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,              // [69-76]
+      0xF7,                                                          // [77]
+    ]);
+    expect(msg).toEqual(expected);
+  });
+
+  it('DLY↔RVB swap produces correct routing at decoded[16:27]', () => {
+    const msg = SysExCodec.buildReorderEffects([0, 1, 2, 4, 3, 5, 6, 7, 9, 8, 10]);
+    const decoded = SysExCodec.nibbleDecode(msg.slice(13, 77));
+    expect(Array.from(decoded.slice(16, 27))).toEqual([0, 1, 2, 4, 3, 5, 6, 7, 9, 8, 10]);
+    expect(decoded[27]).toBe(0x44); // terminator
+  });
+
+  it('default order has sequential indices', () => {
+    const msg = SysExCodec.buildReorderEffects([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    const decoded = SysExCodec.nibbleDecode(msg.slice(13, 77));
+    expect(Array.from(decoded.slice(16, 27))).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
   });
 });

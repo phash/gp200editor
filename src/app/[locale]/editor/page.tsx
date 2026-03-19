@@ -179,10 +179,17 @@ export default function EditorPage() {
   const handleDrop = useCallback((toIndex: number) => {
     if (dragIndex !== null) {
       reorderEffects(dragIndex, toIndex);
+      // Send reorder to device: build new order array
+      if (midiDevice.status === 'connected' && preset) {
+        const order = preset.effects.map(e => e.slotIndex);
+        const [moved] = order.splice(dragIndex, 1);
+        order.splice(toIndex, 0, moved);
+        midiDevice.sendReorder(order);
+      }
     }
     setDragIndex(null);
     setDragOverIndex(null);
-  }, [dragIndex, reorderEffects]);
+  }, [dragIndex, reorderEffects, midiDevice, preset]);
 
   if (!preset) {
     return (
@@ -273,9 +280,21 @@ export default function EditorPage() {
             key={`${i}-${slot.effectId}`}
             slot={slot}
             index={i}
-            onToggle={toggleEffect}
+            onToggle={(index: number) => {
+              toggleEffect(index);
+              if (midiDevice.status === 'connected' && preset) {
+                const eff = preset.effects[index];
+                midiDevice.sendToggle(eff.slotIndex, !eff.enabled);
+              }
+            }}
             onChangeEffect={changeEffect}
-            onParamChange={setParam}
+            onParamChange={(slotIndex: number, paramIndex: number, value: number) => {
+              setParam(slotIndex, paramIndex, value);
+              if (midiDevice.status === 'connected' && preset) {
+                const eff = preset.effects.find(e => e.slotIndex === slotIndex);
+                if (eff) midiDevice.sendParamChange(slotIndex, paramIndex, eff.effectId, value);
+              }
+            }}
             onDragStart={handleDragStart}
             onDragOver={handleDragOver}
             onDrop={handleDrop}
