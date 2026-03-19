@@ -119,75 +119,76 @@ export const SysExCodec = {
   buildWriteChunks(preset: GP200Preset, slot: number): Uint8Array[] {
     const SYSEX_HEADER = [0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x20];
 
-    // Build 732-byte decoded write payload
-    const payload = new Uint8Array(732).fill(0);
+    // Build 1184-byte decoded write payload (confirmed via Windows USB capture 2026-03-18)
+    // Layout: [0:16] write header, [16:36] pre-name metadata, [36:68] name+author,
+    //         [68:104] URL, [104:108] padding, [108:128] routing section,
+    //         [128:920] 11×72B effect blocks, [920:1184] controller/pedal assignments
+    const payload = new Uint8Array(1184).fill(0);
     const view = new DataView(payload.buffer);
 
-    // Write header (36 bytes) — constant template with slot at [8:10]
-    const WRITE_HEADER = [
-      0x00, 0x00, 0x04, 0x00, 0x01, 0x00, // bytes 0–5
-      0x27, 0x00,                          // bytes 6–7 (0x27 marker)
-      slot & 0xFF, 0x00,                   // bytes 8–9 (slot LE16)
-      0x04, 0x00,                          // bytes 10–11
-      0x27, 0x00,                          // bytes 12–13 (0x27 marker)
-      0x27, 0x00,                          // bytes 14–15 (0x27 marker)
-      0x00, 0x00, 0x00, 0x00,              // bytes 16–19
-      0x27, 0x00,                          // bytes 20–21 (0x27 marker)
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // bytes 22–35
-    ];
-    WRITE_HEADER.forEach((b, i) => { payload[i] = b; });
+    // [0:16] Write header — constants + slot number at 3 positions
+    payload.set([0x00, 0x00, 0x04, 0x00, 0x01, 0x00], 0);
+    view.setUint16(6, slot, true);   // slot LE16
+    payload.set([0x01, 0x00, 0x04, 0x00], 8);
+    view.setUint16(12, slot, true);  // slot repeated
+    view.setUint16(14, slot, true);  // slot repeated
 
-    // Preset name at bytes 36–67 (null-terminated, 32 bytes)
+    // [16:36] Pre-name metadata (20 bytes)
+    payload.set([0x02, 0x00, 0x58, 0x00], 16);
+    view.setUint16(20, slot, true);  // slot in metadata
+    payload.set([0x78, 0x00], 22);   // constant
+
+    // [36:68] Preset name (32 bytes, null-terminated)
     for (let i = 0; i < 32; i++) {
       payload[36 + i] = i < preset.patchName.length ? preset.patchName.charCodeAt(i) : 0;
     }
 
-    // Effect blocks 0–7 complete at bytes 128–703 (8 × 72 = 576 bytes)
-    for (let b = 0; b < 8; b++) {
+    // [68:104] URL area — zeros (web editor doesn't set author/URL)
+    // [104:108] padding — zeros
+
+    // [108:128] Routing section
+    payload.set([0x08, 0x00, 0x10, 0x00], 108);
+    view.setUint16(112, slot, true); // slot reference
+    payload.set([0x04, 0x04], 114);  // constant
+    // Default routing order: PRE→WAH→BOOST→AMP→NR→CAB→EQ→MOD→DLY→RVB→VOL
+    for (let i = 0; i < 11; i++) {
+      payload[116 + i] = i;
+    }
+    // [127] = 0x00 terminator (already zero)
+
+    // [128:920] All 11 effect blocks (11 × 72 = 792 bytes)
+    for (let b = 0; b < 11; b++) {
       const base = 128 + b * 72;
-      const slot_e = preset.effects[b];
-      if (!slot_e) continue;
-      payload[base + 0] = 0x14; payload[base + 1] = 0x00;
+      const eff = preset.effects[b];
+      if (!eff) continue;
+      payload[base] = 0x14; payload[base + 1] = 0x00;
       payload[base + 2] = 0x44; payload[base + 3] = 0x00;
-      payload[base + 4] = slot_e.slotIndex;
-      payload[base + 5] = slot_e.enabled ? 1 : 0;
+      payload[base + 4] = eff.slotIndex;
+      payload[base + 5] = eff.enabled ? 1 : 0;
       payload[base + 6] = 0x00; payload[base + 7] = 0x0F;
-      view.setUint32(base + 8, slot_e.effectId, true);
+      view.setUint32(base + 8, eff.effectId, true);
       for (let p = 0; p < 15; p++) {
-        view.setFloat32(base + 12 + p * 4, slot_e.params[p] ?? 0, true);
+        view.setFloat32(base + 12 + p * 4, eff.params[p] ?? 0, true);
       }
     }
 
-    // Block 8 partial at bytes 704–731 (28 bytes: header + slotIdx + active + const + effectId + 4 params)
-    const blk8 = preset.effects[8];
-    if (blk8) {
-      payload[704] = 0x14; payload[705] = 0x00; payload[706] = 0x44; payload[707] = 0x00;
-      payload[708] = blk8.slotIndex;
-      payload[709] = blk8.enabled ? 1 : 0;
-      payload[710] = 0x00; payload[711] = 0x0F;
-      view.setUint32(712, blk8.effectId, true);
-      for (let p = 0; p < 4; p++) {
-        view.setFloat32(716 + p * 4, blk8.params[p] ?? 0, true);
-      }
-    }
+    // [920:1184] Controller/pedal assignments — zeros (not yet mapped in GP200Preset)
 
-    // Nibble-encode and split into 4 chunks
-    const nibble = this.nibbleEncode(payload); // 1464 bytes
-    // Chunk decoded offsets (start of each chunk in decoded bytes, plus end)
-    const decodedOffsets = [0, 183, 366, 549, 732];
-    // Note: spec lists write offsets as [0, 311, 622, 1061] but those exceed
-    // the 732-byte decoded payload. Using equal 183-byte chunks instead.
-    // Validate against real device on first hardware test.
-    const CHUNK_OFFSETS  = [0, 183, 366, 549]; // values placed in chunk headers
+    // Nibble-encode → 2368 nibble bytes, split into 7 chunks
+    const nibble = this.nibbleEncode(payload);
+    // Chunk sizes: 6 × 366 + 1 × 172 = 2368 nibble bytes
+    // Offsets: values placed in chunk headers (from USB capture, NOT nibble positions)
+    const CHUNK_NIBBLE_SIZES = [366, 366, 366, 366, 366, 366, 172];
+    const CHUNK_OFFSETS      = [0, 311, 622, 1061, 1372, 1811, 2122];
+
     const chunks: Uint8Array[] = [];
-    for (let i = 0; i < 4; i++) {
-      const nibbleStart = decodedOffsets[i] * 2;
-      const nibbleEnd   = decodedOffsets[i + 1] * 2;
-      const nibbleData  = nibble.slice(nibbleStart, nibbleEnd);
+    let nibblePos = 0;
+    for (let i = 0; i < 7; i++) {
+      const nibbleData = nibble.slice(nibblePos, nibblePos + CHUNK_NIBBLE_SIZES[i]);
+      nibblePos += CHUNK_NIBBLE_SIZES[i];
       const offLo = CHUNK_OFFSETS[i] & 0xFF;
       const offHi = (CHUNK_OFFSETS[i] >> 8) & 0xFF;
 
-      // Build chunk bytes: header + slot + offsets + nibble data + end
       const chunkBytes: number[] = [];
       chunkBytes.push(...SYSEX_HEADER);
       chunkBytes.push(slot & 0xFF);

@@ -38,7 +38,8 @@ describe('PRSTEncoder', () => {
     const decoded = decoder.decode();
     expect(decoded.patchName).toBe(samplePreset.patchName);
     expect(decoded.version).toBe(samplePreset.version);
-    expect(decoded.checksum).toBe(samplePreset.checksum);
+    // Checksum is now auto-computed by encoder (sum of bytes[0:0x4C6] & 0xFFFF, BE16)
+    expect(decoded.checksum).toBeGreaterThan(0);
     expect(decoded.effects).toHaveLength(11);
     expect(decoded.effects[0].enabled).toBe(false);
     expect(decoded.effects[0].slotIndex).toBe(0);

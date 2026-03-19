@@ -5,8 +5,20 @@ GP-200 SysEx Protocol Analyzer
 Decodes USB MIDI SysEx captures (pcapng) for the Valeton GP-200.
 
 Usage:
-  python3 analyze-sysex.py <capture.pcap>
-  python3 analyze-sysex.py                # uses default: /home/manuel/gp200-capture-windows.pcap
+  python analyze-sysex.py <capture.pcap>
+  python analyze-sysex.py                # uses default path (see DEFAULT_PCAP below)
+
+Windows capture workflow:
+  1. Wireshark 4.x mit tshark + USBPcap installieren (Checkbox im Installer)
+  2. GP-200 per USB anschließen (Normalmodus: 6-In/4-Out)
+  3. PowerShell (Admin): scripts\capture-windows.ps1
+     → Interface auswählen → Valeton-Editor/Browser bedienen → ENTER
+  4. python scripts\analyze-sysex.py <capture.pcap>
+
+Linux capture workflow:
+  sudo modprobe usbmon
+  tshark -i usbmon3 -w capture.pcap   # Bus-Nr. aus: lsusb | grep -i valeton
+  python3 scripts/analyze-sysex.py capture.pcap
 
 Protocol (fully confirmed 2026-03-18, sources: own USB captures + GP-200LT Reddit post):
   Header:  F0 21 25 7E 47 50 2D 32 [CMD] [PAYLOAD...] F7
@@ -78,8 +90,35 @@ Protocol (fully confirmed 2026-03-18, sources: own USB captures + GP-200LT Reddi
 """
 
 import sys
+import os
 import struct
 import subprocess
+
+# ---- Platform helpers -------------------------------------------------------
+
+def find_tshark() -> str:
+    """Find tshark executable; searches PATH then common Windows install paths."""
+    candidates = ["tshark"]
+    if sys.platform == "win32":
+        candidates += [
+            r"C:\Program Files\Wireshark\tshark.exe",
+            r"C:\Program Files (x86)\Wireshark\tshark.exe",
+        ]
+    for c in candidates:
+        try:
+            subprocess.run([c, "--version"], capture_output=True, check=True)
+            return c
+        except (FileNotFoundError, subprocess.CalledProcessError):
+            continue
+    print("FEHLER: tshark nicht gefunden.", file=sys.stderr)
+    print("  Windows: Wireshark installieren mit 'TShark' und 'USBPcap' (Checkboxen im Installer)", file=sys.stderr)
+    print("  Linux:   sudo apt install tshark", file=sys.stderr)
+    sys.exit(1)
+
+def default_pcap() -> str:
+    if sys.platform == "win32":
+        return os.path.join(os.path.expanduser("~"), "Desktop", "gp200-capture.pcap")
+    return "/home/manuel/gp200-capture-windows.pcap"
 
 SYSEX_HEADER = bytes([0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32])
 
@@ -92,8 +131,20 @@ BLOCK_NAMES = {
 
 def decode_usb_midi(hexstr: str) -> bytes:
     """Extract MIDI bytes from USB MIDI Event Packets (4 bytes each, USB MIDI 1.0 spec)."""
+    midi, _ = decode_usb_midi_ex(hexstr)
+    return midi
+
+
+def decode_usb_midi_ex(hexstr: str) -> tuple[bytes, bool]:
+    """Extract MIDI bytes and whether SysEx end (F7) was found.
+
+    Returns (midi_bytes, has_sysex_end).
+    Handles CIN 4 (continue), 5/6/7 (end with 1/2/3 bytes),
+    and CIN 0xF (single byte, used by GP-200 for standalone F7 ACKs).
+    """
     data = bytes.fromhex(hexstr.replace(':', '').replace(' ', ''))
     midi = bytearray()
+    has_end = False
     i = 0
     while i + 3 < len(data):
         cin = data[i] & 0x0F
@@ -101,12 +152,19 @@ def decode_usb_midi(hexstr: str) -> bytes:
             midi.extend(data[i+1:i+4])
         elif cin == 0x5: # SysEx end (1 byte)
             midi.append(data[i+1])
+            has_end = True
         elif cin == 0x6: # SysEx end (2 bytes)
             midi.extend(data[i+1:i+3])
+            has_end = True
         elif cin == 0x7: # SysEx end (3 bytes)
             midi.extend(data[i+1:i+4])
+            has_end = True
+        elif cin == 0xF: # Single byte (GP-200 uses for standalone F7 ACK)
+            midi.append(data[i+1])
+            if data[i+1] == 0xF7:
+                has_end = True
         i += 4
-    return bytes(midi)
+    return bytes(midi), has_end
 
 
 def nibble_decode(data: bytes) -> bytes:
@@ -146,109 +204,153 @@ def decode_midi_7bit(data: bytes) -> bytes:
 
 
 def parse_messages(pcap_path: str) -> list[dict]:
-    """Extract all GP-200 SysEx messages from a pcapng capture."""
+    """Extract all GP-200 SysEx messages from a pcapng capture.
+
+    Works with both Linux (usbmon) and Windows (USBPcap) captures.
+    On Windows, the usbaudio dissector consumes bulk data so we disable it
+    to get raw USB MIDI bytes in usb.capdata.
+
+    SysEx messages can span multiple USB frames — we accumulate MIDI bytes
+    across consecutive frames (same direction) until F7 is found.
+    """
+    tshark = find_tshark()
     result = subprocess.run(
-        ['tshark', '-r', pcap_path,
+        [tshark, '--disable-protocol', 'usbaudio',
+         '-r', pcap_path,
          '-T', 'fields',
          '-e', 'frame.number',
          '-e', 'frame.time_relative',
          '-e', 'usb.src',
-         '-e', 'usb.capdata'],
+         '-e', 'usb.endpoint_address.direction',
+         '-e', 'usb.capdata',
+         '-e', 'usb.data_fragment'],
         capture_output=True, text=True
     )
+    if result.returncode != 0 and result.stderr:
+        print(f"tshark Fehler: {result.stderr.strip()}", file=sys.stderr)
 
     messages = []
+    # Multi-frame SysEx accumulator
+    midi_buffer = bytearray()
+    buffer_meta = None  # (pkt_num, timestamp, direction)
+
     for line in result.stdout.strip().split('\n'):
         parts = line.split('\t')
-        if len(parts) < 4 or not parts[3]:
-            continue
-        pkt_num = int(parts[0])
-        timestamp = float(parts[1])
-        src = parts[2]
-        hexdata = parts[3]
-
-        midi = decode_usb_midi(hexdata)
-        if len(midi) < 10 or midi[:8] != SYSEX_HEADER:
+        if len(parts) < 5:
             continue
 
-        cmd = midi[8]
-        payload = midi[9:-1]  # strip F7
-        direction = 'host→dev' if src == 'host' else 'dev→host'
+        pkt_num_s, timestamp_s, src, ep_dir_s = parts[0], parts[1], parts[2], parts[3]
+        capdata    = parts[4] if len(parts) > 4 else ''
+        datafrag   = parts[5] if len(parts) > 5 else ''
+        hexdata    = capdata or datafrag
+        if not hexdata:
+            continue
 
-        msg = {
-            'pkt': pkt_num,
-            'time': timestamp,
-            'direction': direction,
-            'cmd': cmd,
-            'payload': payload,
-            'raw_midi': midi,
-        }
+        try:
+            pkt_num   = int(pkt_num_s)
+            timestamp = float(timestamp_s)
+        except ValueError:
+            continue
 
-        # Classify by (cmd, sub-command, length)
-        if len(payload) >= 1:
-            sub = payload[0]
+        # Direction: prefer endpoint direction flag (works on both Linux + Windows)
+        if ep_dir_s == '0':
+            direction = 'host->dev'
+        elif ep_dir_s == '1':
+            direction = 'dev->host'
+        else:
+            direction = 'host->dev' if src == 'host' else 'dev->host'
 
-            if cmd == 0x11 and sub == 0x10 and len(payload) <= 46:
-                # Either: query FX state, or request full patch block
-                # Disambiguate by byte at payload[12]: 0x01 = patch request, else = FX state query
-                if len(payload) > 12 and payload[12] == 0x01:
-                    msg['type'] = 'req_patch'
-                    if len(payload) > 17:
-                        msg['preset_num'] = payload[17]
-                else:
-                    msg['type'] = 'req_fx_state'
-                    if len(payload) > 29:
-                        block_id = payload[29]
-                        msg['block_id'] = block_id
-                        msg['block_name'] = BLOCK_NAMES.get(block_id, f'?{block_id:02X}')
+        midi_bytes, has_sysex_end = decode_usb_midi_ex(hexdata)
+        if not midi_bytes:
+            continue
 
-            elif cmd == 0x11 and sub == 0x20:
-                msg['type'] = 'req_patch_name'
-                if len(payload) > 17:
-                    msg['preset_num'] = payload[17]
+        # New SysEx start?
+        if midi_bytes[0] == 0xF0:
+            midi_buffer = bytearray(midi_bytes)
+            buffer_meta = (pkt_num, timestamp, direction)
+        elif buffer_meta:
+            # Continuation frame — append to existing buffer
+            midi_buffer.extend(midi_bytes)
 
-            elif cmd == 0x12 and sub == 0x08 and len(payload) <= 30:
-                # Either: change preset command, or FX state response from device
-                if direction == 'host→dev' and len(payload) > 17 and payload[5] == 0x08:
-                    msg['type'] = 'change_preset'
-                    msg['preset_num'] = payload[17]
-                else:
-                    msg['type'] = 'fx_state_resp'
-                    if len(payload) > 15:
-                        msg['block_id'] = payload[13]
-                        msg['block_name'] = BLOCK_NAMES.get(payload[13], f'?{payload[13]:02X}')
-                        msg['state'] = payload[15]
+        # If SysEx end found, assemble complete message
+        if has_sysex_end and buffer_meta and len(midi_buffer) >= 10:
+            midi = bytes(midi_buffer)
+            if midi[:8] == SYSEX_HEADER:
+                cmd = midi[8]
+                payload = midi[9:-1]  # strip F7
 
-            elif cmd == 0x12 and sub == 0x10 and len(payload) <= 46:
-                msg['type'] = 'toggle_fx'
-                if len(payload) > 31:
-                    block_id = payload[29]
-                    state = payload[31]
-                    msg['block_id'] = block_id
-                    msg['block_name'] = BLOCK_NAMES.get(block_id, f'?{block_id:02X}')
-                    msg['state'] = state
+                msg = {
+                    'pkt': buffer_meta[0],
+                    'time': buffer_meta[1],
+                    'direction': buffer_meta[2],
+                    'cmd': cmd,
+                    'payload': payload,
+                    'raw_midi': midi,
+                }
+                # Classify by (cmd, sub-command, length)
+                if len(payload) >= 1:
+                    sub = payload[0]
 
-            elif cmd == 0x12 and sub == 0x18 and len(payload) > 100:
-                # Preset data READ chunk (device → host)
-                # payload[1] = slot, payload[2:4] = LE16 offset, payload[4:] = nibble data
-                msg['type'] = 'preset_read_chunk'
-                msg['slot'] = payload[1]
-                msg['offset'] = struct.unpack_from('<H', payload, 2)[0]
-                msg['data'] = payload[4:]
+                    if cmd == 0x11 and sub == 0x10 and len(payload) <= 46:
+                        if len(payload) > 12 and payload[12] == 0x01:
+                            msg['type'] = 'req_patch'
+                            if len(payload) > 17:
+                                msg['preset_num'] = payload[17]
+                        else:
+                            msg['type'] = 'req_fx_state'
+                            if len(payload) > 29:
+                                block_id = payload[29]
+                                msg['block_id'] = block_id
+                                msg['block_name'] = BLOCK_NAMES.get(block_id, f'?{block_id:02X}')
 
-            elif cmd == 0x12 and sub == 0x20 and len(payload) > 100:
-                msg['type'] = 'preset_chunk'
-                msg['slot'] = payload[1]
-                msg['offset'] = struct.unpack_from('<H', payload, 2)[0]
-                msg['data'] = payload[4:]
+                    elif cmd == 0x11 and sub == 0x20:
+                        msg['type'] = 'req_patch_name'
+                        if len(payload) > 17:
+                            msg['preset_num'] = payload[17]
 
-            elif sub == 0x10 and len(payload) > 36:
-                msg['type'] = 'capabilities'
+                    elif cmd == 0x12 and sub == 0x08 and len(payload) <= 30:
+                        if direction == 'host->dev' and len(payload) > 17 and payload[5] == 0x08:
+                            msg['type'] = 'change_preset'
+                            msg['preset_num'] = payload[17]
+                        else:
+                            msg['type'] = 'fx_state_resp'
+                            if len(payload) > 15:
+                                msg['block_id'] = payload[13]
+                                msg['block_name'] = BLOCK_NAMES.get(payload[13], f'?{payload[13]:02X}')
+                                msg['state'] = payload[15]
 
-            else:
-                msg['type'] = f'unknown_cmd{cmd:02X}_sub{sub:02X}'
+                    elif cmd == 0x12 and sub == 0x10 and len(payload) <= 46:
+                        msg['type'] = 'toggle_fx'
+                        if len(payload) > 31:
+                            block_id = payload[29]
+                            state = payload[31]
+                            msg['block_id'] = block_id
+                            msg['block_name'] = BLOCK_NAMES.get(block_id, f'?{block_id:02X}')
+                            msg['state'] = state
 
-        messages.append(msg)
+                    elif cmd == 0x12 and sub == 0x18 and len(payload) > 100:
+                        msg['type'] = 'preset_read_chunk'
+                        msg['slot'] = payload[1]
+                        msg['offset'] = struct.unpack_from('<H', payload, 2)[0]
+                        msg['data'] = payload[4:]
+
+                    elif cmd == 0x12 and sub == 0x20 and len(payload) > 100:
+                        msg['type'] = 'preset_chunk'
+                        msg['slot'] = payload[1]
+                        msg['offset'] = struct.unpack_from('<H', payload, 2)[0]
+                        msg['data'] = payload[4:]
+
+                    elif sub == 0x10 and len(payload) > 36:
+                        msg['type'] = 'capabilities'
+
+                    else:
+                        msg['type'] = f'unknown_cmd{cmd:02X}_sub{sub:02X}'
+
+                messages.append(msg)
+            # Reset buffer
+            midi_buffer = bytearray()
+            buffer_meta = None
+
     return messages
 
 
@@ -405,7 +507,11 @@ def decode_all_read_presets(messages: list[dict]) -> dict[int, bytes]:
 
 
 if __name__ == '__main__':
-    path = sys.argv[1] if len(sys.argv) > 1 else '/home/manuel/gp200-capture-windows.pcap'
+    path = sys.argv[1] if len(sys.argv) > 1 else default_pcap()
+    if not os.path.exists(path):
+        print(f"FEHLER: Datei nicht gefunden: {path}", file=sys.stderr)
+        print(f"  Verwendung: python analyze-sysex.py <capture.pcap>", file=sys.stderr)
+        sys.exit(1)
     print(f"Analysiere: {path}\n")
 
     messages = parse_messages(path)

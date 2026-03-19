@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<title>GP-200 MIDI Push Test</title>
+<style>
+  body { background: #1a1a2e; color: #e0e0e0; font-family: 'JetBrains Mono', monospace; padding: 2em; }
+  button { background: #d4a24e; color: #000; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; margin: 4px; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  #log { background: #0a0a1a; padding: 1em; border-radius: 8px; white-space: pre-wrap; font-size: 0.85em; max-height: 400px; overflow-y: auto; }
+  .ok { color: #4ade80; } .err { color: #ff5050; } .info { color: #d4a24e; }
+  input[type=file] { margin: 8px 0; }
+  select { background: #0a0a1a; color: #e0e0e0; border: 1px solid #d4a24e; padding: 4px 8px; border-radius: 4px; }
+</style>
+</head><body>
+<h1>GP-200 MIDI Push Test</h1>
+
+<div>
+  <button id="connectBtn" onclick="doConnect()">1. Connect to GP-200</button>
+  <span id="connStatus">disconnected</span>
+</div>
+<div style="margin-top: 12px">
+  <label>2. Select .prst file: <input type="file" id="fileInput" accept=".prst" onchange="loadFile(this)"></label>
+  <span id="fileStatus"></span>
+</div>
+<div style="margin-top: 12px">
+  <label>3. Target slot:
+    <select id="slotSelect"></select>
+  </label>
+</div>
+<div style="margin-top: 12px">
+  <button id="pushBtn" onclick="doPush()" disabled>4. PUSH to Device</button>
+  <button onclick="doToggleTest()" style="background:#666">Test: Toggle AMP</button>
+  <button onclick="doSingleChunkTest()" style="background:#888">Test: Single Write Chunk</button>
+  <button onclick="doSizeProbe()" style="background:#888">Test: SysEx Size Probe</button>
+  <button onclick="doChangePreset(0)" style="background:#666">Test: Switch to 1A</button>
+  <button onclick="listAllPorts()" style="background:#666">List ALL MIDI Ports</button>
+</div>
+
+<h3 style="margin-top: 24px">Log</h3>
+<div id="log"></div>
+
+<script>
+const logEl = document.getElementById('log');
+function log(msg, cls = '') { logEl.innerHTML += `<span class="${cls}">${msg}</span>\n`; logEl.scrollTop = logEl.scrollHeight; }
+
+// Populate slot selector (1A-64D = 256 slots)
+const slotSel = document.getElementById('slotSelect');
+for (let s = 0; s < 256; s++) {
+  const bank = Math.floor(s / 4) + 1;
+  const letter = 'ABCD'[s % 4];
+  const opt = document.createElement('option');
+  opt.value = s;
+  opt.textContent = `${bank}${letter}`;
+  if (s === 0) opt.selected = true; // default: 1A
+  slotSel.appendChild(opt);
+}
+
+let midiOutput = null;
+let midiInput = null;
+let prstBuffer = null;
+
+async function doConnect() {
+  log('Requesting MIDI access (sysex=true)...', 'info');
+  try {
+    const access = await navigator.requestMIDIAccess({ sysex: true });
+    log('MIDI access granted');
+
+    // List all ports
+    for (const [id, port] of access.inputs) log(`  IN:  "${port.name}" (${port.state})`);
+    for (const [id, port] of access.outputs) log(`  OUT: "${port.name}" (${port.state})`);
+
+    midiOutput = [...access.outputs.values()].find(p => p.name?.includes('GP-200'));
+    midiInput = [...access.inputs.values()].find(p => p.name?.includes('GP-200'));
+
+    if (!midiOutput) { log('ERROR: No GP-200 output port found!', 'err'); return; }
+    if (!midiInput) { log('ERROR: No GP-200 input port found!', 'err'); return; }
+
+    log(`Connected: OUT="${midiOutput.name}", IN="${midiInput.name}"`, 'ok');
+    document.getElementById('connStatus').textContent = 'CONNECTED';
+    document.getElementById('connStatus').style.color = '#4ade80';
+
+    // Listen for any incoming MIDI
+    midiInput.onmidimessage = (e) => {
+      const data = new Uint8Array(e.data.buffer ?? e.data);
+      const hex = Array.from(data).map(b => b.toString(16).padStart(2, '0')).join(' ');
+      log(`RX [${data.length}B]: ${hex}`, 'info');
+    };
+
+    updatePushBtn();
+  } catch (e) {
+    log(`ERROR: ${e}`, 'err');
+  }
+}
+
+function loadFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    prstBuffer = new Uint8Array(reader.result);
+    if (prstBuffer.length !== 1224) {
+      log(`WARNING: File is ${prstBuffer.length} bytes (expected 1224)`, 'err');
+    }
+    // Read preset name at offset 0x44
+    let name = '';
+    for (let i = 0x44; i < 0x44 + 32; i++) {
+      if (prstBuffer[i] === 0) break;
+      name += String.fromCharCode(prstBuffer[i]);
+    }
+    log(`Loaded: "${name}" (${prstBuffer.length} bytes)`, 'ok');
+    document.getElementById('fileStatus').textContent = `"${name}" loaded`;
+    updatePushBtn();
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function updatePushBtn() {
+  document.getElementById('pushBtn').disabled = !(midiOutput && prstBuffer);
+}
+
+function nibbleEncode(data) {
+  const out = [];
+  for (const b of data) {
+    out.push((b >> 4) & 0x0F);
+    out.push(b & 0x0F);
+  }
+  return out;
+}
+
+async function listAllPorts() {
+  const access = await navigator.requestMIDIAccess({ sysex: true });
+  log('\n=== ALL MIDI PORTS ===', 'info');
+  for (const [id, port] of access.inputs) {
+    log(`  IN:  "${port.name}" id=${id} state=${port.state} type=${port.type}`);
+  }
+  for (const [id, port] of access.outputs) {
+    log(`  OUT: "${port.name}" id=${id} state=${port.state} type=${port.type}`);
+  }
+}
+
+function doToggleTest() {
+  if (!midiOutput) { log('Not connected!', 'err'); return; }
+  // Toggle AMP (block 0x03) ON — confirmed working SysEx from captures
+  const msg = new Uint8Array([
+    0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32,
+    0x12, 0x10,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+    0x01, 0x00, 0x00, 0x01, 0x05, 0x00, 0x00, 0x00,
+    0x04, 0x00, 0x00, 0x00,
+    0x03, // AMP block
+    0x00,
+    0x01, // ON
+    0x0C, 0x0F, 0x00, 0x02,
+    0xF7,
+  ]);
+  log(`\nSending Toggle AMP ON (${msg.length}B)...`, 'info');
+  log(`TX: ${Array.from(msg).map(b => b.toString(16).padStart(2, '0')).join(' ')}`);
+  midiOutput.send(msg);
+  log('Sent! Watch the GP-200 — AMP LED should light up.', 'info');
+}
+
+function doChangePreset(preset) {
+  if (!midiOutput) { log('Not connected!', 'err'); return; }
+  const msg = new Uint8Array([
+    0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32,
+    0x12, 0x08,
+    0x00, 0x00, 0x00, 0x00, 0x08, 0x01, 0x00, 0x00,
+    0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    preset & 0x7F,
+    0x00, 0x00,
+    0xF7,
+  ]);
+  log(`\nSending Change Preset to ${preset} (${msg.length}B)...`, 'info');
+  log(`TX: ${Array.from(msg).map(b => b.toString(16).padStart(2, '0')).join(' ')}`);
+  midiOutput.send(msg);
+  log('Sent! Watch the GP-200 display.', 'info');
+}
+
+async function doSizeProbe() {
+  if (!midiOutput) { log('Not connected!', 'err'); return; }
+  // Send SysEx messages of increasing size to find where the device stops responding
+  const header = [0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12];
+  for (const size of [30, 50, 100, 200, 380]) {
+    const msg = new Uint8Array(size);
+    msg[0] = 0xF0;
+    msg.set([0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32], 1);
+    msg[8] = 0x12; // CMD
+    msg[9] = 0x10; // sub=toggle (won't do anything meaningful but might get a response)
+    // Fill with zeros (valid SysEx data)
+    msg[size - 1] = 0xF7;
+    log(`Sending ${size}B SysEx...`, 'info');
+    midiOutput.send(msg);
+    await new Promise(r => setTimeout(r, 1000));
+  }
+  log('Size probe done. Check RX above.', 'info');
+}
+
+function doSingleChunkTest() {
+  if (!midiOutput) { log('Not connected!', 'err'); return; }
+  // Send a minimal sub=0x20 write chunk header only (no real data)
+  // This tests if the device even acknowledges write commands
+  const slot = 0;
+  // Minimal write: just header + slot + offset + a few nibble bytes + F7
+  const msg = new Uint8Array([
+    0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32,
+    0x12, 0x20, // CMD=SET, sub=WRITE
+    slot,       // target slot
+    0x00, 0x00, // offset LE16 = 0
+    // 10 nibble bytes (5 decoded bytes of write header)
+    0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00,
+    0xF7,
+  ]);
+  log(`\nSending single write chunk test (${msg.length}B)...`, 'info');
+  log(`TX: ${Array.from(msg).map(b => b.toString(16).padStart(2, '0')).join(' ')}`);
+  midiOutput.send(msg);
+  log('Sent. Watching for ACK...', 'info');
+}
+
+async function doPush() {
+  if (!midiOutput || !prstBuffer) return;
+
+  const slot = parseInt(slotSel.value);
+  const label = slotSel.options[slotSel.selectedIndex].text;
+  log(`\nPushing to slot ${slot} (${label})...`, 'info');
+
+  // Parse .prst: skip 48-byte TSRP header, take PARM data
+  const parmData = Array.from(prstBuffer.slice(48, 48 + 1172));
+
+  // Build 1184-byte write payload: 16-byte header + 1168 bytes PARM
+  const payload = new Array(1184).fill(0);
+
+  // Write header
+  payload[2] = 0x04;
+  payload[4] = 0x01;
+  payload[6] = slot & 0xFF; payload[7] = (slot >> 8) & 0xFF;
+  payload[8] = 0x01;
+  payload[10] = 0x04;
+  payload[12] = slot & 0xFF; payload[13] = (slot >> 8) & 0xFF;
+  payload[14] = slot & 0xFF; payload[15] = (slot >> 8) & 0xFF;
+
+  // Copy PARM data (1168 bytes)
+  for (let i = 0; i < 1168 && i < parmData.length; i++) {
+    payload[16 + i] = parmData[i];
+  }
+
+  // Don't modify PARM slot — keep original from .prst file
+  // (Valeton editor keeps source slot in payload, target only in chunk header)
+
+  // Nibble encode
+  const nibbles = nibbleEncode(payload);
+  log(`Payload: ${payload.length}B → ${nibbles.length} nibble bytes`);
+
+  // Split into 7 chunks and send
+  const CHUNK_SIZES = [366, 366, 366, 366, 366, 366, 172];
+  const CHUNK_OFFSETS = [0, 311, 622, 1061, 1372, 1811, 2122];
+  const HEADER = [0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x20];
+
+  let nibblePos = 0;
+  for (let i = 0; i < 7; i++) {
+    const chunk = new Uint8Array([
+      ...HEADER,
+      slot & 0xFF,
+      CHUNK_OFFSETS[i] & 0xFF,
+      (CHUNK_OFFSETS[i] >> 8) & 0xFF,
+      ...nibbles.slice(nibblePos, nibblePos + CHUNK_SIZES[i]),
+      0xF7,
+    ]);
+    nibblePos += CHUNK_SIZES[i];
+
+    midiOutput.send(chunk);
+    log(`  Chunk ${i + 1}/7: ${chunk.length}B, offset=${CHUNK_OFFSETS[i]}`, 'ok');
+    await new Promise(r => setTimeout(r, 50));
+  }
+
+  // Send save/commit command (CMD=0x12, sub=0x18 — observed after writes in captures)
+  await new Promise(r => setTimeout(r, 100));
+  const saveCmd = new Uint8Array([
+    0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32,
+    0x12, 0x18,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04,
+    0xF7,
+  ]);
+  log(`  Save command: ${saveCmd.length}B`, 'ok');
+  midiOutput.send(saveCmd);
+  await new Promise(r => setTimeout(r, 500));
+
+  // Send change_preset to reload the slot (forces device to read new data)
+  await new Promise(r => setTimeout(r, 200));
+  const reloadCmd = new Uint8Array([
+    0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32,
+    0x12, 0x08,
+    0x00, 0x00, 0x00, 0x00, 0x08, 0x01, 0x00, 0x00,
+    0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    slot & 0x7F,
+    0x00, 0x00,
+    0xF7,
+  ]);
+  log(`  Reload: change_preset → slot ${slot}`, 'ok');
+  midiOutput.send(reloadCmd);
+
+  log(`\n✓ PUSH + SAVE + RELOAD → slot ${label}`, 'ok');
+  log('Check the GP-200 display!', 'ok');
+}
+</script>
+</body></html>

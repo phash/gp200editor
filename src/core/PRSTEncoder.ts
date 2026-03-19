@@ -62,9 +62,18 @@ export class PRSTEncoder {
       }
     }
 
-    // Checksum (stored as-is; recalculation not implemented)
-    gen.writeUint16LE(OFFSET_CHECKSUM, preset.checksum);
+    // Checksum: sum of all bytes [0:0x4C6], stored as BE16 at 0x4C6
+    // Algorithm confirmed 2026-03-18 against 5 real .prst files from GP-200
+    const buf = gen.toArrayBuffer();
+    const bytes = new Uint8Array(buf);
+    let sum = 0;
+    for (let i = 0; i < OFFSET_CHECKSUM; i++) {
+      sum += bytes[i];
+    }
+    const checksum = sum & 0xFFFF;
+    bytes[OFFSET_CHECKSUM]     = (checksum >> 8) & 0xFF; // big-endian high byte
+    bytes[OFFSET_CHECKSUM + 1] = checksum & 0xFF;        // big-endian low byte
 
-    return gen.toArrayBuffer();
+    return buf;
   }
 }

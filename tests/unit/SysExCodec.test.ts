@@ -199,9 +199,9 @@ describe('SysExCodec: buildWriteChunks', () => {
     })),
   };
 
-  it('returns exactly 4 chunks', () => {
+  it('returns exactly 7 chunks', () => {
     const chunks = SysExCodec.buildWriteChunks(samplePreset, 5);
-    expect(chunks).toHaveLength(4);
+    expect(chunks).toHaveLength(7);
   });
 
   it('each chunk starts with SysEx header CMD=0x12 sub=0x20', () => {
@@ -222,12 +222,12 @@ describe('SysExCodec: buildWriteChunks', () => {
     for (const chunk of chunks) expect(chunk[10]).toBe(7);
   });
 
-  it('chunks decode to 732 bytes total', () => {
+  it('chunks decode to 1184 bytes total', () => {
     const chunks = SysExCodec.buildWriteChunks(samplePreset, 0);
     // Each chunk: [10-byte header][slot:1][offLo:1][offHi:1][nibbleData...][F7:1]
     const nibbles = chunks.flatMap(c => Array.from(c.slice(13, c.length - 1)));
     const decoded = SysExCodec.nibbleDecode(new Uint8Array(nibbles));
-    expect(decoded.length).toBe(732);
+    expect(decoded.length).toBe(1184);
   });
 
   it('preset name appears at write offset 36', () => {

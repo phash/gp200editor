@@ -267,7 +267,7 @@ Preset        id, userId, presetKey, name(VarChar32), description, tags(String[]
 
 ### Checksum (letzte 2 Bytes, 0x4C6)
 
-LE uint16; Algorithmus unbekannt.
+LE uint16 → **Algorithmus gelöst (2026-03-18):** `sum(bytes[0:0x4C6]) & 0xFFFF`, gespeichert als BE16.
 
 ---
 

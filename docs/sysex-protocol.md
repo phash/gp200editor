@@ -4,7 +4,9 @@
 **Sources:**
 - USB MIDI captures via tshark/usbmon (own device, Wine + Windows VM)
 - Targeted capture: `/home/manuel/gp200-capture-targeted.pcap` (1.3 MB, 4370 frames, all 256 presets)
-- Write capture: `/home/manuel/gp200-capture-windows.pcap` (22 KB, slot 9 "Pretender" write)
+- Write capture (Linux): `/home/manuel/gp200-capture-windows.pcap` (22 KB, slot 9 "Pretender" write)
+- **Write capture (Windows, 2026-03-18):** `scripts/gp200-capture-20260318-231056.pcap` (1.9 MB, slot 9 "American Idiot" full write — confirmed 7-chunk/1184B write format)
+- .prst files from device: `prst/63-B American Idiot.prst`, `prst/63-C claude1.prst`, `prst/63-D It's GP-200.prst`
 - Reddit thread by `dvanverseveld` on `/r/ValetonGP2OO` — GP-200LT (same header/protocol)
 - GP-5 BLE controller repo `helvecioneto/gp5-wc` (different transport, same Valeton command concepts)
 
@@ -166,22 +168,29 @@ Total: **2352 nibble bytes** → **1176 decoded bytes** per preset.
 
 ### 4.6 Preset Chunk Write (CMD=0x12, sub=0x20, host→device)
 
-Write a preset in **4 chunks**:
+Write a preset in **7 chunks** (confirmed via Windows USB capture 2026-03-18):
 
 ```
 F0 21 25 7E 47 50 2D 32  12  20  [SLOT:1B]  [OFFSET:2B LE]  [NIBBLE_DATA...]  F7
 ```
 
-| Chunk | Offset | Nibble bytes | Notes                    |
-|-------|--------|-------------|--------------------------|
-| 1     | 0      | 366         | Header + name + start    |
-| 2     | 311    | 366         | Effect blocks 0–3        |
-| 3     | 622    | 366         | Effect blocks 4–7        |
-| 4     | 1061   | 366         | Effect block 8 (partial) |
+| Chunk | Offset | Nibble bytes | Notes                              |
+|-------|--------|--------------|------------------------------------|
+| 1     | 0      | 366          | Write header + metadata + name     |
+| 2     | 311    | 366          | Author/URL + routing + blocks 0–1  |
+| 3     | 622    | 366          | Effect blocks 2–4                  |
+| 4     | 1061   | 366          | Effect blocks 5–7                  |
+| 5     | 1372   | 366          | Effect blocks 8–10                 |
+| 6     | 1811   | 366          | Controller/pedal assignments       |
+| 7     | 2122   | 172          | Remaining assignments              |
 
-Total: **1464 nibble bytes** → **732 decoded bytes** per preset.
+Total: **2368 nibble bytes** → **1184 decoded bytes** per preset.
 
-**Assembly:** Concatenate all 4 chunks' `payload[4:]` in chunk order, then nibble-decode.
+**All 11 effect blocks** and controller/pedal data are sent (previous docs incorrectly stated only blocks 0–8 partial were sent — this was based on older firmware/captures).
+
+The offset field in chunk headers is metadata for the device's reassembly, NOT a position in the nibble stream. Chunks must be concatenated in order.
+
+**Assembly:** Concatenate all 7 chunks' `payload[4:]` in chunk order, then nibble-decode.
 
 ### 4.7 Initial State Dump (CMD=0x12, sub=0x4E, device→host)
 
@@ -271,35 +280,74 @@ Appears constant across presets (not preset-specific data).
 
 ---
 
-## 6. Write Format (732 bytes)
+## 6. Write Format (1184 bytes)
 
-Write payload is nibble-decoded from 4 sub=0x20 chunks:
+Write payload is nibble-decoded from 7 sub=0x20 chunks. Confirmed via Windows USB capture 2026-03-18.
 
-### 6.1 Write Header (bytes 0–35, 36 bytes)
+**Relationship to .prst file:** The write payload is the .prst PARM data (bytes 48–1219) with a different 16-byte header prepended instead of the 48-byte TSRP/MRAP header. The effect block data, routing, and controller assignments are identical.
 
-Similar to read header but 8 bytes larger, with `0x27` markers at positions 6, 12, 14, 20.
+### 6.1 Write Header (bytes 0–15, 16 bytes)
 
-| Offset | Read format       | Write format      |
-|--------|-------------------|-------------------|
-| 0–5    | `00 00 04 00 01 00` | Same            |
-| 6–7    | `NN 00` (slot)    | `27 00`           |
-| 8–9    | `02 00`           | `NN 00` (slot)    |
-| 10–11  | `58 00`           | `04 00`           |
-| ...    | (28 bytes total)  | (36 bytes total)  |
+```
+00 00 04 00 01 00 [SLOT:2B LE] 01 00 04 00 [SLOT:2B LE] [SLOT:2B LE]
+```
 
-### 6.2 Write Name (bytes 36–67, 32 bytes)
+| Offset | Size | Value            | Notes                  |
+|--------|------|------------------|------------------------|
+| 0–1    | 2    | `00 00`          | Padding                |
+| 2–3    | 2    | `04 00`          | Constant (LE16 = 4)    |
+| 4–5    | 2    | `01 00`          | Constant (LE16 = 1)    |
+| 6–7    | 2    | `NN 00`          | **Slot number** (LE16) |
+| 8–9    | 2    | `01 00`          | Constant (LE16 = 1)    |
+| 10–11  | 2    | `04 00`          | Constant (LE16 = 4)    |
+| 12–13  | 2    | `NN 00`          | Slot repeated          |
+| 14–15  | 2    | `NN 00`          | Slot repeated          |
 
-Same as read format bytes 28–59.
+### 6.2 Pre-Name Metadata (bytes 16–35, 20 bytes)
 
-### 6.3 Write Middle Section (bytes 68–127, 60 bytes)
+```
+02 00  58 00  [SLOT:2B LE]  78 00  [VAR:2B]  00 00  [VAR:2B]  00 00 00 00 00 00
+```
 
-Same as read format bytes 60–119 (includes routing table).
+Constants: `02 00` at [16], `58 00` at [18], `78 00` at [22]. Slot at [20]. Other fields may encode category/subcategory metadata.
 
-### 6.4 Write Effect Blocks (bytes 128–731)
+### 6.3 Name + Author + URL (bytes 36–107, 72 bytes)
 
-- **Blocks 0–7 complete:** bytes 128–703 (8 × 72 = 576 bytes)
-- **Block 8 partial (DLY):** bytes 704–731 (28 bytes: marker + slot + active + const + effID + 4 params)
-- **Blocks 9–10 (RVB, VOL) and trailing data: NOT SENT** (device retains existing values)
+| Offset | Size | Content                        |
+|--------|------|--------------------------------|
+| 36–51  | 16   | Preset name (null-terminated)  |
+| 52–67  | 16   | Author name (null-terminated)  |
+| 68–103 | 36   | URL (null-terminated)          |
+| 104–107| 4    | Padding (zeros)                |
+
+Author and URL are metadata from the Valeton PC editor; Web MIDI writes leave these as zeros.
+
+### 6.4 Routing Section (bytes 108–127, 20 bytes)
+
+Same structure as read format bytes 100–119:
+
+| Offset | Size | Value               | Notes                     |
+|--------|------|---------------------|---------------------------|
+| 108–109| 2    | `08 00`             | Constant                  |
+| 110–111| 2    | `10 00`             | Constant                  |
+| 112–113| 2    | Slot reference      | LE16                      |
+| 114–115| 2    | `04 04`             | Constant                  |
+| 116–126| 11   | Block routing order | Signal chain (§5.4)       |
+| 127    | 1    | `00`                | Terminator                |
+
+### 6.5 Effect Blocks (bytes 128–919, 11 × 72 = 792 bytes)
+
+**All 11 blocks** are sent, identical structure to read format (§5.5). Blocks 9 (RVB) and 10 (VOL) ARE included.
+
+### 6.6 Controller/Pedal Assignments (bytes 920–1183, 264 bytes)
+
+Three record types:
+
+| Prefix         | Size | Count | Description                |
+|----------------|------|-------|----------------------------|
+| `0C 00 0C 00`  | 16B  | 9     | Expression pedal assigns   |
+| `10 00 04 00`  | 8B   | 3     | Footswitch assignments     |
+| `0F 00 08 00`  | 12B  | 8     | Parameter assignments      |
 
 ---
 
@@ -423,14 +471,49 @@ function parsePreset(decoded) {
 
 ---
 
-## 11. Known Unknowns
+## 11. .prst Checksum Algorithm (SOLVED 2026-03-18)
 
-- [ ] Header bytes [14:16] and [16:28] exact semantics (BPM? Other metadata?)
-- [ ] Write header [0:36] exact field layout (role of `0x27` bytes)
-- [ ] Why write omits blocks 9 (RVB) and 10 (VOL) and part of block 8 (DLY)
-- [ ] Trailing data [912:1176] complete format (partially identified as controller records)
-- [ ] Full handshake/capabilities sequence on connect
-- [ ] Checksum algorithm in `.prst` binary format
+**Algorithm:** Simple byte sum, stored as big-endian uint16.
+
+```
+checksum = sum(file_bytes[0 .. 0x4C5]) & 0xFFFF
+stored as BE16 at file_bytes[0x4C6 .. 0x4C7]
+```
+
+Verified against 5 real .prst files exported from GP-200 firmware v1.1.0.
+
+Note: the `.prst` file also has a 4-byte footer at [0x4C0:0x4C4] containing the data-end offset as LE32 (always 0x04C0 = 1216), followed by 2 bytes padding, then the checksum.
+
+---
+
+## 12. .prst ↔ SysEx Format Mapping
+
+| Component         | .prst offset | SysEx Write offset | Size   |
+|-------------------|--------------|--------------------|--------|
+| File header       | 0–47         | —                  | 48B    |
+| Write header      | —            | 0–15               | 16B    |
+| Pre-name metadata | 48–67        | 16–35              | 20B    |
+| Name + Author     | 68–99        | 36–67              | 32B    |
+| URL + padding     | 100–139      | 68–107             | 40B    |
+| Routing section   | 140–159      | 108–127            | 20B    |
+| 11 effect blocks  | 160–951      | 128–919            | 792B   |
+| Controller/pedal  | 952–1219     | 920–1183           | 264B   |
+| Footer+checksum   | 1220–1223    | —                  | 4B     |
+
+Conversion: `.prst[48:]` ≈ `SysEx[16:]` — the payload data is identical except for:
+- Slot number field at pre-name metadata offset 4 (may differ between export and write)
+
+---
+
+## 13. Known Unknowns
+
+- [ ] Header bytes [14:28] in read format: exact semantics (BPM? Scene metadata?)
+- [ ] Pre-name metadata bytes [24:36]: category/subcategory fields
+- [ ] Full handshake/capabilities sequence on device connect
+- [ ] Read protocol on Windows: Valeton editor uses `change_preset` + unknown mechanism (no sub=0x18 chunks observed in USB capture — may use HID or cached data)
+- [x] ~~Checksum algorithm in `.prst` binary format~~ → §11
+- [x] ~~Write header format~~ → §6.1
+- [x] ~~Why write omits blocks 9–10~~ → It doesn't; full 11-block write confirmed
 
 ---
 
@@ -438,5 +521,6 @@ function parsePreset(decoded) {
 
 - GP-5 BLE SysEx (different transport): `helvecioneto/gp5-wc` → `src/lib/ble_sysex.json`
 - GP-5 SysEx reference doc: https://www.scribd.com/document/963614194/GP-5-SysEx-1
-- Capture script: `scripts/analyze-sysex.py`
-- Captures: `/home/manuel/gp200-capture-windows.pcap` (write, 22KB), `/home/manuel/gp200-capture-targeted.pcap` (read all 256 slots, 1.3MB)
+- Capture scripts: `scripts/analyze-sysex.py`, `scripts/capture-windows.ps1`
+- Captures (Linux): `/home/manuel/gp200-capture-windows.pcap` (write, 22KB), `/home/manuel/gp200-capture-targeted.pcap` (read all 256 slots, 1.3MB)
+- Captures (Windows): `scripts/gp200-capture-20260318-*.pcap` (write + toggle FX, 2026-03-18)
