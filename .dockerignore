@@ -1,0 +1,8 @@
+node_modules
+.next
+prst
+scripts/*.pcap
+playwright-report
+test-results
+planung
+.git

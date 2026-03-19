@@ -414,43 +414,21 @@ describe('SysExCodec: handshake parsers', () => {
 });
 
 describe('SysExCodec: parseStateDump', () => {
-  it('extracts slot and preset from 5 chunks', () => {
-    const decoded = buildDecodedPreset('TestPreset', 6);
-    const truncated = decoded.slice(0, 846);
-    const nibble = SysExCodec.nibbleEncode(truncated);
-    const chunkSizes = [370, 370, 370, 370, nibble.length - 370 * 4];
-    const offsets = [0, 313, 626, 1067, 1380];
-    const chunks: Uint8Array[] = [];
-    let pos = 0;
-    for (let i = 0; i < 5; i++) {
-      const nd = nibble.slice(pos, pos + chunkSizes[i]);
-      pos += chunkSizes[i];
-      const HEADER = [0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x4E];
-      const offLo = offsets[i] & 0xFF;
-      const offHi = (offsets[i] >> 8) & 0xFF;
-      chunks.push(new Uint8Array([...HEADER, 6, offLo, offHi, ...Array.from(nd), 0xF7]));
-    }
-    const result = SysExCodec.parseStateDump(chunks);
+  it('extracts slot number from first chunk byte[10]', () => {
+    // 0x4E uses a different "live state" format — we only extract the slot
+    const fakeChunk = new Uint8Array([
+      0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x4E,
+      0x06, // slot = 6
+      0x00, 0x00, // offset
+      0x00, 0x00, // minimal nibble data
+      0xF7,
+    ]);
+    const result = SysExCodec.parseStateDump([fakeChunk]);
     expect(result.slot).toBe(6);
-    expect(result.preset.patchName).toBe('TestPreset');
   });
 
-  it('uses slot label as fallback when name is empty', () => {
-    const decoded = new Uint8Array(846).fill(0);
-    const nibble = SysExCodec.nibbleEncode(decoded);
-    const chunkSizes = [370, 370, 370, 370, nibble.length - 370 * 4];
-    const offsets = [0, 313, 626, 1067, 1380];
-    const chunks: Uint8Array[] = [];
-    let pos = 0;
-    for (let i = 0; i < 5; i++) {
-      const nd = nibble.slice(pos, pos + chunkSizes[i]);
-      pos += chunkSizes[i];
-      const HEADER = [0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x4E];
-      const offLo = offsets[i] & 0xFF;
-      const offHi = (offsets[i] >> 8) & 0xFF;
-      chunks.push(new Uint8Array([...HEADER, 6, offLo, offHi, ...Array.from(nd), 0xF7]));
-    }
-    const result = SysExCodec.parseStateDump(chunks);
-    expect(result.preset.patchName).toBe('2C'); // slot 6 = bank 2, letter C
+  it('defaults to slot 0 when no chunks provided', () => {
+    const result = SysExCodec.parseStateDump([]);
+    expect(result.slot).toBe(0);
   });
 });

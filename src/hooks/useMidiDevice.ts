@@ -179,12 +179,11 @@ export function useMidiDevice(): UseMidiDeviceReturn {
         output.send(SysExCodec.buildEnterEditorMode());
         await new Promise(r => setTimeout(r, 100));
 
-        // Step 5-6: State dump
+        // Step 5-6: State dump (0x4E has different format — only extract slot number)
         output.send(SysExCodec.buildStateDumpRequest());
         const dumpChunks = await collectChunks(input, 0x12, 0x4E, 5, READ_TIMEOUT_MS, onMidiMessage);
-        const { slot, preset } = SysExCodec.parseStateDump(dumpChunks);
+        const { slot } = SysExCodec.parseStateDump(dumpChunks);
         setCurrentSlot(slot);
-        setCurrentPreset(preset);
 
         // Step 7-8: Version check
         output.send(SysExCodec.buildVersionCheck());
@@ -218,7 +217,17 @@ export function useMidiDevice(): UseMidiDeviceReturn {
         }
         setAssignments(assignmentEntries);
 
-        // Step 10: Done
+        // Step 10: Pull current preset via normal read (0x4E format differs from stored preset)
+        try {
+          const readReq = SysExCodec.buildReadRequest(slot);
+          output.send(readReq);
+          const presetChunks = await collectChunks(input, 0x12, 0x18, 7, READ_TIMEOUT_MS, onMidiMessage);
+          setCurrentPreset(SysExCodec.parseReadChunks(presetChunks));
+        } catch {
+          // Non-critical — user can still pull manually
+        }
+
+        // Step 11: Done
         setStatus('connected');
       } catch (err) {
         setStatus('error');

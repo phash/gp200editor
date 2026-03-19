@@ -71,6 +71,22 @@ function enableAutoHandshake(mock: ReturnType<typeof makeMockMidi>) {
         0xF7,
       ])), 1);
     }
+    // Preset read request (sub=0x10) → 7 minimal 0x18 chunks
+    // Extract slot from request nibble at [25-26]: slot = (d[25] << 4) | d[26]
+    if (d[8] === 0x11 && d[9] === 0x10) {
+      const reqSlot = ((d[25] & 0x0F) << 4) | (d[26] & 0x0F);
+      setTimeout(() => {
+        const CHUNK_OFFSETS = [0, 313, 626, 1067, 1380, 1821, 2134];
+        const CHUNK_SIZES = [370, 370, 370, 370, 370, 370, 172];
+        for (let i = 0; i < 7; i++) {
+          mock.emit(new Uint8Array([
+            0xF0,0x21,0x25,0x7E,0x47,0x50,0x2D,0x32,0x12,0x18,
+            reqSlot, CHUNK_OFFSETS[i] & 0xFF, (CHUNK_OFFSETS[i] >> 8) & 0xFF,
+            ...new Array(CHUNK_SIZES[i]).fill(0), 0xF7,
+          ]));
+        }
+      }, 1);
+    }
     // Assignment query → empty response
     if (d[8] === 0x11 && d[9] === 0x1C) {
       setTimeout(() => mock.emit(new Uint8Array([
@@ -186,13 +202,10 @@ describe('useMidiDevice', () => {
     });
     await waitFor(() => {
       const sent = mockMidi.sentMessages;
-      // Find the read request (sub=0x10) after the handshake messages
-      const readReq = sent.find(m => m[8] === 0x11 && m[9] === 0x10);
+      // Find the read request for slot 5 (sub=0x10, slot nibble at [25-26] = 0x00 0x05)
+      const readReq = sent.find(m => m[8] === 0x11 && m[9] === 0x10 && m[25] === 0x00 && m[26] === 0x05);
       expect(readReq).toBeDefined();
       SYSEX_HEADER.forEach((b, i) => expect(readReq![i]).toBe(b));
-      // Slot 5 nibble-encoded at [25-26]
-      expect(readReq![25]).toBe(0x00);
-      expect(readReq![26]).toBe(0x05);
     });
     // Clean up by aborting the pull (no chunks sent)
     pullPromise!.catch(() => {}); // ignore timeout error

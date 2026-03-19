@@ -306,10 +306,11 @@ export const SysExCodec = {
     return { section, page, block, name, rawData: decoded };
   },
 
-  parseStateDump(chunks: Uint8Array[]): { slot: number; preset: GP200Preset } {
+  parseStateDump(chunks: Uint8Array[]): { slot: number } {
+    // 0x4E state dump uses a different "live state" format (no 14 00 44 00 markers).
+    // We only extract the current slot number. The actual preset data is loaded
+    // via a normal pullPreset(slot) after the handshake.
     const slot = chunks[0]?.[10] ?? 0;
-    const decoded = this.assembleChunks(chunks);
-    const fallbackName = this.slotToLabel(slot);
-    return { slot, preset: this.parsePresetFromDecoded(decoded, fallbackName) };
+    return { slot };
   },
 };
