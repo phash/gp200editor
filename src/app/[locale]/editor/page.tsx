@@ -165,21 +165,6 @@ export default function EditorPage() {
     }
   }
 
-  async function handleBankPull(bank: number) {
-    const baseSlot = (bank - 1) * 4;
-    const labels = ['A', 'B', 'C', 'D'];
-    for (let i = 0; i < 4; i++) {
-      try {
-        console.log(`[Bank Pull] ${bank}${labels[i]} (slot ${baseSlot + i})`);
-        const loaded = await midiDevice.pullPreset(baseSlot + i);
-        console.log(`[Bank Pull] ${bank}${labels[i]}: "${loaded.patchName}"`);
-        // Load the last one into the editor
-        if (i === 3) loadPreset(loaded);
-      } catch (err) {
-        console.error(`[Bank Pull] ${bank}${labels[i]} failed:`, err);
-      }
-    }
-  }
 
   function handleOpenBrowser(mode: 'pull' | 'push') {
     setSlotBrowserMode(mode);
