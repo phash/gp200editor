@@ -279,3 +279,76 @@ describe('SysExCodec: buildWriteChunks', () => {
     expect(view.getUint32(128 + 8, true)).toBe(0x03000001);
   });
 });
+
+describe('SysExCodec: handshake builders', () => {
+  it('buildIdentityQuery returns exact 22-byte message', () => {
+    const msg = SysExCodec.buildIdentityQuery();
+    expect(msg).toEqual(new Uint8Array([
+      0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32,
+      0x11, 0x04,
+      0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0xF7,
+    ]));
+  });
+
+  it('buildEnterEditorMode returns exact 14-byte message', () => {
+    const msg = SysExCodec.buildEnterEditorMode();
+    expect(msg).toEqual(new Uint8Array([
+      0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32,
+      0x11, 0x12,
+      0x00, 0x00, 0x00,
+      0xF7,
+    ]));
+  });
+
+  it('buildStateDumpRequest returns exact 22-byte message', () => {
+    const msg = SysExCodec.buildStateDumpRequest();
+    expect(msg).toEqual(new Uint8Array([
+      0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32,
+      0x11, 0x04,
+      0x00, 0x00, 0x00, 0x00, 0x06, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0xF7,
+    ]));
+  });
+
+  it('buildVersionCheck returns exact 34-byte message', () => {
+    const msg = SysExCodec.buildVersionCheck();
+    expect(msg).toEqual(new Uint8Array([
+      0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32,
+      0x11, 0x0A,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x06, 0x00, 0x00,
+      0x0D, 0x04, 0x0F, 0x07, 0x08, 0x0B, 0x00, 0x00, 0x0C, 0x0B, 0x04, 0x05,
+      0xF7,
+    ]));
+  });
+
+  it('buildAssignmentQuery section 0 page 0 block 0 is 70 bytes', () => {
+    const msg = SysExCodec.buildAssignmentQuery(0, 0, 0);
+    expect(msg.length).toBe(70);
+    expect(msg[0]).toBe(0xF0);
+    expect(msg[8]).toBe(0x11);
+    expect(msg[9]).toBe(0x1C);
+    expect(msg[10]).toBe(0x00);
+    expect(msg[14]).toBe(0x09);
+    expect(msg[22]).toBe(0x00);
+    expect(msg[69]).toBe(0xF7);
+  });
+
+  it('buildAssignmentQuery increments block byte', () => {
+    const msg5 = SysExCodec.buildAssignmentQuery(0, 0, 5);
+    expect(msg5[22]).toBe(0x05);
+    const msgF = SysExCodec.buildAssignmentQuery(0, 0, 15);
+    expect(msgF[22]).toBe(0x0F);
+  });
+
+  it('buildAssignmentQuery page 1 sets page byte at [21]', () => {
+    const msg = SysExCodec.buildAssignmentQuery(0, 1, 0);
+    expect(msg[21]).toBe(0x01);
+  });
+
+  it('buildAssignmentQuery section 1 uses different header', () => {
+    const msg = SysExCodec.buildAssignmentQuery(1, 0, 0);
+    expect(msg[13]).toBe(0x01);
+    expect(msg[14]).toBe(0x02);
+  });
+});
