@@ -56,6 +56,9 @@ export async function POST(request: Request) {
   const parsed = uploadPresetSchema.safeParse({
     description: formData.get('description') ?? undefined,
     tags: tagsArray.length > 0 ? tagsArray : undefined,
+    author: formData.get('author') ?? undefined,
+    style: formData.get('style') ?? undefined,
+    publish: formData.get('publish') === 'true' ? true : undefined,
   });
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
@@ -78,6 +81,9 @@ export async function POST(request: Request) {
       name: decoded.patchName.trim() || file.name.replace(/\.prst$/i, '').slice(0, 32) || 'Untitled',
       description: parsed.data.description ?? null,
       tags: parsed.data.tags ?? [],
+      author: parsed.data.author ?? null,
+      style: parsed.data.style ?? null,
+      public: parsed.data.publish ?? false,
       modules: extractModules(decoded),
     },
     select: {
@@ -85,6 +91,7 @@ export async function POST(request: Request) {
       name: true,
       modules: true,
       shareToken: true,
+      public: true,
     },
   });
 
@@ -107,6 +114,8 @@ export async function GET() {
       description: true,
       tags: true,
       modules: true,
+      author: true,
+      style: true,
       public: true,
       shareToken: true,
       downloadCount: true,

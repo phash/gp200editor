@@ -37,7 +37,12 @@
     "savingPreset": "Speichern…",
     "presetSaved": "Gespeichert!",
     "presetSaveFailed": "Speichern fehlgeschlagen. Bitte anmelden.",
-    "loginToSave": "Anmelden, um zu speichern"
+    "loginToSave": "Anmelden, um zu speichern",
+    "publishToGallery": "In Galerie veröffentlichen",
+    "customStyle": "Eigener Style…",
+    "customStylePlaceholder": "z.B. Progressive Metal",
+    "cancel": "Abbrechen",
+    "styleFilter": "Style"
   },
   "auth": {
     "loginTitle": "Anmelden",

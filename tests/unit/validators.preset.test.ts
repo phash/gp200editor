@@ -46,6 +46,25 @@ describe('uploadPresetSchema', () => {
     });
     expect(result.success).toBe(true);
   });
+
+  it('accepts author, style and publish fields', () => {
+    const result = uploadPresetSchema.safeParse({
+      author: 'Manuel R',
+      style: 'Rock',
+      publish: true,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects author longer than 50 chars', () => {
+    const result = uploadPresetSchema.safeParse({ author: 'x'.repeat(51) });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects style longer than 50 chars', () => {
+    const result = uploadPresetSchema.safeParse({ style: 'x'.repeat(51) });
+    expect(result.success).toBe(false);
+  });
 });
 
 describe('patchPresetSchema', () => {

@@ -37,7 +37,12 @@
     "savingPreset": "Saving…",
     "presetSaved": "Saved!",
     "presetSaveFailed": "Save failed. Please sign in.",
-    "loginToSave": "Sign in to save"
+    "loginToSave": "Sign in to save",
+    "publishToGallery": "Publish to Gallery",
+    "customStyle": "Custom style…",
+    "customStylePlaceholder": "e.g. Progressive Metal",
+    "cancel": "Cancel",
+    "styleFilter": "Style"
   },
   "auth": {
     "loginTitle": "Sign In",

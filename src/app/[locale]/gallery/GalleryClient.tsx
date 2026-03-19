@@ -10,6 +10,8 @@ type GalleryPreset = {
   description: string | null;
   tags: string[];
   modules: string[];
+  author: string | null;
+  style: string | null;
   shareToken: string;
   downloadCount: number;
   createdAt: string;
@@ -26,6 +28,7 @@ export function GalleryClient() {
   const [query, setQuery] = useState('');
   const [activeModules, setActiveModules] = useState<string[]>([]);
   const [sort, setSort] = useState<'newest' | 'popular'>('newest');
+  const [styleFilter, setStyleFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -34,6 +37,7 @@ export function GalleryClient() {
     const params = new URLSearchParams();
     if (query) params.set('q', query);
     if (activeModules.length > 0) params.set('modules', activeModules.join(','));
+    if (styleFilter) params.set('style', styleFilter);
     params.set('sort', sort);
     params.set('page', String(p));
     params.set('limit', '20');
@@ -45,7 +49,7 @@ export function GalleryClient() {
       setTotal(data.total);
     }
     setLoading(false);
-  }, [query, activeModules, sort]);
+  }, [query, activeModules, styleFilter, sort]);
 
   // Fetch on filter/sort change (reset to page 1)
   useEffect(() => {
@@ -123,7 +127,25 @@ export function GalleryClient() {
         })}
       </div>
 
-      {/* Sort toggle */}
+      {/* Style filter + Sort toggle */}
+      <div className="flex gap-2 mb-6 flex-wrap items-center">
+        <select
+          value={styleFilter}
+          onChange={(e) => setStyleFilter(e.target.value)}
+          className="font-mono-display text-[11px] font-medium tracking-wider uppercase px-3 py-1.5 rounded"
+          style={{
+            background: styleFilter ? 'var(--glow-amber)' : 'transparent',
+            border: `1px solid ${styleFilter ? 'var(--accent-amber)' : 'var(--border-active)'}`,
+            color: styleFilter ? 'var(--accent-amber)' : 'var(--text-muted)',
+          }}
+        >
+          <option value="">Style</option>
+          {['Rock', 'Metal', 'Blues', 'Jazz', 'Country', 'Funk', 'Pop', 'Punk', 'Ambient', 'Clean', 'Acoustic', 'Experimental'].map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+        <span style={{ width: 1, height: 20, background: 'var(--border-active)' }} />
+      </div>
       <div className="flex gap-2 mb-6">
         {(['newest', 'popular'] as const).map((s) => (
           <button
@@ -166,7 +188,10 @@ export function GalleryClient() {
                   className="font-mono-display text-[11px] flex-shrink-0"
                   style={{ color: 'var(--text-muted)' }}
                 >
-                  {t('by')} @{preset.user.username}
+                  {t('by')} {preset.author || `@${preset.user.username}`}
+                  {preset.style && (
+                    <span style={{ color: 'var(--accent-amber)', marginLeft: 6 }}>{preset.style}</span>
+                  )}
                 </span>
               </div>
 

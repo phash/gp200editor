@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
   }
 
-  const { q, modules, sort, page, limit } = parsed.data;
+  const { q, modules, style, sort, page, limit } = parsed.data;
 
   const where: Prisma.PresetWhereInput = { public: true };
 
@@ -18,11 +18,16 @@ export async function GET(request: NextRequest) {
     where.OR = [
       { name: { contains: q, mode: 'insensitive' } },
       { tags: { hasSome: [q] } },
+      { author: { contains: q, mode: 'insensitive' } },
     ];
   }
 
   if (modules && modules.length > 0) {
     where.modules = { hasSome: modules };
+  }
+
+  if (style) {
+    where.style = { equals: style, mode: 'insensitive' };
   }
 
   const orderBy: Prisma.PresetOrderByWithRelationInput =
@@ -40,6 +45,8 @@ export async function GET(request: NextRequest) {
         description: true,
         tags: true,
         modules: true,
+        author: true,
+        style: true,
         shareToken: true,
         downloadCount: true,
         createdAt: true,

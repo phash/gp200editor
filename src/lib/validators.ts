@@ -47,6 +47,9 @@ const tagSchema = z
 export const uploadPresetSchema = z.object({
   description: z.string().max(500).optional(),
   tags: tagSchema.array().max(10, 'At most 10 tags allowed').optional(),
+  author: z.string().max(50).optional(),
+  style: z.string().max(50).optional(),
+  publish: z.boolean().optional(),
 });
 
 export const patchPresetSchema = z.object({
@@ -58,6 +61,7 @@ export const patchPresetSchema = z.object({
 export const galleryQuerySchema = z.object({
   q: z.string().max(100).optional(),
   modules: z.string().optional().transform((v) => v ? v.split(',').filter(Boolean) : undefined),
+  style: z.string().max(50).optional(),
   sort: z.enum(['newest', 'popular']).default('newest'),
   page: z.string().optional().transform((v) => Math.max(1, parseInt(v ?? '1', 10) || 1)),
   limit: z.string().optional().transform((v) => Math.min(50, Math.max(1, parseInt(v ?? '20', 10) || 20))),

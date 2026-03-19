@@ -10,6 +10,7 @@ import { useRouter } from '@/i18n/routing';
 import { useMidiDevice } from '@/hooks/useMidiDevice';
 import { DeviceStatusBar } from '@/components/DeviceStatusBar';
 import { DeviceSlotBrowser } from '@/components/DeviceSlotBrowser';
+import { SavePresetDialog } from '@/components/SavePresetDialog';
 import { SysExCodec } from '@/core/SysExCodec';
 import type { GP200Preset } from '@/core/types';
 
@@ -27,10 +28,19 @@ export default function EditorPage() {
   const [activeTab, setActiveTab] = useState(0);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [username, setUsername] = useState('');
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   useEffect(() => {
     fetch('/api/profile')
-      .then((r) => setIsLoggedIn(r.ok))
+      .then((r) => {
+        setIsLoggedIn(r.ok);
+        if (r.ok) return r.json();
+        return null;
+      })
+      .then((data: { username?: string } | null) => {
+        if (data?.username) setUsername(data.username);
+      })
       .catch(() => setIsLoggedIn(false));
   }, []);
 
@@ -73,7 +83,7 @@ export default function EditorPage() {
     URL.revokeObjectURL(url);
   }
 
-  async function handleSaveToPresets() {
+  async function handleSaveToPresets(data: { author: string; style: string; note: string; publish: boolean }) {
     const ab = encodePreset();
     if (!ab || !preset) return;
 
@@ -83,10 +93,15 @@ export default function EditorPage() {
       const file = new File([blob], `${preset.patchName}.prst`, { type: 'application/octet-stream' });
       const formData = new FormData();
       formData.append('preset', file);
+      if (data.author) formData.append('author', data.author);
+      if (data.style) formData.append('style', data.style);
+      if (data.note) formData.append('description', data.note);
+      if (data.publish) formData.append('publish', 'true');
 
       const res = await fetch('/api/presets', { method: 'POST', body: formData });
       if (res.ok) {
         setSaveStatus('saved');
+        setShowSaveDialog(false);
         setTimeout(() => {
           router.push('/presets');
           router.refresh();
@@ -379,10 +394,10 @@ export default function EditorPage() {
         {isLoggedIn ? (
           <>
             <button
-              onClick={handleSaveToPresets}
+              onClick={() => setShowSaveDialog(true)}
               disabled={saveStatus === 'saving' || saveStatus === 'saved'}
               data-testid="save-to-presets-btn"
-              className="font-mono-display text-sm font-bold tracking-wider uppercase px-8 py-3 rounded-lg transition-all duration-200 disabled:opacity-50"
+              className="font-mono-display text-sm font-bold tracking-wider uppercase px-6 py-3 rounded-lg transition-all duration-200 disabled:opacity-50"
               style={{
                 background: saveStatus === 'saved' ? 'var(--glow-green)' : 'var(--bg-elevated)',
                 border: `1px solid ${saveStatus === 'saved' ? 'var(--accent-green)' : 'var(--border-active)'}`,
@@ -417,6 +432,17 @@ export default function EditorPage() {
           </span>
         ) : null}
       </div>
+
+      {/* Save Preset Dialog */}
+      {showSaveDialog && (
+        <SavePresetDialog
+          presetName={preset.patchName}
+          defaultAuthor={username}
+          onSave={handleSaveToPresets}
+          onCancel={() => setShowSaveDialog(false)}
+          saving={saveStatus === 'saving'}
+        />
+      )}
 
       {/* Device sync — bottom */}
       <div className="mt-6">

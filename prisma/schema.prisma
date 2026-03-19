@@ -30,6 +30,8 @@ model Preset {
   name          String   @db.VarChar(32)
   description   String?
   tags          String[]
+  author        String?
+  style         String?
   shareToken    String   @unique @default(cuid())
   downloadCount Int      @default(0)
   public        Boolean  @default(false)
