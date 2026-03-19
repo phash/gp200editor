@@ -1,10 +1,13 @@
-# GP-200 Editor – CLAUDE.md
+# Preset Forge — GP-200 Editor – CLAUDE.md
 
 Inoffizieller Browser-Editor für Valeton GP-200 Gitarren-Multi-Effektpedal Preset-Dateien (`.prst`).
+Live USB-MIDI Editing, Preset-Galerie, Community-Sharing.
 
 ## Projekt-Überblick
 
-- **Zweck:** `.prst` Preset-Dateien im Browser laden, bearbeiten, speichern, teilen
+- **Name:** Preset Forge
+- **Domain:** https://preset-forge.com
+- **Zweck:** `.prst` Preset-Dateien im Browser laden, bearbeiten, speichern, teilen, live per USB-MIDI ans Gerät senden
 - **GitHub:** https://github.com/phash/gp200editor
 - **Stack:** Next.js 14 App Router · TypeScript strict · Tailwind CSS · Prisma 5 · PostgreSQL 16 · Lucia v3 · Garage S3 · next-intl 4 (DE/EN)
 - **Tests:** Vitest (Unit) · Playwright + @axe-core/playwright (E2E + A11y)
@@ -36,26 +39,45 @@ npm install --legacy-peer-deps
 ## Docker / Dev-Infrastruktur
 
 ```bash
-# Alle Services starten (PostgreSQL 16, Garage S3, Mailhog)
-docker compose up -d
+# 1. Env-Datei erstellen
+cp .env.dev.example .env.dev   # Credentials eintragen
 
-# Garage initialisieren (einmalig nach erstem Start)
+# 2. Alle Services starten (PostgreSQL 16, Garage S3, Mailhog)
+docker compose --env-file .env.dev up -d --build
+
+# 3. Garage initialisieren (einmalig nach erstem Start)
 bash scripts/garage-init.sh
-# → gibt GARAGE_ACCESS_KEY_ID und GARAGE_SECRET_ACCESS_KEY aus → in .env.local eintragen
+# → gibt GARAGE_ACCESS_KEY_ID und GARAGE_SECRET_ACCESS_KEY aus → in .env.dev eintragen
+# → App-Container neustarten: docker compose --env-file .env.dev up -d app
 
-# Datenbankmigrationen
-npx prisma migrate dev
+# 4. Datenbankmigrationen
+DATABASE_URL="postgresql://USER:PASS@localhost:5433/DB" npx prisma migrate dev
 
-# App starten
+# 5. App starten (ohne Docker)
 npm run dev
 ```
 
-### Docker Image (Production)
+### Production Deployment (IONOS VPS)
 
 ```bash
-docker build -t gp200editor .
-docker run -d -p 3000:3000 --name gp200editor gp200editor
+# Auf dem VPS (preset-forge.com → 82.165.40.140):
+cd /opt
+git clone https://github.com/phash/gp200editor.git
+cd gp200editor
+bash scripts/deploy-vps.sh    # Einmaliges Setup: Build, Migrate, Garage, SSL, Nginx
+
+# Updates deployen:
+cd /opt/gp200editor
+git pull
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build app
 ```
+
+**VPS-Architektur:**
+- GP-200 Stack (Postgres, Garage, Mailhog, App) auf Port 3320
+- Musikersuche-Nginx (ports 80/443) proxied `preset-forge.com` → `172.17.0.1:3320`
+- SSL via Musikersuche's Certbot-Container
+- `scripts/deploy-vps.sh` macht alles automatisch (erster Start)
+- `scripts/backup.sh` / `scripts/restore.sh` für DB + S3 Backups
 
 ### Dockerfile-Details
 
@@ -63,6 +85,7 @@ docker run -d -p 3000:3000 --name gp200editor gp200editor
 - `output: 'standalone'` in `next.config.mjs` für Docker-kompatiblen Build
 - `@node-rs/argon2` in `serverComponentsExternalPackages` (native binary)
 - Non-root User `nextjs:nodejs` (UID/GID 1001)
+- `public/.gitkeep` nötig (leerer Ordner wird sonst nicht von Git getrackt → COPY fehlschlägt)
 
 ---
 
