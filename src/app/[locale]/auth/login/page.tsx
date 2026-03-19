@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link, useRouter } from '@/i18n/routing';
+import { PasswordInput } from '@/components/PasswordInput';
 
 export default function LoginPage() {
   const t = useTranslations('auth');
@@ -28,7 +29,12 @@ export default function LoginPage() {
         router.refresh();
       } else {
         const data = await res.json();
-        setError(data.error ?? t('loginFailed'));
+        const apiError = data.error as string | undefined;
+        if (apiError?.includes('not verified')) {
+          setError(t('emailNotVerified'));
+        } else {
+          setError(t('loginFailed'));
+        }
       }
     } catch {
       setError(t('loginFailed'));
@@ -85,37 +91,14 @@ export default function LoginPage() {
               }}
             />
           </div>
-          <div>
-            <label
-              className="block font-mono-display text-[11px] font-medium tracking-wider uppercase mb-1.5"
-              htmlFor="password"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              {t('password')}
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full rounded px-3 py-2 text-sm focus:outline-none transition-shadow"
-              style={{
-                background: 'var(--bg-elevated)',
-                border: '1px solid var(--border-active)',
-                color: 'var(--text-primary)',
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = 'var(--accent-amber)';
-                e.currentTarget.style.boxShadow = '0 0 0 2px var(--glow-amber)';
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = 'var(--border-active)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
-            />
-          </div>
+          <PasswordInput
+            id="password"
+            name="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            label={t('password')}
+          />
           {error && (
             <p
               className="text-sm rounded px-3 py-2"
@@ -162,10 +145,8 @@ export default function LoginPage() {
             <span style={{ color: 'var(--text-muted)' }}>{t('noAccount')} </span>
             <Link
               href="/auth/register"
-              className="transition-colors"
+              className="transition-colors hover:text-[var(--text-primary)]"
               style={{ color: 'var(--accent-amber)' }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--accent-amber)')}
             >
               {t('register')}
             </Link>
@@ -173,10 +154,8 @@ export default function LoginPage() {
           <p>
             <Link
               href="/auth/forgot-password"
-              className="transition-colors"
+              className="transition-colors hover:text-[var(--accent-amber)]"
               style={{ color: 'var(--text-muted)' }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent-amber)')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
             >
               {t('forgotPassword')}
             </Link>

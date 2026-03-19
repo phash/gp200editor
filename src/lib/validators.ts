@@ -28,7 +28,12 @@ export const resetPasswordSchema = z.object({
 
 export const patchProfileSchema = z.object({
   bio: z.string().max(500, 'Bio must be at most 500 characters').nullable().optional(),
-  website: z.string().url('Invalid URL').nullable().optional(),
+  website: z.string().max(200).nullable().optional().transform((v) => {
+    if (!v) return v;
+    // Auto-prepend https:// if no protocol given
+    if (!/^https?:\/\//i.test(v)) return `https://${v}`;
+    return v;
+  }),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;
