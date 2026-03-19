@@ -156,6 +156,7 @@ export default function EditorPage() {
             hasPreset={false}
             onPullRequest={() => handleOpenBrowser('pull')}
             onPushRequest={() => {}}
+            onSlotPull={handlePullConfirm}
           />
         </div>
         {slotBrowserMode && (
@@ -200,6 +201,7 @@ export default function EditorPage() {
           hasPreset={!!preset}
           onPullRequest={() => handleOpenBrowser('pull')}
           onPushRequest={() => handleOpenBrowser('push')}
+          onSlotPull={handlePullConfirm}
         />
       </div>
 

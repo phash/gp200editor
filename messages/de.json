@@ -138,6 +138,7 @@
     "cancel": "Abbrechen",
     "handshaking": "Initialisierung…",
     "firmware": "FW {version}",
-    "versionWarning": "Firmware nicht unterstützt"
+    "versionWarning": "Firmware nicht unterstützt",
+    "loadSlot": "Slot"
   }
 }

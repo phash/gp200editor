@@ -10,6 +10,7 @@ interface DeviceStatusBarProps {
   hasPreset: boolean;
   onPullRequest: () => void;
   onPushRequest: () => void;
+  onSlotPull?: (slot: number) => void;
 }
 
 export function DeviceStatusBar({
@@ -18,10 +19,13 @@ export function DeviceStatusBar({
   hasPreset,
   onPullRequest,
   onPushRequest,
+  onSlotPull,
 }: DeviceStatusBarProps) {
   const t = useTranslations('device');
   const { status, errorMessage, currentSlot, connect, disconnect } = midiDevice;
   const [webMidiSupported, setWebMidiSupported] = useState(false);
+  const [slotInput, setSlotInput] = useState(false);
+  const [slotValue, setSlotValue] = useState('');
 
   useEffect(() => {
     setWebMidiSupported('requestMIDIAccess' in navigator);
@@ -129,6 +133,47 @@ export function DeviceStatusBar({
             >
               {t('pull')}
             </button>
+            {onSlotPull && !slotInput && (
+              <button
+                onClick={() => { setSlotInput(true); setSlotValue(''); }}
+                className="font-mono-display text-xs font-bold px-3 py-1 rounded"
+                style={{ border: '1px solid rgba(212,162,78,0.4)', color: 'var(--accent-amber)', background: 'rgba(212,162,78,0.06)' }}
+              >
+                {t('loadSlot')}
+              </button>
+            )}
+            {onSlotPull && slotInput && (
+              <form
+                className="flex items-center gap-1"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  try {
+                    const slot = SysExCodec.labelToSlot(slotValue.toUpperCase());
+                    onSlotPull(slot);
+                    setSlotInput(false);
+                  } catch {
+                    // invalid format — keep input open
+                  }
+                }}
+              >
+                <input
+                  autoFocus
+                  value={slotValue}
+                  onChange={(e) => setSlotValue(e.target.value)}
+                  placeholder="1A"
+                  className="font-mono-display text-xs font-bold w-12 px-1 py-1 rounded bg-transparent text-center outline-none"
+                  style={{ border: '1px solid rgba(212,162,78,0.6)', color: 'var(--accent-amber)' }}
+                  onKeyDown={(e) => { if (e.key === 'Escape') setSlotInput(false); }}
+                />
+                <button
+                  type="submit"
+                  className="font-mono-display text-xs px-2 py-1 rounded"
+                  style={{ color: 'var(--accent-amber)' }}
+                >
+                  ↵
+                </button>
+              </form>
+            )}
             <button
               onClick={onPushRequest}
               disabled={!hasPreset}

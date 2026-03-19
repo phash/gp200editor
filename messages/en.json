@@ -138,6 +138,7 @@
     "cancel": "Cancel",
     "handshaking": "Initializing…",
     "firmware": "FW {version}",
-    "versionWarning": "Unsupported firmware"
+    "versionWarning": "Unsupported firmware",
+    "loadSlot": "Slot"
   }
 }
