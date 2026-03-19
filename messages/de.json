@@ -1,6 +1,6 @@
 {
   "nav": {
-    "title": "GP-200 Editor",
+    "title": "Preset Forge",
     "home": "Start",
     "editor": "Editor",
     "login": "Anmelden",
@@ -11,12 +11,12 @@
     "switchLocale": "Sprache wechseln"
   },
   "home": {
-    "headline": "Valeton GP-200 Preset Editor",
-    "subtitle": "Lade deine .prst-Datei, bearbeite Effekte und speichere zurück.",
+    "headline": "Preset Forge",
+    "subtitle": "Valeton GP-200 Presets bearbeiten, teilen und live per USB-MIDI auf dein Pedal senden.",
     "uploadCta": "Preset laden"
   },
   "footer": {
-    "disclaimer": "Inoffizielles Tool. Nicht von Valeton.",
+    "disclaimer": "Preset Forge — Inoffizielles Tool. Nicht von Valeton.",
     "poweredBy": "powered by"
   },
   "editor": {
@@ -148,7 +148,7 @@
     "cancel": "Abbrechen",
     "handshaking": "Initialisierung…",
     "firmware": "FW {version}",
-    "versionWarning": "Firmware nicht unterstützt",
+    "versionWarning": "Nur mit FW 1.2 getestet — andere Versionen auf eigenes Risiko",
     "loadSlot": "Slot"
   }
 }

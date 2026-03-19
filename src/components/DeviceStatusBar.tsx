@@ -89,6 +89,11 @@ export function DeviceStatusBar({
               {t('firmware', { version: midiDevice.deviceInfo.firmwareValues.join('.') })}
             </span>
           )}
+          {midiDevice.deviceInfo && midiDevice.deviceInfo.firmwareValues.join('.') !== '1.2' && (
+            <span style={{ color: 'var(--accent-red)', marginLeft: 8, fontSize: '0.85em' }} title={t('versionWarning')}>
+              ⚠
+            </span>
+          )}
           <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>
             · {t('loadSlot')} <strong style={{ color: 'var(--accent-amber)' }}>{slotLabel}</strong>
             {slotName}

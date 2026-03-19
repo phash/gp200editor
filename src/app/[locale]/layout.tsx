@@ -8,8 +8,15 @@ import { Footer } from '@/components/Footer';
 import { Navbar } from '@/components/Navbar';
 
 export const metadata: Metadata = {
-  title: 'GP-200 Editor',
-  description: 'Unofficial Valeton GP-200 Preset Editor',
+  title: 'Preset Forge — GP-200 Editor',
+  description: 'Edit, share, and sync Valeton GP-200 presets. Real-time USB MIDI editing, preset gallery, and community sharing.',
+  openGraph: {
+    title: 'Preset Forge — GP-200 Editor',
+    description: 'Edit, share, and sync Valeton GP-200 presets. Real-time USB MIDI editing, preset gallery, and community sharing.',
+    siteName: 'Preset Forge',
+    type: 'website',
+    url: 'https://preset-forge.com',
+  },
 };
 
 type Props = {
