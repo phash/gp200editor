@@ -316,20 +316,24 @@ export function useMidiDevice(): UseMidiDeviceReturn {
   const loadPresetNames = useCallback(async (): Promise<void> => {
     if (!outputRef.current || !inputRef.current) return;
     namesLoadAbortRef.current = false;
+    const NAME_TIMEOUT = 500; // 500ms per slot (device responds in ~20ms normally)
+    const BATCH_SIZE = 8;     // Update UI every 8 slots instead of every slot
+
     for (let s = 0; s < 256; s++) {
       if (namesLoadAbortRef.current) break;
-      // Skip already-loaded names (supports resuming interrupted loads)
       if (presetNamesRef.current[s] !== null) {
         setNamesLoadProgress(s + 1);
         continue;
       }
       const name = await new Promise<string | null>((resolve) => {
         const slotNum = s;
-        const timer = setTimeout(() => resolve(null), READ_TIMEOUT_MS);
+        const timer = setTimeout(() => {
+          if (inputRef.current) inputRef.current.onmidimessage = onMidiMessage;
+          resolve(null);
+        }, NAME_TIMEOUT);
         if (inputRef.current) {
           inputRef.current.onmidimessage = (event: { data: unknown }) => {
             const data = getBytes(event.data);
-            console.log('[GP-200] names rx:', Array.from(data).map(b => b.toString(16).padStart(2,'0')).join(' '));
             onMidiMessage(event);
             if (isSysEx(data, 0x12, 0x18) && data[10] === slotNum) {
               const off = data[11] | (data[12] << 8);
@@ -341,15 +345,18 @@ export function useMidiDevice(): UseMidiDeviceReturn {
             }
           };
         }
-        const req = SysExCodec.buildReadRequest(slotNum);
-        console.log('[GP-200] names tx s=' + slotNum + ':', Array.from(req).map(b => b.toString(16).padStart(2,'0')).join(' '));
-        outputRef.current!.send(req);
+        outputRef.current!.send(SysExCodec.buildReadRequest(slotNum));
       });
       if (namesLoadAbortRef.current) break;
       presetNamesRef.current[s] = name;
-      setPresetNames([...presetNamesRef.current]);
+      // Batch UI updates: only re-render every BATCH_SIZE slots or on the last slot
+      if ((s + 1) % BATCH_SIZE === 0 || s === 255) {
+        setPresetNames([...presetNamesRef.current]);
+      }
       setNamesLoadProgress(s + 1);
     }
+    // Final flush in case we stopped mid-batch
+    setPresetNames([...presetNamesRef.current]);
     if (inputRef.current) inputRef.current.onmidimessage = onMidiMessage;
   }, [onMidiMessage]);
 
