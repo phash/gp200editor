@@ -12,7 +12,6 @@ services:
     environment:
       HOSTNAME: "0.0.0.0"
       GARAGE_ENDPOINT: http://garage:3900
-      EMAIL_SMTP_HOST: mailhog
     depends_on:
       - postgres
       - garage

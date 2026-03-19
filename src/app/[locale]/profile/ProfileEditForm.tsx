@@ -150,7 +150,8 @@ export default function ProfileEditForm({ initialData, username }: Props) {
         <input
           id="website"
           name="website"
-          type="url"
+          type="text"
+          placeholder="www.example.com"
           value={website}
           onChange={(e) => setWebsite(e.target.value)}
           className="w-full rounded px-3 py-2 text-sm focus:outline-none transition-shadow"
