@@ -11,7 +11,7 @@ export function Footer() {
     >
       {t('disclaimer')}
       <span style={{ margin: '0 8px' }}>·</span>
-      powered by{' '}
+      {t('poweredBy')}{' '}
       <a
         href="https://phash.de"
         target="_blank"

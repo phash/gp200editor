@@ -90,7 +90,7 @@ export function DeviceStatusBar({
             </span>
           )}
           <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>
-            · Slot <strong style={{ color: 'var(--accent-amber)' }}>{slotLabel}</strong>
+            · {t('loadSlot')} <strong style={{ color: 'var(--accent-amber)' }}>{slotLabel}</strong>
             {slotName}
           </span>
         </span>

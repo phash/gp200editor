@@ -233,7 +233,7 @@ export function GalleryClient() {
                     e.currentTarget.style.color = 'var(--accent-amber)';
                   }}
                 >
-                  Download
+                  {t('download')}
                 </a>
               </div>
             </div>

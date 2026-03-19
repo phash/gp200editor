@@ -107,7 +107,7 @@ export function Navbar() {
         </a>
         <button
           onClick={switchLocale}
-          aria-label={`Switch to ${otherLocale.toUpperCase()}`}
+          aria-label={t('switchLocale')}
           data-testid="nav-locale-switcher"
           className="font-mono-display text-xs px-2.5 py-1 rounded transition-all"
           style={{

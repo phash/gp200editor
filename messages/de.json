@@ -7,7 +7,8 @@
     "profile": "Profil",
     "logout": "Abmelden",
     "presets": "Presets",
-    "gallery": "Galerie"
+    "gallery": "Galerie",
+    "switchLocale": "Sprache wechseln"
   },
   "home": {
     "headline": "Valeton GP-200 Preset Editor",
@@ -15,7 +16,8 @@
     "uploadCta": "Preset laden"
   },
   "footer": {
-    "disclaimer": "Inoffizielles Tool. Nicht von Valeton."
+    "disclaimer": "Inoffizielles Tool. Nicht von Valeton.",
+    "poweredBy": "powered by"
   },
   "editor": {
     "title": "Preset bearbeiten",
@@ -25,14 +27,10 @@
     "loadFromDisk": "Preset von Festplatte laden",
     "loadError": "Fehler beim Laden",
     "pushError": "Speichern auf Gerät fehlgeschlagen",
-    "placeholder": "Editor wird in Chunk 3 implementiert.",
     "effectOn": "AN",
     "effectOff": "AUS",
     "effectEnabled": "aktiviert",
     "effectDisabled": "deaktiviert",
-    "effectSlotLabel": "Slot",
-    "effectId": "Effekt-ID",
-    "parameterCount": "Parameter",
     "parameters": "Parameter",
     "noParams": "Keine Parameter verfügbar",
     "saveToPresets": "In Presets speichern",
@@ -122,7 +120,8 @@
     "noResults": "Keine Presets gefunden.",
     "downloads": "Downloads",
     "by": "von",
-    "loadMore": "Mehr laden"
+    "loadMore": "Mehr laden",
+    "download": "Herunterladen"
   },
   "device": {
     "connect": "GP-200 verbinden",
