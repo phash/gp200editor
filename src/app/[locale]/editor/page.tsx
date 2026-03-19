@@ -10,6 +10,8 @@ import { useRouter } from '@/i18n/routing';
 import { useMidiDevice } from '@/hooks/useMidiDevice';
 import { DeviceStatusBar } from '@/components/DeviceStatusBar';
 import { DeviceSlotBrowser } from '@/components/DeviceSlotBrowser';
+import { SysExCodec } from '@/core/SysExCodec';
+import type { GP200Preset } from '@/core/types';
 
 export default function EditorPage() {
   const t = useTranslations('editor');
@@ -19,6 +21,10 @@ export default function EditorPage() {
   const [slotBrowserMode, setSlotBrowserMode] = useState<'pull' | 'push' | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  // Bank tabs: 4 presets (A/B/C/D) with active tab index
+  const [bankPresets, setBankPresets] = useState<(GP200Preset | null)[]>([null, null, null, null]);
+  const [bankBaseSlot, setBankBaseSlot] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState(0);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
@@ -96,13 +102,27 @@ export default function EditorPage() {
   }
 
   async function handlePullConfirm(slot: number) {
-    try {
-      const loaded = await midiDevice.pullPreset(slot);
-      loadPreset(loaded);
-    } catch {
-      alert(t('loadError'));
-    } finally {
-      setSlotBrowserMode(null);
+    setSlotBrowserMode(null);
+    const bank = Math.floor(slot / 4);
+    const baseSlot = bank * 4;
+    const tabIndex = slot % 4;
+    const pulled: (GP200Preset | null)[] = [null, null, null, null];
+
+    // Pull all 4 slots of the bank
+    for (let i = 0; i < 4; i++) {
+      try {
+        pulled[i] = await midiDevice.pullPreset(baseSlot + i);
+      } catch {
+        // leave null on failure
+      }
+    }
+
+    setBankPresets(pulled);
+    setBankBaseSlot(baseSlot);
+    setActiveTab(tabIndex);
+    // Load the selected slot into the editor
+    if (pulled[tabIndex]) {
+      loadPreset(pulled[tabIndex]);
     }
   }
 
@@ -114,6 +134,13 @@ export default function EditorPage() {
       alert(t('pushError'));
     } finally {
       setSlotBrowserMode(null);
+    }
+  }
+
+  function handleTabSwitch(tabIndex: number) {
+    setActiveTab(tabIndex);
+    if (bankPresets[tabIndex]) {
+      loadPreset(bankPresets[tabIndex]);
     }
   }
 
@@ -210,6 +237,35 @@ export default function EditorPage() {
         />
       </div>
 
+      {/* Bank tabs */}
+      {bankBaseSlot !== null && (
+        <div className="flex gap-1 mb-3">
+          {['A', 'B', 'C', 'D'].map((letter, i) => {
+            const slotNum = bankBaseSlot + i;
+            const label = SysExCodec.slotToLabel(slotNum);
+            const name = bankPresets[i]?.patchName;
+            const isActive = activeTab === i;
+            return (
+              <button
+                key={i}
+                onClick={() => handleTabSwitch(i)}
+                className="flex-1 font-mono-display text-xs py-2 px-2 rounded-t transition-colors"
+                style={{
+                  background: isActive ? 'rgba(212,162,78,0.15)' : 'rgba(255,255,255,0.03)',
+                  borderBottom: isActive ? '2px solid var(--accent-amber)' : '2px solid transparent',
+                  color: isActive ? 'var(--accent-amber)' : 'var(--text-muted)',
+                }}
+              >
+                <div className="font-bold">{label}</div>
+                <div className="truncate" style={{ fontSize: '0.85em', opacity: name ? 1 : 0.4 }}>
+                  {name ?? '—'}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Device sync */}
       <div className="mb-4">
         <DeviceStatusBar
@@ -219,6 +275,7 @@ export default function EditorPage() {
           onPullRequest={() => handleOpenBrowser('pull')}
           onPushRequest={() => handleOpenBrowser('push')}
           onSlotPull={handlePullConfirm}
+          onBankPull={handleBankPull}
         />
       </div>
 
