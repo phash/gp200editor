@@ -282,7 +282,8 @@ export function useMidiDevice(): UseMidiDeviceReturn {
             const data = getBytes(event.data);
             console.log('[GP-200] pull rx:', Array.from(data).map(b => b.toString(16).padStart(2,'0')).join(' '));
             onMidiMessage(event);
-            if (isSysEx(data, 0x12, 0x18) && data[10] === slot) {
+            // data[10] is the device's current slot, NOT the requested slot
+            if (isSysEx(data, 0x12, 0x18)) {
               chunks.push(data);
               if (chunks.length === 7) {
                 clearTimeout(timer);
@@ -335,7 +336,7 @@ export function useMidiDevice(): UseMidiDeviceReturn {
           inputRef.current.onmidimessage = (event: { data: unknown }) => {
             const data = getBytes(event.data);
             onMidiMessage(event);
-            if (isSysEx(data, 0x12, 0x18) && data[10] === slotNum) {
+            if (isSysEx(data, 0x12, 0x18)) {
               const off = data[11] | (data[12] << 8);
               if (off === 0) {
                 clearTimeout(timer);
