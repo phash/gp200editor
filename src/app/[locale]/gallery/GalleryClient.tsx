@@ -236,30 +236,35 @@ export function GalleryClient() {
                 </div>
               )}
 
-              {/* Footer: downloads + download button */}
+              {/* Footer: downloads + buttons */}
               <div className="flex items-center justify-between mt-3 pt-2" style={{ borderTop: '1px solid var(--border-subtle)' }}>
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
                   {preset.downloadCount} {t('downloads')}
                 </span>
-                <a
-                  href={`/api/share/${preset.shareToken}/download`}
-                  className="font-mono-display text-[10px] font-bold tracking-wider uppercase px-3 py-1 rounded transition-all duration-150"
-                  style={{
-                    border: '1px solid var(--accent-amber)',
-                    color: 'var(--accent-amber)',
-                    background: 'var(--glow-amber)',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'var(--accent-amber)';
-                    e.currentTarget.style.color = 'var(--bg-primary)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'var(--glow-amber)';
-                    e.currentTarget.style.color = 'var(--accent-amber)';
-                  }}
-                >
-                  {t('download')}
-                </a>
+                <div className="flex gap-2">
+                  <a
+                    href={`/editor?share=${preset.shareToken}`}
+                    className="font-mono-display text-[10px] font-bold tracking-wider uppercase px-3 py-1 rounded transition-all duration-150 hover:!bg-[var(--accent-amber)] hover:!text-[var(--bg-primary)]"
+                    style={{
+                      border: '1px solid var(--border-active)',
+                      color: 'var(--text-secondary)',
+                      background: 'transparent',
+                    }}
+                  >
+                    {t('openInEditor')}
+                  </a>
+                  <a
+                    href={`/api/share/${preset.shareToken}/download`}
+                    className="font-mono-display text-[10px] font-bold tracking-wider uppercase px-3 py-1 rounded transition-all duration-150 hover:!bg-[var(--accent-amber)] hover:!text-[var(--bg-primary)]"
+                    style={{
+                      border: '1px solid var(--accent-amber)',
+                      color: 'var(--accent-amber)',
+                      background: 'var(--glow-amber)',
+                    }}
+                  >
+                    {t('download')}
+                  </a>
+                </div>
               </div>
             </div>
           ))}

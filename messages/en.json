@@ -138,7 +138,8 @@
     "downloads": "downloads",
     "by": "by",
     "loadMore": "Load More",
-    "download": "Download"
+    "download": "Download",
+    "openInEditor": "Open in Editor"
   },
   "device": {
     "connect": "Connect GP-200",

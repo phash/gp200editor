@@ -6,6 +6,7 @@ import { usePreset } from '@/hooks/usePreset';
 import { PRSTDecoder } from '@/core/PRSTDecoder';
 import { PRSTEncoder } from '@/core/PRSTEncoder';
 import { useCallback, useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useRouter } from '@/i18n/routing';
 import { useMidiDevice } from '@/hooks/useMidiDevice';
 import { DeviceStatusBar } from '@/components/DeviceStatusBar';
@@ -18,6 +19,7 @@ import type { GP200Preset } from '@/core/types';
 export default function EditorPage() {
   const t = useTranslations('editor');
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { preset, loadPreset, setPatchName, toggleEffect, changeEffect, reorderEffects, setParam } = usePreset();
   const midiDevice = useMidiDevice();
   const [slotBrowserMode, setSlotBrowserMode] = useState<'pull' | 'push' | null>(null);
@@ -45,6 +47,25 @@ export default function EditorPage() {
       })
       .catch(() => setIsLoggedIn(false));
   }, []);
+
+  // Load preset from gallery share link (?share=TOKEN)
+  useEffect(() => {
+    const shareToken = searchParams.get('share');
+    if (!shareToken || preset) return;
+    fetch(`/api/share/${shareToken}/download`)
+      .then((res) => {
+        if (!res.ok) throw new Error('Download failed');
+        return res.arrayBuffer();
+      })
+      .then((ab) => {
+        const decoder = new PRSTDecoder(new Uint8Array(ab));
+        loadPreset(decoder.decode());
+      })
+      .catch((err) => {
+        console.error('Failed to load shared preset:', err);
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   // Disconnect MIDI on page unload to abort any running loadPresetNames loop
   useEffect(() => {
