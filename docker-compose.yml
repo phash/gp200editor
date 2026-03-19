@@ -1,22 +1,17 @@
+# Local development stack.
+# Setup: cp .env.dev.example .env.dev  (edit credentials)
+# Start: docker compose --env-file .env.dev up -d --build
+# Init:  bash scripts/garage-init.sh
 services:
-  # Local dev: use "npm run dev" instead of this service.
-  # For production container builds, run: docker compose up app
   app:
     build: .
     ports:
-      - "3000:3000"
+      - "${APP_PORT:-3320}:3000"
     env_file:
-      - path: .env.local
-        required: false
+      - .env.dev
     environment:
-      # Override DATABASE_URL to use the internal service name
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/gp200
       HOSTNAME: "0.0.0.0"
       GARAGE_ENDPOINT: http://garage:3900
-      GARAGE_ACCESS_KEY_ID: GKf3c3f90b5411b948e9853a44
-      GARAGE_SECRET_ACCESS_KEY: "94895f063ccfa0f1759df4efd464e667a147bd720ae50cc12ca4cd583733b1ee"
-      GARAGE_BUCKET: avatars
-      GARAGE_PRESET_BUCKET: presets
       EMAIL_SMTP_HOST: mailhog
     depends_on:
       - postgres
@@ -25,12 +20,10 @@ services:
 
   postgres:
     image: postgres:16
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: gp200
+    env_file:
+      - .env.dev
     ports:
-      - "5433:5432"   # 5433 extern to avoid conflicts with other projects
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
