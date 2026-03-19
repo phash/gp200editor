@@ -1,0 +1,56 @@
+services:
+  app:
+    build: .
+    ports:
+      - "${APP_PORT:-3320}:3000"
+    env_file:
+      - .env.prod
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-gp200}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-gp200}
+      HOSTNAME: "0.0.0.0"
+      GARAGE_ENDPOINT: http://garage:3900
+      EMAIL_SMTP_HOST: ${EMAIL_SMTP_HOST:-mailhog}
+      EMAIL_SMTP_PORT: ${EMAIL_SMTP_PORT:-1025}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      garage:
+        condition: service_started
+      mailhog:
+        condition: service_started
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-gp200}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-gp200}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gp200}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "127.0.0.1:8025:8025"   # Web UI — only localhost
+    restart: unless-stopped
+
+  garage:
+    image: dxflrs/garage:v1.3.1
+    volumes:
+      - garage_data:/var/lib/garage/data
+      - garage_meta:/var/lib/garage/meta
+      - ./garage.toml:/etc/garage.toml:ro
+    command: /garage -c /etc/garage.toml server
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  garage_data:
+  garage_meta:
