@@ -267,9 +267,20 @@ export default function EditorPage() {
         )}
       </div>
 
-      {/* Bank tabs */}
+      {/* Bank tabs with prev/next navigation */}
       {bankBaseSlot !== null && (
-        <div className="flex gap-1 mb-3">
+        <div className="flex gap-1 mb-3 items-stretch">
+          <button
+            onClick={() => {
+              const prevBase = bankBaseSlot === 0 ? 252 : bankBaseSlot - 4;
+              handlePullConfirm(prevBase + activeTab);
+            }}
+            className="font-mono-display text-sm font-bold px-2 rounded-l transition-colors"
+            style={{ color: 'var(--text-muted)', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+            title={`Bank ${Math.floor((bankBaseSlot === 0 ? 252 : bankBaseSlot - 4) / 4) + 1}`}
+          >
+            &lt;
+          </button>
           {['A', 'B', 'C', 'D'].map((letter, i) => {
             const slotNum = bankBaseSlot + i;
             const label = SysExCodec.slotToLabel(slotNum);
@@ -279,7 +290,7 @@ export default function EditorPage() {
               <button
                 key={i}
                 onClick={() => handleTabSwitch(i)}
-                className="flex-1 font-mono-display text-xs py-2 px-2 rounded-t transition-colors"
+                className="flex-1 font-mono-display text-xs py-2 px-2 transition-colors"
                 style={{
                   background: isActive ? 'rgba(212,162,78,0.15)' : 'rgba(255,255,255,0.03)',
                   borderBottom: isActive ? '2px solid var(--accent-amber)' : '2px solid transparent',
@@ -293,6 +304,17 @@ export default function EditorPage() {
               </button>
             );
           })}
+          <button
+            onClick={() => {
+              const nextBase = bankBaseSlot >= 252 ? 0 : bankBaseSlot + 4;
+              handlePullConfirm(nextBase + activeTab);
+            }}
+            className="font-mono-display text-sm font-bold px-2 rounded-r transition-colors"
+            style={{ color: 'var(--text-muted)', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+            title={`Bank ${Math.floor((bankBaseSlot >= 252 ? 0 : bankBaseSlot + 4) / 4) + 1}`}
+          >
+            &gt;
+          </button>
         </div>
       )}
 
