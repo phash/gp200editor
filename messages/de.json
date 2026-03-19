@@ -135,6 +135,9 @@
     "chromeOnly": "Nur Chrome/Edge unterstützt",
     "error": "Verbindungsfehler",
     "retry": "Erneut verbinden",
-    "cancel": "Abbrechen"
+    "cancel": "Abbrechen",
+    "handshaking": "Initialisierung…",
+    "firmware": "FW {version}",
+    "versionWarning": "Firmware nicht unterstützt"
   }
 }

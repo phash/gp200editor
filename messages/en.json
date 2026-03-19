@@ -135,6 +135,9 @@
     "chromeOnly": "Chrome/Edge only",
     "error": "Connection error",
     "retry": "Reconnect",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "handshaking": "Initializing…",
+    "firmware": "FW {version}",
+    "versionWarning": "Unsupported firmware"
   }
 }

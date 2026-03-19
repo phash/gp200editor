@@ -28,9 +28,10 @@ export function DeviceStatusBar({
   }, []);
 
   const ledColor =
-    status === 'connected'   ? 'var(--accent-green)' :
-    status === 'connecting'  ? 'var(--accent-amber)' :
-    status === 'error'       ? 'var(--accent-red)'   :
+    status === 'connected'    ? 'var(--accent-green)' :
+    status === 'connecting'   ? 'var(--accent-amber)' :
+    status === 'handshaking'  ? 'var(--accent-amber)' :
+    status === 'error'        ? 'var(--accent-red)'   :
     '#555';
 
   const slotLabel = currentSlot !== null ? SysExCodec.slotToLabel(currentSlot) : '—';
@@ -52,9 +53,9 @@ export function DeviceStatusBar({
         style={{
           width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
           background: ledColor,
-          boxShadow: status === 'connected' ? `0 0 6px ${ledColor}` :
-                     status === 'connecting' ? `0 0 6px ${ledColor}` : 'none',
-          animation: status === 'connecting' ? 'pulse 1s infinite' : 'none',
+          boxShadow: (status === 'connected') ? `0 0 6px ${ledColor}` :
+                     (status === 'connecting' || status === 'handshaking') ? `0 0 6px ${ledColor}` : 'none',
+          animation: (status === 'connecting' || status === 'handshaking') ? 'pulse 1s infinite' : 'none',
         }}
       />
 
@@ -69,9 +70,19 @@ export function DeviceStatusBar({
           {t('connecting')}
         </span>
       )}
+      {status === 'handshaking' && (
+        <span className="font-mono-display" style={{ color: 'var(--accent-amber)' }}>
+          {t('handshaking')}
+        </span>
+      )}
       {status === 'connected' && (
         <span className="font-mono-display" style={{ color: 'var(--accent-green)', fontSize: '0.8em' }}>
           GP-200
+          {midiDevice.deviceInfo && (
+            <span style={{ color: 'var(--text-muted)', marginLeft: 4, fontSize: '0.9em' }}>
+              {t('firmware', { version: midiDevice.deviceInfo.firmwareValues.join('.') })}
+            </span>
+          )}
           <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>
             · Slot <strong style={{ color: 'var(--accent-amber)' }}>{slotLabel}</strong>
             {slotName}
