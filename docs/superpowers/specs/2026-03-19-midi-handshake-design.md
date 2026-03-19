@@ -27,7 +27,7 @@ The current `useMidiDevice.connect()` opens MIDI ports but sends no handshake. T
 
 ### Current (broken)
 
-Slot placed as raw byte at positions [16], [29], [33]. Only works correctly for slot 0.
+The entire 46-byte message template is wrong, not just the slot encoding. The current code uses 6 zero bytes at [10-15], raw slot byte at [16], and different constant placement. The correct template (from capture) has 8 zero bytes at [10-17] and a completely different structure. The function must be fully rewritten. Existing unit tests in `SysExCodec.test.ts` that assert slot at [16]/[29]/[33] must also be rewritten.
 
 ### Correct format (from capture)
 
@@ -113,13 +113,22 @@ Same structure as identity query but param bytes [14-15] = `06 01`. Triggers 5-c
 
 ### 2.5 `parseStateDump(chunks: Uint8Array[])` → `{ slot: number, preset: GP200Preset }`
 
-Parses 5 × sub=0x4E chunks (384+384+384+384+226B → 846 decoded bytes):
+Parses 5 × sub=0x4E chunks. Per-chunk structure is identical to sub=0x18 read chunks:
+- Bytes [0-9]: SysEx header (F0 + manufacturer + CMD + SUB)
+- Byte [10]: slot number
+- Bytes [11-12]: offset (LE16)
+- Bytes [13..N-1]: nibble data
+- Byte [N]: F7
 
-- Slot number from `chunks[0][10]` (byte after SUB)
-- Same chunk assembly as `parseReadChunks` but only 5 chunks
-- Decoded data contains routing + 11 effect blocks but no controller assignments
-- Preset name at decoded[28..59] (may be empty for "live" state)
-- Effect blocks at decoded[120..911] (same 72B structure)
+Chunk raw sizes: 384+384+384+384+226 = 1762 bytes total.
+Per-chunk overhead: 14 bytes (10 header + 1 slot + 2 offset + 1 F7).
+Nibble data: 370+370+370+370+212 = 1692 nibbles → **846 decoded bytes**.
+
+This is a truncated version of the full 1176-byte preset — the trailing 330 bytes (controller/pedal assignments) are absent. The core parsing logic (name at decoded[28..59], effect blocks at decoded[120..911]) is shared with `parseReadChunks`. Implementation should extract a shared helper for chunk assembly + nibble decode, then have `parseReadChunks` and `parseStateDump` both use it.
+
+- Slot number from `chunks[0][10]`
+- If preset name is empty (common for "live" state), use slot label as fallback (e.g. "2B")
+- Effect blocks at decoded[120..min(911, decoded.length)] — guard against shorter payload
 
 ### 2.6 `buildVersionCheck()` → Uint8Array (34B)
 
@@ -136,28 +145,28 @@ CMD=0x11, SUB=0x0A. Nibble-encoded bytes `0D 04 0F 07 08 0B 00 00 0C 0B 04 05` d
 
 CMD=0x12, SUB=0x0A response (34B). If nibble data at [21..32] is all zeros → accepted.
 
-### 2.8 `buildAssignmentQuery(section, page, block, refData?)` → Uint8Array (70B)
+### 2.8 `buildAssignmentQuery(section, page, block)` → Uint8Array (70B)
 
-CMD=0x11, SUB=0x1C. Template from capture:
+CMD=0x11, SUB=0x1C. The reference data in the request body is opaque — we use static templates extracted from the capture, one per (section, page) combination.
 
+**Section 0, Page 0** (blocks 0x00–0x0F): 16 queries, most use this template:
 ```
 F0 21 25 7E 47 50 2D 32 11 1C
-[header: 9 bytes, varies by section]
-[page_hi] [page_lo]
-[block: 0x00-0x0F]
-[padding: 3 bytes]
-[constant: 01]
-[padding: 2 bytes]
-[reference data: ~40 bytes, nibble-encoded]
+00 00 00 00 09 01 00 01 08      [section 0 header]
+00 00                            [page 0]
+XX                               [block 0x00-0x0F]
+00 00 00 01 00 00                [constant]
+0C 0E 07 03 0B 02 00 00 0F 0A 04 0F 06 05 00 09 00 0C 0F 0E 0D 0A 00 0B 09 08 07 05 0E 08 00 02 00 02 00 00 00 00 00 00
 F7
 ```
 
-Section 0 header: `00 00 00 00 09 01 00 01 08`
-Section 1 header: `00 00 00 01 02 01 00 01 08`
+**Section 0, Page 1** (blocks 0x00–0x03): 4 queries, same template but page bytes = `01 00`.
 
-Page increments at byte [21] (nibble-encoded), block at byte [22] (0x00–0x0F).
+**Section 1** (observed at end of capture, blocks 0x00–0x09): header changes to `00 00 00 01 02 01 00 01 08`. Same body template otherwise.
 
-The reference data varies slightly between requests — we use the most common pattern from the capture as default.
+Total: ~34 assignment queries. The reference data after the constant bytes varies slightly for a few requests (observed at page boundaries), but the device responds correctly to the most common template regardless. If a response times out, skip that block and continue.
+
+**Page/block limits:** Section 0 has 2 pages (page 0: 16 blocks, page 1: 4 blocks = 20 total). Section 1 has 1 page (10 blocks). These limits are observed from the capture and hardcoded.
 
 ### 2.9 `parseAssignmentResponse(msg: Uint8Array)` → `AssignmentEntry`
 
@@ -223,7 +232,13 @@ Step 9: for section 0, pages 0-1:
 Step 10: setStatus('connected')
 ```
 
-Timeout per step: 3000ms (`READ_TIMEOUT_MS`). On timeout → `setStatus('error')` with message indicating which step failed.
+Timeout per step: 3000ms (`READ_TIMEOUT_MS`) for steps 1-8. Assignment queries (step 9) use 1000ms timeout — on timeout, skip the block and continue (assignments are non-critical). Steps 1-8 failure → `setStatus('error')` with message indicating which step failed.
+
+### 3.3.1 Error Recovery
+
+If the handshake fails partway (e.g. after `buildEnterEditorMode` is sent), `disconnect()` does not currently send an "exit editor mode" message. This is acceptable — the device appears to auto-exit editor mode when the USB connection is lost or the MIDI port is closed. If the user retries via the Connect button, `connect()` starts from scratch (full sequence). No special cleanup needed.
+
+Note: `buildWriteChunks` places the slot as a raw byte at `chunk[10]`, matching the capture format for write chunks. This is correct — write chunks use a different encoding than read requests. No fix needed there.
 
 ### 3.4 Helper: `waitForResponse()`
 
@@ -261,8 +276,9 @@ Collects N messages matching cmd/sub. Used for:
 ### 4.1 DeviceStatusBar
 
 - Shows firmware version from `deviceInfo` next to device name: "GP-200 FW 1.2"
-- During `status === 'handshaking'`: progress text ("Identifying device...", "Loading state...", "Reading assignments...")
+- During `status === 'handshaking'`: LED color = amber (same as `'connecting'`), progress text ("Identifying device...", "Loading state...", "Reading assignments...")
 - Version warning if `deviceInfo.versionAccepted === false`
+- The LED color mapping must add `'handshaking'` → `var(--accent-amber)` and the status text block must handle it
 
 ### 4.2 Editor Auto-Load
 
@@ -274,7 +290,7 @@ After handshake completes with `currentPreset` set, `editor/page.tsx` loads it i
 
 ### Unit Tests (SysExCodec)
 
-- `buildReadRequest`: verify nibble encoding for slots 0, 1, 127, 254, 255 against capture bytes
+- `buildReadRequest`: verify complete 46-byte template for slots 0, 1, 127, 254, 255 against capture bytes. Existing tests that assert slot at [16]/[29]/[33] must be rewritten
 - `buildIdentityQuery`: exact byte match against capture message #1
 - `buildEnterEditorMode`: exact byte match against capture message #3
 - `buildStateDumpRequest`: exact byte match against capture message #4
