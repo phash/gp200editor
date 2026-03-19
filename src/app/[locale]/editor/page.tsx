@@ -191,8 +191,9 @@ export default function EditorPage() {
     setDragOverIndex(null);
   }, [dragIndex, reorderEffects, midiDevice, preset]);
 
+  const td = useTranslations('device');
+
   if (!preset) {
-    const td = useTranslations('device');
     return (
       <div className="p-8 max-w-2xl mx-auto">
         {/* Device connection — prominent at top */}

@@ -306,7 +306,7 @@ export const SysExCodec = {
     return { section, page, block, name, rawData: decoded };
   },
 
-  parseStateDump(chunks: Uint8Array[]): { slot: number } {
+  parseStateDump(_chunks: Uint8Array[]): { slot: number } {
     // 0x4E state dump: byte[10] is NOT the slot (it's consistently 0x06, likely chunk count
     // or protocol version). The actual current slot encoding within the nibble payload is
     // unknown. Default to slot 0 — user can manually select the correct slot.
@@ -411,7 +411,7 @@ export const SysExCodec = {
     return msg;
   },
 
-  buildPresetChange(slot: number): Uint8Array {
+  buildPresetChange(_slot: number): Uint8Array {
     // CMD=0x12, sub=0x08, 30 bytes — change/commit preset
     // From capture 100548: sent after save commit to activate the slot
     return new Uint8Array([
