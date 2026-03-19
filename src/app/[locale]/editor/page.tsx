@@ -10,6 +10,7 @@ import { useRouter } from '@/i18n/routing';
 import { useMidiDevice } from '@/hooks/useMidiDevice';
 import { DeviceStatusBar } from '@/components/DeviceStatusBar';
 import { DeviceSlotBrowser } from '@/components/DeviceSlotBrowser';
+import { FirmwareWarningBanner } from '@/components/FirmwareWarningBanner';
 import { SavePresetDialog } from '@/components/SavePresetDialog';
 import { SysExCodec } from '@/core/SysExCodec';
 import type { GP200Preset } from '@/core/types';
@@ -30,6 +31,7 @@ export default function EditorPage() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [username, setUsername] = useState('');
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [firmwareWarningDismissed, setFirmwareWarningDismissed] = useState(false);
 
   useEffect(() => {
     fetch('/api/profile')
@@ -48,6 +50,13 @@ export default function EditorPage() {
   useEffect(() => {
     return () => { midiDevice.disconnect(); };
   }, [midiDevice.disconnect]);
+
+  // Reset firmware warning when device disconnects
+  useEffect(() => {
+    if (midiDevice.status === 'disconnected') {
+      setFirmwareWarningDismissed(false);
+    }
+  }, [midiDevice.status]);
 
   // Auto-load entire bank from device after handshake
   useEffect(() => {
@@ -202,6 +211,16 @@ export default function EditorPage() {
 
   const td = useTranslations('device');
 
+  const showFirmwareWarning =
+    midiDevice.status === 'connected' &&
+    midiDevice.deviceInfo !== null &&
+    midiDevice.deviceInfo.firmwareValues.join('.') !== '1.2' &&
+    !firmwareWarningDismissed;
+
+  const firmwareVersionStr = midiDevice.deviceInfo
+    ? midiDevice.deviceInfo.firmwareValues.join('.')
+    : '';
+
   if (!preset) {
     return (
       <div className="p-8 max-w-2xl mx-auto">
@@ -220,6 +239,12 @@ export default function EditorPage() {
             </p>
           )}
         </div>
+        {showFirmwareWarning && (
+          <FirmwareWarningBanner
+            firmwareVersion={firmwareVersionStr}
+            onDismiss={() => setFirmwareWarningDismissed(true)}
+          />
+        )}
 
         <h1 className="font-mono-display text-2xl font-bold mb-8 tracking-tight"
           style={{ color: 'var(--text-primary)' }}>
@@ -469,6 +494,14 @@ export default function EditorPage() {
           onPullRequest={() => handleOpenBrowser('pull')}
           onPushRequest={() => handleOpenBrowser('push')}
         />
+        {showFirmwareWarning && (
+          <div className="mt-3">
+            <FirmwareWarningBanner
+              firmwareVersion={firmwareVersionStr}
+              onDismiss={() => setFirmwareWarningDismissed(true)}
+            />
+          </div>
+        )}
       </div>
 
       {slotBrowserMode && (
