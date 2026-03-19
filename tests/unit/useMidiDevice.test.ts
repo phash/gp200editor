@@ -127,7 +127,9 @@ describe('useMidiDevice', () => {
       expect(sent.length).toBeGreaterThan(0);
       const req = sent[0];
       SYSEX_HEADER.forEach((b, i) => expect(req[i]).toBe(b));
-      expect(req[16]).toBe(5); // slot
+      // Slot 5 nibble-encoded at [25-26]
+      expect(req[25]).toBe(0x00);
+      expect(req[26]).toBe(0x05);
     });
     // Clean up by aborting the pull (no chunks sent)
     pullPromise!.catch(() => {}); // ignore timeout error

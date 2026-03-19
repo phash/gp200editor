@@ -100,28 +100,57 @@ describe('SysExCodec: slot labels', () => {
 });
 
 describe('SysExCodec: buildReadRequest', () => {
-  it('returns a 46-byte message starting with F0 header', () => {
+  it('returns a 46-byte SysEx message with correct framing', () => {
     const req = SysExCodec.buildReadRequest(0);
     expect(req.length).toBe(46);
     expect(req[0]).toBe(0xF0);
-    expect(req[1]).toBe(0x21);
-    expect(req[8]).toBe(0x11); // CMD
-    expect(req[9]).toBe(0x10); // sub
-    expect(req[45]).toBe(0xF7); // end
+    expect(req[8]).toBe(0x11);
+    expect(req[9]).toBe(0x10);
+    expect(req[45]).toBe(0xF7);
   });
 
-  it('places slot number at bytes 16, 29, 33', () => {
-    const req = SysExCodec.buildReadRequest(9);
-    expect(req[16]).toBe(9);
-    expect(req[29]).toBe(9);
-    expect(req[33]).toBe(9);
-  });
-
-  it('slot 0 has zeros at positions 16, 29, 33', () => {
+  it('slot 0 matches capture exactly', () => {
     const req = SysExCodec.buildReadRequest(0);
-    expect(req[16]).toBe(0);
-    expect(req[29]).toBe(0);
-    expect(req[33]).toBe(0);
+    const expected = new Uint8Array([
+      0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x11, 0x10,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00,
+      0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x01, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0xF7,
+    ]);
+    expect(req).toEqual(expected);
+  });
+
+  it('slot 1: nibble-encoded at [25-26], [37-38], [41-42]', () => {
+    const req = SysExCodec.buildReadRequest(1);
+    expect(req[25]).toBe(0x00); expect(req[26]).toBe(0x01);
+    expect(req[37]).toBe(0x00); expect(req[38]).toBe(0x01);
+    expect(req[41]).toBe(0x00); expect(req[42]).toBe(0x01);
+  });
+
+  it('slot 254 (0xFE): nibble-encoded as 0F 0E', () => {
+    const req = SysExCodec.buildReadRequest(254);
+    expect(req[25]).toBe(0x0F); expect(req[26]).toBe(0x0E);
+    expect(req[37]).toBe(0x0F); expect(req[38]).toBe(0x0E);
+    expect(req[41]).toBe(0x0F); expect(req[42]).toBe(0x0E);
+  });
+
+  it('slot 255 (0xFF): nibble-encoded as 0F 0F', () => {
+    const req = SysExCodec.buildReadRequest(255);
+    expect(req[25]).toBe(0x0F); expect(req[26]).toBe(0x0F);
+    expect(req[37]).toBe(0x0F); expect(req[38]).toBe(0x0F);
+    expect(req[41]).toBe(0x0F); expect(req[42]).toBe(0x0F);
+  });
+
+  it('constants are correct for all slots', () => {
+    for (const slot of [0, 1, 127, 254, 255]) {
+      const req = SysExCodec.buildReadRequest(slot);
+      for (let i = 10; i <= 17; i++) expect(req[i]).toBe(0x00);
+      expect(req[18]).toBe(0x04);
+      expect(req[22]).toBe(0x01); expect(req[23]).toBe(0x00);
+      expect(req[30]).toBe(0x01); expect(req[31]).toBe(0x00);
+      expect(req[34]).toBe(0x04);
+    }
   });
 });
 

@@ -34,21 +34,26 @@ export const SysExCodec = {
   },
 
   buildReadRequest(slot: number): Uint8Array {
-    // CMD=0x11, sub=0x10, 46 bytes (§4.4 "Request Full Preset Data")
-    // Slot number at bytes 16, 29, 33 (0-based)
-    const n = slot & 0xFF;
+    // CMD=0x11, sub=0x10, 46 bytes — corrected from USB capture 2026-03-19
+    // Slot nibble-encoded (high first) at positions [25-26], [37-38], [41-42]
+    const sh = (slot >> 4) & 0x0F;
+    const sl = slot & 0x0F;
     return new Uint8Array([
       0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32,  // [0-7]   header
       0x11, 0x10,                                        // [8-9]   CMD, sub
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00,              // [10-15] padding
-      n,                                                  // [16]    slot
-      0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01, 0x00, // [17-24]
-      0x00, 0x00, 0x04, 0x00,                           // [25-28]
-      n,                                                  // [29]    slot
-      0x00, 0x00, 0x00,                                 // [30-32]
-      n,                                                  // [33]    slot
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // [34-41]
-      0x00, 0x00, 0x00,                                 // [42-44]
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // [10-17] padding
+      0x04, 0x00, 0x00, 0x00,                            // [18-21] constant
+      0x01, 0x00,                                        // [22-23] constant
+      0x00,                                              // [24]    padding
+      sh, sl,                                            // [25-26] slot nibble
+      0x00, 0x00, 0x00,                                  // [27-29] padding
+      0x01, 0x00,                                        // [30-31] constant
+      0x00, 0x00,                                        // [32-33] padding
+      0x04, 0x00, 0x00,                                  // [34-36] constant (3 bytes)
+      sh, sl,                                            // [37-38] slot nibble
+      0x00, 0x00,                                        // [39-40] padding
+      sh, sl,                                            // [41-42] slot nibble
+      0x00, 0x00,                                        // [43-44] padding
       0xF7,                                              // [45]    end
     ]);
   },
