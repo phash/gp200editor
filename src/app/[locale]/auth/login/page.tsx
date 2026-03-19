@@ -12,6 +12,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showResend, setShowResend] = useState(false);
+  const [resendSent, setResendSent] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -32,6 +34,7 @@ export default function LoginPage() {
         const apiError = data.error as string | undefined;
         if (apiError?.includes('not verified')) {
           setError(t('emailNotVerified'));
+          setShowResend(true);
         } else {
           setError(t('loginFailed'));
         }
@@ -100,7 +103,7 @@ export default function LoginPage() {
             label={t('password')}
           />
           {error && (
-            <p
+            <div
               className="text-sm rounded px-3 py-2"
               style={{
                 color: 'var(--accent-red)',
@@ -108,8 +111,30 @@ export default function LoginPage() {
                 border: '1px solid rgba(196, 78, 78, 0.25)',
               }}
             >
-              {error}
-            </p>
+              <p>{error}</p>
+              {showResend && !resendSent && (
+                <button
+                  type="button"
+                  className="mt-1 text-xs underline"
+                  style={{ color: 'var(--accent-amber)' }}
+                  onClick={async () => {
+                    await fetch('/api/auth/resend-verification', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ email }),
+                    });
+                    setResendSent(true);
+                  }}
+                >
+                  {t('resendVerification')}
+                </button>
+              )}
+              {resendSent && (
+                <p className="mt-1 text-xs" style={{ color: 'var(--accent-green)' }}>
+                  {t('resendSent')}
+                </p>
+              )}
+            </div>
           )}
           <button
             type="submit"

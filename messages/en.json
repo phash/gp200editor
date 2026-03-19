@@ -78,6 +78,8 @@
     "verifyRedirecting": "Redirecting…",
     "verifyFailed": "Verification failed",
     "verifyInvalidToken": "Invalid or expired link.",
+    "resendVerification": "Resend verification email",
+    "resendSent": "Email resent. Check your inbox.",
     "emailTaken": "This email address is already taken.",
     "usernameTaken": "This username is already taken.",
     "passwordTooShort": "Password must be at least 8 characters.",
