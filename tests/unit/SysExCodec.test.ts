@@ -352,3 +352,105 @@ describe('SysExCodec: handshake builders', () => {
     expect(msg[14]).toBe(0x02);
   });
 });
+
+describe('SysExCodec: handshake parsers', () => {
+  it('parseIdentityResponse extracts device info from capture', () => {
+    const msg = new Uint8Array([
+      0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32,
+      0x12, 0x08,
+      0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x00, 0x00,
+      0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
+      0x02, 0x00, 0x00,
+      0xF7,
+    ]);
+    const info = SysExCodec.parseIdentityResponse(msg);
+    expect(info.deviceType).toBe(0x04);
+    expect(info.firmwareValues).toEqual([0x01, 0x02]);
+  });
+
+  it('parseVersionResponse: all-zero nibble data → accepted', () => {
+    const msg = new Uint8Array([
+      0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32,
+      0x12, 0x0A,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x06, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0xF7,
+    ]);
+    expect(SysExCodec.parseVersionResponse(msg)).toEqual({ accepted: true });
+  });
+
+  it('parseVersionResponse: non-zero nibble data → not accepted', () => {
+    const msg = new Uint8Array([
+      0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32,
+      0x12, 0x0A,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x06, 0x00, 0x00,
+      0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0xF7,
+    ]);
+    expect(SysExCodec.parseVersionResponse(msg)).toEqual({ accepted: false });
+  });
+
+  it('parseAssignmentResponse extracts cab name from capture block 0', () => {
+    // Exact bytes from capture response (D→H sub=0x1C, block 0)
+    const msg = new Uint8Array([
+      0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x1C,
+      0x00, 0x00, 0x00, 0x00, 0x09, 0x01, 0x00, 0x01, 0x08,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x05, 0x09, 0x04, 0x01, 0x02, 0x00,
+      0x04, 0x08, 0x05, 0x07, 0x04, 0x01,
+      0x05, 0x04, 0x02, 0x00,
+      0x03, 0x04, 0x03, 0x01, 0x03, 0x02, 0x02, 0x00,
+      0x04, 0x06, 0x04, 0x0E, 0x03, 0x05,
+      0x00, 0x00,
+      0xF7,
+    ]);
+    const entry = SysExCodec.parseAssignmentResponse(msg, 0, 0);
+    expect(entry.section).toBe(0);
+    expect(entry.page).toBe(0);
+    expect(entry.block).toBe(0);
+    expect(entry.name).toBe('YA HWAT 412 FN5');
+  });
+});
+
+describe('SysExCodec: parseStateDump', () => {
+  it('extracts slot and preset from 5 chunks', () => {
+    const decoded = buildDecodedPreset('TestPreset', 6);
+    const truncated = decoded.slice(0, 846);
+    const nibble = SysExCodec.nibbleEncode(truncated);
+    const chunkSizes = [370, 370, 370, 370, nibble.length - 370 * 4];
+    const offsets = [0, 313, 626, 1067, 1380];
+    const chunks: Uint8Array[] = [];
+    let pos = 0;
+    for (let i = 0; i < 5; i++) {
+      const nd = nibble.slice(pos, pos + chunkSizes[i]);
+      pos += chunkSizes[i];
+      const HEADER = [0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x4E];
+      const offLo = offsets[i] & 0xFF;
+      const offHi = (offsets[i] >> 8) & 0xFF;
+      chunks.push(new Uint8Array([...HEADER, 6, offLo, offHi, ...Array.from(nd), 0xF7]));
+    }
+    const result = SysExCodec.parseStateDump(chunks);
+    expect(result.slot).toBe(6);
+    expect(result.preset.patchName).toBe('TestPreset');
+  });
+
+  it('uses slot label as fallback when name is empty', () => {
+    const decoded = new Uint8Array(846).fill(0);
+    const nibble = SysExCodec.nibbleEncode(decoded);
+    const chunkSizes = [370, 370, 370, 370, nibble.length - 370 * 4];
+    const offsets = [0, 313, 626, 1067, 1380];
+    const chunks: Uint8Array[] = [];
+    let pos = 0;
+    for (let i = 0; i < 5; i++) {
+      const nd = nibble.slice(pos, pos + chunkSizes[i]);
+      pos += chunkSizes[i];
+      const HEADER = [0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x4E];
+      const offLo = offsets[i] & 0xFF;
+      const offHi = (offsets[i] >> 8) & 0xFF;
+      chunks.push(new Uint8Array([...HEADER, 6, offLo, offHi, ...Array.from(nd), 0xF7]));
+    }
+    const result = SysExCodec.parseStateDump(chunks);
+    expect(result.preset.patchName).toBe('2C'); // slot 6 = bank 2, letter C
+  });
+});

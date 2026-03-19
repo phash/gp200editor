@@ -74,43 +74,47 @@ export const SysExCodec = {
     return name;
   },
 
-  parseReadChunks(chunks: Uint8Array[]): GP200Preset {
-    // Sort by chunk offset (bytes [11:13] of each SysEx message are offset LE16)
+  /** Shared: assemble sorted chunks → nibble-decoded bytes */
+  assembleChunks(chunks: Uint8Array[]): Uint8Array {
     const sorted = [...chunks].sort((a, b) => {
       const offA = a[11] | (a[12] << 8);
       const offB = b[11] | (b[12] << 8);
       return offA - offB;
     });
-
-    // Concatenate nibble data from all 7 chunks
     const nibbleParts = sorted.map(msg => msg.slice(13, msg.length - 1));
-    const totalNibbleLen = nibbleParts.reduce((s, p) => s + p.length, 0);
-    const allNibbles = new Uint8Array(totalNibbleLen);
+    const totalLen = nibbleParts.reduce((s, p) => s + p.length, 0);
+    const allNibbles = new Uint8Array(totalLen);
     let pos = 0;
     for (const part of nibbleParts) {
       allNibbles.set(part, pos);
       pos += part.length;
     }
+    return this.nibbleDecode(allNibbles);
+  },
 
-    // Nibble-decode → 1176 bytes
-    const decoded = this.nibbleDecode(allNibbles);
-
-    // Parse preset name (bytes 28–59, null-terminated)
+  /** Parse preset data from decoded bytes (shared by parseReadChunks and parseStateDump) */
+  parsePresetFromDecoded(decoded: Uint8Array, fallbackName?: string): GP200Preset {
     let patchName = '';
-    for (let i = 0; i < 32; i++) {
-      const b = decoded[28 + i];
-      if (b === 0) break;
-      patchName += String.fromCharCode(b);
+    if (decoded.length > 59) {
+      for (let i = 0; i < 32; i++) {
+        const b = decoded[28 + i];
+        if (b === 0) break;
+        patchName += String.fromCharCode(b);
+      }
     }
+    if (!patchName && fallbackName) patchName = fallbackName;
 
-    // Parse 11 effect blocks (bytes 120–911, each 72 bytes)
-    const view = new DataView(decoded.buffer, decoded.byteOffset, decoded.byteLength);
     const effects: GP200Preset['effects'] = [];
+    const view = new DataView(decoded.buffer, decoded.byteOffset, decoded.byteLength);
     for (let b = 0; b < 11; b++) {
       const base = 120 + b * 72;
+      if (base + 72 > decoded.length) {
+        effects.push({ slotIndex: b, enabled: false, effectId: 0, params: new Array(15).fill(0) });
+        continue;
+      }
       const slotIndex = decoded[base + 4];
-      const enabled   = decoded[base + 5] === 1;
-      const effectId  = view.getUint32(base + 8, true);
+      const enabled = decoded[base + 5] === 1;
+      const effectId = view.getUint32(base + 8, true);
       const params: number[] = [];
       for (let p = 0; p < 15; p++) {
         params.push(view.getFloat32(base + 12 + p * 4, true));
@@ -119,6 +123,11 @@ export const SysExCodec = {
     }
 
     return GP200PresetSchema.parse({ version: '1', patchName, effects, checksum: 0 });
+  },
+
+  parseReadChunks(chunks: Uint8Array[]): GP200Preset {
+    const decoded = this.assembleChunks(chunks);
+    return this.parsePresetFromDecoded(decoded);
   },
 
   buildWriteChunks(preset: GP200Preset, slot: number): Uint8Array[] {
@@ -267,5 +276,40 @@ export const SysExCodec = {
       ...REF_DATA,
       0xF7,
     ]);
+  },
+
+  parseIdentityResponse(msg: Uint8Array): { deviceType: number; firmwareValues: number[] } {
+    return {
+      deviceType: msg[18],
+      firmwareValues: [msg[22], msg[26]],
+    };
+  },
+
+  parseVersionResponse(msg: Uint8Array): { accepted: boolean } {
+    for (let i = 21; i <= 32; i++) {
+      if (msg[i] !== 0) return { accepted: false };
+    }
+    return { accepted: true };
+  },
+
+  parseAssignmentResponse(msg: Uint8Array, section: number, page: number): { section: number; page: number; block: number; name: string; rawData: Uint8Array } {
+    const block = msg[22];
+    const nibbleData = msg.slice(27, msg.length - 1);
+    const decoded = this.nibbleDecode(nibbleData);
+    let name = '';
+    let nameStart = 0;
+    while (nameStart < decoded.length && decoded[nameStart] === 0) nameStart++;
+    for (let i = nameStart; i < decoded.length; i++) {
+      if (decoded[i] === 0) break;
+      name += String.fromCharCode(decoded[i]);
+    }
+    return { section, page, block, name, rawData: decoded };
+  },
+
+  parseStateDump(chunks: Uint8Array[]): { slot: number; preset: GP200Preset } {
+    const slot = chunks[0]?.[10] ?? 0;
+    const decoded = this.assembleChunks(chunks);
+    const fallbackName = this.slotToLabel(slot);
+    return { slot, preset: this.parsePresetFromDecoded(decoded, fallbackName) };
   },
 };
