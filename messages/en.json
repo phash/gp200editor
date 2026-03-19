@@ -65,6 +65,9 @@
     "forgotPassword": "Forgot password?",
     "backToLogin": "Back to sign in",
     "registrationError": "Registration failed. Please try again.",
+    "emailTaken": "This email address is already taken.",
+    "usernameTaken": "This username is already taken.",
+    "passwordTooShort": "Password must be at least 8 characters.",
     "resetError": "Token invalid or expired"
   },
   "profile": {

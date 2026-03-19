@@ -29,7 +29,16 @@ export default function RegisterPage() {
         router.refresh();
       } else {
         const data = await res.json();
-        setError(data.error ?? t('registrationError'));
+        const apiError = data.error as string | undefined;
+        if (apiError?.includes('Email already taken')) {
+          setError(t('emailTaken'));
+        } else if (apiError?.includes('Username already taken')) {
+          setError(t('usernameTaken'));
+        } else if (apiError?.includes('at least 8')) {
+          setError(t('passwordTooShort'));
+        } else {
+          setError(apiError ?? t('registrationError'));
+        }
       }
     } catch {
       setError(t('registrationError'));
