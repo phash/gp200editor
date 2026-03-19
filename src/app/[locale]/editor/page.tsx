@@ -266,19 +266,6 @@ export default function EditorPage() {
         </div>
       )}
 
-      {/* Device sync */}
-      <div className="mb-4">
-        <DeviceStatusBar
-          midiDevice={midiDevice}
-          currentPresetName={preset?.patchName ?? null}
-          hasPreset={!!preset}
-          onPullRequest={() => handleOpenBrowser('pull')}
-          onPushRequest={() => handleOpenBrowser('push')}
-          onSlotPull={handlePullConfirm}
-          onBankPull={handleBankPull}
-        />
-      </div>
-
       {/* Signal chain */}
       <div className="flex flex-col gap-2 mb-8" onDragEnd={() => { setDragIndex(null); setDragOverIndex(null); }}>
         {preset.effects.map((slot, i) => (
@@ -360,6 +347,21 @@ export default function EditorPage() {
             {t('loginToSave')}
           </span>
         ) : null}
+      </div>
+
+      {/* Device sync — bottom */}
+      <div className="mt-6">
+        <DeviceStatusBar
+          midiDevice={bankBaseSlot !== null
+            ? { ...midiDevice, currentSlot: bankBaseSlot + activeTab }
+            : midiDevice}
+          currentPresetName={preset?.patchName ?? null}
+          hasPreset={!!preset}
+          onPullRequest={() => handleOpenBrowser('pull')}
+          onPushRequest={() => handleOpenBrowser('push')}
+          onSlotPull={handlePullConfirm}
+          onBankPull={handleBankPull}
+        />
       </div>
 
       {slotBrowserMode && (
