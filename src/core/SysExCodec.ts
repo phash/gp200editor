@@ -411,9 +411,12 @@ export const SysExCodec = {
     return msg;
   },
 
-  buildPresetChange(_slot: number): Uint8Array {
+  buildPresetChange(slot: number): Uint8Array {
     // CMD=0x12, sub=0x08, 30 bytes — change/commit preset
     // From capture 100548: sent after save commit to activate the slot
+    // Slot nibble-encoded at [25:27] (same pattern as buildReadRequest)
+    const sh = (slot >> 4) & 0x0F;
+    const sl = slot & 0x0F;
     return new Uint8Array([
       0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, // [0-7]   header
       0x12, 0x08,                                        // [8-9]   CMD, sub
@@ -421,7 +424,7 @@ export const SysExCodec = {
       0x08, 0x01,                                        // [14-15] constant
       0x00, 0x00,                                        // [16-17] padding
       0x04, 0x00, 0x00, 0x00,                            // [18-21] constant
-      0x00, 0x00, 0x00,                                  // [22-24] padding
+      sh, sl, 0x00,                                      // [22-24] slot nibble + padding
       0x00, 0x00, 0x00, 0x00,                            // [25-28] padding
       0xF7,                                              // [29]    end
     ]);
