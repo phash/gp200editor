@@ -25,6 +25,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
   }
 
+  if (!user.emailVerified) {
+    return NextResponse.json({ error: 'Email not verified. Please check your inbox.' }, { status: 403 });
+  }
+
   const session = await lucia.createSession(user.id, {});
   const sessionCookie = lucia.createSessionCookie(session.id);
   const cookieStore = await cookies();

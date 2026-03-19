@@ -1,14 +1,21 @@
 import nodemailer from 'nodemailer';
 
 function getTransporter() {
+  const host = process.env.MAIL_HOST ?? process.env.EMAIL_SMTP_HOST;
+  const port = Number(process.env.MAIL_PORT ?? process.env.EMAIL_SMTP_PORT ?? 1025);
+  const user = process.env.MAIL_USERNAME ?? process.env.EMAIL_SMTP_USER;
+  const pass = process.env.MAIL_PASSWORD ?? process.env.EMAIL_SMTP_PASS;
+
   return nodemailer.createTransport({
-    host: process.env.EMAIL_SMTP_HOST!,
-    port: Number(process.env.EMAIL_SMTP_PORT ?? 1025),
-    // For production with port 465 (TLS), add: secure: true
-    auth: process.env.EMAIL_SMTP_USER
-      ? { user: process.env.EMAIL_SMTP_USER, pass: process.env.EMAIL_SMTP_PASS }
-      : undefined,
+    host,
+    port,
+    secure: port === 465,
+    auth: user ? { user, pass } : undefined,
   });
+}
+
+function getFrom(): string {
+  return process.env.EMAIL_FROM ?? `noreply@${process.env.MAIL_HOST ?? 'preset-forge.com'}`;
 }
 
 export async function sendPasswordResetEmail(
@@ -16,13 +23,30 @@ export async function sendPasswordResetEmail(
   resetUrl: string,
 ): Promise<void> {
   await getTransporter().sendMail({
-    from: process.env.EMAIL_FROM!,
+    from: getFrom(),
     to,
-    subject: 'Reset your password — GP-200 Editor',
+    subject: 'Reset your password — Preset Forge',
     html: `
       <p>Click the link below to reset your password. It expires in 1&nbsp;hour.</p>
       <p><a href="${resetUrl}">${resetUrl}</a></p>
       <p>If you did not request this, you can safely ignore this email.</p>
+    `,
+  });
+}
+
+export async function sendVerificationEmail(
+  to: string,
+  verifyUrl: string,
+): Promise<void> {
+  await getTransporter().sendMail({
+    from: getFrom(),
+    to,
+    subject: 'Verify your email — Preset Forge',
+    html: `
+      <p>Welcome to Preset Forge! Please verify your email address by clicking the link below.</p>
+      <p><a href="${verifyUrl}">${verifyUrl}</a></p>
+      <p>This link expires in 24 hours.</p>
+      <p>If you did not create an account, you can safely ignore this email.</p>
     `,
   });
 }

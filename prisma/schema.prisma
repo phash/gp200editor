@@ -9,18 +9,20 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  username     String   @unique
-  passwordHash String
-  bio          String?
-  website      String?
-  avatarKey    String?
-  createdAt    DateTime @default(now())
+  id            String   @id @default(cuid())
+  email         String   @unique
+  username      String   @unique
+  passwordHash  String
+  emailVerified Boolean  @default(false)
+  bio           String?
+  website       String?
+  avatarKey     String?
+  createdAt     DateTime @default(now())
 
-  sessions    Session[]
-  resetTokens PasswordResetToken[]
-  presets     Preset[]
+  sessions            Session[]
+  resetTokens         PasswordResetToken[]
+  emailVerifyTokens   EmailVerificationToken[]
+  presets             Preset[]
 }
 
 model Preset {
@@ -54,6 +56,16 @@ model Session {
 model PasswordResetToken {
   id        String    @id @default(cuid())
   tokenHash String    @unique
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
   userId    String
   expiresAt DateTime
   usedAt    DateTime?

@@ -2,16 +2,16 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Link, useRouter } from '@/i18n/routing';
+import { Link } from '@/i18n/routing';
 
 export default function RegisterPage() {
   const t = useTranslations('auth');
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [registered, setRegistered] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -25,8 +25,7 @@ export default function RegisterPage() {
         body: JSON.stringify({ email, username, password }),
       });
       if (res.ok) {
-        router.push('/profile');
-        router.refresh();
+        setRegistered(true);
       } else {
         const data = await res.json();
         const apiError = data.error as string | undefined;
@@ -57,6 +56,16 @@ export default function RegisterPage() {
           boxShadow: '0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03)',
         }}
       >
+        {registered ? (
+          <div className="text-center py-4">
+            <h1 className="font-mono-display text-xl font-bold tracking-tight mb-4"
+              style={{ color: 'var(--accent-green)' }}>
+              {t('registerSuccess')}
+            </h1>
+            <p style={{ color: 'var(--text-muted)' }}>{t('registerCheckEmail')}</p>
+          </div>
+        ) : (
+        <>
         <h1
           className="font-mono-display text-xl font-bold tracking-tight mb-6"
           style={{ color: 'var(--accent-amber)' }}
@@ -199,6 +208,8 @@ export default function RegisterPage() {
             {loading ? t('loading') : t('registerButton')}
           </button>
         </form>
+        </>
+        )}
         <div
           className="mt-5 pt-4 text-sm text-center"
           style={{ borderTop: '1px solid var(--border-subtle)' }}

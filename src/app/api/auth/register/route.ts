@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { hash } from '@node-rs/argon2';
-import { cookies } from 'next/headers';
+import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
-import { lucia } from '@/lib/auth';
 import { registerSchema } from '@/lib/validators';
+import { sendVerificationEmail } from '@/lib/email';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 export async function POST(request: NextRequest) {
@@ -32,11 +32,10 @@ export async function POST(request: NextRequest) {
 
   const passwordHash = await hash(password);
 
-  // Let Prisma generate the CUID via @default(cuid()) in the schema
   let user;
   try {
     user = await prisma.user.create({
-      data: { email, username, passwordHash },
+      data: { email, username, passwordHash, emailVerified: false },
     });
   } catch (e) {
     if (e instanceof PrismaClientKnownRequestError && e.code === 'P2002') {
@@ -47,10 +46,31 @@ export async function POST(request: NextRequest) {
     throw e;
   }
 
-  const session = await lucia.createSession(user.id, {});
-  const sessionCookie = lucia.createSessionCookie(session.id);
-  const cookieStore = await cookies();
-  cookieStore.set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
+  // Generate verification token
+  const token = crypto.randomBytes(32).toString('hex');
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
 
-  return NextResponse.json({ userId: user.id }, { status: 201 });
+  await prisma.emailVerificationToken.create({
+    data: {
+      userId: user.id,
+      tokenHash,
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+    },
+  });
+
+  // Send verification email
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3320';
+  const verifyUrl = `${appUrl}/en/auth/verify-email?token=${token}`;
+
+  try {
+    await sendVerificationEmail(email, verifyUrl);
+  } catch (err) {
+    console.error('Failed to send verification email:', err);
+    // Don't fail registration if email sending fails — user can request resend
+  }
+
+  return NextResponse.json(
+    { message: 'Account created. Please check your email to verify your account.' },
+    { status: 201 },
+  );
 }
