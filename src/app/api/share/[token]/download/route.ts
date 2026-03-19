@@ -30,7 +30,6 @@ export async function GET(_request: Request, context: RouteContext) {
     headers: {
       'Content-Type': 'application/octet-stream',
       'Content-Disposition': `attachment; filename="${safeFilename}.prst"`,
-      'Content-Length': '512',
     },
   });
 }
