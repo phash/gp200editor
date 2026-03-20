@@ -19,73 +19,117 @@ const CABLE_COLORS = [
   '#50b8d4', // cyan
   '#9060c8', // violet
   '#7070d8', // indigo
-  '#d4a24e', // amber again
-  '#d45050', // red again
+  '#d4a24e', // amber
+  '#d45050', // red
 ];
 
+interface CablePath {
+  d: string;
+  color: string;
+}
+
 export function PatchCableOverlay({ containerRef, count, dragIndex, dragOverIndex }: PatchCableOverlayProps) {
-  const [paths, setPaths] = useState<{ d: string; color: string }[]>([]);
+  const [paths, setPaths] = useState<CablePath[]>([]);
 
   const recalculate = useCallback(() => {
     const container = containerRef.current;
-    if (!container || count < 2) { setPaths([]); return; }
+    if (!container || count < 1) { setPaths([]); return; }
 
     const containerRect = container.getBoundingClientRect();
-    const cards: DOMRect[] = [];
+    const ox = containerRect.left;
+    const oy = containerRect.top;
 
+    // Collect card bounding rects (skip the SVG overlay element)
+    const cards: DOMRect[] = [];
     for (let i = 0; i < count; i++) {
-      const el = container.querySelector(`[data-testid="effect-slot-${i}"]`) as HTMLElement | null;
-      // Fall back to nth-child if data-testid doesn't match reordered slots
-      const card = el ?? container.children[i] as HTMLElement | null;
+      // data-testid uses slotIndex which may differ from visual order after reorder
+      // Use children order instead, skipping the SVG overlay (first child)
+      const children = Array.from(container.children).filter(
+        el => el.tagName !== 'svg'
+      );
+      const card = children[i] as HTMLElement | null;
       if (!card) continue;
       cards.push(card.getBoundingClientRect());
     }
 
-    if (cards.length < 2) { setPaths([]); return; }
+    if (cards.length < 1) { setPaths([]); return; }
 
-    const newPaths: { d: string; color: string }[] = [];
+    const newPaths: CablePath[] = [];
 
+    // Connection points: always right-center OUT, left-center IN
+    // Vertically centered at 45% height (roughly where the module badge sits)
+    const yFrac = 0.45;
+
+    // Input stub — short cable coming into the first pedal from the left
+    {
+      const first = cards[0];
+      const inX = first.left - ox;
+      const inY = first.top + first.height * yFrac - oy;
+      const stubLen = 25;
+      newPaths.push({
+        d: `M${inX - stubLen},${inY + 8} C${inX - stubLen * 0.3},${inY + 12} ${inX - 4},${inY + 2} ${inX},${inY}`,
+        color: 'rgba(100,100,100,0.5)',
+      });
+    }
+
+    // Cables between pedals: right side of [i] → left side of [i+1]
     for (let i = 0; i < cards.length - 1; i++) {
       const from = cards[i];
       const to = cards[i + 1];
 
-      // Connect from bottom-center of current to top-center of next (relative to container)
-      const x1 = from.left + from.width / 2 - containerRect.left;
-      const y1 = from.top + from.height - containerRect.top;
-      const x2 = to.left + to.width / 2 - containerRect.left;
-      const y2 = to.top - containerRect.top;
+      // Start: right-center of current pedal
+      const sx = from.left + from.width - ox;
+      const sy = from.top + from.height * yFrac - oy;
 
-      const sameRow = Math.abs(from.top - to.top) < 20;
+      // End: left-center of next pedal
+      const ex = to.left - ox;
+      const ey = to.top + to.height * yFrac - oy;
+
+      const sameRow = Math.abs(from.top - to.top) < 30;
 
       let d: string;
       if (sameRow) {
-        // Same row — connect right side of left pedal to left side of right pedal
-        const sx = from.left + from.width - containerRect.left;
-        const sy = from.top + from.height * 0.6 - containerRect.top;
-        const ex = to.left - containerRect.left;
-        const ey = to.top + to.height * 0.6 - containerRect.top;
+        // Same row: gentle horizontal droop
+        const gap = ex - sx;
+        const sag = 12 + gap * 0.12;
         const midX = (sx + ex) / 2;
-        // Droopy cable effect
-        const sag = 20 + Math.abs(ex - sx) * 0.15;
         d = `M${sx},${sy} C${midX},${sy + sag} ${midX},${ey + sag} ${ex},${ey}`;
       } else {
-        // Different row — connect bottom of current to top of next
-        const sag = Math.abs(y2 - y1) * 0.3 + 15;
-        const midY = (y1 + y2) / 2;
-        d = `M${x1},${y1} C${x1},${y1 + sag} ${x2},${y2 - sag} ${x2},${y2}`;
-        // If crossing columns, add extra horizontal sag
-        if (Math.abs(x2 - x1) > 50) {
-          const cp1x = x1 + (x2 - x1) * 0.2;
-          const cp2x = x1 + (x2 - x1) * 0.8;
-          d = `M${x1},${y1} C${cp1x},${midY + sag * 0.5} ${cp2x},${midY - sag * 0.5} ${x2},${y2}`;
-        }
+        // Different row: route right-out, curve down, come in from left
+        // Go right from source, then swoop down to the next row, enter from left
+        const exitX = sx + 20;     // extend right past the pedal
+        const entryX = ex - 20;    // come in from left of next pedal
+        const midY = (sy + ey) / 2;
+
+        // Right-going exit, then curve down and left to next pedal's input
+        d = [
+          `M${sx},${sy}`,
+          `C${exitX},${sy}`,     // ease right
+          `${exitX},${midY}`,    // drop down on right side
+          `${(exitX + entryX) / 2},${midY}`, // midpoint
+          `S${entryX},${ey}`,    // smooth into left entry
+          `${ex},${ey}`,
+        ].join(' ');
       }
 
-      const isDragging = dragIndex !== null && (i === dragIndex || i + 1 === dragIndex || i === dragOverIndex || i + 1 === dragOverIndex);
+      const isDragging = dragIndex !== null &&
+        (i === dragIndex || i + 1 === dragIndex || i === dragOverIndex || i + 1 === dragOverIndex);
 
       newPaths.push({
         d,
         color: isDragging ? 'rgba(100,100,100,0.3)' : CABLE_COLORS[i % CABLE_COLORS.length],
+      });
+    }
+
+    // Output stub — short cable going out from the last pedal to the right
+    {
+      const last = cards[cards.length - 1];
+      const outX = last.left + last.width - ox;
+      const outY = last.top + last.height * yFrac - oy;
+      const stubLen = 25;
+      newPaths.push({
+        d: `M${outX},${outY} C${outX + 4},${outY + 2} ${outX + stubLen * 0.7},${outY + 12} ${outX + stubLen},${outY + 8}`,
+        color: 'rgba(100,100,100,0.5)',
       });
     }
 
@@ -94,7 +138,6 @@ export function PatchCableOverlay({ containerRef, count, dragIndex, dragOverInde
 
   useEffect(() => {
     recalculate();
-    // Recalculate on resize and after animations
     window.addEventListener('resize', recalculate);
     const timer = setTimeout(recalculate, 300); // after slot-enter animation
     return () => {
@@ -116,10 +159,10 @@ export function PatchCableOverlay({ containerRef, count, dragIndex, dragOverInde
           key={`shadow-${i}`}
           d={path.d}
           fill="none"
-          stroke="rgba(0,0,0,0.4)"
-          strokeWidth={5}
+          stroke="rgba(0,0,0,0.5)"
+          strokeWidth={6}
           strokeLinecap="round"
-          style={{ filter: 'blur(3px)' }}
+          style={{ filter: 'blur(4px)' }}
         />
       ))}
       {/* Cables */}
@@ -129,26 +172,28 @@ export function PatchCableOverlay({ containerRef, count, dragIndex, dragOverInde
           d={path.d}
           fill="none"
           stroke={path.color}
-          strokeWidth={3}
+          strokeWidth={3.5}
           strokeLinecap="round"
-          opacity={0.6}
+          opacity={0.7}
           style={{
             transition: 'all 0.3s ease',
-            filter: `drop-shadow(0 0 3px ${path.color})`,
+            filter: `drop-shadow(0 0 4px ${path.color})`,
           }}
         />
       ))}
-      {/* Cable plugs — small circles at connection points */}
+      {/* Cable plugs at connection points */}
       {paths.map((path, i) => {
-        // Extract start and end points from the path
-        const startMatch = path.d.match(/^M([\d.]+),([\d.]+)/);
-        const endParts = path.d.split(' ');
-        const endMatch = endParts[endParts.length - 1].match(/([\d.]+),([\d.]+)$/);
-        if (!startMatch || !endMatch) return null;
+        const startMatch = path.d.match(/^M([\d.-]+),([\d.-]+)/);
+        const nums = path.d.match(/[\d.-]+/g);
+        if (!startMatch || !nums || nums.length < 4) return null;
+        const endX = nums[nums.length - 2];
+        const endY = nums[nums.length - 1];
         return (
           <g key={`plugs-${i}`}>
-            <circle cx={startMatch[1]} cy={startMatch[2]} r={4} fill={path.color} opacity={0.8} />
-            <circle cx={endMatch[1]} cy={endMatch[2]} r={4} fill={path.color} opacity={0.8} />
+            <circle cx={startMatch[1]} cy={startMatch[2]} r={4.5}
+              fill="rgba(40,40,40,0.9)" stroke={path.color} strokeWidth={1.5} />
+            <circle cx={endX} cy={endY} r={4.5}
+              fill="rgba(40,40,40,0.9)" stroke={path.color} strokeWidth={1.5} />
           </g>
         );
       })}

@@ -37,6 +37,16 @@ export function EffectSlotCard({ slot, index, onToggle, onChangeEffect, onParamC
       }}
       data-testid={`effect-slot-${slot.slotIndex}`}
     >
+      {/* Jack indicators — IN (left) / OUT (right) */}
+      <div
+        className="absolute left-0 top-[45%] -translate-x-1/2 w-3 h-3 rounded-full border"
+        style={{ background: 'rgba(30,30,30,1)', borderColor: 'rgba(80,80,80,0.6)', zIndex: 2 }}
+      />
+      <div
+        className="absolute right-0 top-[45%] translate-x-1/2 w-3 h-3 rounded-full border"
+        style={{ background: 'rgba(30,30,30,1)', borderColor: 'rgba(80,80,80,0.6)', zIndex: 2 }}
+      />
+
       {/* Pedal enclosure */}
       <div
         className="relative rounded-xl overflow-hidden flex flex-col h-full"
