@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { usePlaylist } from '@/hooks/usePlaylist';
 import { PRSTDecoder } from '@/core/PRSTDecoder';
 import type { Playlist, PlaylistEntry, PlaylistPreset } from '@/lib/playlistDb';
+import { GalleryPickerDialog } from '@/components/GalleryPickerDialog';
 
 type View = { type: 'overview' } | { type: 'edit'; id: string } | { type: 'play'; id: string };
 
@@ -20,6 +21,7 @@ export function PlaylistEditor({ playlistId, onNavigate }: PlaylistEditorProps) 
   const [saving, setSaving] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [galleryPickerForEntry, setGalleryPickerForEntry] = useState<number | null>(null);
 
   useEffect(() => {
     getPlaylist(playlistId).then(pl => pl && setPlaylist(pl));
@@ -106,6 +108,17 @@ export function PlaylistEditor({ playlistId, onNavigate }: PlaylistEditorProps) 
       presets: entries[entryIndex].presets.filter((_, i) => i !== presetIndex),
     };
     setPlaylist({ ...playlist, entries });
+  }
+
+  function handleGalleryPresets(entryIndex: number, galleryPresets: PlaylistPreset[]) {
+    if (!playlist) return;
+    const entries = [...playlist.entries];
+    entries[entryIndex] = {
+      ...entries[entryIndex],
+      presets: [...entries[entryIndex].presets, ...galleryPresets],
+    };
+    setPlaylist({ ...playlist, entries });
+    setGalleryPickerForEntry(null);
   }
 
   async function handleSave() {
@@ -256,10 +269,30 @@ export function PlaylistEditor({ playlistId, onNavigate }: PlaylistEditorProps) 
                   }}
                 />
               </label>
+
+              {/* Add from Gallery button */}
+              <button
+                onClick={() => setGalleryPickerForEntry(entryIndex)}
+                className="rounded px-2 py-1 text-xs transition-opacity hover:opacity-70"
+                style={{
+                  border: '1px dashed var(--accent-amber)',
+                  color: 'var(--accent-amber)',
+                }}
+              >
+                🔍 {t('addFromGallery')}
+              </button>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Gallery Picker Dialog */}
+      {galleryPickerForEntry !== null && (
+        <GalleryPickerDialog
+          onAdd={(presets) => handleGalleryPresets(galleryPickerForEntry, presets)}
+          onClose={() => setGalleryPickerForEntry(null)}
+        />
+      )}
 
       {/* Bottom action bar */}
       <div className="mt-6 flex items-center gap-3">
