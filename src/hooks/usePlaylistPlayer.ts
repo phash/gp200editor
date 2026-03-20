@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-import type { Playlist, PlaylistEntry, PlaylistPreset } from '@/lib/playlistDb';
+import type { Playlist } from '@/lib/playlistDb';
 
 export function usePlaylistPlayer(playlist: Playlist | null) {
   const [currentSongIndex, setCurrentSongIndex] = useState(0);
   const [currentPresetIndex, setCurrentPresetIndex] = useState(0);
 
-  const entries = playlist?.entries ?? [];
+  const entries = useMemo(() => playlist?.entries ?? [], [playlist?.entries]);
 
   const currentEntry = useMemo(
     () => entries[currentSongIndex] ?? null,
