@@ -7,7 +7,7 @@ import { PRSTDecoder } from '@/core/PRSTDecoder';
 import { PRSTEncoder } from '@/core/PRSTEncoder';
 import { useCallback, useState, useEffect } from 'react';
 import { useRouter } from '@/i18n/routing';
-import { useMidiDevice } from '@/hooks/useMidiDevice';
+import { useMidiDeviceContext } from '@/contexts/MidiDeviceContext';
 import { DeviceStatusBar } from '@/components/DeviceStatusBar';
 import { DeviceSlotBrowser } from '@/components/DeviceSlotBrowser';
 import { FirmwareWarningBanner } from '@/components/FirmwareWarningBanner';
@@ -19,7 +19,7 @@ export default function EditorPage() {
   const t = useTranslations('editor');
   const router = useRouter();
   const { preset, loadPreset, setPatchName, toggleEffect, changeEffect, reorderEffects, setParam } = usePreset();
-  const midiDevice = useMidiDevice();
+  const midiDevice = useMidiDeviceContext();
   const [slotBrowserMode, setSlotBrowserMode] = useState<'pull' | 'push' | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -66,11 +66,6 @@ export default function EditorPage() {
       });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Disconnect MIDI on page unload to abort any running loadPresetNames loop
-  useEffect(() => {
-    return () => { midiDevice.disconnect(); };
-  }, [midiDevice.disconnect]);
 
   // Reset firmware warning when device disconnects
   useEffect(() => {

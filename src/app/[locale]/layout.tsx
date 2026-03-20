@@ -7,6 +7,7 @@ import Script from 'next/script';
 import '../globals.css'; // globals.css stays in src/app/, so relative path goes up
 import { Footer } from '@/components/Footer';
 import { Navbar } from '@/components/Navbar';
+import { ClientProviders } from './ClientProviders';
 
 export const metadata: Metadata = {
   title: 'Preset Forge — GP-200 Editor',
@@ -67,9 +68,11 @@ export default async function LocaleLayout({ children, params }: Props) {
       </head>
       <body className="flex flex-col min-h-screen">
         <NextIntlClientProvider messages={messages}>
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <ClientProviders>
+            <Navbar />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </ClientProviders>
         </NextIntlClientProvider>
         {/* Matomo Analytics — Site ID 2 on musikersuche.org/matomo */}
         <Script id="matomo" strategy="afterInteractive">{`
