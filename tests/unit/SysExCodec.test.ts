@@ -365,7 +365,8 @@ describe('SysExCodec: handshake parsers', () => {
     ]);
     const info = SysExCodec.parseIdentityResponse(msg);
     expect(info.deviceType).toBe(0x04);
-    expect(info.firmwareValues).toEqual([0x01, 0x02]);
+    // Identity response bytes [22]/[26] are NOT firmware version (always 1.2 regardless of FW)
+    expect(info.firmwareValues).toEqual([]);
   });
 
   it('parseVersionResponse: all-zero nibble data → accepted', () => {

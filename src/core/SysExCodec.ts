@@ -296,9 +296,13 @@ export const SysExCodec = {
   },
 
   parseIdentityResponse(msg: Uint8Array): { deviceType: number; firmwareValues: number[] } {
+    // sub=0x08 response — bytes [22] and [26] are NOT firmware version
+    // (they show 1.2 regardless of actual FW, likely protocol version).
+    // Actual firmware version is not transmitted via SysEx identity.
+    // We return deviceType only; firmware compat uses version check (sub=0x0A).
     return {
       deviceType: msg[18],
-      firmwareValues: [msg[22], msg[26]],
+      firmwareValues: [],
     };
   },
 

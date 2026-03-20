@@ -13,7 +13,7 @@ import { useMidiDeviceContext } from '@/contexts/MidiDeviceContext';
 import { DeviceStatusBar } from '@/components/DeviceStatusBar';
 import { DeviceSlotBrowser } from '@/components/DeviceSlotBrowser';
 import { FirmwareCompatDialog } from '@/components/FirmwareCompatDialog';
-import { TESTED_FIRMWARE_VERSIONS } from '@/core/firmware';
+// Firmware compat now uses version check (sub=0x0A) result, not version string matching
 import { SavePresetDialog } from '@/components/SavePresetDialog';
 import { AddToPlaylistDialog } from '@/components/AddToPlaylistDialog';
 import { SysExCodec } from '@/core/SysExCodec';
@@ -277,10 +277,14 @@ export default function EditorPage() {
 
   const td = useTranslations('device');
 
+  // Firmware compat: identity response doesn't contain real FW version,
+  // so we rely on the version check (sub=0x0A) result instead.
+  const firmwareOk = midiDevice.deviceInfo?.versionAccepted ?? false;
   const firmwareVersionStr = midiDevice.deviceInfo
-    ? midiDevice.deviceInfo.firmwareValues.join('.')
+    ? (midiDevice.deviceInfo.firmwareValues.length > 0
+        ? midiDevice.deviceInfo.firmwareValues.join('.')
+        : '')
     : '';
-  const firmwareOk = TESTED_FIRMWARE_VERSIONS.includes(firmwareVersionStr);
   const showFirmwareDialog =
     midiDevice.status === 'connected' &&
     midiDevice.deviceInfo !== null &&
