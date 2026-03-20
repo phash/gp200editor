@@ -4,12 +4,15 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { usePlaylist } from '@/hooks/usePlaylist';
 import { usePlaylistPlayer } from '@/hooks/usePlaylistPlayer';
+import { useTimelinePlayer } from '@/hooks/useTimelinePlayer';
 import { useMidiDeviceContext } from '@/contexts/MidiDeviceContext';
 import { YouTubeEmbed } from '@/components/YouTubeEmbed';
+import { CuePointTable } from '@/components/CuePointTable';
 import { PRSTDecoder } from '@/core/PRSTDecoder';
 import { FirmwareCompatDialog } from '@/components/FirmwareCompatDialog';
 import { TESTED_FIRMWARE_VERSIONS } from '@/core/firmware';
-import type { Playlist } from '@/lib/playlistDb';
+import { openPlaylistDb, updatePlaylist as dbUpdatePlaylist } from '@/lib/playlistDb';
+import type { Playlist, CuePoint } from '@/lib/playlistDb';
 
 type View = { type: 'overview' } | { type: 'edit'; id: string } | { type: 'play'; id: string };
 
@@ -65,6 +68,80 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [player.currentSongIndex, player.currentPresetIndex]);
+
+  // ─── Cue Points ──────────────────────────────────────────────────────────────
+
+  const cuePoints = player.currentEntry?.cuePoints ?? [];
+
+  const persistPlaylist = useCallback(async (updated: Playlist) => {
+    setPlaylist(updated);
+    const db = await openPlaylistDb();
+    await dbUpdatePlaylist(db, updated);
+  }, []);
+
+  const handleAddCuePoint = useCallback(async () => {
+    if (!playlist || !player.currentEntry) return;
+    const newCp: CuePoint = {
+      id: crypto.randomUUID(),
+      timeSeconds: 0,
+      action: 'preset-switch',
+      slot: 0,
+    };
+    const updated: Playlist = {
+      ...playlist,
+      entries: playlist.entries.map(e =>
+        e.id === player.currentEntry!.id
+          ? { ...e, cuePoints: [...(e.cuePoints ?? []), newCp] }
+          : e
+      ),
+      updatedAt: Date.now(),
+    };
+    await persistPlaylist(updated);
+  }, [playlist, player.currentEntry, persistPlaylist]);
+
+  const handleUpdateCuePoint = useCallback(async (id: string, patch: Partial<CuePoint>) => {
+    if (!playlist || !player.currentEntry) return;
+    const updated: Playlist = {
+      ...playlist,
+      entries: playlist.entries.map(e =>
+        e.id === player.currentEntry!.id
+          ? {
+              ...e,
+              cuePoints: (e.cuePoints ?? []).map(cp =>
+                cp.id === id ? { ...cp, ...patch } : cp
+              ),
+            }
+          : e
+      ),
+      updatedAt: Date.now(),
+    };
+    await persistPlaylist(updated);
+  }, [playlist, player.currentEntry, persistPlaylist]);
+
+  const handleDeleteCuePoint = useCallback(async (id: string) => {
+    if (!playlist || !player.currentEntry) return;
+    const updated: Playlist = {
+      ...playlist,
+      entries: playlist.entries.map(e =>
+        e.id === player.currentEntry!.id
+          ? { ...e, cuePoints: (e.cuePoints ?? []).filter(cp => cp.id !== id) }
+          : e
+      ),
+      updatedAt: Date.now(),
+    };
+    await persistPlaylist(updated);
+  }, [playlist, player.currentEntry, persistPlaylist]);
+
+  const onCueFire = useCallback((cp: CuePoint) => {
+    if (midiDevice.status !== 'connected') return;
+    if (cp.action === 'preset-switch' && cp.slot !== undefined) {
+      midiDevice.sendSlotChange(cp.slot);
+    } else if (cp.action === 'effect-toggle' && cp.blockIndex !== undefined) {
+      midiDevice.sendToggle(cp.blockIndex, cp.enabled ?? false);
+    }
+  }, [midiDevice]);
+
+  const timeline = useTimelinePlayer(cuePoints, onCueFire);
 
   // Keyboard navigation
   useEffect(() => {
@@ -209,6 +286,59 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
               </button>
             );
           })}
+        </div>
+      )}
+
+      {/* Timeline controls + Cue Point Table */}
+      {currentEntry && (
+        <div className="mb-6">
+          {/* Play/Pause/Stop + timer */}
+          <div className="flex items-center gap-3 mb-3">
+            <h3 className="font-mono-display text-sm font-bold" style={{ color: 'var(--text-secondary)' }}>
+              {t('cuePoints')}
+            </h3>
+            <div className="flex gap-1 ml-auto">
+              {timeline.state !== 'playing' ? (
+                <button
+                  onClick={timeline.play}
+                  className="font-mono-display text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded"
+                  style={{ border: '1px solid var(--accent-green)', color: 'var(--accent-green)' }}
+                >
+                  {t('timelinePlay')}
+                </button>
+              ) : (
+                <button
+                  onClick={timeline.pause}
+                  className="font-mono-display text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded"
+                  style={{ border: '1px solid var(--accent-amber)', color: 'var(--accent-amber)' }}
+                >
+                  {t('timelinePause')}
+                </button>
+              )}
+              <button
+                onClick={timeline.stop}
+                disabled={timeline.state === 'stopped'}
+                className="font-mono-display text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded disabled:opacity-30"
+                style={{ border: '1px solid var(--border-active)', color: 'var(--text-muted)' }}
+              >
+                {t('timelineStop')}
+              </button>
+              {timeline.state !== 'stopped' && (
+                <span className="font-mono-display text-xs ml-2" style={{ color: 'var(--text-muted)' }}>
+                  {Math.floor(timeline.elapsedSeconds / 60)}:{String(Math.floor(timeline.elapsedSeconds % 60)).padStart(2, '0')}
+                </span>
+              )}
+            </div>
+          </div>
+          <CuePointTable
+            cuePoints={cuePoints}
+            onAdd={handleAddCuePoint}
+            onUpdate={handleUpdateCuePoint}
+            onDelete={handleDeleteCuePoint}
+            elapsedSeconds={timeline.elapsedSeconds}
+            firedIds={timeline.firedIds}
+            isPlaying={timeline.state === 'playing'}
+          />
         </div>
       )}
 

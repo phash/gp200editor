@@ -132,6 +132,27 @@ describe('playlistDb', () => {
     });
   });
 
+  describe('cue points', () => {
+    it('persists cue points on playlist entries', async () => {
+      const db = await openPlaylistDb();
+      const playlist = await createPlaylist(db, 'Cue Test');
+      playlist.entries.push({
+        id: 'e1',
+        songName: 'Song 1',
+        presets: [],
+        cuePoints: [
+          { id: 'cp1', timeSeconds: 0, action: 'preset-switch', slot: 0 },
+          { id: 'cp2', timeSeconds: 18, action: 'effect-toggle', blockIndex: 8, enabled: true },
+        ],
+      });
+      await updatePlaylist(db, playlist);
+      const loaded = await getPlaylist(db, playlist.id);
+      expect(loaded!.entries[0].cuePoints).toHaveLength(2);
+      expect(loaded!.entries[0].cuePoints![0].action).toBe('preset-switch');
+      expect(loaded!.entries[0].cuePoints![1].timeSeconds).toBe(18);
+    });
+  });
+
   describe('binary size validation (sliceBinaries)', () => {
     it('stores an exactly 1224-byte binary unchanged', async () => {
       const db = await openPlaylistDb();
