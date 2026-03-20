@@ -43,6 +43,9 @@ export interface UseMidiDeviceReturn {
   sendParamChange: (blockIndex: number, paramIndex: number, effectId: number, value: number) => void;
   sendReorder: (order: number[]) => void;
   sendSlotChange: (slot: number) => void;
+  sendAuthor: (author: string) => void;
+  sendStyleName: (styleName: string) => void;
+  sendNote: (note: string) => void;
 }
 
 // Minimal shape we actually use — avoids conflicts with DOM's MIDIInput / MIDIOutput
@@ -319,9 +322,17 @@ export function useMidiDevice(): UseMidiDeviceReturn {
       outputRef.current.send(chunks[i]);
       await new Promise(r => setTimeout(r, 20));
     }
+    // Send author/style/note metadata after write chunks
+    await new Promise(r => setTimeout(r, 100)); // wait for device to process writes
+    if (preset.author) {
+      const authorMsg = SysExCodec.buildAuthorName(preset.author);
+      console.log(`[GP-200] push author: "${preset.author}"`);
+      outputRef.current.send(authorMsg);
+      await new Promise(r => setTimeout(r, 20));
+    }
+
     // Send save-commit after write chunks (required to persist to flash)
     // From captures 100548/101538: sub=0x18 (name) + sub=0x08 (commit)
-    await new Promise(r => setTimeout(r, 100)); // wait for device to process writes
     const saveMsg = SysExCodec.buildSaveCommit(preset.patchName);
     console.log(`[GP-200] push save-commit: ${saveMsg.length}B`);
     outputRef.current.send(saveMsg);
@@ -408,10 +419,32 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     setCurrentSlot(slot);
   }, []);
 
+  const sendAuthor = useCallback((author: string) => {
+    if (!outputRef.current) return;
+    const msg = SysExCodec.buildAuthorName(author);
+    console.log(`[GP-200] author: "${author}"`);
+    outputRef.current.send(msg);
+  }, []);
+
+  const sendStyleName = useCallback((styleName: string) => {
+    if (!outputRef.current) return;
+    const msg = SysExCodec.buildStyleName(styleName);
+    console.log(`[GP-200] style: "${styleName}"`);
+    outputRef.current.send(msg);
+  }, []);
+
+  const sendNote = useCallback((note: string) => {
+    if (!outputRef.current) return;
+    const msg = SysExCodec.buildNote(note);
+    console.log(`[GP-200] note: "${note}"`);
+    outputRef.current.send(msg);
+  }, []);
+
   return {
     status, errorMessage, deviceName, currentSlot, presetNames, namesLoadProgress,
     deviceInfo, currentPreset, assignments,
     connect, disconnect, loadPresetNames, pullPreset, pushPreset,
     sendToggle, sendParamChange, sendReorder, sendSlotChange,
+    sendAuthor, sendStyleName, sendNote,
   };
 }

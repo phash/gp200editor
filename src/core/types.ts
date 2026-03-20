@@ -11,6 +11,7 @@ export const EffectSlotSchema = z.object({
 export const GP200PresetSchema = z.object({
   version: z.string(),
   patchName: z.string().max(32), // longest known name: "Stone in Love" = 13 chars
+  author: z.string().max(16).optional(), // .prst offset 0x54, 16 bytes null-terminated
   effects: z.array(EffectSlotSchema),
   checksum: z.number().int().min(0).max(65535), // LE uint16 at end of file
 });

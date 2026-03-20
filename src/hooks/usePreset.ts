@@ -5,6 +5,7 @@ interface PresetActions {
   preset: GP200Preset | null;
   loadPreset: (preset: GP200Preset) => void;
   setPatchName: (name: string) => void;
+  setAuthor: (author: string) => void;
   toggleEffect: (slotIndex: number) => void;
   changeEffect: (slotIndex: number, effectId: number) => void;
   reorderEffects: (fromIndex: number, toIndex: number) => void;
@@ -21,6 +22,10 @@ export function usePreset(): PresetActions {
 
   const setPatchName = useCallback((name: string) => {
     setPreset((prev) => prev ? { ...prev, patchName: name } : null);
+  }, []);
+
+  const setAuthor = useCallback((author: string) => {
+    setPreset((prev) => prev ? { ...prev, author: author || undefined } : null);
   }, []);
 
   const toggleEffect = useCallback((slotIndex: number) => {
@@ -80,5 +85,5 @@ export function usePreset(): PresetActions {
     setPreset(null);
   }, []);
 
-  return { preset, loadPreset, setPatchName, toggleEffect, changeEffect, reorderEffects, setParam, reset };
+  return { preset, loadPreset, setPatchName, setAuthor, toggleEffect, changeEffect, reorderEffects, setParam, reset };
 }

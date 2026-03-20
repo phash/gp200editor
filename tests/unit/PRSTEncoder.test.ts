@@ -46,6 +46,30 @@ describe('PRSTEncoder', () => {
     expect(decoded.effects[0].params).toHaveLength(15);
   });
 
+  it('round-trips author field', () => {
+    const preset: GP200Preset = { ...samplePreset, author: 'TestAuthor' };
+    const encoder = new PRSTEncoder();
+    const buf = new Uint8Array(encoder.encode(preset));
+    const decoded = new PRSTDecoder(buf).decode();
+    expect(decoded.author).toBe('TestAuthor');
+  });
+
+  it('round-trips preset without author', () => {
+    const encoder = new PRSTEncoder();
+    const buf = new Uint8Array(encoder.encode(samplePreset));
+    const decoded = new PRSTDecoder(buf).decode();
+    expect(decoded.author).toBeUndefined();
+  });
+
+  it('writes author at offset 0x54', () => {
+    const preset: GP200Preset = { ...samplePreset, author: 'Me' };
+    const encoder = new PRSTEncoder();
+    const buf = new Uint8Array(encoder.encode(preset));
+    expect(buf[0x54]).toBe('M'.charCodeAt(0));
+    expect(buf[0x55]).toBe('e'.charCodeAt(0));
+    expect(buf[0x56]).toBe(0); // null terminated
+  });
+
   it('round-trips float32 param values', () => {
     const preset: GP200Preset = {
       ...samplePreset,

@@ -17,7 +17,9 @@ const MRAP_CONTENT_SIZE  = 1172;
 const OFFSET_PRE_META    = 0x30;
 
 const OFFSET_PATCH_NAME  = 0x44;
-const PATCH_NAME_MAX     = 32;
+const PATCH_NAME_MAX     = 16;   // name is 16 bytes, author follows at 0x54
+const OFFSET_AUTHOR      = 0x54;
+const AUTHOR_MAX         = 16;
 
 // Routing section (0x8C-0x9F)
 const OFFSET_ROUTING     = 0x8C;
@@ -61,8 +63,13 @@ export class PRSTEncoder {
     gen.writeUint8(OFFSET_PRE_META + 6, 0x78);   // 0x36
     gen.writeUint8(OFFSET_PRE_META + 8, 0x32);   // 0x38: '2' (part of preset format ID)
 
-    // ── Patch name (0x44-0x63) ───────────────────────────────────────────
+    // ── Patch name (0x44-0x53) ───────────────────────────────────────────
     gen.writeAscii(OFFSET_PATCH_NAME, preset.patchName, PATCH_NAME_MAX);
+
+    // ── Author (0x54-0x63) ────────────────────────────────────────────
+    if (preset.author) {
+      gen.writeAscii(OFFSET_AUTHOR, preset.author, AUTHOR_MAX);
+    }
 
     // ── Routing section (0x8C-0x9F) ──────────────────────────────────────
     gen.writeUint8(OFFSET_ROUTING, 0x08);         // marker

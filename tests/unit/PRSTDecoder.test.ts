@@ -57,6 +57,21 @@ describe('PRSTDecoder', () => {
     expect(decoder.decode().patchName).toBe('TestPatch');
   });
 
+  it('reads author from offset 0x54', () => {
+    const buf = buildTestBuffer();
+    'TestAuthor'.split('').forEach((c, i) => { buf[0x54 + i] = c.charCodeAt(0); });
+    const decoder = new PRSTDecoder(buf);
+    const preset = decoder.decode();
+    expect(preset.author).toBe('TestAuthor');
+  });
+
+  it('returns undefined author when empty', () => {
+    const buf = buildTestBuffer();
+    const decoder = new PRSTDecoder(buf);
+    const preset = decoder.decode();
+    expect(preset.author).toBeUndefined();
+  });
+
   it('wirft bei ungueltigem Magic', () => {
     const bad = new Uint8Array(1224).fill(0);
     const decoder = new PRSTDecoder(bad);
@@ -111,4 +126,12 @@ describe('PRSTDecoder mit echten .prst Dateien', () => {
       });
     });
   }
+
+  const authorFile = join(process.cwd(), 'prst/63-B American Idiot.prst');
+  it.skipIf(!existsSync(authorFile))('reads author "Galtone Studio" from American Idiot.prst', () => {
+    const data = new Uint8Array(readFileSync(authorFile));
+    const preset = new PRSTDecoder(data).decode();
+    expect(preset.patchName).toBe('American Idiot');
+    expect(preset.author).toBe('Galtone Studio');
+  });
 });

@@ -579,3 +579,119 @@ describe('SysExCodec: buildReorderEffects', () => {
     expect(Array.from(decoded.slice(16, 27))).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
   });
 });
+
+describe('SysExCodec: buildAuthorName', () => {
+  it('produces 78-byte SysEx with correct structure', () => {
+    const msg = SysExCodec.buildAuthorName('Manuel');
+    expect(msg.length).toBe(78);
+    expect(msg[0]).toBe(0xF0);
+    expect(msg[8]).toBe(0x12); // CMD
+    expect(msg[9]).toBe(0x20); // sub
+    expect(msg[77]).toBe(0xF7);
+  });
+
+  it('encodes author name at decoded[16]', () => {
+    const msg = SysExCodec.buildAuthorName('Manuel');
+    const decoded = SysExCodec.nibbleDecode(msg.slice(13, 77));
+    expect(decoded[8]).toBe(0x09); // msg type: author
+    expect(decoded[16]).toBe('M'.charCodeAt(0));
+    expect(decoded[17]).toBe('a'.charCodeAt(0));
+    expect(decoded[18]).toBe('n'.charCodeAt(0));
+    expect(decoded[19]).toBe('u'.charCodeAt(0));
+    expect(decoded[20]).toBe('e'.charCodeAt(0));
+    expect(decoded[21]).toBe('l'.charCodeAt(0));
+    expect(decoded[22]).toBe(0); // null terminated
+  });
+
+  it('truncates author to 16 chars', () => {
+    const msg = SysExCodec.buildAuthorName('A'.repeat(20));
+    const decoded = SysExCodec.nibbleDecode(msg.slice(13, 77));
+    for (let i = 0; i < 16; i++) expect(decoded[16 + i]).toBe('A'.charCodeAt(0));
+  });
+});
+
+describe('SysExCodec: buildStyleName', () => {
+  it('produces 62-byte SysEx with correct structure', () => {
+    const msg = SysExCodec.buildStyleName('Green Day');
+    expect(msg.length).toBe(62);
+    expect(msg[0]).toBe(0xF0);
+    expect(msg[8]).toBe(0x12);
+    expect(msg[9]).toBe(0x18);
+    expect(msg[61]).toBe(0xF7);
+  });
+
+  it('encodes style name at decoded[8]', () => {
+    const msg = SysExCodec.buildStyleName('Rock');
+    const decoded = SysExCodec.nibbleDecode(msg.slice(13, 61));
+    expect(decoded[0]).toBe(0x03); // style header
+    expect(decoded[1]).toBe(0x20);
+    expect(decoded[8]).toBe('R'.charCodeAt(0));
+    expect(decoded[9]).toBe('o'.charCodeAt(0));
+    expect(decoded[10]).toBe('c'.charCodeAt(0));
+    expect(decoded[11]).toBe('k'.charCodeAt(0));
+    expect(decoded[12]).toBe(0);
+  });
+});
+
+describe('SysExCodec: buildNote', () => {
+  it('produces 126-byte SysEx with correct structure', () => {
+    const msg = SysExCodec.buildNote('TestNote');
+    expect(msg.length).toBe(126);
+    expect(msg[0]).toBe(0xF0);
+    expect(msg[8]).toBe(0x12);
+    expect(msg[9]).toBe(0x38);
+    expect(msg[125]).toBe(0xF7);
+  });
+
+  it('encodes note text at decoded[16]', () => {
+    const msg = SysExCodec.buildNote('TestNote');
+    const decoded = SysExCodec.nibbleDecode(msg.slice(13, 125));
+    expect(decoded[8]).toBe(0x0B); // msg type: note
+    expect(decoded[16]).toBe('T'.charCodeAt(0));
+    expect(decoded[17]).toBe('e'.charCodeAt(0));
+    expect(decoded[18]).toBe('s'.charCodeAt(0));
+    expect(decoded[19]).toBe('t'.charCodeAt(0));
+    expect(decoded[20]).toBe('N'.charCodeAt(0));
+    expect(decoded[21]).toBe('o'.charCodeAt(0));
+    expect(decoded[22]).toBe('t'.charCodeAt(0));
+    expect(decoded[23]).toBe('e'.charCodeAt(0));
+    expect(decoded[24]).toBe(0);
+  });
+});
+
+describe('SysExCodec: author in read/write chunks', () => {
+  it('parsePresetFromDecoded reads author from decoded[44:60]', () => {
+    // Build a minimal decoded payload (912+ bytes)
+    const decoded = new Uint8Array(920).fill(0);
+    // Name at [28:44]
+    'TestName'.split('').forEach((c, i) => { decoded[28 + i] = c.charCodeAt(0); });
+    // Author at [44:60]
+    'TestAuthor'.split('').forEach((c, i) => { decoded[44 + i] = c.charCodeAt(0); });
+    // Effect blocks at [120:912] — need markers
+    for (let b = 0; b < 11; b++) {
+      const base = 120 + b * 72;
+      decoded[base] = 0x14; decoded[base + 2] = 0x44;
+      decoded[base + 4] = b;
+    }
+    const preset = SysExCodec.parsePresetFromDecoded(decoded);
+    expect(preset.patchName).toBe('TestName');
+    expect(preset.author).toBe('TestAuthor');
+  });
+
+  it('buildWriteChunks includes author in payload', () => {
+    const preset = {
+      version: '1', patchName: 'Test', author: 'Author1', checksum: 0,
+      effects: Array.from({ length: 11 }, (_, i) => ({ slotIndex: i, effectId: 0, enabled: false, params: Array(15).fill(0) })),
+    };
+    const chunks = SysExCodec.buildWriteChunks(preset, 0);
+    // Reassemble all chunks to get the full write payload
+    const decoded = SysExCodec.assembleChunks(chunks);
+    // Write payload: author at [52:68] (read payload has it at [44:60], +8 offset for write header)
+    let author = '';
+    for (let i = 0; i < 16; i++) {
+      if (decoded[52 + i] === 0) break;
+      author += String.fromCharCode(decoded[52 + i]);
+    }
+    expect(author).toBe('Author1');
+  });
+});

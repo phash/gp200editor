@@ -63,10 +63,10 @@ export const SysExCodec = {
     // sysexMsg layout: [F0 header(10B)][slot(1B)][off_lo(1B)][off_hi(1B)][nibble_data...][F7]
     const nibbleData = sysexMsg.slice(13, sysexMsg.length - 1);
     const decoded = this.nibbleDecode(nibbleData);
-    // In a full preset, name starts at byte 28. In the first chunk (offset=0),
-    // the nibble data covers decoded bytes 0..184, so name is at decoded[28..59].
+    // In a full preset, name starts at byte 28 (16 bytes). In the first chunk (offset=0),
+    // the nibble data covers decoded bytes 0..184, so name is at decoded[28..43].
     let name = '';
-    for (let i = 0; i < 32; i++) {
+    for (let i = 0; i < 16; i++) {
       const b = decoded[28 + i];
       if (b === 0) break;
       name += String.fromCharCode(b);
@@ -95,14 +95,24 @@ export const SysExCodec = {
   /** Parse preset data from decoded bytes (shared by parseReadChunks and parseStateDump) */
   parsePresetFromDecoded(decoded: Uint8Array, fallbackName?: string): GP200Preset {
     let patchName = '';
-    if (decoded.length > 59) {
-      for (let i = 0; i < 32; i++) {
+    if (decoded.length > 43) {
+      for (let i = 0; i < 16; i++) {
         const b = decoded[28 + i];
         if (b === 0) break;
         patchName += String.fromCharCode(b);
       }
     }
     if (!patchName && fallbackName) patchName = fallbackName;
+
+    // Author at decoded[44:60] (16 bytes, null-terminated)
+    let author = '';
+    if (decoded.length > 59) {
+      for (let i = 0; i < 16; i++) {
+        const b = decoded[44 + i];
+        if (b === 0) break;
+        author += String.fromCharCode(b);
+      }
+    }
 
     const effects: GP200Preset['effects'] = [];
     const view = new DataView(decoded.buffer, decoded.byteOffset, decoded.byteLength);
@@ -122,7 +132,7 @@ export const SysExCodec = {
       effects.push({ slotIndex, enabled, effectId, params });
     }
 
-    return GP200PresetSchema.parse({ version: '1', patchName, effects, checksum: 0 });
+    return GP200PresetSchema.parse({ version: '1', patchName, author: author || undefined, effects, checksum: 0 });
   },
 
   parseReadChunks(chunks: Uint8Array[]): GP200Preset {
@@ -152,12 +162,19 @@ export const SysExCodec = {
     view.setUint16(20, slot, true);  // slot in metadata
     payload.set([0x78, 0x00], 22);   // constant
 
-    // [36:68] Preset name (32 bytes, null-terminated)
-    for (let i = 0; i < 32; i++) {
+    // [36:52] Preset name (16 bytes, null-terminated)
+    for (let i = 0; i < 16; i++) {
       payload[36 + i] = i < preset.patchName.length ? preset.patchName.charCodeAt(i) : 0;
     }
 
-    // [68:104] URL area — zeros (web editor doesn't set author/URL)
+    // [52:68] Author (16 bytes, null-terminated)
+    if (preset.author) {
+      for (let i = 0; i < 16; i++) {
+        payload[52 + i] = i < preset.author.length ? preset.author.charCodeAt(i) : 0;
+      }
+    }
+
+    // [68:104] URL area — zeros
     // [104:108] padding — zeros
 
     // [108:128] Routing section
@@ -408,6 +425,75 @@ export const SysExCodec = {
     msg.set([0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x18, 0x00, 0x00, 0x00]);
     msg.set(nibbles, 13);
     msg[61] = 0xF7;
+    return msg;
+  },
+
+  buildAuthorName(author: string): Uint8Array {
+    // CMD=0x12, sub=0x20, 78 bytes — nibble-encoded 32-byte payload
+    // Confirmed: capture 143029 pkt 71 — decoded[8]=0x09 (Author msg type)
+    // Decoded: 00 00 04 00 00 00 01 00 09 00 14 00 01 00 70 0B [author 16B]
+    const decoded = new Uint8Array(32);
+    decoded[2] = 0x04;
+    decoded[6] = 0x01;
+    decoded[8] = 0x09;                          // msg type: author
+    decoded[10] = 0x14;
+    decoded[12] = 0x01;
+    decoded[14] = 0x70;
+    decoded[15] = 0x0B;
+    for (let i = 0; i < 16 && i < author.length; i++) {
+      decoded[16 + i] = author.charCodeAt(i);
+    }
+
+    const nibbles = this.nibbleEncode(decoded);
+    const msg = new Uint8Array(78);
+    msg.set([0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x20, 0x00, 0x00, 0x00]);
+    msg.set(nibbles, 13);
+    msg[77] = 0xF7;
+    return msg;
+  },
+
+  buildStyleName(styleName: string): Uint8Array {
+    // CMD=0x12, sub=0x18, 62 bytes — nibble-encoded 24-byte payload
+    // Confirmed: capture 143029 pkt 135 — different header from param change
+    // decoded[0:8]=03 20 14 00 01 00 a1 00, decoded[8:24]=style name
+    const decoded = new Uint8Array(24);
+    decoded[0] = 0x03;
+    decoded[1] = 0x20;
+    decoded[2] = 0x14;
+    decoded[4] = 0x01;
+    decoded[6] = 0xa1;
+    for (let i = 0; i < 16 && i < styleName.length; i++) {
+      decoded[8 + i] = styleName.charCodeAt(i);
+    }
+
+    const nibbles = this.nibbleEncode(decoded);
+    const msg = new Uint8Array(62);
+    msg.set([0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x18, 0x00, 0x00, 0x00]);
+    msg.set(nibbles, 13);
+    msg[61] = 0xF7;
+    return msg;
+  },
+
+  buildNote(note: string): Uint8Array {
+    // CMD=0x12, sub=0x38, 126 bytes — nibble-encoded 56-byte payload
+    // Confirmed: capture 143029 pkt 129 — decoded[8]=0x0B (Note msg type)
+    // Decoded: 00 00 04 00 00 00 01 00 0B 00 2C 00 01 00 A1 00 [note 40B]
+    const decoded = new Uint8Array(56);
+    decoded[2] = 0x04;
+    decoded[6] = 0x01;
+    decoded[8] = 0x0B;                          // msg type: note
+    decoded[10] = 0x2C;
+    decoded[12] = 0x01;
+    decoded[14] = 0xA1;
+    for (let i = 0; i < 40 && i < note.length; i++) {
+      decoded[16 + i] = note.charCodeAt(i);
+    }
+
+    const nibbles = this.nibbleEncode(decoded);
+    const msg = new Uint8Array(126);
+    msg.set([0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x38, 0x00, 0x00, 0x00]);
+    msg.set(nibbles, 13);
+    msg[125] = 0xF7;
     return msg;
   },
 

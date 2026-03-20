@@ -5,8 +5,10 @@ import { GP200PresetSchema, type GP200Preset } from './types';
 export const PRST_MAGIC = 'TSRP';
 const OFFSET_MAGIC       = 0x00;  // 4 bytes: "TSRP"
 const OFFSET_VERSION     = 0x15;  // 1 byte: version minor (e.g. 1)
-const OFFSET_PATCH_NAME  = 0x44;  // null-terminated, max 32 bytes
-const PATCH_NAME_MAX     = 32;
+const OFFSET_PATCH_NAME  = 0x44;  // null-terminated, max 16 bytes (not 32 — author follows)
+const PATCH_NAME_MAX     = 16;
+const OFFSET_AUTHOR      = 0x54;  // null-terminated, max 16 bytes
+const AUTHOR_MAX         = 16;
 const OFFSET_CHECKSUM    = 0x4C6; // LE uint16 (last 2 bytes of 1224-byte file)
 
 const EFFECT_BLOCK_COUNT  = 11;    // GP-200 has 11 effect slots
@@ -37,6 +39,7 @@ export class PRSTDecoder {
 
     const version = String(this.parser.readUint8(OFFSET_VERSION));
     const patchName = this.parser.readAscii(OFFSET_PATCH_NAME, PATCH_NAME_MAX);
+    const author = this.parser.readAscii(OFFSET_AUTHOR, AUTHOR_MAX);
 
     const effects: GP200Preset['effects'] = [];
     for (let i = 0; i < EFFECT_BLOCK_COUNT; i++) {
@@ -53,6 +56,6 @@ export class PRSTDecoder {
 
     const checksum = this.parser.readUint16LE(OFFSET_CHECKSUM);
 
-    return GP200PresetSchema.parse({ version, patchName, effects, checksum });
+    return GP200PresetSchema.parse({ version, patchName, author: author || undefined, effects, checksum });
   }
 }

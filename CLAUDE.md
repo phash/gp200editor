@@ -21,7 +21,7 @@ Live USB-MIDI Editing, Preset-Galerie, Community-Sharing.
 ```bash
 npm install --legacy-peer-deps   # legacy-peer-deps wegen lokaler npm-Version (11.x vs lock-file)
 npm run dev                      # http://localhost:3000
-npm run test                     # Vitest Unit-Tests (98 Tests)
+npm run test                     # Vitest Unit-Tests (240 Tests)
 npm run test:e2e                 # Playwright E2E (App muss laufen + Garage + DB)
 npm run build                    # Production Build
 ```
@@ -246,10 +246,15 @@ Preset        id, userId, presetKey, name(VarChar32), description, tags(String[]
 | 0x28   | 4     | Chunk-Marker: `MRAP`            |
 | 0x2C   | 4     | Chunk-Größe (LE uint32 = 1172)  |
 
-### Preset-Name (0x44–0x63)
+### Preset-Name + Author (0x44–0x63)
 
-- Null-terminierter ASCII-String ab Offset 0x44
-- Max. 32 Zeichen
+| Offset | Größe | Inhalt                          |
+|--------|-------|---------------------------------|
+| 0x44   | 16    | Preset-Name (null-terminiert)   |
+| 0x54   | 16    | Author (null-terminiert)        |
+
+- Beide Felder: ASCII, null-terminiert, max 16 Zeichen (nicht 32 wie ursprünglich angenommen)
+- Author wird auch per SysEx Live-Message (sub=0x20) ans Gerät gesendet
 
 ### Effekt-Blöcke (0xa0–0x3AF, 11× 72 Bytes)
 
@@ -297,7 +302,7 @@ LE uint16 → **Algorithmus gelöst (2026-03-18):** `sum(bytes[0:0x4C6]) & 0xFFF
 ## Tests
 
 ```bash
-npm run test              # 183 Unit-Tests (Vitest)
+npm run test              # 240 Unit-Tests (Vitest)
 npm run test:coverage     # Coverage-Report
 npm run test:e2e          # Playwright E2E (App + Garage + DB erforderlich)
 ```
@@ -463,13 +468,15 @@ Device antwortet mit sub=0x14 (54 Bytes) und bestätigt die neue Reihenfolge.
 #### Author-Name (sub=0x20, 78 Bytes, nibble-encoded)
 
 Gleicher Sub wie Reorder, aber anderer decoded[8] Msg-Typ:
+**Verifiziert**: Capture 143029, Pkt 71 — Author "Manuel"
 
 ```
-[0:8]   00 00 04 00 00 00 00 00   Konstanter Header
+[0:8]   00 00 04 00 00 00 01 00   Konstanter Header
 [8]     09                         Msg-Typ (Author)
 [10]    14                         Konstante
-[14]    7F                         Marker
-[15]    05                         Konstante
+[12]    01                         Konstante
+[14]    70                         Marker
+[15]    0B                         Konstante
 [16:32] Author-Name                Null-terminierter ASCII-String (max 16 Zeichen)
 ```
 
@@ -477,20 +484,32 @@ Gleicher Sub wie Reorder, aber anderer decoded[8] Msg-Typ:
 
 SysEx: `F0 ... 12 38 00 00 00 [112 nibble bytes] F7`
 Nibble-decoded Payload (56 Bytes):
+**Verifiziert**: Capture 143029, Pkt 129 — Note "TestNote"
 
 ```
-[0:8]   00 00 04 00 00 00 00 00   Konstanter Header
+[0:8]   00 00 04 00 00 00 01 00   Konstanter Header
 [8]     0B                         Msg-Typ (Note)
 [10]    2C                         Konstante
-[14]    6F                         Marker
+[12]    01                         Konstante
+[14]    A1                         Marker
 [16:56] Note-Text                  Null-terminierter ASCII-String (max 40 Zeichen)
 ```
 
-#### Style (sub=0x10 + sub=0x18)
+#### Style-Name (sub=0x18, 62 Bytes, nibble-encoded)
 
-Style wird in zwei Schritten gesetzt:
-1. **sub=0x10** (46B): Style-Index als nibble-Wert an [41:42], byte[38]=0x02
-2. **sub=0x18** (62B): Style-Name als ASCII-String (anderer Header als Param-Change)
+Gleicher Sub wie Param-Change, aber anderer Header (beginnt mit 03 20 14).
+**Verifiziert**: Capture 143029, Pkt 135 — Style "Green Day"
+
+```
+[0]     03                         Style-Header (vs 00 bei Param-Change)
+[1]     20                         Konstante
+[2]     14                         Konstante
+[4]     01                         Konstante
+[6]     A1                         Marker
+[8:24]  Style-Name                 Null-terminierter ASCII-String (max 16 Zeichen)
+```
+
+**Hinweis:** Style-Name ist NICHT in der .prst-Datei gespeichert — nur per SysEx ans Gerät + DB-Metadaten.
 
 #### Drum-Computer (sub=0x08, 30 Bytes, raw)
 

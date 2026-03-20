@@ -22,7 +22,7 @@ import type { GP200Preset } from '@/core/types';
 export default function EditorPage() {
   const t = useTranslations('editor');
   const router = useRouter();
-  const { preset, loadPreset, setPatchName, toggleEffect, changeEffect, reorderEffects, setParam } = usePreset();
+  const { preset, loadPreset, setPatchName, setAuthor, toggleEffect, changeEffect, reorderEffects, setParam } = usePreset();
   const midiDevice = useMidiDeviceContext();
   const [slotBrowserMode, setSlotBrowserMode] = useState<'pull' | 'push' | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -126,8 +126,17 @@ export default function EditorPage() {
   }
 
   async function handleSaveToPresets(data: { author: string; style: string; note: string; publish: boolean }) {
+    // Update author in preset before encoding
+    if (data.author) setAuthor(data.author);
     const ab = encodePreset();
     if (!ab || !preset) return;
+
+    // Send metadata to connected device
+    if (midiDevice.status === 'connected') {
+      if (data.author) midiDevice.sendAuthor(data.author);
+      if (data.style) midiDevice.sendStyleName(data.style);
+      if (data.note) midiDevice.sendNote(data.note);
+    }
 
     setSaveStatus('saving');
     try {
@@ -332,8 +341,8 @@ export default function EditorPage() {
 
   return (
     <div className={`p-8 mx-auto ${viewMode === 'pedals' ? 'max-w-6xl' : 'max-w-2xl'}`}>
-      {/* Header with patch name + slot */}
-      <div className="flex items-center gap-4 mb-8 flex-wrap">
+      {/* Header with patch name + author + slot */}
+      <div className="flex items-center gap-4 mb-4 flex-wrap">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <span className="font-mono-display text-sm font-bold tracking-tight flex-shrink-0"
             style={{ color: 'var(--text-muted)' }}>
@@ -344,7 +353,7 @@ export default function EditorPage() {
             type="text"
             value={preset.patchName}
             onChange={(e) => setPatchName(e.target.value)}
-            maxLength={32}
+            maxLength={16}
             data-testid="patch-name-input"
             className="font-mono-display text-xl font-bold tracking-tight bg-transparent border-none outline-none min-w-0 flex-1"
             style={{ color: 'var(--accent-amber)' }}
@@ -353,6 +362,36 @@ export default function EditorPage() {
         {bankBaseSlot !== null && (
           <span className="font-mono-display text-sm flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
             {t('slot')}: <strong style={{ color: 'var(--accent-amber)' }}>{SysExCodec.slotToLabel(bankBaseSlot + activeTab)}</strong>
+          </span>
+        )}
+      </div>
+      {/* Author + Style */}
+      <div className="flex items-center gap-4 mb-8 flex-wrap">
+        <div className="flex items-center gap-3">
+          <span className="font-mono-display text-[11px] font-medium tracking-wider uppercase flex-shrink-0"
+            style={{ color: 'var(--text-muted)' }}>
+            {t('author')}:
+          </span>
+          <input
+            type="text"
+            value={preset.author ?? ''}
+            onChange={(e) => {
+              setAuthor(e.target.value);
+              if (midiDevice.status === 'connected') {
+                midiDevice.sendAuthor(e.target.value);
+              }
+            }}
+            maxLength={16}
+            placeholder={username || '—'}
+            data-testid="author-input"
+            className="font-mono-display text-sm bg-transparent border-none outline-none"
+            style={{ color: 'var(--text-secondary)' }}
+          />
+        </div>
+        {sourcePreset?.style && (
+          <span className="font-mono-display text-[11px] tracking-wider uppercase px-2 py-0.5 rounded"
+            style={{ color: 'var(--text-muted)', background: 'rgba(212,162,78,0.08)', border: '1px solid rgba(212,162,78,0.15)' }}>
+            {sourcePreset.style}
           </span>
         )}
       </div>
@@ -629,7 +668,7 @@ export default function EditorPage() {
       {showSaveDialog && (
         <SavePresetDialog
           presetName={preset.patchName}
-          defaultAuthor={username}
+          defaultAuthor={preset.author || username}
           onSave={handleSaveToPresets}
           onCancel={() => setShowSaveDialog(false)}
           saving={saveStatus === 'saving'}
