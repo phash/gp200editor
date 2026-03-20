@@ -171,7 +171,13 @@
     "loadSlot": "Slot",
     "firmwareBannerText": "This app was only tested with firmware 1.2. Your version ({version}) may cause issues.",
     "firmwareBannerAck": "I understand the risk",
-    "firmwareBannerContinue": "Continue"
+    "firmwareBannerContinue": "Continue",
+    "firmwareCompatTitle": "Firmware Compatibility Warning",
+    "firmwareCompatInfo": "This app was only tested with firmware {versions}. Your device has firmware {detected}.",
+    "firmwareCompatRisk": "With untested firmware, presets may get corrupted or the device may behave unexpectedly.",
+    "firmwareCompatAck": "I understand the risk",
+    "firmwareCompatContinue": "Continue",
+    "firmwareCompatDisconnect": "Disconnect"
   },
   "help": {
     "title": "Help",

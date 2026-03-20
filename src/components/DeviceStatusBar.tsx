@@ -2,6 +2,7 @@
 import { useTranslations } from 'next-intl';
 import type { UseMidiDeviceReturn } from '@/hooks/useMidiDevice';
 import { SysExCodec } from '@/core/SysExCodec';
+import { TESTED_FIRMWARE_VERSIONS } from '@/core/firmware';
 import { useState, useEffect } from 'react';
 
 interface DeviceStatusBarProps {
@@ -83,7 +84,7 @@ export function DeviceStatusBar({
               {t('firmware', { version: midiDevice.deviceInfo.firmwareValues.join('.') })}
             </span>
           )}
-          {midiDevice.deviceInfo && midiDevice.deviceInfo.firmwareValues.join('.') !== '1.2' && (
+          {midiDevice.deviceInfo && !TESTED_FIRMWARE_VERSIONS.includes(midiDevice.deviceInfo.firmwareValues.join('.')) && (
             <span style={{ color: 'var(--accent-red)', marginLeft: 8, fontSize: '0.85em' }} title={t('versionWarning')}>
               ⚠
             </span>

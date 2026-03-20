@@ -171,7 +171,13 @@
     "loadSlot": "Slot",
     "firmwareBannerText": "Diese App wurde nur mit Firmware 1.2 getestet. Deine Version ({version}) könnte Probleme verursachen.",
     "firmwareBannerAck": "Ich verstehe das Risiko",
-    "firmwareBannerContinue": "Weiter"
+    "firmwareBannerContinue": "Weiter",
+    "firmwareCompatTitle": "Firmware-Kompatibilitätswarnung",
+    "firmwareCompatInfo": "Diese App wurde nur mit Firmware {versions} getestet. Dein Gerät hat Firmware {detected}.",
+    "firmwareCompatRisk": "Bei nicht getesteter Firmware können Presets beschädigt werden oder das Gerät unerwartet reagieren.",
+    "firmwareCompatAck": "Mir ist das Risiko bewusst",
+    "firmwareCompatContinue": "Weiter",
+    "firmwareCompatDisconnect": "Verbindung trennen"
   },
   "help": {
     "title": "Hilfe",

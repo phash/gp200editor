@@ -10,7 +10,8 @@ import { useRouter } from '@/i18n/routing';
 import { useMidiDeviceContext } from '@/contexts/MidiDeviceContext';
 import { DeviceStatusBar } from '@/components/DeviceStatusBar';
 import { DeviceSlotBrowser } from '@/components/DeviceSlotBrowser';
-import { FirmwareWarningBanner } from '@/components/FirmwareWarningBanner';
+import { FirmwareCompatDialog } from '@/components/FirmwareCompatDialog';
+import { TESTED_FIRMWARE_VERSIONS } from '@/core/firmware';
 import { SavePresetDialog } from '@/components/SavePresetDialog';
 import { AddToPlaylistDialog } from '@/components/AddToPlaylistDialog';
 import { SysExCodec } from '@/core/SysExCodec';
@@ -231,15 +232,15 @@ export default function EditorPage() {
 
   const td = useTranslations('device');
 
-  const showFirmwareWarning =
-    midiDevice.status === 'connected' &&
-    midiDevice.deviceInfo !== null &&
-    midiDevice.deviceInfo.firmwareValues.join('.') !== '1.2' &&
-    !firmwareWarningDismissed;
-
   const firmwareVersionStr = midiDevice.deviceInfo
     ? midiDevice.deviceInfo.firmwareValues.join('.')
     : '';
+  const firmwareOk = TESTED_FIRMWARE_VERSIONS.includes(firmwareVersionStr);
+  const showFirmwareDialog =
+    midiDevice.status === 'connected' &&
+    midiDevice.deviceInfo !== null &&
+    !firmwareOk &&
+    !firmwareWarningDismissed;
 
   if (!preset) {
     return (
@@ -259,13 +260,6 @@ export default function EditorPage() {
             </p>
           )}
         </div>
-        {showFirmwareWarning && (
-          <FirmwareWarningBanner
-            firmwareVersion={firmwareVersionStr}
-            onDismiss={() => setFirmwareWarningDismissed(true)}
-          />
-        )}
-
         <h1 className="font-mono-display text-2xl font-bold mb-8 tracking-tight"
           style={{ color: 'var(--text-primary)' }}>
           {t('title')}
@@ -554,14 +548,6 @@ export default function EditorPage() {
           onPullRequest={() => handleOpenBrowser('pull')}
           onPushRequest={() => handleOpenBrowser('push')}
         />
-        {showFirmwareWarning && (
-          <div className="mt-3">
-            <FirmwareWarningBanner
-              firmwareVersion={firmwareVersionStr}
-              onDismiss={() => setFirmwareWarningDismissed(true)}
-            />
-          </div>
-        )}
       </div>
 
       {slotBrowserMode && (
@@ -580,6 +566,14 @@ export default function EditorPage() {
           presetName={preset.patchName}
           presetBinary={encodePreset()!}
           onClose={() => setShowPlaylistDialog(false)}
+        />
+      )}
+
+      {showFirmwareDialog && (
+        <FirmwareCompatDialog
+          detectedVersion={firmwareVersionStr}
+          onContinue={() => setFirmwareWarningDismissed(true)}
+          onDisconnect={() => { midiDevice.disconnect(); setFirmwareWarningDismissed(false); }}
         />
       )}
     </div>

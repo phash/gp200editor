@@ -7,6 +7,8 @@ import { usePlaylistPlayer } from '@/hooks/usePlaylistPlayer';
 import { useMidiDeviceContext } from '@/contexts/MidiDeviceContext';
 import { YouTubeEmbed } from '@/components/YouTubeEmbed';
 import { PRSTDecoder } from '@/core/PRSTDecoder';
+import { FirmwareCompatDialog } from '@/components/FirmwareCompatDialog';
+import { TESTED_FIRMWARE_VERSIONS } from '@/core/firmware';
 import type { Playlist } from '@/lib/playlistDb';
 
 type View = { type: 'overview' } | { type: 'edit'; id: string } | { type: 'play'; id: string };
@@ -26,6 +28,11 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
 
   const [playlist, setPlaylist] = useState<Playlist | null>(null);
   const [pushStatus, setPushStatus] = useState<PushStatus>('idle');
+  const [firmwareDismissed, setFirmwareDismissed] = useState(false);
+
+  const firmwareVersionStr = midiDevice.deviceInfo?.firmwareValues.join('.') ?? '';
+  const firmwareOk = TESTED_FIRMWARE_VERSIONS.includes(firmwareVersionStr);
+  const showFirmwareDialog = midiDevice.status === 'connected' && midiDevice.deviceInfo !== null && !firmwareOk && !firmwareDismissed;
 
   // Load playlist from IndexedDB on mount
   useEffect(() => {
@@ -317,6 +324,14 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
           </>
         )}
       </div>
+
+      {showFirmwareDialog && (
+        <FirmwareCompatDialog
+          detectedVersion={firmwareVersionStr}
+          onContinue={() => setFirmwareDismissed(true)}
+          onDisconnect={() => { midiDevice.disconnect(); setFirmwareDismissed(false); }}
+        />
+      )}
     </main>
   );
 }
