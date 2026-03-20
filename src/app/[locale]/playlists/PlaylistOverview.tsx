@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { usePlaylist } from '@/hooks/usePlaylist';
+import { HelpButton } from '@/components/HelpButton';
 
 type View = { type: 'overview' } | { type: 'edit'; id: string } | { type: 'play'; id: string };
 
@@ -47,12 +48,15 @@ export function PlaylistOverview({ onNavigate }: PlaylistOverviewProps) {
   return (
     <main className="max-w-4xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6 gap-4">
-        <h1
-          className="font-mono-display text-xl font-bold tracking-tight"
-          style={{ color: 'var(--accent-amber)' }}
-        >
-          {t('title')}
-        </h1>
+        <div className="flex items-center gap-3">
+          <h1
+            className="font-mono-display text-xl font-bold tracking-tight"
+            style={{ color: 'var(--accent-amber)' }}
+          >
+            {t('title')}
+          </h1>
+          <HelpButton section="playlists" />
+        </div>
 
         {!showCreateInput && (
           <button

@@ -12,6 +12,7 @@ import { DeviceSlotBrowser } from '@/components/DeviceSlotBrowser';
 // Slot-based: presets live on device, no PRSTDecoder needed for playback
 import { SysExCodec } from '@/core/SysExCodec';
 import { FirmwareCompatDialog } from '@/components/FirmwareCompatDialog';
+import { HelpButton } from '@/components/HelpButton';
 // Firmware compat uses version check (sub=0x0A) result, not string matching
 import { openPlaylistDb, updatePlaylist as dbUpdatePlaylist } from '@/lib/playlistDb';
 import type { Playlist, CuePoint } from '@/lib/playlistDb';
@@ -260,12 +261,15 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
       </div>
 
       {/* Playlist title */}
-      <h1
-        className="font-mono-display text-xl font-bold tracking-tight mb-4"
-        style={{ color: 'var(--accent-amber)' }}
-      >
-        {playlist.name}
-      </h1>
+      <div className="flex items-center gap-3 mb-4">
+        <h1
+          className="font-mono-display text-xl font-bold tracking-tight"
+          style={{ color: 'var(--accent-amber)' }}
+        >
+          {playlist.name}
+        </h1>
+        <HelpButton section="playlists" />
+      </div>
 
       {/* MIDI Connection Banner */}
       {midiDevice.status !== 'connected' ? (

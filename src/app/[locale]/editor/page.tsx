@@ -13,6 +13,7 @@ import { useMidiDeviceContext } from '@/contexts/MidiDeviceContext';
 import { DeviceStatusBar } from '@/components/DeviceStatusBar';
 import { DeviceSlotBrowser } from '@/components/DeviceSlotBrowser';
 import { FirmwareCompatDialog } from '@/components/FirmwareCompatDialog';
+import { HelpButton } from '@/components/HelpButton';
 // Firmware compat now uses version check (sub=0x0A) result, not version string matching
 import { SavePresetDialog } from '@/components/SavePresetDialog';
 import { AddToPlaylistDialog } from '@/components/AddToPlaylistDialog';
@@ -321,10 +322,13 @@ export default function EditorPage() {
             </p>
           )}
         </div>
-        <h1 className="font-mono-display text-2xl font-bold mb-8 tracking-tight"
-          style={{ color: 'var(--text-primary)' }}>
-          {t('title')}
-        </h1>
+        <div className="flex items-center gap-3 mb-8">
+          <h1 className="font-mono-display text-2xl font-bold tracking-tight"
+            style={{ color: 'var(--text-primary)' }}>
+            {t('title')}
+          </h1>
+          <HelpButton section="editor" />
+        </div>
         <FileUpload onFile={handleFile} />
         {loadError && (
           <div
@@ -368,6 +372,7 @@ export default function EditorPage() {
       {/* Header with patch name + author + slot */}
       <div className="flex items-center gap-4 mb-4 flex-wrap">
         <div className="flex items-center gap-3 flex-1 min-w-0">
+          <HelpButton section="editor" />
           <span className="font-mono-display text-sm font-bold tracking-tight flex-shrink-0"
             style={{ color: 'var(--text-muted)' }}>
             {t('patchName')}:

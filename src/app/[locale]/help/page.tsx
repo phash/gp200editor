@@ -3,8 +3,9 @@ import { getTranslations } from 'next-intl/server';
 export default async function HelpPage() {
   const t = await getTranslations('help');
 
-  const sections = [
+  const sections: { id: string; title: string; items: string[] }[] = [
     {
+      id: 'editor',
       title: t('gettingStartedTitle'),
       items: [
         t('gettingStartedLoad'),
@@ -15,6 +16,7 @@ export default async function HelpPage() {
       ],
     },
     {
+      id: 'hlx-import',
       title: t('hxStompTitle'),
       items: [
         t('hxStompLoad'),
@@ -23,6 +25,7 @@ export default async function HelpPage() {
       ],
     },
     {
+      id: 'midi',
       title: t('usbMidiTitle'),
       items: [
         t('usbMidiBrowser'),
@@ -32,6 +35,7 @@ export default async function HelpPage() {
       ],
     },
     {
+      id: 'gallery',
       title: t('galleryTitle'),
       items: [
         t('galleryUpload'),
@@ -40,6 +44,7 @@ export default async function HelpPage() {
       ],
     },
     {
+      id: 'bank-nav',
       title: t('bankNavTitle'),
       items: [
         t('bankNavTabs'),
@@ -47,6 +52,7 @@ export default async function HelpPage() {
       ],
     },
     {
+      id: 'playlists',
       title: t('playlistsTitle'),
       items: [
         t('playlistsCreate'),
@@ -57,6 +63,7 @@ export default async function HelpPage() {
       ],
     },
     {
+      id: 'shortcuts',
       title: t('shortcutsTitle'),
       items: [
         t('shortcutsPlaylistUpDown'),
@@ -83,7 +90,7 @@ export default async function HelpPage() {
       </h1>
 
       {sections.map((section) => (
-        <section key={section.title} className="mb-8">
+        <section key={section.id} id={section.id} className="mb-8">
           <h2
             className="font-mono-display text-lg font-bold tracking-tight mb-3"
             style={{ color: 'var(--accent-amber)' }}
