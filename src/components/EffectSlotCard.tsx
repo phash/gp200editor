@@ -61,17 +61,17 @@ export function EffectSlotCard({ slot, index, onToggle, onChangeEffect, onParamC
       >
         {/* Top strip — module color accent */}
         <div
-          className="h-1"
+          className="h-1.5"
           style={{
             background: slot.enabled
-              ? `linear-gradient(90deg, transparent, ${colors.accent}, transparent)`
-              : `linear-gradient(90deg, transparent, ${colors.accentDim}, transparent)`,
+              ? `linear-gradient(90deg, transparent 5%, ${colors.accent} 50%, transparent 95%)`
+              : `linear-gradient(90deg, transparent 5%, ${colors.accentDim} 50%, transparent 95%)`,
             opacity: slot.enabled ? 1 : 0.3,
           }}
         />
 
-        {/* Drag handle bar — subtle screws */}
-        <div className="flex items-center justify-between px-3 pt-2 pb-1">
+        {/* Drag handle bar */}
+        <div className="flex items-center justify-between px-3 pt-2 pb-0">
           <span
             className="cursor-grab text-[8px] tracking-[0.3em] uppercase select-none"
             style={{ color: 'rgba(100,100,100,0.5)' }}
@@ -81,50 +81,50 @@ export function EffectSlotCard({ slot, index, onToggle, onChangeEffect, onParamC
             ● ● ●
           </span>
           <span
-            className="text-[8px] tracking-[0.2em] uppercase font-mono-display select-none"
+            className="text-[9px] tracking-[0.15em] uppercase font-mono-display select-none"
             style={{ color: 'rgba(100,100,100,0.4)' }}
           >
             {index + 1}
           </span>
         </div>
 
-        {/* Module badge + effect name */}
-        <div className="px-4 pt-1 pb-3 text-center">
+        {/* Module badge — prominent, centered */}
+        <div className="px-4 pt-2 pb-1 text-center">
           <span
-            className="inline-block font-mono-display text-[9px] font-bold tracking-[0.25em] uppercase px-3 py-1 rounded-sm mb-2"
+            className="inline-block font-mono-display text-[11px] font-black tracking-[0.3em] uppercase px-4 py-1.5 rounded"
             style={{
               color: colors.accent,
-              background: colors.glow,
-              border: `1px solid ${colors.accentDim}`,
-              letterSpacing: '0.2em',
+              background: `linear-gradient(180deg, ${colors.glow}, rgba(0,0,0,0))`,
+              border: `1.5px solid ${colors.accentDim}`,
+              boxShadow: slot.enabled ? `0 0 12px ${colors.glow}` : 'none',
             }}
           >
             {moduleName}
           </span>
+        </div>
 
-          {/* Effect selector */}
-          <div className="mt-1">
-            <select
-              value={slot.effectId}
-              onChange={(e) => onChangeEffect(slot.slotIndex, Number(e.target.value))}
-              data-testid={`effect-select-${slot.slotIndex}`}
-              className="w-full text-center text-sm font-bold bg-transparent border-none cursor-pointer truncate focus:outline-none font-mono-display"
-              style={{ color: 'var(--text-primary)' }}
-            >
-              {effects.map((eff) => (
-                <option key={eff.effectId} value={eff.effectId}>
-                  {eff.name}
-                </option>
-              ))}
-              {!effects.some(e => e.effectId === slot.effectId) && (
-                <option value={slot.effectId}>{effectName}</option>
-              )}
-            </select>
-          </div>
+        {/* Effect name selector — larger */}
+        <div className="px-4 pt-1 pb-2 text-center">
+          <select
+            value={slot.effectId}
+            onChange={(e) => onChangeEffect(slot.slotIndex, Number(e.target.value))}
+            data-testid={`effect-select-${slot.slotIndex}`}
+            className="w-full text-center text-base font-bold bg-transparent border-none cursor-pointer truncate focus:outline-none font-mono-display"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            {effects.map((eff) => (
+              <option key={eff.effectId} value={eff.effectId}>
+                {eff.name}
+              </option>
+            ))}
+            {!effects.some(e => e.effectId === slot.effectId) && (
+              <option value={slot.effectId}>{effectName}</option>
+            )}
+          </select>
         </div>
 
         {/* Parameters — flex-1 pushes stomp button to bottom */}
-        <div className="px-3 pb-3 flex-1" draggable onDragStart={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+        <div className="px-3 pb-2 flex-1" draggable onDragStart={(e) => { e.preventDefault(); e.stopPropagation(); }}>
           <EffectParams
             effectId={slot.effectId}
             params={slot.params}
@@ -134,14 +134,14 @@ export function EffectSlotCard({ slot, index, onToggle, onChangeEffect, onParamC
           />
         </div>
 
-        {/* Footswitch — big stomp button */}
-        <div className="px-4 pb-4 pt-1">
+        {/* Footswitch — stomp button at bottom, below all sliders */}
+        <div className="px-4 pb-4 pt-2 mt-auto">
           <button
             onClick={(e) => { e.stopPropagation(); onToggle(slot.slotIndex); }}
             aria-pressed={slot.enabled}
             aria-label={`${effectName} ${slot.enabled ? t('effectEnabled') : t('effectDisabled')}`}
             data-testid={`effect-slot-toggle-${slot.slotIndex}`}
-            className="relative w-full py-3 rounded-lg font-mono-display text-xs font-bold tracking-[0.15em] uppercase transition-all duration-150 cursor-pointer select-none"
+            className="relative w-full py-3.5 rounded-lg font-mono-display text-sm font-bold tracking-[0.15em] uppercase transition-all duration-150 cursor-pointer select-none"
             style={{
               background: slot.enabled
                 ? `radial-gradient(ellipse at center, ${colors.glow} 0%, rgba(0,0,0,0) 70%), linear-gradient(180deg, rgba(50,50,50,1), rgba(35,35,35,1))`
@@ -155,7 +155,7 @@ export function EffectSlotCard({ slot, index, onToggle, onChangeEffect, onParamC
           >
             {/* LED indicator */}
             <span
-              className="absolute top-2 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full transition-all duration-200"
+              className="absolute top-2 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full transition-all duration-200"
               style={{
                 background: slot.enabled ? colors.accent : 'rgba(60,60,60,0.8)',
                 boxShadow: slot.enabled ? `0 0 8px ${colors.accent}, 0 0 20px ${colors.glow}` : 'none',
