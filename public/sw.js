@@ -1,5 +1,8 @@
 const CACHE_NAME = 'preset-forge-v1';
 
+// Activate immediately — don't wait for old tabs to close
+self.addEventListener('install', () => self.skipWaiting());
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -38,8 +41,13 @@ self.addEventListener('fetch', (event) => {
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    )
+    Promise.all([
+      // Claim all open tabs immediately
+      self.clients.claim(),
+      // Clean old caches
+      caches.keys().then(keys =>
+        Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      ),
+    ])
   );
 });
