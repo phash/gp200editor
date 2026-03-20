@@ -9,7 +9,7 @@ import { useMidiDeviceContext } from '@/contexts/MidiDeviceContext';
 import { YouTubeEmbed } from '@/components/YouTubeEmbed';
 import { CuePointTable } from '@/components/CuePointTable';
 import { DeviceSlotBrowser } from '@/components/DeviceSlotBrowser';
-import { PRSTDecoder } from '@/core/PRSTDecoder';
+// Slot-based: presets live on device, no PRSTDecoder needed for playback
 import { SysExCodec } from '@/core/SysExCodec';
 import { FirmwareCompatDialog } from '@/components/FirmwareCompatDialog';
 // Firmware compat uses version check (sub=0x0A) result, not string matching
@@ -23,18 +23,17 @@ interface PlaylistPlayerProps {
   onNavigate: (view: View) => void;
 }
 
-type PushStatus = 'idle' | 'pushing' | 'success' | 'error';
+// Push status removed — slot-based playback uses sendSlotChange only
 
 export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) {
   const t = useTranslations('playlists');
-  const tDevice = useTranslations('device');
   const { getPlaylist } = usePlaylist();
   const midiDevice = useMidiDeviceContext();
 
   const [playlist, setPlaylist] = useState<Playlist | null>(null);
-  const [pushStatus, setPushStatus] = useState<PushStatus>('idle');
   const [firmwareDismissed, setFirmwareDismissed] = useState(false);
   const [showSlotBrowser, setShowSlotBrowser] = useState(false);
+  const [countIn, setCountIn] = useState<number | null>(null); // 3, 2, 1, null
 
   const firmwareOk = midiDevice.deviceInfo?.versionAccepted ?? false;
   const firmwareVersionStr = midiDevice.deviceInfo
@@ -51,30 +50,7 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
 
   const player = usePlaylistPlayer(playlist);
 
-  const pushCurrentPreset = useCallback(async () => {
-    const preset = player.currentPreset;
-    if (!preset || midiDevice.status !== 'connected' || midiDevice.currentSlot === null) return;
-    setPushStatus('pushing');
-    try {
-      const bytes = new Uint8Array(preset.binary);
-      const decoder = new PRSTDecoder(bytes);
-      const decoded = decoder.decode();
-      await midiDevice.pushPreset(decoded, midiDevice.currentSlot);
-      setPushStatus('success');
-      setTimeout(() => setPushStatus('idle'), 2000);
-    } catch {
-      setPushStatus('error');
-      setTimeout(() => setPushStatus('idle'), 3000);
-    }
-  }, [player.currentPreset, midiDevice]);
-
-  // Auto-push on song/preset change
-  useEffect(() => {
-    if (player.currentPreset && midiDevice.status === 'connected') {
-      pushCurrentPreset();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [player.currentSongIndex, player.currentPresetIndex]);
+  // Slot-based: no preset pushing needed, cue points use sendSlotChange
 
   // ─── Cue Points ──────────────────────────────────────────────────────────────
 
@@ -174,6 +150,18 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
 
   const timeline = useTimelinePlayer(cuePoints, onCueFire);
 
+  // Count-in: 3, 2, 1, go!
+  useEffect(() => {
+    if (countIn === null) return;
+    if (countIn <= 0) {
+      setCountIn(null);
+      timeline.play();
+      return;
+    }
+    const timer = setTimeout(() => setCountIn(countIn - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [countIn, timeline]);
+
   // Keyboard navigation
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -226,26 +214,10 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
 
   const entries = playlist.entries;
   const currentEntry = player.currentEntry;
-  const currentPresets = currentEntry?.presets ?? [];
 
-  const pushStatusText =
-    pushStatus === 'pushing'
-      ? t('pushing')
-      : pushStatus === 'success'
-        ? t('pushSuccess')
-        : pushStatus === 'error'
-          ? t('pushError')
-          : '';
-
-  const ledColor =
-    midiDevice.status === 'connected' ? 'var(--accent-green)' : '#555';
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8 font-mono-display">
-      {/* Accessibility: live region for push status */}
-      <div aria-live="polite" className="sr-only">
-        {pushStatusText}
-      </div>
 
       {/* Navigation buttons */}
       <div className="mb-4 flex gap-2">
@@ -397,44 +369,6 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
         </div>
       )}
 
-      {/* Preset chips */}
-      {currentEntry && currentPresets.length > 0 && (
-        <div
-          role="tablist"
-          aria-label={currentEntry.songName}
-          className="flex flex-wrap gap-2 mb-6"
-        >
-          {currentPresets.map((preset, idx) => {
-            const isActive = idx === player.currentPresetIndex;
-            return (
-              <button
-                key={preset.id}
-                role="tab"
-                aria-selected={isActive}
-                draggable
-                onDragStart={(e) => {
-                  e.dataTransfer.setData('text/preset-id', preset.id);
-                  e.dataTransfer.effectAllowed = 'copy';
-                }}
-                onClick={() => {
-                  player.goToPreset(idx);
-                  pushCurrentPreset();
-                }}
-                className="font-mono-display text-xs font-bold uppercase tracking-wider px-4 py-2 rounded transition-all duration-150 cursor-grab active:cursor-grabbing"
-                style={{
-                  background: isActive ? 'var(--accent-amber)' : 'transparent',
-                  color: isActive ? 'var(--bg-deep)' : 'var(--text-secondary)',
-                  border: isActive ? 'none' : '1px solid var(--border-subtle)',
-                  animation: isActive && pushStatus === 'pushing' ? 'pulse 1s infinite' : 'none',
-                }}
-              >
-                {preset.label || preset.presetName}
-              </button>
-            );
-          })}
-        </div>
-      )}
-
       {/* Timeline controls + Cue Point Table */}
       {currentEntry && (
         <div className="mb-6">
@@ -444,15 +378,29 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
               {t('cuePoints')}
             </h3>
             <div className="flex gap-1 ml-auto">
-              {timeline.state !== 'playing' ? (
-                <button
-                  onClick={timeline.play}
-                  className="font-mono-display text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded"
-                  style={{ border: '1px solid var(--accent-green)', color: 'var(--accent-green)' }}
-                >
-                  {t('timelinePlay')}
-                </button>
-              ) : (
+              {countIn !== null && (
+                <span className="font-mono-display text-2xl font-bold tabular-nums animate-pulse mr-2" style={{ color: 'var(--accent-amber)' }}>
+                  {countIn}
+                </span>
+              )}
+              {timeline.state !== 'playing' && countIn === null ? (
+                <>
+                  <button
+                    onClick={() => setCountIn(3)}
+                    className="font-mono-display text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded"
+                    style={{ border: '1px solid var(--accent-amber)', color: 'var(--accent-amber)' }}
+                  >
+                    3…2…1
+                  </button>
+                  <button
+                    onClick={timeline.play}
+                    className="font-mono-display text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded"
+                    style={{ border: '1px solid var(--accent-green)', color: 'var(--accent-green)' }}
+                  >
+                    {t('timelinePlay')}
+                  </button>
+                </>
+              ) : timeline.state === 'playing' ? (
                 <button
                   onClick={timeline.pause}
                   className="font-mono-display text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded"
@@ -460,7 +408,7 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
                 >
                   {t('timelinePause')}
                 </button>
-              )}
+              ) : null}
               <button
                 onClick={timeline.stop}
                 disabled={timeline.state === 'stopped'}
@@ -474,9 +422,11 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
                 const sorted = [...cuePoints].sort((a, b) => a.timeSeconds - b.timeSeconds);
                 const nextCp = sorted.find(cp => !timeline.firedIds.has(cp.id));
                 const nextIn = nextCp ? Math.max(0, nextCp.timeSeconds - elapsed) : null;
-                const nextPreset = nextCp?.presetId
-                  ? currentPresets.find(p => p.id === nextCp.presetId)
-                  : null;
+                const nextLabel = nextCp?.action === 'preset-switch' && nextCp.slot !== undefined
+                  ? `${SysExCodec.slotToLabel(nextCp.slot)}${midiDevice.presetNames[nextCp.slot] ? ` ${midiDevice.presetNames[nextCp.slot]}` : ''}`
+                  : nextCp?.action === 'effect-toggle'
+                    ? `${['PRE','WAH','DST','AMP','NR','CAB','EQ','MOD','DLY','RVB','VOL'][nextCp.blockIndex ?? 0]} ${nextCp.enabled ? 'AN' : 'AUS'}`
+                    : '?';
                 return (
                   <div className="flex items-center gap-3 ml-2">
                     <span className="font-mono-display text-sm font-bold tabular-nums" style={{ color: 'var(--accent-amber)' }}>
@@ -484,8 +434,7 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
                     </span>
                     {nextCp && nextIn !== null && (
                       <span className="font-mono-display text-xs" style={{ color: 'var(--text-muted)' }}>
-                        → {nextPreset ? (nextPreset.label || nextPreset.presetName) : (nextCp.action === 'effect-toggle' ? `${['PRE','WAH','DST','AMP','NR','CAB','EQ','MOD','DLY','RVB','VOL'][nextCp.blockIndex ?? 0]} ${nextCp.enabled ? 'AN' : 'AUS'}` : '?')}
-                        {' '}in {Math.ceil(nextIn)}s
+                        → {nextLabel} in {Math.ceil(nextIn)}s
                       </span>
                     )}
                     {!nextCp && (
@@ -563,65 +512,9 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
           </ul>
         </div>
 
-        {/* Push status indicator */}
-        {pushStatus !== 'idle' && (
-          <div
-            className="shrink-0 flex items-start pt-1"
-            style={{ color: pushStatus === 'success' ? 'var(--accent-green)' : pushStatus === 'error' ? 'var(--accent-red)' : 'var(--accent-amber)' }}
-          >
-            <span className="font-mono-display text-sm font-bold">
-              {pushStatus === 'success' && '✓'}
-              {pushStatus === 'error' && '✗'}
-              {pushStatus === 'pushing' && '…'}
-            </span>
-          </div>
-        )}
       </div>
 
-      {/* Mini device status bar */}
-      <div
-        className="mt-8 flex items-center gap-3 px-3 py-2 rounded-lg text-sm"
-        style={{
-          border: `1px solid ${midiDevice.status === 'connected' ? 'rgba(74,222,128,0.25)' : 'rgba(255,255,255,0.08)'}`,
-          background: midiDevice.status === 'connected' ? 'rgba(74,222,128,0.04)' : 'rgba(255,255,255,0.02)',
-        }}
-      >
-        {/* LED */}
-        <span
-          aria-hidden="true"
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            flexShrink: 0,
-            background: ledColor,
-            boxShadow: midiDevice.status === 'connected' ? `0 0 6px ${ledColor}` : 'none',
-          }}
-        />
-
-        {midiDevice.status === 'connected' ? (
-          <span className="font-mono-display text-xs" style={{ color: 'var(--accent-green)' }}>
-            {midiDevice.deviceName ?? 'GP-200'}
-          </span>
-        ) : (
-          <>
-            <span className="font-mono-display text-xs" style={{ color: 'var(--text-muted)' }}>
-              {t('noDevice')}
-            </span>
-            <button
-              onClick={midiDevice.connect}
-              className="ml-auto font-mono-display text-xs font-bold uppercase px-3 py-1 rounded"
-              style={{
-                border: '1px solid rgba(212,162,78,0.4)',
-                color: 'var(--accent-amber)',
-                background: 'transparent',
-              }}
-            >
-              {tDevice('connect')}
-            </button>
-          </>
-        )}
-      </div>
+      {/* Device status is shown in the top banner — no duplicate here */}
 
       {showSlotBrowser && (
         <DeviceSlotBrowser
