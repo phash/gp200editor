@@ -2,7 +2,7 @@
 import { useTranslations } from 'next-intl';
 import type { UseMidiDeviceReturn } from '@/hooks/useMidiDevice';
 import { SysExCodec } from '@/core/SysExCodec';
-import { TESTED_FIRMWARE_VERSIONS } from '@/core/firmware';
+// Firmware compat uses versionAccepted from handshake, not string matching
 import { useState, useEffect } from 'react';
 
 interface DeviceStatusBarProps {
@@ -84,7 +84,7 @@ export function DeviceStatusBar({
               {t('firmware', { version: midiDevice.deviceInfo.firmwareValues.join('.') })}
             </span>
           )}
-          {midiDevice.deviceInfo && !TESTED_FIRMWARE_VERSIONS.includes(midiDevice.deviceInfo.firmwareValues.join('.')) && (
+          {midiDevice.deviceInfo && !midiDevice.deviceInfo.versionAccepted && (
             <span style={{ color: 'var(--accent-red)', marginLeft: 8, fontSize: '0.85em' }} title={t('versionWarning')}>
               ⚠
             </span>

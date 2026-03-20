@@ -10,7 +10,7 @@ import { YouTubeEmbed } from '@/components/YouTubeEmbed';
 import { CuePointTable } from '@/components/CuePointTable';
 import { PRSTDecoder } from '@/core/PRSTDecoder';
 import { FirmwareCompatDialog } from '@/components/FirmwareCompatDialog';
-import { TESTED_FIRMWARE_VERSIONS } from '@/core/firmware';
+// Firmware compat uses version check (sub=0x0A) result, not string matching
 import { openPlaylistDb, updatePlaylist as dbUpdatePlaylist } from '@/lib/playlistDb';
 import type { Playlist, CuePoint } from '@/lib/playlistDb';
 
@@ -33,8 +33,12 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
   const [pushStatus, setPushStatus] = useState<PushStatus>('idle');
   const [firmwareDismissed, setFirmwareDismissed] = useState(false);
 
-  const firmwareVersionStr = midiDevice.deviceInfo?.firmwareValues.join('.') ?? '';
-  const firmwareOk = TESTED_FIRMWARE_VERSIONS.includes(firmwareVersionStr);
+  const firmwareOk = midiDevice.deviceInfo?.versionAccepted ?? false;
+  const firmwareVersionStr = midiDevice.deviceInfo
+    ? (midiDevice.deviceInfo.firmwareValues.length > 0
+        ? midiDevice.deviceInfo.firmwareValues.join('.')
+        : '')
+    : '';
   const showFirmwareDialog = midiDevice.status === 'connected' && midiDevice.deviceInfo !== null && !firmwareOk && !firmwareDismissed;
 
   // Load playlist from IndexedDB on mount

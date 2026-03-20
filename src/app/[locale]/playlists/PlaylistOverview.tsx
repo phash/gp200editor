@@ -196,6 +196,23 @@ export function PlaylistOverview({ onNavigate }: PlaylistOverviewProps) {
               {/* Action buttons */}
               <div className="flex items-center gap-2 shrink-0">
                 <button
+                  onClick={() => onNavigate({ type: 'play', id: playlist.id })}
+                  className={btnClass}
+                  style={{
+                    background: 'var(--glow-amber)',
+                    border: '1px solid var(--accent-amber)',
+                    color: 'var(--accent-amber)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(212,162,78,0.25)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'var(--glow-amber)';
+                  }}
+                >
+                  ▶ {t('player')}
+                </button>
+                <button
                   onClick={() => onNavigate({ type: 'edit', id: playlist.id })}
                   className={btnClass}
                   style={{
