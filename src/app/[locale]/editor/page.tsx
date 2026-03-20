@@ -17,6 +17,7 @@ import { FirmwareCompatDialog } from '@/components/FirmwareCompatDialog';
 import { SavePresetDialog } from '@/components/SavePresetDialog';
 import { AddToPlaylistDialog } from '@/components/AddToPlaylistDialog';
 import { SysExCodec } from '@/core/SysExCodec';
+import { convertHLX } from '@/core/HLXConverter';
 import type { GP200Preset } from '@/core/types';
 
 export default function EditorPage() {
@@ -42,6 +43,7 @@ export default function EditorPage() {
   const pedalGridRef = useRef<HTMLDivElement>(null);
   // Track source preset when loaded from gallery (for update vs save-as-new)
   const [sourcePreset, setSourcePreset] = useState<{ id: string; username: string; author: string; style: string; description: string } | null>(null);
+  const [importedFromHLX, setImportedFromHLX] = useState(false);
 
   useEffect(() => {
     fetch('/api/profile')
@@ -96,12 +98,22 @@ export default function EditorPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [midiDevice.currentPreset]);
 
-  const handleFile = useCallback((buffer: Uint8Array, _filename: string) => {
+  const handleFile = useCallback((buffer: Uint8Array, filename: string) => {
     try {
-      const decoder = new PRSTDecoder(buffer);
-      loadPreset(decoder.decode());
+      if (filename.toLowerCase().endsWith('.hlx')) {
+        // HLX import (experimental)
+        const text = new TextDecoder().decode(buffer);
+        const hlx = JSON.parse(text);
+        const converted = convertHLX(hlx);
+        loadPreset(converted);
+        setImportedFromHLX(true);
+      } else {
+        const decoder = new PRSTDecoder(buffer);
+        loadPreset(decoder.decode());
+        setImportedFromHLX(false);
+      }
       setLoadError(null);
-      setSourcePreset(null); // Clear gallery source — this is a local file
+      setSourcePreset(null);
     } catch (err) {
       setLoadError(`${t('loadError')}: ${err instanceof Error ? err.message : String(err)}`);
     }
@@ -345,6 +357,14 @@ export default function EditorPage() {
 
   return (
     <div className={`p-8 mx-auto ${viewMode === 'pedals' ? 'max-w-6xl' : 'max-w-2xl'}`}>
+      {/* Experimental HLX import badge */}
+      {importedFromHLX && (
+        <div className="mb-4 px-3 py-1.5 rounded-lg font-mono-display text-[11px] tracking-wider uppercase inline-flex items-center gap-2"
+          style={{ background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.3)', color: '#a855f7' }}>
+          EXPERIMENTAL — imported from Line6 HX Stomp (.hlx)
+        </div>
+      )}
+
       {/* Header with patch name + author + slot */}
       <div className="flex items-center gap-4 mb-4 flex-wrap">
         <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -575,7 +595,7 @@ export default function EditorPage() {
           {t('loadFromDisk')}
           <input
             type="file"
-            accept=".prst"
+            accept=".prst,.hlx"
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0];
