@@ -10,8 +10,8 @@ import { Navbar } from '@/components/Navbar';
 import { ClientProviders } from './ClientProviders';
 
 export const metadata: Metadata = {
-  title: 'Preset Forge — GP-200 Preset Editor | Line6 HX Stomp Import',
-  description: 'Free browser-based editor for Valeton GP-200 guitar presets. Import Line6 HX Stomp .hlx files, live USB MIDI editing, preset gallery, and community sharing. No install needed.',
+  title: 'Preset Forge — GP-200 Preset Editor | HX Stomp Import | Live Setlists',
+  description: 'Free browser-based editor for Valeton GP-200 guitar presets. Import Line6 HX Stomp .hlx files, live USB MIDI editing, timed preset switching for gigs, 305 effects with per-effect gallery filtering, community sharing. No install needed — works offline as PWA.',
   keywords: [
     'Valeton GP-200',
     'GP-200 preset editor',
@@ -32,11 +32,20 @@ export const metadata: Metadata = {
     'amp simulator',
     'signal chain editor',
     'GP-200 firmware 1.8',
+    'live setlist',
+    'cue points',
+    'preset switching',
+    'gig automation',
+    'guitar preset gallery',
+    'effect filter',
+    'pedalboard view',
+    'PWA offline',
+    'MIDI auto-reconnect',
   ],
   manifest: '/manifest.json',
   openGraph: {
-    title: 'Preset Forge — GP-200 Preset Editor | HX Stomp Import',
-    description: 'Free browser-based editor for Valeton GP-200. Import Line6 HX Stomp .hlx presets, edit effects live via USB MIDI, share with the community. Works offline as PWA.',
+    title: 'Preset Forge — GP-200 Preset Editor | HX Stomp Import | Live Setlists',
+    description: 'Free browser editor for Valeton GP-200. Import HX Stomp .hlx presets, build timed setlists with cue points for live gigs, browse 305 effects in the gallery. USB MIDI, offline PWA.',
     siteName: 'Preset Forge',
     type: 'website',
     url: 'https://preset-forge.com',
@@ -47,7 +56,7 @@ const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebApplication',
   name: 'Preset Forge',
-  description: 'Free browser-based editor for Valeton GP-200 guitar presets. Import Line6 HX Stomp .hlx files, live USB MIDI editing, preset gallery, and community sharing.',
+  description: 'Free browser-based editor for Valeton GP-200 guitar presets. Import Line6 HX Stomp .hlx files, build timed setlists with automatic preset switching, browse 305 effects in the community gallery.',
   url: 'https://preset-forge.com',
   applicationCategory: 'Music',
   operatingSystem: 'Web',
@@ -57,7 +66,7 @@ const jsonLd = {
     priceCurrency: 'USD',
   },
   browserRequirements: 'Requires Chrome or Edge for USB MIDI features',
-  featureList: 'GP-200 preset editing, Line6 HX Stomp .hlx import, USB MIDI live editing, preset gallery, offline PWA, signal chain editor, pedalboard view',
+  featureList: 'GP-200 preset editing, Line6 HX Stomp .hlx import, USB MIDI live editing, timed cue points for live setlists, 3-2-1 count-in, auto-reconnect, preset gallery with per-effect filtering (305 effects), pedalboard view, offline PWA, community sharing',
 };
 
 type Props = {
