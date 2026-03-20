@@ -38,7 +38,7 @@ export default function EditorPage() {
   const [showPlaylistDialog, setShowPlaylistDialog] = useState(false);
   const [firmwareWarningDismissed, setFirmwareWarningDismissed] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'list' | 'pedals'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'pedals'>('pedals');
   const pedalGridRef = useRef<HTMLDivElement>(null);
   // Track source preset when loaded from gallery (for update vs save-as-new)
   const [sourcePreset, setSourcePreset] = useState<{ id: string; username: string; author: string; style: string; description: string } | null>(null);

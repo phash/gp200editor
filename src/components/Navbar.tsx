@@ -42,10 +42,16 @@ export function Navbar() {
       className="relative flex items-center justify-between px-6 py-3 border-b"
       style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
     >
-      <Link href="/" className="font-mono-display text-lg font-bold tracking-tight" data-testid="nav-home-link"
-        style={{ color: 'var(--accent-amber)' }}>
-        {t('title')}
-      </Link>
+      <div className="flex items-center gap-3">
+        <Link href="/" className="font-mono-display text-lg font-bold tracking-tight" data-testid="nav-home-link"
+          style={{ color: 'var(--accent-amber)' }}>
+          {t('title')}
+        </Link>
+        <span className="hidden sm:inline font-mono-display text-[10px] tracking-wider uppercase px-1.5 py-0.5 rounded"
+          style={{ color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}>
+          FW 1.8.0
+        </span>
+      </div>
       {/* Hamburger button — mobile only */}
       <button
         className="md:hidden flex flex-col gap-1 p-1"
