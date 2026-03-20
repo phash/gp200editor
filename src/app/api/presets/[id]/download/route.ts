@@ -23,13 +23,19 @@ export async function GET(_request: Request, context: RouteContext) {
   }
 
   const stream = await getPresetStream(preset.presetKey);
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  const buffer = Buffer.concat(chunks);
 
   const safeFilename = preset.name.replace(/[\\\"\/\x00]/g, '_').slice(0, 64);
 
-  return new NextResponse(stream as unknown as ReadableStream, {
+  return new NextResponse(buffer, {
     headers: {
       'Content-Type': 'application/octet-stream',
       'Content-Disposition': `attachment; filename="${safeFilename}.prst"`,
+      'Content-Length': String(buffer.length),
     },
   });
 }
