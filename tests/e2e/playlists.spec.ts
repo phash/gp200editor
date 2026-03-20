@@ -94,6 +94,115 @@ test.describe('Playlists', () => {
     await expect(page.locator('[role="tab"]')).toBeVisible();
   });
 
+  test('add presets from gallery picker', async ({ page }) => {
+    // Requires: gallery has published presets (seeded via API before test run)
+    await page.goto('/de/playlists');
+
+    // Create playlist
+    await page.click('text=Neue Playlist');
+    const nameInput = page.locator('input[placeholder]').first();
+    await nameInput.fill('Gallery Picker Test');
+    await page.locator('button:has-text("Speichern")').first().click();
+
+    // Add a song
+    await page.click('text=Song hinzufügen');
+    await page.locator('input[placeholder="z.B. Master of Puppets"]').fill('Gallery Song');
+
+    // Click "Aus Galerie" button
+    await page.locator('button:has-text("Aus Galerie")').click();
+
+    // Gallery picker dialog should open
+    await expect(page.locator('text=Presets aus Galerie wählen')).toBeVisible();
+
+    // Should show gallery presets (wait for fetch)
+    await expect(page.locator('text=American Idiot')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('text=claude1')).toBeVisible();
+
+    // Select 2 presets by clicking them
+    await page.locator('button:has-text("American Idiot")').click();
+    await page.locator('button:has-text("claude1")').click();
+
+    // Should show "2 ausgewählt"
+    await expect(page.locator('text=2 ausgewählt')).toBeVisible();
+
+    // Click Add button
+    await page.locator('button:has-text("Hinzufügen (2)")').click();
+
+    // Dialog should close, presets should appear as chips in the song
+    await expect(page.locator('text=Presets aus Galerie wählen')).not.toBeVisible({ timeout: 10000 });
+
+    // Both preset names should appear as chips in the editor (not inside dialog)
+    // Wait for download + IndexedDB write to complete
+    await expect(page.locator('span:has-text("American Idiot")')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('span:has-text("claude1")')).toBeVisible({ timeout: 5000 });
+
+    // Save and verify
+    await page.locator('button:has-text("Speichern")').last().click();
+    await expect(page.locator('text=Gallery Picker Test')).toBeVisible();
+  });
+
+  test('gallery picker search and filter', async ({ page }) => {
+    await page.goto('/de/playlists');
+
+    // Create playlist and add song
+    await page.click('text=Neue Playlist');
+    await page.locator('input[placeholder]').first().fill('Filter Test');
+    await page.locator('button:has-text("Speichern")').first().click();
+    await page.click('text=Song hinzufügen');
+    await page.locator('input[placeholder="z.B. Master of Puppets"]').fill('Filter Song');
+
+    // Open gallery picker
+    await page.locator('button:has-text("Aus Galerie")').click();
+    await expect(page.locator('text=Presets aus Galerie wählen')).toBeVisible();
+
+    // Wait for presets to load
+    await expect(page.locator('text=American Idiot')).toBeVisible({ timeout: 10000 });
+
+    // Search for "claude"
+    const searchInput = page.locator('input[placeholder*="durchsuchen"]');
+    await searchInput.fill('claude');
+
+    // Should filter to only claude1
+    await expect(page.locator('text=claude1')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('text=American Idiot')).not.toBeVisible({ timeout: 3000 });
+
+    // Clear search
+    await searchInput.clear();
+    await expect(page.locator('text=American Idiot')).toBeVisible({ timeout: 5000 });
+
+    // Close with ESC
+    await page.keyboard.press('Escape');
+    await expect(page.locator('text=Presets aus Galerie wählen')).not.toBeVisible();
+  });
+
+  test('gallery picker max 5 selection limit', async ({ page }) => {
+    await page.goto('/de/playlists');
+
+    // Create playlist + song
+    await page.click('text=Neue Playlist');
+    await page.locator('input[placeholder]').first().fill('Max Test');
+    await page.locator('button:has-text("Speichern")').first().click();
+    await page.click('text=Song hinzufügen');
+    await page.locator('input[placeholder="z.B. Master of Puppets"]').fill('Max Song');
+
+    // Open gallery picker
+    await page.locator('button:has-text("Aus Galerie")').click();
+    await expect(page.locator('text=American Idiot')).toBeVisible({ timeout: 10000 });
+
+    // We only have 3 presets, so select all 3 - all should work (under limit of 5)
+    await page.locator('button:has-text("American Idiot")').click();
+    await page.locator('button:has-text("claude1")').click();
+    await page.locator('button:has-text("GP-200")').click();
+
+    await expect(page.locator('text=3 ausgewählt')).toBeVisible();
+
+    // Add button should show count
+    await expect(page.locator('button:has-text("Hinzufügen (3)")')).toBeVisible();
+
+    // Close without adding
+    await page.keyboard.press('Escape');
+  });
+
   test('navbar has playlists link', async ({ page }) => {
     await page.goto('/de');
     const playlistLink = page.locator('a[href*="playlists"]').first();
