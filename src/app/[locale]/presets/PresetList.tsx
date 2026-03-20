@@ -33,7 +33,7 @@ export function PresetList({ initialPresets }: Props) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.name.endsWith('.prst')) {
+    if (!file.name.endsWith('.prst') && !file.name.endsWith('.hlx')) {
       setUploadError(t('invalidFile'));
       return;
     }
@@ -41,8 +41,31 @@ export function PresetList({ initialPresets }: Props) {
     setUploading(true);
     setUploadError(null);
 
+    let uploadFile = file;
+
+    // Convert .hlx → .prst before upload
+    if (file.name.endsWith('.hlx')) {
+      try {
+        const text = await file.text();
+        const hlx = JSON.parse(text);
+        const { convertHLX } = await import('@/core/HLXConverter');
+        const { PRSTEncoder } = await import('@/core/PRSTEncoder');
+        const preset = convertHLX(hlx);
+        const encoder = new PRSTEncoder();
+        const buf = encoder.encode(preset);
+        const blob = new Blob([buf], { type: 'application/octet-stream' });
+        const name = (preset.patchName || 'HLX Import').replace(/[^a-zA-Z0-9 _-]/g, '') + '.prst';
+        uploadFile = new File([blob], name, { type: 'application/octet-stream' });
+      } catch {
+        setUploadError('HLX conversion failed');
+        setUploading(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        return;
+      }
+    }
+
     const formData = new FormData();
-    formData.append('preset', file);
+    formData.append('preset', uploadFile);
 
     const res = await fetch('/api/presets', { method: 'POST', body: formData });
     if (!res.ok) {
@@ -117,7 +140,7 @@ export function PresetList({ initialPresets }: Props) {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".prst"
+          accept=".prst,.hlx"
           className="hidden"
           id="preset-file-input"
           onChange={handleFileChange}

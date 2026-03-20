@@ -203,7 +203,7 @@ export function PresetEditForm({ preset }: Props) {
             ref={fileInputRef}
             id="preset-replace-file"
             type="file"
-            accept=".prst"
+            accept=".prst,.hlx"
             data-testid="preset-replace-file-input"
             onChange={(e) => setReplaceFile(e.target.files?.[0] ?? null)}
             className="block text-sm"
