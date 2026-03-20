@@ -55,6 +55,14 @@ interface CachedPreset {
 
 **Speicherbedarf:** 1224 Bytes pro Preset. 100 Songs × 4 Presets = ~480 KB. Kein Problem für IndexedDB.
 
+**Validierung:** Beim Speichern in IndexedDB muss `binary.slice(0, 1224)` verwendet werden, um sicherzustellen dass exakt 1224 Bytes gespeichert werden (Fetch/Encoder können größere Buffer liefern).
+
+**Schema-Versionierung:** `idb`'s `upgrade`-Callback nutzen. Initiale DB-Version = 1. Bei Schema-Änderungen (z.B. für #40–#42) neue Version mit Migration.
+
+### `cachedPresets` Store — entfällt in v1
+
+~~Ursprünglich geplant für Offline-Editor-Cache. Wird in v1 nicht benötigt~~ — Playlists speichern Binaries inline, der Editor arbeitet mit lokalen Dateien. Kann bei Bedarf in einem Follow-up ergänzt werden (z.B. "zuletzt bearbeitete Presets" offline halten).
+
 ---
 
 ## 2. Seitenstruktur & Navigation
@@ -126,6 +134,10 @@ Drei Views auf einer Seite, je nach Query-Parameter:
 - Ohne Gerät: Presets werden visuell markiert, Push übersprungen mit Hinweis
 - Load-Slot-Modus (fester Slot pro Preset) → Follow-up Issue #42
 
+**Push-Ablauf:** `PlaylistPreset.binary` (ArrayBuffer) → `PRSTDecoder.decode()` → `GP200Preset` → `useMidiDevice.pushPreset(preset, currentSlot)`. Die Dekodierung ist nötig weil `pushPreset` ein `GP200Preset`-Objekt erwartet, kein rohes Binary.
+
+**MIDI-Lifecycle über Seiten hinweg:** `useMidiDevice` wird ins App-Layout (`layout.tsx`) gehoben und per React Context bereitgestellt. So bleibt die MIDI-Verbindung beim Navigieren zwischen Editor und Playlists bestehen — kein erneuter Handshake nötig. Editor und Player konsumieren den Context statt den Hook direkt zu instanziieren.
+
 ### YouTube-Embed
 
 - YouTube iframe API (`youtube.com/embed/<videoId>`)
@@ -152,11 +164,9 @@ Drei Wege Presets in eine Playlist zu bekommen:
 - Datei hochladen (.prst) oder aus gecachten Presets wählen
 - Kein Galerie-Browse hier (dafür Galerie → Editor → Weg a)
 
-### c) Aus der Galerie (Shortcut)
+### c) Aus der Galerie (Shortcut) — deferred auf nach v1
 
-- Neuer Button auf Preset-Cards: "Add to Playlist"
-- Lädt Binary runter, gleicher Dialog wie (a)
-- Spart Umweg über Editor beim Sammeln
+~~Neuer Button auf Preset-Cards.~~ Für v1 gestrichen — der Weg über Galerie → "Open in Editor" → "Add to Playlist" ist ausreichend. Vermeidet zusätzliche Download-UX-Komplexität (Loading-State, Fehlerbehandlung beim Fetch) in der Galerie-Komponente. Kann als schneller Follow-up ergänzt werden.
 
 **Wichtig:** Preset-Binary wird beim Hinzufügen **kopiert**. Keine Referenz auf Galerie/S3. Sofort offline verfügbar.
 
@@ -189,20 +199,30 @@ Drei Wege Presets in eine Playlist zu bekommen:
 - Login/Register/Profil: Hinweis
 - "Preset aus Galerie hinzufügen": Button disabled mit Tooltip
 
+### Service Worker Technologie
+
+**`@serwist/next`** (aktiver Fork von next-pwa). Achtung: `output: 'standalone'` kopiert `public/` nicht automatisch in den Build-Output. Der Dockerfile muss den generierten SW explizit kopieren (`COPY --from=builder /app/public/sw.js ./public/sw.js`). Alternativ: manueller Service Worker mit `workbox-precaching` + `workbox-routing` für volle Kontrolle. Entscheidung bei Implementierung.
+
 ### Manifest
 
 ```json
 {
   "name": "Preset Forge — GP-200 Editor",
   "short_name": "Preset Forge",
-  "start_url": "/editor",
+  "start_url": "/de/editor",
   "display": "standalone",
   "theme_color": "#d97706",
   "background_color": "#111827"
 }
 ```
 
+**Hinweis:** `start_url` muss locale-prefixed sein (`/de/editor`), weil next-intl Middleware bei `/editor` einen Redirect auslöst, der offline nicht funktioniert. Default-Locale `de` wählen; User mit EN-Preference landen trotzdem korrekt (Browser-Locale-Detection).
+
 Kein Background-Sync, keine Push-Notifications.
+
+### CSP-Hinweis
+
+Sobald eine Content-Security-Policy eingeführt wird, muss `frame-src https://www.youtube.com` erlaubt werden für den YouTube-Embed. Aktuell kein CSP-Header gesetzt — kein Blocker für v1.
 
 ---
 
@@ -212,10 +232,11 @@ Kein Background-Sync, keine Push-Notifications.
 
 | Datei | Beschreibung |
 |-------|-------------|
-| `src/lib/playlistDb.ts` | IndexedDB Wrapper (idb): CRUD Playlists, Cache Presets |
+| `src/lib/playlistDb.ts` | IndexedDB Wrapper (idb): CRUD Playlists (Version 1, upgrade-ready) |
+| `src/contexts/MidiDeviceContext.tsx` | React Context Provider für useMidiDevice (shared zwischen Editor + Player) |
 | `src/hooks/usePlaylist.ts` | React Hook: Playlist-State, CRUD-Operationen |
 | `src/hooks/usePlaylistPlayer.ts` | Player-State: aktiver Song/Preset, Navigation, Push-Logik |
-| `src/app/[locale]/playlists/page.tsx` | Playlists Hauptseite (Server Component) |
+| `src/app/[locale]/playlists/page.tsx` | Playlists Hauptseite (dünner Server-Component-Wrapper → Client Components) |
 | `src/app/[locale]/playlists/PlaylistOverview.tsx` | Playlist-Liste |
 | `src/app/[locale]/playlists/PlaylistEditor.tsx` | Playlist bearbeiten |
 | `src/app/[locale]/playlists/PlaylistPlayer.tsx` | Player-Modus |
@@ -228,10 +249,9 @@ Kein Background-Sync, keine Push-Notifications.
 
 | Datei | Änderung |
 |-------|----------|
-| `src/app/[locale]/editor/page.tsx` | "Add to Playlist"-Button + Dialog |
-| `src/app/[locale]/gallery/GalleryClient.tsx` | "Add to Playlist"-Button auf Preset-Cards |
+| `src/app/[locale]/editor/page.tsx` | "Add to Playlist"-Button + Dialog, useMidiDevice aus Context statt direkt |
 | `src/components/Navbar.tsx` | "Playlists"-Link hinzufügen |
-| `src/app/[locale]/layout.tsx` | PWA Meta-Tags, Manifest-Link |
+| `src/app/[locale]/layout.tsx` | PWA Meta-Tags, Manifest-Link, MidiDeviceContext Provider |
 | `next.config.mjs` | PWA/Workbox Konfiguration |
 | `messages/de.json` | Neue Übersetzungsschlüssel (playlists Namespace) |
 | `messages/en.json` | Neue Übersetzungsschlüssel (playlists Namespace) |
@@ -248,16 +268,45 @@ Kein Background-Sync, keine Push-Notifications.
 
 ## 7. Nicht im Scope (v1)
 
-- Playlist duplizieren, Import/Export → #40
-- Social Playlists (veröffentlichen, entdecken) → #41
-- Load-Slot-Modus (fester Slot pro Preset) → #42
+- Playlist duplizieren, Import/Export → #40 (angelegt)
+- Social Playlists (veröffentlichen, entdecken) → #41 (angelegt)
+- Load-Slot-Modus (fester Slot pro Preset) → #42 (angelegt)
+- "Add to Playlist" direkt aus Galerie (Shortcut ohne Editor-Umweg)
 - Background-Sync, Push-Notifications
 - Galerie offline cachen
 - YouTube-Video offline cachen (technisch nicht möglich)
 
 ---
 
-## 8. i18n Namespaces
+## 8. Accessibility (WCAG 2.1 AA)
+
+- Song-Liste: `role="listbox"` mit `role="option"` pro Song, `aria-selected` für aktiven Song
+- Preset-Chips: `role="tablist"` / `role="tab"`, `aria-selected` für aktives Preset
+- Push-Feedback: `aria-live="polite"` Region für Status-Meldungen ("Preset gepusht", "Push fehlgeschlagen")
+- YouTube-Embed: `<iframe title="YouTube: {songName}">` für Screen Reader
+- Fokus-Management: Bei Song-Wechsel Fokus auf ersten Preset-Chip setzen
+- Keyboard: Arrow-Keys wie in Section 3 beschrieben, Enter/Space zum Aktivieren
+
+---
+
+## 9. Tests
+
+### Unit Tests (Vitest)
+
+- `playlistDb.test.ts` — CRUD gegen `fake-indexeddb`, Schema-Upgrade
+- `usePlaylist.test.ts` — Hook-State, Add/Remove/Reorder
+- `usePlaylistPlayer.test.ts` — Navigation, Push-Trigger-Logik
+- `YouTubeEmbed.test.ts` — URL-Parsing (watch?v=, youtu.be/, embed/)
+
+### E2E Tests (Playwright)
+
+- Playlist erstellen, Song hinzufügen, Preset hinzufügen, Player öffnen
+- Keyboard-Navigation im Player (Arrow-Keys)
+- Offline-Platzhalter für YouTube (Service Worker intercepten)
+
+---
+
+## 10. i18n Namespaces
 
 Neuer Namespace `playlists`:
 
