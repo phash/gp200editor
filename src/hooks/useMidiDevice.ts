@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { SysExCodec } from '@/core/SysExCodec';
 import type { GP200Preset } from '@/core/types';
 
@@ -122,6 +122,9 @@ export function useMidiDevice(): UseMidiDeviceReturn {
   const [namesLoadProgress, setNamesLoadProgress] = useState(0);
   const [deviceInfo, setDeviceInfo] = useState<UseMidiDeviceReturn['deviceInfo']>(null);
   const [currentPreset, setCurrentPreset] = useState<GP200Preset | null>(null);
+  const wasConnectedRef = useRef(false);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reconnectAttemptsRef = useRef(0);
   const [assignments, setAssignments] = useState<UseMidiDeviceReturn['assignments']>([]);
 
   const outputRef          = useRef<GP200Output | null>(null);
@@ -439,6 +442,28 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     console.log(`[GP-200] note: "${note}"`);
     outputRef.current.send(msg);
   }, []);
+
+  // Track connection state for auto-reconnect
+  useEffect(() => {
+    if (status === 'connected') {
+      wasConnectedRef.current = true;
+      reconnectAttemptsRef.current = 0;
+    }
+  }, [status]);
+
+  // Auto-reconnect when connection drops (USB replug, page navigation)
+  useEffect(() => {
+    if (status === 'disconnected' && wasConnectedRef.current && reconnectAttemptsRef.current < 3) {
+      reconnectTimerRef.current = setTimeout(() => {
+        reconnectAttemptsRef.current++;
+        console.log(`[GP-200] auto-reconnect attempt ${reconnectAttemptsRef.current}/3`);
+        connect();
+      }, 2000);
+    }
+    return () => {
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+    };
+  }, [status, connect]);
 
   return {
     status, errorMessage, deviceName, currentSlot, presetNames, namesLoadProgress,

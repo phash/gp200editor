@@ -8,7 +8,9 @@ import { useTimelinePlayer } from '@/hooks/useTimelinePlayer';
 import { useMidiDeviceContext } from '@/contexts/MidiDeviceContext';
 import { YouTubeEmbed } from '@/components/YouTubeEmbed';
 import { CuePointTable } from '@/components/CuePointTable';
+import { DeviceSlotBrowser } from '@/components/DeviceSlotBrowser';
 import { PRSTDecoder } from '@/core/PRSTDecoder';
+import { SysExCodec } from '@/core/SysExCodec';
 import { FirmwareCompatDialog } from '@/components/FirmwareCompatDialog';
 // Firmware compat uses version check (sub=0x0A) result, not string matching
 import { openPlaylistDb, updatePlaylist as dbUpdatePlaylist } from '@/lib/playlistDb';
@@ -32,6 +34,7 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
   const [playlist, setPlaylist] = useState<Playlist | null>(null);
   const [pushStatus, setPushStatus] = useState<PushStatus>('idle');
   const [firmwareDismissed, setFirmwareDismissed] = useState(false);
+  const [showSlotBrowser, setShowSlotBrowser] = useState(false);
 
   const firmwareOk = midiDevice.deviceInfo?.versionAccepted ?? false;
   const firmwareVersionStr = midiDevice.deviceInfo
@@ -85,9 +88,8 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
 
   const handleAddCuePoint = useCallback(async () => {
     if (!playlist || !player.currentEntry) return;
-    const presets = player.currentEntry.presets;
+    const slots = player.currentEntry.deviceSlots ?? [];
     const existingCues = player.currentEntry.cuePoints ?? [];
-    // Default time: after the last cue point, or 0:00
     const lastTime = existingCues.length > 0
       ? Math.max(...existingCues.map(c => c.timeSeconds)) + 10
       : 0;
@@ -95,7 +97,7 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
       id: crypto.randomUUID(),
       timeSeconds: lastTime,
       action: 'preset-switch',
-      presetId: presets[0]?.id,
+      slot: slots[0] ?? 0,
     };
     const updated: Playlist = {
       ...playlist,
@@ -142,34 +144,33 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
     await persistPlaylist(updated);
   }, [playlist, player.currentEntry, persistPlaylist]);
 
-  const onCueFire = useCallback(async (cp: CuePoint) => {
+  // Slot browser: save selected device slots to current entry
+  const handleSlotsConfirm = useCallback(async (slots: number[]) => {
+    setShowSlotBrowser(false);
+    if (!playlist || !player.currentEntry) return;
+    const updated: Playlist = {
+      ...playlist,
+      entries: playlist.entries.map(e =>
+        e.id === player.currentEntry!.id ? { ...e, deviceSlots: slots } : e
+      ),
+      updatedAt: Date.now(),
+    };
+    await persistPlaylist(updated);
+  }, [playlist, player.currentEntry, persistPlaylist]);
+
+  // Device slots for current entry
+  const deviceSlots = player.currentEntry?.deviceSlots ?? [];
+
+  const onCueFire = useCallback((cp: CuePoint) => {
     if (midiDevice.status !== 'connected') return;
-    if (cp.action === 'preset-switch') {
-      // Prefer presetId (from playlist), fallback to raw slot number
-      const entry = player.currentEntry;
-      if (cp.presetId && entry) {
-        const preset = entry.presets.find(p => p.id === cp.presetId);
-        if (preset && midiDevice.currentSlot !== null) {
-          try {
-            const slot = midiDevice.currentSlot;
-            const bytes = new Uint8Array(preset.binary);
-            const decoded = new PRSTDecoder(bytes).decode();
-            await midiDevice.pushPreset(decoded, slot);
-            // Force reload: switch away and back to make device load new preset into DSP
-            const tempSlot = slot === 0 ? 1 : slot - 1;
-            await new Promise(r => setTimeout(r, 100));
-            midiDevice.sendSlotChange(tempSlot);
-            await new Promise(r => setTimeout(r, 100));
-            midiDevice.sendSlotChange(slot);
-          } catch { /* push failed, skip */ }
-        }
-      } else if (cp.slot !== undefined) {
-        midiDevice.sendSlotChange(cp.slot);
-      }
+    if (cp.action === 'preset-switch' && cp.slot !== undefined) {
+      // Instant slot switch — preset is already on the device
+      console.log(`[CUE] slot change → ${SysExCodec.slotToLabel(cp.slot)}`);
+      midiDevice.sendSlotChange(cp.slot);
     } else if (cp.action === 'effect-toggle' && cp.blockIndex !== undefined) {
       midiDevice.sendToggle(cp.blockIndex, cp.enabled ?? false);
     }
-  }, [midiDevice, player]);
+  }, [midiDevice]);
 
   const timeline = useTimelinePlayer(cuePoints, onCueFire);
 
@@ -294,6 +295,98 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
         {playlist.name}
       </h1>
 
+      {/* MIDI Connection Banner */}
+      {midiDevice.status !== 'connected' ? (
+        <div
+          className="mb-4 rounded-lg p-4 flex items-center gap-4"
+          style={{ border: '1px solid rgba(212,162,78,0.3)', background: 'rgba(212,162,78,0.05)' }}
+        >
+          <div className="flex-1">
+            <p className="font-mono-display text-sm font-bold" style={{ color: 'var(--accent-amber)' }}>
+              GP-200 verbinden
+            </p>
+            <p className="font-mono-display text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+              Verbinde dein Valeton GP-200 per USB um Presets live zu wechseln
+            </p>
+            {midiDevice.status === 'connecting' && (
+              <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.1)' }}>
+                <div className="h-full rounded-full animate-pulse" style={{ width: '60%', background: 'var(--accent-amber)' }} />
+              </div>
+            )}
+            {midiDevice.status === 'handshaking' && (
+              <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.1)' }}>
+                <div className="h-full rounded-full animate-pulse" style={{ width: '85%', background: 'var(--accent-green)' }} />
+              </div>
+            )}
+            {midiDevice.status === 'error' && midiDevice.errorMessage && (
+              <p className="font-mono-display text-xs mt-1" style={{ color: 'var(--accent-red)' }}>
+                {midiDevice.errorMessage}
+              </p>
+            )}
+          </div>
+          <button
+            onClick={midiDevice.connect}
+            disabled={midiDevice.status === 'connecting' || midiDevice.status === 'handshaking'}
+            className="font-mono-display text-sm font-bold uppercase tracking-wider px-5 py-2.5 rounded transition-all disabled:opacity-50"
+            style={{ border: '1px solid var(--accent-amber)', color: 'var(--accent-amber)', background: 'var(--glow-amber)' }}
+          >
+            {midiDevice.status === 'connecting' ? 'Verbinde...' :
+             midiDevice.status === 'handshaking' ? 'Handshake...' :
+             'Verbinden'}
+          </button>
+        </div>
+      ) : (
+        <div
+          className="mb-4 rounded-lg px-4 py-2 flex items-center gap-3"
+          style={{ border: '1px solid rgba(74,222,128,0.25)', background: 'rgba(74,222,128,0.04)' }}
+        >
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-green)', boxShadow: '0 0 6px var(--accent-green)' }} />
+          <span className="font-mono-display text-xs" style={{ color: 'var(--accent-green)' }}>
+            {midiDevice.deviceName ?? 'GP-200'}
+          </span>
+        </div>
+      )}
+
+      {/* Device Slot Chips — selected slots from device */}
+      {currentEntry && deviceSlots.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          {deviceSlots.map((slot) => (
+            <span
+              key={slot}
+              className="font-mono-display text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded"
+              style={{ border: '1px solid var(--accent-amber)', color: 'var(--accent-amber)', background: 'var(--glow-amber)' }}
+            >
+              {SysExCodec.slotToLabel(slot)}
+              {midiDevice.presetNames[slot] ? ` — ${midiDevice.presetNames[slot]}` : ''}
+            </span>
+          ))}
+          <button
+            onClick={() => setShowSlotBrowser(true)}
+            disabled={midiDevice.status !== 'connected'}
+            className="font-mono-display text-xs font-bold px-3 py-1.5 rounded disabled:opacity-30"
+            style={{ border: '1px solid var(--border-active)', color: 'var(--text-muted)' }}
+          >
+            + Slots
+          </button>
+        </div>
+      )}
+
+      {/* Initial slot selection prompt */}
+      {currentEntry && deviceSlots.length === 0 && midiDevice.status === 'connected' && (
+        <button
+          onClick={() => {
+            setShowSlotBrowser(true);
+            if (midiDevice.presetNames.every(n => n === null)) {
+              midiDevice.loadPresetNames();
+            }
+          }}
+          className="mb-4 w-full rounded-lg p-4 font-mono-display text-sm font-bold transition-all"
+          style={{ border: '2px dashed var(--accent-amber)', color: 'var(--accent-amber)', background: 'rgba(212,162,78,0.05)' }}
+        >
+          Slots vom GP-200 auswählen
+        </button>
+      )}
+
       {/* YouTube player */}
       {currentEntry && (
         <div className="mb-4">
@@ -405,7 +498,8 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
           </div>
           <CuePointTable
             cuePoints={cuePoints}
-            presets={currentPresets}
+            deviceSlots={deviceSlots}
+            presetNames={midiDevice.presetNames}
             onAdd={handleAddCuePoint}
             onUpdate={handleUpdateCuePoint}
             onDelete={handleDeleteCuePoint}
@@ -528,6 +622,19 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
           </>
         )}
       </div>
+
+      {showSlotBrowser && (
+        <DeviceSlotBrowser
+          mode="multiselect"
+          presetNames={midiDevice.presetNames}
+          namesLoadProgress={midiDevice.namesLoadProgress}
+          currentSlot={midiDevice.currentSlot}
+          initialSelected={deviceSlots}
+          onConfirm={() => {}} // unused in multiselect
+          onConfirmMulti={handleSlotsConfirm}
+          onCancel={() => setShowSlotBrowser(false)}
+        />
+      )}
 
       {showFirmwareDialog && (
         <FirmwareCompatDialog

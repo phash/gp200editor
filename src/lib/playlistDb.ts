@@ -24,6 +24,7 @@ export interface PlaylistEntry {
   songName: string;
   youtubeUrl?: string;
   presets: PlaylistPreset[];
+  deviceSlots?: number[];  // GP-200 slot numbers selected from device for cue points
   cuePoints?: CuePoint[];
 }
 
