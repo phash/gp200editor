@@ -1,4 +1,5 @@
 import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/routing';
 
 export function Footer() {
   const t = useTranslations('footer');
@@ -10,6 +11,13 @@ export function Footer() {
       data-testid="footer"
     >
       {t('disclaimer')}
+      <span style={{ margin: '0 8px' }}>·</span>
+      <Link
+        href="/legal"
+        style={{ color: 'var(--text-muted)', textDecoration: 'none' }}
+      >
+        {t('legal')}
+      </Link>
       <span style={{ margin: '0 8px' }}>·</span>
       {t('poweredBy')}{' '}
       <a
