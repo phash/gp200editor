@@ -1,28 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-
-export interface PlaylistPreset {
-  id: string;
-  label: string;
-  presetName: string;
-  binary: ArrayBuffer;
-}
-
-export interface PlaylistEntry {
-  id: string;
-  songName: string;
-  youtubeUrl?: string;
-  presets: PlaylistPreset[];
-}
-
-export interface Playlist {
-  id: string;
-  name: string;
-  createdAt: number;
-  updatedAt: number;
-  entries: PlaylistEntry[];
-}
+import type { Playlist, PlaylistEntry, PlaylistPreset } from '@/lib/playlistDb';
 
 export function usePlaylistPlayer(playlist: Playlist | null) {
   const [currentSongIndex, setCurrentSongIndex] = useState(0);
