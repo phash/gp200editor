@@ -10,11 +10,11 @@ import { Navbar } from '@/components/Navbar';
 import { ClientProviders } from './ClientProviders';
 
 export const metadata: Metadata = {
-  title: 'Preset Forge — GP-200 Editor',
-  description: 'Edit, share, and sync Valeton GP-200 presets. Real-time USB MIDI editing, preset gallery, and community sharing.',
+  title: 'Preset Forge — GP-200 Preset Editor | Line6 HX Stomp Import',
+  description: 'Free browser-based editor for Valeton GP-200 guitar presets. Import Line6 HX Stomp .hlx files, live USB MIDI editing, preset gallery, and community sharing. No install needed.',
   keywords: [
     'Valeton GP-200',
-    'preset editor',
+    'GP-200 preset editor',
     'guitar effects',
     'multi-effects pedal',
     'USB MIDI',
@@ -23,11 +23,20 @@ export const metadata: Metadata = {
     'pedalboard',
     'tone sharing',
     'guitar presets',
+    'Line6 HX Stomp',
+    'HX Stomp preset converter',
+    '.hlx import',
+    'Helix preset',
+    'preset converter',
+    'guitar tone',
+    'amp simulator',
+    'signal chain editor',
+    'GP-200 firmware 1.8',
   ],
   manifest: '/manifest.json',
   openGraph: {
-    title: 'Preset Forge — GP-200 Editor',
-    description: 'Edit, share, and sync Valeton GP-200 presets. Real-time USB MIDI editing, preset gallery, and community sharing.',
+    title: 'Preset Forge — GP-200 Preset Editor | HX Stomp Import',
+    description: 'Free browser-based editor for Valeton GP-200. Import Line6 HX Stomp .hlx presets, edit effects live via USB MIDI, share with the community. Works offline as PWA.',
     siteName: 'Preset Forge',
     type: 'website',
     url: 'https://preset-forge.com',
@@ -38,7 +47,7 @@ const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebApplication',
   name: 'Preset Forge',
-  description: 'Edit, share, and sync Valeton GP-200 presets. Real-time USB MIDI editing, preset gallery, and community sharing.',
+  description: 'Free browser-based editor for Valeton GP-200 guitar presets. Import Line6 HX Stomp .hlx files, live USB MIDI editing, preset gallery, and community sharing.',
   url: 'https://preset-forge.com',
   applicationCategory: 'Music',
   operatingSystem: 'Web',
@@ -48,6 +57,7 @@ const jsonLd = {
     priceCurrency: 'USD',
   },
   browserRequirements: 'Requires Chrome or Edge for USB MIDI features',
+  featureList: 'GP-200 preset editing, Line6 HX Stomp .hlx import, USB MIDI live editing, preset gallery, offline PWA, signal chain editor, pedalboard view',
 };
 
 type Props = {
