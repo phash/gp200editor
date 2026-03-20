@@ -21,7 +21,7 @@ Live USB-MIDI Editing, Preset-Galerie, Community-Sharing.
 ```bash
 npm install --legacy-peer-deps   # legacy-peer-deps wegen lokaler npm-Version (11.x vs lock-file)
 npm run dev                      # http://localhost:3000
-npm run test                     # Vitest Unit-Tests (240 Tests)
+npm run test                     # Vitest Unit-Tests (271 Tests)
 npm run test:e2e                 # Playwright E2E (App muss laufen + Garage + DB)
 npm run build                    # Production Build
 ```
@@ -124,11 +124,13 @@ src/
 │   ├── PRSTDecoder.ts       # .prst → GP200Preset (1224 Bytes, echtes Format)
 │   ├── PRSTEncoder.ts       # GP200Preset → .prst (1224 Bytes, echtes Format)
 │   ├── effectNames.ts       # 305 Effekt-ID→Name Mappings + MODULE_COLORS (aus algorithm.xml)
-│   └── effectParams.ts      # Parameter-Definitionen pro Effekt (Knob/Slider/Switch/Combox)
+│   ├── effectParams.ts      # Parameter-Definitionen pro Effekt (Knob/Slider/Switch/Combox)
+│   └── HLXConverter.ts      # Line6 HX Stomp .hlx (JSON) → GP200Preset Konvertierung
 │
 ├── hooks/
-│   └── usePreset.ts         # React-State: loadPreset, setPatchName, toggleEffect,
-│                            #   changeEffect, reorderEffects, setParam, reset
+│   ├── usePreset.ts         # React-State: loadPreset, setPatchName, toggleEffect,
+│   │                        #   changeEffect, reorderEffects, setParam, reset
+│   └── useTimelinePlayer.ts # rAF-basierter Timer für Playlist Cue Points
 │
 ├── components/
 │   ├── Navbar.tsx            # Auth-Status, Locale-Switcher, Links (Profile, Presets)
@@ -136,6 +138,7 @@ src/
 │   ├── EffectSlot.tsx        # Effekt-Slot: Modul-Badge, Effekt-Dropdown, LED-Toggle,
 │   │                        #   Drag & Drop Reorder, aufklappbare Parameter
 │   ├── EffectParams.tsx      # Parameter-Controls: Slider, Switch, Combox
+│   ├── CuePointTable.tsx     # Timeline-Tabelle für Playlist Cue Points (device slot-basiert)
 │   └── Footer.tsx
 │
 ├── lib/
@@ -302,7 +305,7 @@ LE uint16 → **Algorithmus gelöst (2026-03-18):** `sum(bytes[0:0x4C6]) & 0xFFF
 ## Tests
 
 ```bash
-npm run test              # 240 Unit-Tests (Vitest)
+npm run test              # 271 Unit-Tests (Vitest)
 npm run test:coverage     # Coverage-Report
 npm run test:e2e          # Playwright E2E (App + Garage + DB erforderlich)
 ```
@@ -338,6 +341,7 @@ Das GP-200 ist USB-MIDI class-compliant. Die offizielle Valeton-Software kommuni
 - **Issue #5** (Sniffing): SysEx-Protokoll reverse-engineered ✓ (14 Message-Typen, 10 Captures)
 - **Issue #6** (Feature): Web MIDI implementiert ✓ — Pull, Push, **Live-Editing (Toggle, Param, Reorder) hardware-verifiziert**
 - Dateien: `src/core/SysExCodec.ts`, `src/hooks/useMidiDevice.ts`, `src/components/DeviceStatusBar.tsx`, `src/components/DeviceSlotBrowser.tsx`
+- **Auto-Reconnect:** `useMidiDevice` versucht bei Disconnect automatisch 3× neu zu verbinden
 
 ### Hardware-Testing (Web MIDI)
 
@@ -561,6 +565,7 @@ Impulse-Response Dateien werden als Multi-Chunk Transfer über sub=0x1C gesendet
 
 #### Weitere Infos
 
+- **Firmware-Version:** Identity-Response bytes [22]/[26] zeigen immer 1.2 — das ist NICHT die echte FW-Version. Echte Kompatibilitätsprüfung über sub=0x0A Version-Check. Getestet mit FW 1.8.0.
 - Gerät arbeitet im **Normal-Modus** (6-In/4-Out) — nur in diesem Modus funktioniert der Editor
 - GP-5-SysEx-Referenz (Geschwistergerät): https://www.scribd.com/document/963614194/GP-5-SysEx-1
 - Valeton-Software lokal installiert unter Wine
