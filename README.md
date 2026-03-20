@@ -1,19 +1,25 @@
-# GP-200 Editor
+# Preset Forge — GP-200 Editor
 
-Inoffizieller Browser-Editor für Valeton GP-200 Gitarren-Multi-Effektpedal Preset-Dateien (`.prst`).
+Inoffizieller Browser-Editor für Valeton GP-200 Gitarren-Multi-Effektpedal. Live USB-MIDI Editing, Preset-Galerie, Community-Sharing.
+
+**https://preset-forge.com** · Firmware 1.8.0
 
 ## Features
 
-- `.prst` Preset-Dateien im Browser laden, bearbeiten und speichern
+- **Preset Editor** — `.prst` Dateien laden, bearbeiten, speichern. Pedalboard-View mit Patch Cables
 - **305 Effekte** mit Namen und Parametern aus der offiziellen Valeton-Software
-- Effekt-Auswahl per Dropdown, Parameter-Slider, Switches und Dropdowns
-- Drag & Drop zum Umordnen der Effektkette
-- Dark pedalboard UI mit farbcodierten Modul-Badges und LED-Buttons
-- Account-System mit Profil und Avatar-Upload
-- Presets persistent speichern und per Link teilen
-- Öffentliche Share-Seite ohne Login (inkl. Download-Zähler)
-- Vollständig zweisprachig (DE/EN)
-- WCAG 2.1 AA
+- **Live USB MIDI** — Effekte togglen, Parameter ändern, Signal-Kette umordnen in Echtzeit
+- **HX Stomp Import** (experimental) — Line6 HX Stomp `.hlx` Presets importieren und konvertieren
+- **Author & Metadata** — Author-Name wird in .prst Datei + per SysEx ans Gerät geschrieben
+- **Playlists & Cue Points** — Setlists mit zeitgesteuerten Preset-Wechseln für Live-Gigs
+- **Slot-basierte Cue Points** — Slots direkt vom GP-200 wählen, instant Switching per `sendSlotChange`
+- **3-2-1 Count-In** — Countdown vor Timeline-Start
+- **Preset-Galerie** — Presets teilen, suchen, filtern nach Modul UND einzelnem Effekt
+- **MIDI Auto-Reconnect** — 3 automatische Reconnect-Versuche bei USB-Unterbrechung
+- **PWA / Offline** — Editor funktioniert offline, Galerie braucht Internet
+- **Kontextuelle Hilfe** — ? Button auf jeder Seite verlinkt zur relevanten Hilfe-Sektion
+- Account-System mit Profil, Avatar, Email-Verifikation
+- Vollständig zweisprachig (DE/EN) · WCAG 2.1 AA
 
 ## Stack
 
@@ -23,7 +29,7 @@ Inoffizieller Browser-Editor für Valeton GP-200 Gitarren-Multi-Effektpedal Pres
 - **Lucia v3** (Session-Auth, Argon2id)
 - **Garage** (S3-kompatibler Object Store) für Avatare und Presets
 - **next-intl 4** (DE/EN)
-- **Vitest** (98 Unit-Tests) + **Playwright** (E2E + A11y)
+- **Vitest** (271 Unit-Tests) + **Playwright** (E2E + A11y)
 
 ## Entwicklung
 
@@ -60,7 +66,7 @@ npm run dev       # http://localhost:3000
 ### Tests
 
 ```bash
-npm run test          # 98 Unit-Tests (Vitest)
+npm run test          # 271 Unit-Tests (Vitest)
 npm run test:coverage # Coverage-Report
 npm run test:e2e      # Playwright E2E (App + Garage + DB erforderlich)
 ```
