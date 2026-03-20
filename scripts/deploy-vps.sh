@@ -73,20 +73,8 @@ until docker compose -f docker-compose.prod.yml exec -T postgres pg_isready -U g
 info "Postgres ready."
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Step 3: Run database migrations
+# Step 3: Migrations run automatically via docker-entrypoint.sh on app start
 # ══════════════════════════════════════════════════════════════════════════════
-info "Running Prisma migrations..."
-# The app container is a standalone build without prisma/ dir.
-# Use a throwaway node container with the source code mounted instead.
-source .env.prod
-docker run --rm \
-  --network gp200editor_default \
-  -v "$(pwd)":/app \
-  -w /app \
-  -e DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}" \
-  node:23-alpine \
-  sh -c "npx prisma migrate deploy"
-info "Migrations complete."
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Step 4: Initialize Garage S3 (first run only)
