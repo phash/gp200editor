@@ -5,11 +5,13 @@ import { useTranslations } from 'next-intl';
 import { SysExCodec } from '@/core/SysExCodec';
 
 interface DeviceSlotBrowserProps {
-  mode: 'pull' | 'push';
+  mode: 'pull' | 'push' | 'multiselect';
   presetNames: (string | null)[];
   namesLoadProgress: number;
   currentSlot: number | null;
   onConfirm: (slot: number) => void;
+  onConfirmMulti?: (slots: number[]) => void;
+  initialSelected?: number[];
   onCancel: () => void;
 }
 
@@ -19,11 +21,15 @@ export function DeviceSlotBrowser({
   namesLoadProgress,
   currentSlot,
   onConfirm,
+  onConfirmMulti,
+  initialSelected,
   onCancel,
 }: DeviceSlotBrowserProps) {
   const t = useTranslations('device');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<number | null>(currentSlot);
+  const [multiSelected, setMultiSelected] = useState<Set<number>>(new Set(initialSelected ?? []));
+  const isMulti = mode === 'multiselect';
   const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { searchRef.current?.focus(); }, []);
@@ -32,11 +38,17 @@ export function DeviceSlotBrowser({
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onCancel();
-      if (e.key === 'Enter' && selected !== null) onConfirm(selected);
+      if (e.key === 'Enter') {
+        if (isMulti && onConfirmMulti) {
+          onConfirmMulti(Array.from(multiSelected).sort((a, b) => a - b));
+        } else if (selected !== null) {
+          onConfirm(selected);
+        }
+      }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onCancel, onConfirm, selected]);
+  }, [onCancel, onConfirm, onConfirmMulti, selected, multiSelected, isMulti]);
 
   // Filter: build a Set of visible slots
   const visible = useMemo((): Set<number> => {
@@ -50,11 +62,15 @@ export function DeviceSlotBrowser({
     }
     return result;
   }, [search, presetNames]);
-  const confirmLabel = selected !== null
-    ? mode === 'pull'
-      ? t('pullFrom', { slot: SysExCodec.slotToLabel(selected) })
-      : t('pushTo',   { slot: SysExCodec.slotToLabel(selected) })
-    : mode === 'pull' ? t('pull') : t('push');
+  const confirmLabel = isMulti
+    ? multiSelected.size > 0
+      ? `${multiSelected.size} Slots auswählen`
+      : 'Slots auswählen'
+    : selected !== null
+      ? mode === 'pull'
+        ? t('pullFrom', { slot: SysExCodec.slotToLabel(selected) })
+        : t('pushTo',   { slot: SysExCodec.slotToLabel(selected) })
+      : mode === 'pull' ? t('pull') : t('push');
 
   // 64 banks, each with A/B/C/D
   const banks = Array.from({ length: 64 }, (_, bank) =>
@@ -138,26 +154,39 @@ export function DeviceSlotBrowser({
                   return (
                     <button
                       key={slot}
-                      onClick={() => setSelected(slot)}
-                      onDoubleClick={() => onConfirm(slot)}
+                      onClick={() => {
+                        if (isMulti) {
+                          setMultiSelected(prev => {
+                            const next = new Set(prev);
+                            if (next.has(slot)) next.delete(slot);
+                            else next.add(slot);
+                            return next;
+                          });
+                        } else {
+                          setSelected(slot);
+                        }
+                      }}
+                      onDoubleClick={() => { if (!isMulti) onConfirm(slot); }}
                       style={{
                         padding: '6px 8px',
                         textAlign: 'left',
-                        background: isSelected ? 'rgba(212,162,78,0.18)' : isCurrent ? 'rgba(212,162,78,0.07)' : 'transparent',
+                        background: (isMulti ? multiSelected.has(slot) : isSelected)
+                          ? 'rgba(212,162,78,0.18)'
+                          : isCurrent ? 'rgba(212,162,78,0.07)' : 'transparent',
                         borderRight: '1px solid rgba(255,255,255,0.06)',
                         cursor: 'pointer',
                       }}
                     >
                       <div style={{
                         fontFamily: 'monospace', fontSize: '0.65em',
-                        color: isSelected ? 'var(--accent-amber)' : 'var(--text-muted)',
+                        color: (isMulti ? multiSelected.has(slot) : isSelected) ? 'var(--accent-amber)' : 'var(--text-muted)',
                         marginBottom: 2,
                       }}>
-                        {label}{isCurrent ? ' ◀' : ''}
+                        {isMulti && multiSelected.has(slot) ? '✓ ' : ''}{label}{isCurrent ? ' ◀' : ''}
                       </div>
                       <div style={{
                         fontFamily: 'monospace', fontSize: '0.7em',
-                        color: isSelected ? 'var(--accent-amber)' : 'var(--text-primary)',
+                        color: (isMulti ? multiSelected.has(slot) : isSelected) ? 'var(--accent-amber)' : 'var(--text-primary)',
                         whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                       }}>
                         {name ?? (namesLoadProgress < 256 ? '…' : '—')}
@@ -180,8 +209,14 @@ export function DeviceSlotBrowser({
             {t('cancel')}
           </button>
           <button
-            onClick={() => { if (selected !== null) onConfirm(selected); }}
-            disabled={selected === null}
+            onClick={() => {
+              if (isMulti && onConfirmMulti) {
+                onConfirmMulti(Array.from(multiSelected).sort((a, b) => a - b));
+              } else if (selected !== null) {
+                onConfirm(selected);
+              }
+            }}
+            disabled={isMulti ? multiSelected.size === 0 : selected === null}
             className="font-mono-display text-sm font-bold px-4 py-2 rounded disabled:opacity-40"
             style={{
               border: '1px solid var(--accent-amber)',
