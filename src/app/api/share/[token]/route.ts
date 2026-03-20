@@ -16,9 +16,12 @@ export async function GET(_request: Request, context: RouteContext) {
   }
 
   return NextResponse.json({
+    id: preset.id,
     name: preset.name,
     description: preset.description,
     tags: preset.tags,
+    author: preset.author,
+    style: preset.style,
     username: preset.user.username,
     downloadCount: preset.downloadCount,
     createdAt: preset.createdAt.toISOString(),

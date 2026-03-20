@@ -40,6 +40,8 @@ export default function EditorPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'pedals'>('list');
   const pedalGridRef = useRef<HTMLDivElement>(null);
+  // Track source preset when loaded from gallery (for update vs save-as-new)
+  const [sourcePreset, setSourcePreset] = useState<{ id: string; username: string; author: string; style: string; description: string } | null>(null);
 
   useEffect(() => {
     fetch('/api/profile')
@@ -59,14 +61,17 @@ export default function EditorPage() {
     const params = new URLSearchParams(window.location.search);
     const shareToken = params.get('share');
     if (!shareToken) return;
-    fetch(`/api/share/${shareToken}/download`)
-      .then((res) => {
-        if (!res.ok) throw new Error('Download failed: ' + res.status);
-        return res.arrayBuffer();
-      })
-      .then((ab) => {
+    // Fetch binary + info in parallel
+    Promise.all([
+      fetch(`/api/share/${shareToken}/download`).then(r => { if (!r.ok) throw new Error('Download failed'); return r.arrayBuffer(); }),
+      fetch(`/api/share/${shareToken}`).then(r => r.ok ? r.json() : null),
+    ])
+      .then(([ab, info]) => {
         const decoder = new PRSTDecoder(new Uint8Array(ab));
         loadPreset(decoder.decode());
+        if (info?.id) {
+          setSourcePreset({ id: info.id, username: info.username, author: info.author ?? '', style: info.style ?? '', description: info.description ?? '' });
+        }
       })
       .catch(() => {
         setLoadError(t('loadError'));
@@ -96,6 +101,7 @@ export default function EditorPage() {
       const decoder = new PRSTDecoder(buffer);
       loadPreset(decoder.decode());
       setLoadError(null);
+      setSourcePreset(null); // Clear gallery source — this is a local file
     } catch (err) {
       setLoadError(`${t('loadError')}: ${err instanceof Error ? err.message : String(err)}`);
     }
@@ -142,6 +148,32 @@ export default function EditorPage() {
           router.push('/presets');
           router.refresh();
         }, 800);
+      } else {
+        setSaveStatus('error');
+        setTimeout(() => setSaveStatus('idle'), 3000);
+      }
+    } catch {
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    }
+  }
+
+  async function handleUpdatePreset() {
+    const ab = encodePreset();
+    if (!ab || !preset || !sourcePreset) return;
+
+    setSaveStatus('saving');
+    try {
+      const blob = new Blob([ab], { type: 'application/octet-stream' });
+      const file = new File([blob], `${preset.patchName}.prst`, { type: 'application/octet-stream' });
+      const formData = new FormData();
+      formData.append('preset', file);
+      formData.append('name', preset.patchName);
+
+      const res = await fetch(`/api/presets/${sourcePreset.id}`, { method: 'PATCH', body: formData });
+      if (res.ok) {
+        setSaveStatus('saved');
+        setTimeout(() => setSaveStatus('idle'), 2000);
       } else {
         setSaveStatus('error');
         setTimeout(() => setSaveStatus('idle'), 3000);
@@ -518,6 +550,24 @@ export default function EditorPage() {
 
         {isLoggedIn ? (
           <>
+            {/* Update button — only if loaded from gallery AND user owns it */}
+            {sourcePreset && sourcePreset.username === username && (
+              <button
+                onClick={handleUpdatePreset}
+                disabled={saveStatus === 'saving' || saveStatus === 'saved'}
+                className="font-mono-display text-sm font-bold tracking-wider uppercase px-6 py-3 rounded-lg transition-all duration-200 disabled:opacity-50"
+                style={{
+                  background: saveStatus === 'saved' ? 'var(--glow-green)' : 'var(--glow-amber)',
+                  border: `1px solid ${saveStatus === 'saved' ? 'var(--accent-green)' : 'var(--accent-amber)'}`,
+                  color: saveStatus === 'saved' ? 'var(--accent-green)' : 'var(--accent-amber)',
+                }}
+              >
+                {saveStatus === 'saving' ? t('savingPreset') :
+                 saveStatus === 'saved' ? t('updatedPreset') :
+                 t('updatePreset')}
+              </button>
+            )}
+            {/* Save as new — always available when logged in */}
             <button
               onClick={() => setShowSaveDialog(true)}
               disabled={saveStatus === 'saving' || saveStatus === 'saved'}
@@ -543,7 +593,7 @@ export default function EditorPage() {
             >
               {saveStatus === 'saving' ? t('savingPreset') :
                saveStatus === 'saved' ? t('presetSaved') :
-               t('saveToPresets')}
+               sourcePreset ? t('saveAsNew') : t('saveToPresets')}
             </button>
             {saveStatus === 'error' && (
               <span className="text-sm font-mono-display" style={{ color: 'var(--accent-red)' }}>
