@@ -54,11 +54,11 @@ export function FileUpload({ onFile }: FileUploadProps) {
         &#x2191;
       </div>
       <p className="text-lg font-medium" style={{ color: 'var(--text-primary)' }}>{t('uploadCta')}</p>
-      <p className="text-sm mt-2 font-mono-display" style={{ color: 'var(--text-muted)' }}>.prst</p>
+      <p className="text-sm mt-2 font-mono-display" style={{ color: 'var(--text-muted)' }}>.prst / .hlx</p>
       <input
         ref={inputRef}
         type="file"
-        accept=".prst"
+        accept=".prst,.hlx"
         className="hidden"
         onChange={handleChange}
         data-testid="file-input"
