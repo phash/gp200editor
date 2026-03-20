@@ -68,8 +68,7 @@ bash scripts/deploy-vps.sh    # Einmaliges Setup: Build, Migrate, Garage, SSL, N
 
 # Updates deployen:
 cd /opt/gp200editor
-git pull
-docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build app
+bash scripts/deploy-update.sh    # git pull → build → restart (Migrations laufen automatisch)
 ```
 
 **VPS-Architektur:**
@@ -77,6 +76,7 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build app
 - Musikersuche-Nginx (ports 80/443) proxied `preset-forge.com` → `172.17.0.1:3320`
 - SSL via Musikersuche's Certbot-Container
 - `scripts/deploy-vps.sh` macht alles automatisch (erster Start)
+- `scripts/deploy-update.sh` für Updates (git pull → build → restart)
 - `scripts/backup.sh` / `scripts/restore.sh` für DB + S3 Backups
 
 ### Dockerfile-Details
@@ -86,6 +86,8 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build app
 - `@node-rs/argon2` in `serverComponentsExternalPackages` (native binary)
 - Non-root User `nextjs:nodejs` (UID/GID 1001)
 - `public/.gitkeep` nötig (leerer Ordner wird sonst nicht von Git getrackt → COPY fehlschlägt)
+- `docker-entrypoint.sh` führt `prisma migrate deploy` automatisch vor App-Start aus
+- Prisma CLI wird global im Runner installiert (`npm install -g prisma@5.22.0`)
 
 ---
 
@@ -588,3 +590,5 @@ Impulse-Response Dateien werden als Multi-Chunk Transfer über sub=0x1C gesendet
 - `Content-Length` hardcoden in Download-Responses — immer aus `buffer.length` berechnen
 - Garage S3 Stream direkt an NextResponse übergeben — in Standalone-Build hängt der Stream, immer erst in Buffer lesen
 - Garage Secret Key nicht sofort speichern — wird nach Erstellung nur einmal angezeigt, danach `(redacted)`
+- Prod manuell mit `docker compose up -d --build app` deployen — immer `bash scripts/deploy-update.sh` verwenden (führt Migrationen automatisch aus)
+- `npx prisma` im Docker-Standalone-Build verwenden — Prisma wird global installiert, direkt `prisma` nutzen

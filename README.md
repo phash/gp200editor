@@ -81,6 +81,19 @@ docker build -t gp200editor .
 docker run -d -p 3000:3000 gp200editor
 ```
 
+### Production Deployment (IONOS VPS)
+
+```bash
+# Erstmalig:
+cd /opt && git clone https://github.com/phash/gp200editor.git && cd gp200editor
+bash scripts/deploy-vps.sh    # Setup: Build, Garage, SSL, Nginx
+
+# Updates:
+bash scripts/deploy-update.sh # git pull → build → restart (Migrations laufen automatisch)
+```
+
+DB-Migrationen laufen automatisch bei jedem Container-Start (`docker-entrypoint.sh`).
+
 ## .prst Binärformat
 
 Alle User-Presets sind exakt **1224 Bytes**. Das Format wurde per Reverse Engineering dokumentiert:
