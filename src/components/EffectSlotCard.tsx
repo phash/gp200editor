@@ -29,7 +29,7 @@ export function EffectSlotCard({ slot, index, onToggle, onChangeEffect, onParamC
       onDragStart={() => onDragStart(index)}
       onDragOver={(e) => onDragOver(e, index)}
       onDrop={() => onDrop(index)}
-      className="slot-enter relative flex flex-col transition-all duration-200 active:cursor-grabbing"
+      className="slot-enter relative flex flex-col h-full transition-all duration-200 active:cursor-grabbing"
       style={{
         animationDelay: `${index * 40}ms`,
         opacity: isDragOver ? 0.7 : 1,
@@ -39,7 +39,7 @@ export function EffectSlotCard({ slot, index, onToggle, onChangeEffect, onParamC
     >
       {/* Pedal enclosure */}
       <div
-        className="relative rounded-xl overflow-hidden"
+        className="relative rounded-xl overflow-hidden flex flex-col h-full"
         style={{
           background: `linear-gradient(165deg, ${slot.enabled ? 'rgba(30,30,30,1)' : 'rgba(22,22,22,1)'} 0%, ${slot.enabled ? 'rgba(20,20,20,1)' : 'rgba(16,16,16,1)'} 100%)`,
           border: `2px solid ${isDragOver ? colors.accent : slot.enabled ? colors.accentDim : 'rgba(60,60,60,0.5)'}`,
@@ -112,12 +112,13 @@ export function EffectSlotCard({ slot, index, onToggle, onChangeEffect, onParamC
           </div>
         </div>
 
-        {/* Parameters */}
-        <div className="px-3 pb-3" draggable onDragStart={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+        {/* Parameters — flex-1 pushes stomp button to bottom */}
+        <div className="px-3 pb-3 flex-1" draggable onDragStart={(e) => { e.preventDefault(); e.stopPropagation(); }}>
           <EffectParams
             effectId={slot.effectId}
             params={slot.params}
             onParamChange={(paramIdx, value) => onParamChange(slot.slotIndex, paramIdx, value)}
+            maxColumns={2}
           />
         </div>
 

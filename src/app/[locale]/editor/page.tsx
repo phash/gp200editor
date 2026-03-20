@@ -299,7 +299,7 @@ export default function EditorPage() {
   }
 
   return (
-    <div className="p-8 max-w-2xl mx-auto">
+    <div className={`p-8 mx-auto ${viewMode === 'pedals' ? 'max-w-6xl' : 'max-w-2xl'}`}>
       {/* Header with patch name + slot */}
       <div className="flex items-center gap-4 mb-8 flex-wrap">
         <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -408,7 +408,7 @@ export default function EditorPage() {
       <div
         ref={viewMode === 'pedals' ? pedalGridRef : undefined}
         className={viewMode === 'pedals'
-          ? 'relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8'
+          ? 'relative grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 mb-8'
           : 'flex flex-col gap-2 mb-8'}
         onDragEnd={() => { setDragIndex(null); setDragOverIndex(null); }}
       >

@@ -6,6 +6,7 @@ interface EffectParamsProps {
   effectId: number;
   params: number[];
   onParamChange: (idx: number, value: number) => void;
+  maxColumns?: number;
 }
 
 function KnobControl({ param, value, onChange }: {
@@ -118,7 +119,7 @@ function ComboxControl({ param, value, onChange }: {
   );
 }
 
-export function EffectParams({ effectId, params, onParamChange }: EffectParamsProps) {
+export function EffectParams({ effectId, params, onParamChange, maxColumns }: EffectParamsProps) {
   const t = useTranslations('editor');
   const paramDefs = getEffectParams(effectId);
 
@@ -130,7 +131,7 @@ export function EffectParams({ effectId, params, onParamChange }: EffectParamsPr
 
   return (
     <div
-      className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3 pt-4 mt-3"
+      className={`grid gap-x-4 gap-y-3 pt-4 mt-3 ${maxColumns === 2 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3'}`}
       style={{ borderTop: '1px solid var(--border-subtle)' }}
       data-testid="effect-params"
     >
