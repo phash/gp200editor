@@ -22,6 +22,7 @@ export function EffectSlotCard({ slot, index, onToggle, onChangeEffect, onParamC
   const moduleName = getModuleName(slot.effectId);
   const colors = MODULE_COLORS[moduleName] ?? MODULE_COLORS.VOL;
   const effects = getEffectsByModule(moduleName);
+  const isEQ = moduleName === 'EQ';
 
   return (
     <div
@@ -29,7 +30,7 @@ export function EffectSlotCard({ slot, index, onToggle, onChangeEffect, onParamC
       onDragStart={() => onDragStart(index)}
       onDragOver={(e) => onDragOver(e, index)}
       onDrop={() => onDrop(index)}
-      className="slot-enter relative flex flex-col h-full transition-all duration-200 active:cursor-grabbing"
+      className={`slot-enter relative flex flex-col h-full transition-all duration-200 active:cursor-grabbing ${isEQ ? 'sm:col-span-2' : ''}`}
       style={{
         animationDelay: `${index * 40}ms`,
         opacity: isDragOver ? 0.7 : 1,
@@ -128,7 +129,8 @@ export function EffectSlotCard({ slot, index, onToggle, onChangeEffect, onParamC
             effectId={slot.effectId}
             params={slot.params}
             onParamChange={(paramIdx, value) => onParamChange(slot.slotIndex, paramIdx, value)}
-            maxColumns={2}
+            maxColumns={isEQ ? undefined : 2}
+            layout={isEQ ? 'eq' : 'default'}
           />
         </div>
 
