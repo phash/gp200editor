@@ -9,11 +9,21 @@ export interface PlaylistPreset {
   binary: ArrayBuffer;
 }
 
+export interface CuePoint {
+  id: string;
+  timeSeconds: number;
+  action: 'preset-switch' | 'effect-toggle';
+  slot?: number;        // preset-switch: GP-200 slot 0-255
+  blockIndex?: number;  // effect-toggle: 0-10
+  enabled?: boolean;    // effect-toggle: on/off
+}
+
 export interface PlaylistEntry {
   id: string;
   songName: string;
   youtubeUrl?: string;
   presets: PlaylistPreset[];
+  cuePoints?: CuePoint[];
 }
 
 export interface Playlist {

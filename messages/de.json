@@ -291,6 +291,19 @@
     "offlineVideo": "Video offline nicht verfügbar",
     "back": "Zurück zur Übersicht",
     "save": "Speichern",
-    "lastUpdated": "Zuletzt bearbeitet"
+    "lastUpdated": "Zuletzt bearbeitet",
+    "cuePoints": "Cue Points",
+    "addCuePoint": "+ Cue Point",
+    "presetSwitch": "Preset wechseln",
+    "effectToggle": "Effekt schalten",
+    "timeLabel": "Zeit",
+    "actionLabel": "Aktion",
+    "targetLabel": "Ziel",
+    "timelinePlay": "Start",
+    "timelinePause": "Pause",
+    "timelineStop": "Stop",
+    "on": "AN",
+    "off": "AUS",
+    "elapsed": "Vergangen"
   }
 }
