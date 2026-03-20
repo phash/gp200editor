@@ -2,6 +2,7 @@
 import { useTranslations } from 'next-intl';
 import { FileUpload } from '@/components/FileUpload';
 import { EffectSlot } from '@/components/EffectSlot';
+import { EffectSlotCard } from '@/components/EffectSlotCard';
 import { usePreset } from '@/hooks/usePreset';
 import { PRSTDecoder } from '@/core/PRSTDecoder';
 import { PRSTEncoder } from '@/core/PRSTEncoder';
@@ -36,6 +37,7 @@ export default function EditorPage() {
   const [showPlaylistDialog, setShowPlaylistDialog] = useState(false);
   const [firmwareWarningDismissed, setFirmwareWarningDismissed] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'pedals'>('list');
 
   useEffect(() => {
     fetch('/api/profile')
@@ -372,34 +374,70 @@ export default function EditorPage() {
         </div>
       )}
 
+      {/* View toggle */}
+      <div className="flex items-center gap-1 mb-4">
+        <button
+          onClick={() => setViewMode('list')}
+          className="font-mono-display text-[10px] font-bold tracking-wider uppercase px-3 py-1.5 rounded-l transition-all duration-150"
+          style={{
+            background: viewMode === 'list' ? 'var(--glow-amber)' : 'transparent',
+            border: `1px solid ${viewMode === 'list' ? 'var(--accent-amber)' : 'var(--border-subtle)'}`,
+            color: viewMode === 'list' ? 'var(--accent-amber)' : 'var(--text-muted)',
+          }}
+          aria-pressed={viewMode === 'list'}
+        >
+          {t('viewList')}
+        </button>
+        <button
+          onClick={() => setViewMode('pedals')}
+          className="font-mono-display text-[10px] font-bold tracking-wider uppercase px-3 py-1.5 rounded-r transition-all duration-150"
+          style={{
+            background: viewMode === 'pedals' ? 'var(--glow-amber)' : 'transparent',
+            border: `1px solid ${viewMode === 'pedals' ? 'var(--accent-amber)' : 'var(--border-subtle)'}`,
+            color: viewMode === 'pedals' ? 'var(--accent-amber)' : 'var(--text-muted)',
+          }}
+          aria-pressed={viewMode === 'pedals'}
+        >
+          {t('viewPedals')}
+        </button>
+      </div>
+
       {/* Signal chain */}
-      <div className="flex flex-col gap-2 mb-8" onDragEnd={() => { setDragIndex(null); setDragOverIndex(null); }}>
-        {preset.effects.map((slot, i) => (
-          <EffectSlot
-            key={`${i}-${slot.effectId}`}
-            slot={slot}
-            index={i}
-            onToggle={(index: number) => {
+      <div
+        className={viewMode === 'pedals'
+          ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8'
+          : 'flex flex-col gap-2 mb-8'}
+        onDragEnd={() => { setDragIndex(null); setDragOverIndex(null); }}
+      >
+        {preset.effects.map((slot, i) => {
+          const slotProps = {
+            key: `${i}-${slot.effectId}`,
+            slot,
+            index: i,
+            onToggle: (index: number) => {
               toggleEffect(index);
               if (midiDevice.status === 'connected' && preset) {
                 const eff = preset.effects[index];
                 midiDevice.sendToggle(eff.slotIndex, !eff.enabled);
               }
-            }}
-            onChangeEffect={changeEffect}
-            onParamChange={(slotIndex: number, paramIndex: number, value: number) => {
+            },
+            onChangeEffect: changeEffect,
+            onParamChange: (slotIndex: number, paramIndex: number, value: number) => {
               setParam(slotIndex, paramIndex, value);
               if (midiDevice.status === 'connected' && preset) {
                 const eff = preset.effects.find(e => e.slotIndex === slotIndex);
                 if (eff) midiDevice.sendParamChange(slotIndex, paramIndex, eff.effectId, value);
               }
-            }}
-            onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-            isDragOver={dragOverIndex === i && dragIndex !== i}
-          />
-        ))}
+            },
+            onDragStart: handleDragStart,
+            onDragOver: handleDragOver,
+            onDrop: handleDrop,
+            isDragOver: dragOverIndex === i && dragIndex !== i,
+          };
+          return viewMode === 'pedals'
+            ? <EffectSlotCard {...slotProps} />
+            : <EffectSlot {...slotProps} />;
+        })}
       </div>
 
       {/* Action buttons */}

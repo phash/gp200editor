@@ -35,6 +35,8 @@
     "effectDisabled": "disabled",
     "parameters": "Parameters",
     "noParams": "No parameters available",
+    "viewList": "List",
+    "viewPedals": "Pedals",
     "addToPlaylist": "Add to Playlist",
     "saveToPresets": "Save to My Presets",
     "savingPreset": "Saving…",
