@@ -1,0 +1,13 @@
+{
+  "name": "Preset Forge — GP-200 Editor",
+  "short_name": "Preset Forge",
+  "description": "Browser-based preset editor for Valeton GP-200",
+  "start_url": "/de/editor",
+  "display": "standalone",
+  "theme_color": "#d97706",
+  "background_color": "#111827",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

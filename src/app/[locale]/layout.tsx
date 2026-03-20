@@ -7,6 +7,7 @@ import Script from 'next/script';
 import '../globals.css'; // globals.css stays in src/app/, so relative path goes up
 import { Footer } from '@/components/Footer';
 import { Navbar } from '@/components/Navbar';
+import { ClientProviders } from './ClientProviders';
 
 export const metadata: Metadata = {
   title: 'Preset Forge — GP-200 Editor',
@@ -23,6 +24,7 @@ export const metadata: Metadata = {
     'tone sharing',
     'guitar presets',
   ],
+  manifest: '/manifest.json',
   openGraph: {
     title: 'Preset Forge — GP-200 Editor',
     description: 'Edit, share, and sync Valeton GP-200 presets. Real-time USB MIDI editing, preset gallery, and community sharing.',
@@ -57,19 +59,22 @@ export default async function LocaleLayout({ children, params }: Props) {
   const { locale } = await params;
   if (!routing.locales.includes(locale as 'de' | 'en')) notFound();
   const messages = await getMessages();
+  const jsonLdString = JSON.stringify(jsonLd);
   return (
     <html lang={locale}>
       <head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
+        <meta name="theme-color" content="#d97706" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        {/* JSON-LD structured data — static constant, not user input */}
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString }} />
       </head>
       <body className="flex flex-col min-h-screen">
         <NextIntlClientProvider messages={messages}>
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <ClientProviders>
+            <Navbar />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </ClientProviders>
         </NextIntlClientProvider>
         {/* Matomo Analytics — Site ID 2 on musikersuche.org/matomo */}
         <Script id="matomo" strategy="afterInteractive">{`
