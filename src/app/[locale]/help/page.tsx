@@ -11,6 +11,15 @@ export default async function HelpPage() {
         t('gettingStartedEdit'),
         t('gettingStartedSave'),
         t('gettingStartedReorder'),
+        t('gettingStartedAuthor'),
+      ],
+    },
+    {
+      title: t('hxStompTitle'),
+      items: [
+        t('hxStompLoad'),
+        t('hxStompExperimental'),
+        t('hxStompWhat'),
       ],
     },
     {
@@ -38,9 +47,20 @@ export default async function HelpPage() {
       ],
     },
     {
+      title: t('playlistsTitle'),
+      items: [
+        t('playlistsCreate'),
+        t('playlistsSlots'),
+        t('playlistsCuePoints'),
+        t('playlistsCountIn'),
+        t('playlistsReconnect'),
+      ],
+    },
+    {
       title: t('shortcutsTitle'),
       items: [
-        t('shortcutsNone'),
+        t('shortcutsPlaylistUpDown'),
+        t('shortcutsPlaylistLeftRight'),
       ],
     },
   ];
@@ -50,6 +70,7 @@ export default async function HelpPage() {
     { q: t('faqFirmwareQ'), a: t('faqFirmwareA') },
     { q: t('faqFormatQ'), a: t('faqFormatA') },
     { q: t('faqOfflineQ'), a: t('faqOfflineA') },
+    { q: t('faqHxStompQ'), a: t('faqHxStompA') },
   ];
 
   return (
