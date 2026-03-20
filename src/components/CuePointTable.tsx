@@ -61,12 +61,20 @@ export function CuePointTable({
     [cuePoints],
   );
 
-  // Determine the next-to-fire cue point (first unfired in sorted order)
-  const nextToFireId = useMemo(() => {
+  // Active = last fired cue point (the one currently in effect)
+  const activeCpId = useMemo(() => {
+    if (!isPlaying) return null;
+    const fired = sorted.filter((cp) => firedIds.has(cp.id));
+    return fired.length > 0 ? fired[fired.length - 1].id : null;
+  }, [sorted, firedIds, isPlaying]);
+
+  // Upcoming = next unfired cue point is <5s away
+  const upcomingId = useMemo(() => {
     if (!isPlaying) return null;
     const next = sorted.find((cp) => !firedIds.has(cp.id));
-    return next?.id ?? null;
-  }, [sorted, firedIds, isPlaying]);
+    if (!next) return null;
+    return (next.timeSeconds - _elapsedSeconds) <= 5 ? next.id : null;
+  }, [sorted, firedIds, isPlaying, _elapsedSeconds]);
 
   return (
     <div className="font-mono-display">
@@ -124,8 +132,9 @@ export function CuePointTable({
               presets={presets}
               onUpdate={onUpdate}
               onDelete={onDelete}
+              isActive={cp.id === activeCpId}
+              isUpcoming={cp.id === upcomingId}
               isFired={firedIds.has(cp.id)}
-              isNext={cp.id === nextToFireId}
               isPlaying={isPlaying}
             />
           ))}
@@ -155,8 +164,9 @@ interface CuePointRowProps {
   presets: PlaylistPreset[];
   onUpdate: (id: string, patch: Partial<CuePoint>) => void;
   onDelete: (id: string) => void;
+  isActive: boolean;    // currently in effect (last fired)
+  isUpcoming: boolean;  // next to fire AND <5s away
   isFired: boolean;
-  isNext: boolean;
   isPlaying: boolean;
 }
 
@@ -165,8 +175,9 @@ function CuePointRow({
   presets,
   onUpdate,
   onDelete,
-  isFired,
-  isNext,
+  isActive,
+  isUpcoming,
+  isFired: _isFired,
   isPlaying,
 }: CuePointRowProps) {
   const t = useTranslations('playlists');
@@ -198,11 +209,20 @@ function CuePointRow({
 
   return (
     <div
-      className="grid grid-cols-[80px_1fr_1fr_32px] items-center gap-2 px-3 py-1.5 transition-opacity"
+      className="grid grid-cols-[80px_1fr_1fr_32px] items-center gap-2 px-3 py-1.5 transition-all duration-300"
       style={{
-        opacity: isPlaying && isFired ? 0.4 : 1,
-        borderLeft: isPlaying && isNext ? '3px solid var(--accent-amber)' : '3px solid transparent',
+        opacity: isPlaying && !isActive && !isUpcoming ? 0.3 : 1,
+        borderLeft: isActive
+          ? '3px solid var(--accent-amber)'
+          : isUpcoming
+            ? '3px solid rgba(212,162,78,0.4)'
+            : '3px solid transparent',
         borderBottom: '1px solid var(--border-subtle)',
+        background: isActive
+          ? 'rgba(212,162,78,0.08)'
+          : isUpcoming
+            ? 'rgba(212,162,78,0.03)'
+            : 'transparent',
       }}
     >
       {/* Zeit */}

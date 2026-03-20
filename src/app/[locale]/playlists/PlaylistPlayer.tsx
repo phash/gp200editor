@@ -85,11 +85,17 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
 
   const handleAddCuePoint = useCallback(async () => {
     if (!playlist || !player.currentEntry) return;
+    const presets = player.currentEntry.presets;
+    const existingCues = player.currentEntry.cuePoints ?? [];
+    // Default time: after the last cue point, or 0:00
+    const lastTime = existingCues.length > 0
+      ? Math.max(...existingCues.map(c => c.timeSeconds)) + 10
+      : 0;
     const newCp: CuePoint = {
       id: crypto.randomUUID(),
-      timeSeconds: 0,
+      timeSeconds: lastTime,
       action: 'preset-switch',
-      slot: 0,
+      presetId: presets[0]?.id,
     };
     const updated: Playlist = {
       ...playlist,
