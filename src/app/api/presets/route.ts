@@ -74,28 +74,33 @@ export async function POST(request: Request) {
   }
 
   // 5. Create DB record
-  const preset = await prisma.preset.create({
-    data: {
-      userId: user.id,
-      presetKey: key,
-      name: decoded.patchName.trim() || file.name.replace(/\.prst$/i, '').slice(0, 32) || 'Untitled',
-      description: parsed.data.description ?? null,
-      tags: parsed.data.tags ?? [],
-      author: parsed.data.author ?? null,
-      style: parsed.data.style ?? null,
-      public: parsed.data.publish ?? false,
-      modules: extractModules(decoded),
-    },
-    select: {
-      id: true,
-      name: true,
-      modules: true,
-      shareToken: true,
-      public: true,
-    },
-  });
+  try {
+    const preset = await prisma.preset.create({
+      data: {
+        userId: user.id,
+        presetKey: key,
+        name: decoded.patchName.trim() || file.name.replace(/\.prst$/i, '').slice(0, 32) || 'Untitled',
+        description: parsed.data.description ?? null,
+        tags: parsed.data.tags ?? [],
+        author: parsed.data.author ?? null,
+        style: parsed.data.style ?? null,
+        public: parsed.data.publish ?? false,
+        modules: extractModules(decoded),
+      },
+      select: {
+        id: true,
+        name: true,
+        modules: true,
+        shareToken: true,
+        public: true,
+      },
+    });
 
-  return NextResponse.json(preset, { status: 201 });
+    return NextResponse.json(preset, { status: 201 });
+  } catch (err) {
+    console.error('Failed to create preset:', err);
+    return NextResponse.json({ error: 'Failed to save preset' }, { status: 500 });
+  }
 }
 
 export async function GET() {
