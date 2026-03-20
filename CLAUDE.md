@@ -297,7 +297,7 @@ LE uint16 → **Algorithmus gelöst (2026-03-18):** `sum(bytes[0:0x4C6]) & 0xFFF
 ## Tests
 
 ```bash
-npm run test              # 98 Unit-Tests (Vitest)
+npm run test              # 183 Unit-Tests (Vitest)
 npm run test:coverage     # Coverage-Report
 npm run test:e2e          # Playwright E2E (App + Garage + DB erforderlich)
 ```
@@ -305,8 +305,11 @@ npm run test:e2e          # Playwright E2E (App + Garage + DB erforderlich)
 Unit-Tests in `tests/unit/`:
 - `BinaryParser.test.ts`, `BufferGenerator.test.ts`, `types.test.ts`
 - `PRSTDecoder.test.ts`, `PRSTEncoder.test.ts` — inkl. Tests gegen echte .prst-Dateien
+- `SysExCodec.test.ts` — Toggle, ParamChange, Reorder, Handshake (60 Tests)
 - `effectNames.test.ts` — Effekt-ID→Name Auflösung
 - `effectParams.test.ts` — Parameter-Definitionen
+- `useMidiDevice.test.ts` — MIDI Hook Tests
+- `validators.preset.test.ts` — Upload/Patch Schema + author/style/publish
 - `usePreset.test.ts`, `smoke.test.ts`
 - `lib/validators.test.ts` – Auth + Profile Schemas
 - `validators.preset.test.ts` – uploadPresetSchema + patchPresetSchema
@@ -317,6 +320,7 @@ E2E-Tests in `tests/e2e/`:
 - `auth.spec.ts` – Register, Login, Logout, Passwort-Reset
 - `profile.spec.ts` – Profil bearbeiten, Avatar
 - `presets.spec.ts` – Preset hochladen, teilen, bearbeiten, löschen, Link widerrufen
+- `save-and-gallery.spec.ts` – Save-Dialog, Galerie-Suche/Filter, Gallery→Editor Link
 
 ---
 
@@ -549,9 +553,14 @@ Impulse-Response Dateien werden als Multi-Chunk Transfer über sub=0x1C gesendet
 
 - `npm ci` verwenden (Lock-File-Inkompatibilität mit Docker-npm-Version)
 - `next/link` oder `next/navigation` direkt in Client-Components importieren (immer `@/i18n/routing`)
+- `useSearchParams` aus `next/navigation` in Pages verwenden — funktioniert nicht im Production-Build, stattdessen `window.location.search` im `useEffect`
+- `onMouseEnter`/`onMouseLeave` auf `<Link>` Komponenten — crasht in Production SSR, stattdessen CSS `hover:` Klassen
 - UI-Strings hardcoden (immer `useTranslations` / `getTranslations`)
 - `@lucia-auth/adapter-prisma@1.0.0` — das ist Lucia v1/v2; Lucia v3 braucht `@4.0.1`
 - Zod `.errors` verwenden — in Zod v4 heißt es `.issues`
 - `GARAGE_BUCKET` für Presets verwenden — das ist für Avatare; `GARAGE_PRESET_BUCKET` für Presets
 - `bucket()` und `presetBucket()` in `storage.ts` zusammenführen
 - Den `matcher` in `middleware.ts` ändern — next-intl braucht den breiten Matcher; Auth-Guards als `if`-Blöcke im Body hinzufügen
+- `Content-Length` hardcoden in Download-Responses — immer aus `buffer.length` berechnen
+- Garage S3 Stream direkt an NextResponse übergeben — in Standalone-Build hängt der Stream, immer erst in Buffer lesen
+- Garage Secret Key nicht sofort speichern — wird nach Erstellung nur einmal angezeigt, danach `(redacted)`
