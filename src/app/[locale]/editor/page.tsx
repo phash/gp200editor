@@ -3,10 +3,11 @@ import { useTranslations } from 'next-intl';
 import { FileUpload } from '@/components/FileUpload';
 import { EffectSlot } from '@/components/EffectSlot';
 import { EffectSlotCard } from '@/components/EffectSlotCard';
+import { PatchCableOverlay } from '@/components/PatchCableOverlay';
 import { usePreset } from '@/hooks/usePreset';
 import { PRSTDecoder } from '@/core/PRSTDecoder';
 import { PRSTEncoder } from '@/core/PRSTEncoder';
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import { useRouter } from '@/i18n/routing';
 import { useMidiDeviceContext } from '@/contexts/MidiDeviceContext';
 import { DeviceStatusBar } from '@/components/DeviceStatusBar';
@@ -38,6 +39,7 @@ export default function EditorPage() {
   const [firmwareWarningDismissed, setFirmwareWarningDismissed] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'pedals'>('list');
+  const pedalGridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch('/api/profile')
@@ -404,11 +406,20 @@ export default function EditorPage() {
 
       {/* Signal chain */}
       <div
+        ref={viewMode === 'pedals' ? pedalGridRef : undefined}
         className={viewMode === 'pedals'
-          ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8'
+          ? 'relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8'
           : 'flex flex-col gap-2 mb-8'}
         onDragEnd={() => { setDragIndex(null); setDragOverIndex(null); }}
       >
+        {viewMode === 'pedals' && preset && (
+          <PatchCableOverlay
+            containerRef={pedalGridRef}
+            count={preset.effects.length}
+            dragIndex={dragIndex}
+            dragOverIndex={dragOverIndex}
+          />
+        )}
         {preset.effects.map((slot, i) => {
           const slotProps = {
             key: `${i}-${slot.effectId}`,

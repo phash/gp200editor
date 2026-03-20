@@ -33,6 +33,7 @@ export function EffectSlotCard({ slot, index, onToggle, onChangeEffect, onParamC
       style={{
         animationDelay: `${index * 40}ms`,
         opacity: isDragOver ? 0.7 : 1,
+        zIndex: 1,
       }}
       data-testid={`effect-slot-${slot.slotIndex}`}
     >
