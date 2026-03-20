@@ -145,9 +145,16 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
         const preset = entry.presets.find(p => p.id === cp.presetId);
         if (preset && midiDevice.currentSlot !== null) {
           try {
+            const slot = midiDevice.currentSlot;
             const bytes = new Uint8Array(preset.binary);
             const decoded = new PRSTDecoder(bytes).decode();
-            await midiDevice.pushPreset(decoded, midiDevice.currentSlot);
+            await midiDevice.pushPreset(decoded, slot);
+            // Force reload: switch away and back to make device load new preset into DSP
+            const tempSlot = slot === 0 ? 1 : slot - 1;
+            await new Promise(r => setTimeout(r, 100));
+            midiDevice.sendSlotChange(tempSlot);
+            await new Promise(r => setTimeout(r, 100));
+            midiDevice.sendSlotChange(slot);
           } catch { /* push failed, skip */ }
         }
       } else if (cp.slot !== undefined) {
@@ -233,8 +240,8 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
         {pushStatusText}
       </div>
 
-      {/* Back button */}
-      <div className="mb-4">
+      {/* Navigation buttons */}
+      <div className="mb-4 flex gap-2">
         <button
           onClick={() => onNavigate({ type: 'overview' })}
           className="font-mono-display text-xs font-medium uppercase tracking-wider px-3 py-1.5 rounded transition-all duration-150"
@@ -252,6 +259,24 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
           }}
         >
           ← {t('back')}
+        </button>
+        <button
+          onClick={() => onNavigate({ type: 'edit', id: playlistId })}
+          className="font-mono-display text-xs font-medium uppercase tracking-wider px-3 py-1.5 rounded transition-all duration-150"
+          style={{
+            border: '1px solid var(--border-subtle)',
+            color: 'var(--text-secondary)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = 'var(--accent-amber)';
+            e.currentTarget.style.color = 'var(--accent-amber)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'var(--border-subtle)';
+            e.currentTarget.style.color = 'var(--text-secondary)';
+          }}
+        >
+          {t('edit')}
         </button>
       </div>
 
@@ -345,11 +370,31 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
               >
                 {t('timelineStop')}
               </button>
-              {timeline.state !== 'stopped' && (
-                <span className="font-mono-display text-xs ml-2" style={{ color: 'var(--text-muted)' }}>
-                  {Math.floor(timeline.elapsedSeconds / 60)}:{String(Math.floor(timeline.elapsedSeconds % 60)).padStart(2, '0')}
-                </span>
-              )}
+              {timeline.state !== 'stopped' && (() => {
+                const elapsed = timeline.elapsedSeconds;
+                const sorted = [...cuePoints].sort((a, b) => a.timeSeconds - b.timeSeconds);
+                const nextCp = sorted.find(cp => !timeline.firedIds.has(cp.id));
+                const nextIn = nextCp ? Math.max(0, nextCp.timeSeconds - elapsed) : null;
+                const nextPreset = nextCp?.presetId
+                  ? currentPresets.find(p => p.id === nextCp.presetId)
+                  : null;
+                return (
+                  <div className="flex items-center gap-3 ml-2">
+                    <span className="font-mono-display text-sm font-bold tabular-nums" style={{ color: 'var(--accent-amber)' }}>
+                      {Math.floor(elapsed / 60)}:{String(Math.floor(elapsed % 60)).padStart(2, '0')}
+                    </span>
+                    {nextCp && nextIn !== null && (
+                      <span className="font-mono-display text-xs" style={{ color: 'var(--text-muted)' }}>
+                        → {nextPreset ? (nextPreset.label || nextPreset.presetName) : (nextCp.action === 'effect-toggle' ? `${['PRE','WAH','DST','AMP','NR','CAB','EQ','MOD','DLY','RVB','VOL'][nextCp.blockIndex ?? 0]} ${nextCp.enabled ? 'AN' : 'AUS'}` : '?')}
+                        {' '}in {Math.ceil(nextIn)}s
+                      </span>
+                    )}
+                    {!nextCp && (
+                      <span className="font-mono-display text-xs" style={{ color: 'var(--accent-green)' }}>✓</span>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </div>
           <CuePointTable
