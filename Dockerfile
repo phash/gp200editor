@@ -33,12 +33,11 @@ COPY --from=builder --chown=nextjs:nodejs \
      /app/.next/static                       ./.next/static
 COPY --from=builder /app/node_modules/.prisma/client/ \
      ./node_modules/.prisma/client/
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/node_modules/@prisma/engines ./node_modules/@prisma/engines
 COPY --from=builder /app/prisma ./prisma
 COPY docker-entrypoint.sh ./
-USER root
-RUN chmod +x docker-entrypoint.sh
+RUN chmod +x docker-entrypoint.sh \
+ && npm install -g prisma@5.22.0
+
 USER nextjs
 
 EXPOSE 3000
