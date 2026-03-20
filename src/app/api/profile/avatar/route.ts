@@ -3,11 +3,15 @@ import sharp from 'sharp';
 import { prisma } from '@/lib/prisma';
 import { validateSession, refreshSessionCookie } from '@/lib/session';
 import { uploadAvatar, deleteAvatar } from '@/lib/storage';
+import { verifyCsrf } from '@/lib/csrf';
 
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 
 export async function POST(request: Request) {
+  if (!verifyCsrf(request)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
   const { user, session } = await validateSession();
   if (!user || !session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

@@ -33,7 +33,7 @@ export const patchProfileSchema = z.object({
     // Auto-prepend https:// if no protocol given
     if (!/^https?:\/\//i.test(v)) return `https://${v}`;
     return v;
-  }),
+  }).refine((v) => !v || /^https?:\/\//i.test(v), 'Only http and https URLs are allowed'),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;

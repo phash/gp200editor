@@ -29,7 +29,7 @@ export async function GET(_request: Request, context: RouteContext) {
   }
   const buffer = Buffer.concat(chunks);
 
-  const safeFilename = preset.name.replace(/[\\\"\/\x00]/g, '_').slice(0, 64);
+  const safeFilename = preset.name.replace(/[\\\"\/\x00\r\n]/g, '_').slice(0, 64);
 
   return new NextResponse(buffer, {
     headers: {

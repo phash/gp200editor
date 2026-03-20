@@ -6,10 +6,14 @@ import { patchPresetSchema } from '@/lib/validators';
 import { PRSTDecoder } from '@/core/PRSTDecoder';
 import type { GP200Preset } from '@/core/types';
 import { extractModules } from '@/core/extractModules';
+import { verifyCsrf } from '@/lib/csrf';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function PATCH(request: Request, context: RouteContext) {
+  if (!verifyCsrf(request)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
   const { user, session } = await validateSession();
   if (!user || !session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -137,6 +141,9 @@ export async function PATCH(request: Request, context: RouteContext) {
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {
+  if (!verifyCsrf(_request)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
   const { user, session } = await validateSession();
   if (!user || !session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

@@ -32,6 +32,7 @@ export default function EditorPage() {
   const [username, setUsername] = useState('');
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [firmwareWarningDismissed, setFirmwareWarningDismissed] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/profile')
@@ -50,23 +51,18 @@ export default function EditorPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const shareToken = params.get('share');
-    console.log('[Editor] share token:', shareToken, 'preset:', !!preset);
     if (!shareToken) return;
-    console.log('[Editor] fetching shared preset...');
     fetch(`/api/share/${shareToken}/download`)
       .then((res) => {
-        console.log('[Editor] download response:', res.status, res.headers.get('content-length'));
         if (!res.ok) throw new Error('Download failed: ' + res.status);
         return res.arrayBuffer();
       })
       .then((ab) => {
-        console.log('[Editor] downloaded', ab.byteLength, 'bytes, decoding...');
         const decoder = new PRSTDecoder(new Uint8Array(ab));
         loadPreset(decoder.decode());
-        console.log('[Editor] preset loaded!');
       })
-      .catch((err) => {
-        console.error('[Editor] Failed to load shared preset:', err);
+      .catch(() => {
+        setLoadError(t('loadError'));
       });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -97,8 +93,9 @@ export default function EditorPage() {
     try {
       const decoder = new PRSTDecoder(buffer);
       loadPreset(decoder.decode());
+      setLoadError(null);
     } catch (err) {
-      alert(`${t('loadError')}: ${err instanceof Error ? err.message : String(err)}`);
+      setLoadError(`${t('loadError')}: ${err instanceof Error ? err.message : String(err)}`);
     }
   }, [loadPreset, t]);
 
@@ -185,8 +182,9 @@ export default function EditorPage() {
     if (!preset) return;
     try {
       await midiDevice.pushPreset(preset, slot);
+      setLoadError(null);
     } catch {
-      alert(t('pushError'));
+      setLoadError(t('pushError'));
     } finally {
       setSlotBrowserMode(null);
     }
@@ -276,6 +274,21 @@ export default function EditorPage() {
           {t('title')}
         </h1>
         <FileUpload onFile={handleFile} />
+        {loadError && (
+          <div
+            className="mt-4 px-4 py-3 rounded-lg font-mono-display text-sm flex items-center justify-between"
+            style={{
+              background: 'rgba(239,68,68,0.1)',
+              border: '1px solid rgba(239,68,68,0.3)',
+              color: '#ef4444',
+            }}
+          >
+            <span>{loadError}</span>
+            <button onClick={() => setLoadError(null)} className="ml-3 font-bold" style={{ color: '#ef4444' }}>
+              ✕
+            </button>
+          </div>
+        )}
         {slotBrowserMode && (
           <DeviceSlotBrowser
             mode={slotBrowserMode}
@@ -496,6 +509,23 @@ export default function EditorPage() {
           </span>
         ) : null}
       </div>
+
+      {/* Error banner */}
+      {loadError && (
+        <div
+          className="mt-4 px-4 py-3 rounded-lg font-mono-display text-sm flex items-center justify-between"
+          style={{
+            background: 'rgba(239,68,68,0.1)',
+            border: '1px solid rgba(239,68,68,0.3)',
+            color: '#ef4444',
+          }}
+        >
+          <span>{loadError}</span>
+          <button onClick={() => setLoadError(null)} className="ml-3 font-bold" style={{ color: '#ef4444' }}>
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Save Preset Dialog */}
       {showSaveDialog && (

@@ -15,6 +15,7 @@ export default function ProfileEditForm({ initialData, username }: Props) {
   const [website, setWebsite] = useState(initialData.website);
   const [avatarUrl, setAvatarUrl] = useState(initialData.avatarUrl);
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function handleSave(e: React.FormEvent) {
@@ -35,13 +36,18 @@ export default function ProfileEditForm({ initialData, username }: Props) {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setUploading(true);
     const form = new FormData();
     form.append('avatar', file);
 
-    const res = await fetch('/api/profile/avatar', { method: 'POST', body: form });
-    if (res.ok) {
-      const data = await res.json() as { avatarUrl: string };
-      setAvatarUrl(data.avatarUrl);
+    try {
+      const res = await fetch('/api/profile/avatar', { method: 'POST', body: form });
+      if (res.ok) {
+        const data = await res.json() as { avatarUrl: string };
+        setAvatarUrl(data.avatarUrl);
+      }
+    } finally {
+      setUploading(false);
     }
   }
 
@@ -55,7 +61,7 @@ export default function ProfileEditForm({ initialData, username }: Props) {
         >
           {t('avatarLabel')}
         </p>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4" style={{ opacity: uploading ? 0.5 : 1, transition: 'opacity 0.2s' }}>
           {avatarUrl ? (
             <div
               className="rounded-full p-0.5 flex-shrink-0"

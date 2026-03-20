@@ -4,8 +4,15 @@ import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { lucia } from '@/lib/auth';
 import { loginSchema } from '@/lib/validators';
+import { rateLimit } from '@/lib/rateLimit';
 
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+  const { allowed } = rateLimit(`login:${ip}`, 10, 15 * 60 * 1000);
+  if (!allowed) {
+    return NextResponse.json({ error: 'Too many attempts. Please try again later.' }, { status: 429 });
+  }
+
   const body = await request.json().catch(() => null);
   const parsed = loginSchema.safeParse(body);
   if (!parsed.success) {

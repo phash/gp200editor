@@ -2,12 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { sendVerificationEmail } from '@/lib/email';
+import { rateLimit } from '@/lib/rateLimit';
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
   const email = body?.email;
+  const locale = (body?.locale === 'de' ? 'de' : 'en') as string;
   if (!email || typeof email !== 'string') {
     return NextResponse.json({ error: 'Email required' }, { status: 400 });
+  }
+
+  const { allowed } = rateLimit(`resend:${email}`, 3, 60 * 60 * 1000);
+  if (!allowed) {
+    return NextResponse.json({ error: 'Too many attempts. Please try again later.' }, { status: 429 });
   }
 
   const user = await prisma.user.findUnique({ where: { email } });
@@ -35,7 +42,7 @@ export async function POST(request: NextRequest) {
   });
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3320';
-  const verifyUrl = `${appUrl}/en/auth/verify-email?token=${token}`;
+  const verifyUrl = `${appUrl}/${locale}/auth/verify-email?token=${token}`;
 
   try {
     await sendVerificationEmail(email, verifyUrl);

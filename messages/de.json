@@ -43,7 +43,10 @@
     "customStyle": "Eigener Style…",
     "customStylePlaceholder": "z.B. Progressive Metal",
     "cancel": "Abbrechen",
-    "styleFilter": "Style"
+    "styleFilter": "Style",
+    "author": "Autor",
+    "styleLabel": "Style",
+    "noteLabel": "Notiz"
   },
   "auth": {
     "loginTitle": "Anmelden",
@@ -139,7 +142,8 @@
     "by": "von",
     "loadMore": "Mehr laden",
     "download": "Herunterladen",
-    "openInEditor": "Im Editor öffnen"
+    "openInEditor": "Im Editor öffnen",
+    "loading": "Laden…"
   },
   "device": {
     "connect": "GP-200 verbinden",
@@ -175,27 +179,27 @@
     "gettingStartedSave": "Klicke auf \"Preset als Datei speichern\", um dein bearbeitetes Preset als .prst-Datei herunterzuladen.",
     "gettingStartedReorder": "Ziehe Effekt-Slots per Drag & Drop, um die Signalkette umzuordnen.",
     "usbMidiTitle": "USB-MIDI-Verbindung",
-    "usbMidiBrowser": "Web MIDI wird nur in Chrome und Edge unterstuetzt. Firefox und Safari sind nicht kompatibel.",
-    "usbMidiConnect": "Verbinde dein GP-200 per USB und klicke auf \"GP-200 verbinden\". Der Browser fragt nach der Berechtigung fuer das MIDI-Geraet.",
-    "usbMidiLive": "Aenderungen im Editor werden sofort an das Geraet gesendet: Effekte ein-/ausschalten, Parameter aendern, Signalkette umordnen.",
-    "usbMidiPullPush": "Verwende \"Laden\", um ein Preset vom Geraet zu holen, und \"Speichern\", um es zurueck auf das Geraet zu schreiben.",
+    "usbMidiBrowser": "Web MIDI wird nur in Chrome und Edge unterstützt. Firefox und Safari sind nicht kompatibel.",
+    "usbMidiConnect": "Verbinde dein GP-200 per USB und klicke auf \"GP-200 verbinden\". Der Browser fragt nach der Berechtigung für das MIDI-Gerät.",
+    "usbMidiLive": "Änderungen im Editor werden sofort an das Gerät gesendet: Effekte ein-/ausschalten, Parameter ändern, Signalkette umordnen.",
+    "usbMidiPullPush": "Verwende \"Laden\", um ein Preset vom Gerät zu holen, und \"Speichern\", um es zurück auf das Gerät zu schreiben.",
     "galleryTitle": "Galerie",
-    "galleryUpload": "Melde dich an und lade Presets in dein Profil hoch. Veroeffentliche sie in der Galerie, damit andere sie entdecken koennen.",
-    "galleryShare": "Jedes Preset erhaelt einen einzigartigen Share-Link. Du kannst den Link jederzeit zuruecksetzen, um den Zugriff zu widerrufen.",
+    "galleryUpload": "Melde dich an und lade Presets in dein Profil hoch. Veröffentliche sie in der Galerie, damit andere sie entdecken können.",
+    "galleryShare": "Jedes Preset erhält einen einzigartigen Share-Link. Du kannst den Link jederzeit zurücksetzen, um den Zugriff zu widerrufen.",
     "galleryDownload": "Durchsuche die Galerie nach Presets anderer Nutzer und lade sie direkt herunter.",
     "bankNavTitle": "Bank-Navigation",
-    "bankNavTabs": "Wenn du ein Preset per USB lädst, wird die gesamte Bank (A/B/C/D) geladen. Wechsle zwischen den vier Slots ueber die Tabs.",
-    "bankNavPrevNext": "Verwende die Pfeiltasten links und rechts der Tabs, um zur vorherigen oder naechsten Bank zu navigieren.",
-    "shortcutsTitle": "Tastenkuerzel",
-    "shortcutsNone": "Derzeit gibt es keine speziellen Tastenkuerzel. Alle Funktionen sind ueber die Oberflaeche erreichbar.",
-    "faqTitle": "Haeufige Fragen (FAQ)",
-    "faqBrowserQ": "Welche Browser werden unterstuetzt?",
-    "faqBrowserA": "Der Editor funktioniert in allen modernen Browsern. Fuer USB-MIDI-Verbindungen wird Chrome oder Edge benoetigt.",
-    "faqFirmwareQ": "Welche Firmware-Version wird unterstuetzt?",
-    "faqFirmwareA": "Die App wurde mit Firmware 1.2 getestet. Andere Versionen koennen funktionieren, sind aber nicht offiziell unterstuetzt.",
+    "bankNavTabs": "Wenn du ein Preset per USB lädst, wird die gesamte Bank (A/B/C/D) geladen. Wechsle zwischen den vier Slots über die Tabs.",
+    "bankNavPrevNext": "Verwende die Pfeiltasten links und rechts der Tabs, um zur vorherigen oder nächsten Bank zu navigieren.",
+    "shortcutsTitle": "Tastenkürzel",
+    "shortcutsNone": "Derzeit gibt es keine speziellen Tastenkürzel. Alle Funktionen sind über die Oberfläche erreichbar.",
+    "faqTitle": "Häufige Fragen (FAQ)",
+    "faqBrowserQ": "Welche Browser werden unterstützt?",
+    "faqBrowserA": "Der Editor funktioniert in allen modernen Browsern. Für USB-MIDI-Verbindungen wird Chrome oder Edge benötigt.",
+    "faqFirmwareQ": "Welche Firmware-Version wird unterstützt?",
+    "faqFirmwareA": "Die App wurde mit Firmware 1.2 getestet. Andere Versionen können funktionieren, sind aber nicht offiziell unterstützt.",
     "faqFormatQ": "Was ist das .prst-Format?",
-    "faqFormatA": "Das .prst-Format ist das proprietaere Preset-Dateiformat des Valeton GP-200. Jede Datei ist exakt 1224 Bytes gross und enthaelt 11 Effekt-Slots mit jeweils bis zu 15 Parametern.",
+    "faqFormatA": "Das .prst-Format ist das proprietäre Preset-Dateiformat des Valeton GP-200. Jede Datei ist exakt 1224 Bytes groß und enthält 11 Effekt-Slots mit jeweils bis zu 15 Parametern.",
     "faqOfflineQ": "Funktioniert die App offline?",
-    "faqOfflineA": "Der Editor selbst funktioniert im Browser, aber Galerie- und Profil-Funktionen benoetigen eine Internetverbindung."
+    "faqOfflineA": "Der Editor selbst funktioniert im Browser, aber Galerie- und Profil-Funktionen benötigen eine Internetverbindung."
   }
 }

@@ -10,9 +10,11 @@ interface PasswordInputProps {
   required?: boolean;
   minLength?: number;
   label: string;
+  showLabel?: string;
+  hideLabel?: string;
 }
 
-export function PasswordInput({ id, name, value, onChange, required, minLength, label }: PasswordInputProps) {
+export function PasswordInput({ id, name, value, onChange, required, minLength, label, showLabel = 'Show password', hideLabel = 'Hide password' }: PasswordInputProps) {
   const [visible, setVisible] = useState(false);
 
   return (
@@ -51,6 +53,7 @@ export function PasswordInput({ id, name, value, onChange, required, minLength, 
         <button
           type="button"
           onClick={() => setVisible(!visible)}
+          aria-label={visible ? hideLabel : showLabel}
           className="absolute right-2 top-1/2 -translate-y-1/2 text-sm px-1"
           style={{ color: 'var(--text-muted)', background: 'transparent', border: 'none' }}
           tabIndex={-1}

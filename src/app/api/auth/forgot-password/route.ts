@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { sendPasswordResetEmail } from '@/lib/email';
 import { forgotPasswordSchema } from '@/lib/validators';
+import { rateLimit } from '@/lib/rateLimit';
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
@@ -12,6 +13,12 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) return NextResponse.json({});
 
   const { email } = parsed.data;
+  const locale = (body?.locale === 'de' ? 'de' : 'en') as string;
+
+  const { allowed } = rateLimit(`forgot:${email}`, 3, 60 * 60 * 1000);
+  if (!allowed) {
+    return NextResponse.json({ error: 'Too many attempts. Please try again later.' }, { status: 429 });
+  }
   const user = await prisma.user.findUnique({ where: { email } });
 
   if (user) {
@@ -28,7 +35,7 @@ export async function POST(request: NextRequest) {
       data: { tokenHash, userId: user.id, expiresAt },
     });
 
-    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/en/auth/reset-password?token=${rawToken}`;
+    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${locale}/auth/reset-password?token=${rawToken}`;
     // SMTP errors propagate as 500 (intentional — user knows to retry)
     try {
       await sendPasswordResetEmail(email, resetUrl);

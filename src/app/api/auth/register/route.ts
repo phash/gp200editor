@@ -5,8 +5,15 @@ import { prisma } from '@/lib/prisma';
 import { registerSchema } from '@/lib/validators';
 import { sendVerificationEmail } from '@/lib/email';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { rateLimit } from '@/lib/rateLimit';
 
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+  const { allowed } = rateLimit(`register:${ip}`, 5, 15 * 60 * 1000);
+  if (!allowed) {
+    return NextResponse.json({ error: 'Too many attempts. Please try again later.' }, { status: 429 });
+  }
+
   const body = await request.json().catch(() => null);
   const parsed = registerSchema.safeParse(body);
   if (!parsed.success) {
@@ -17,12 +24,16 @@ export async function POST(request: NextRequest) {
   }
 
   const { email, username, password } = parsed.data;
+  const locale = (body?.locale === 'de' ? 'de' : 'en') as string;
 
   const existing = await prisma.user.findFirst({
     where: { OR: [{ email }, { username }] },
     select: { email: true, username: true },
   });
 
+  // Distinct error messages are an intentional UX choice. Rate limiting (#25) is
+  // in place to mitigate enumeration attacks, and the trade-off favours clear
+  // feedback so users know which field to correct.
   if (existing?.email === email) {
     return NextResponse.json({ error: 'Email already taken' }, { status: 409 });
   }
@@ -60,7 +71,7 @@ export async function POST(request: NextRequest) {
 
   // Send verification email
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3320';
-  const verifyUrl = `${appUrl}/en/auth/verify-email?token=${token}`;
+  const verifyUrl = `${appUrl}/${locale}/auth/verify-email?token=${token}`;
 
   try {
     await sendVerificationEmail(email, verifyUrl);

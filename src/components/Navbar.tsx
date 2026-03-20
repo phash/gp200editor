@@ -11,6 +11,7 @@ export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const [username, setUsername] = useState<string | null>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const otherLocale = locale === 'de' ? 'en' : 'de';
 
@@ -38,14 +39,27 @@ export function Navbar() {
     <nav
       role="navigation"
       aria-label={t('title')}
-      className="flex items-center justify-between px-6 py-3 border-b"
+      className="relative flex items-center justify-between px-6 py-3 border-b"
       style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
     >
       <Link href="/" className="font-mono-display text-lg font-bold tracking-tight" data-testid="nav-home-link"
         style={{ color: 'var(--accent-amber)' }}>
         {t('title')}
       </Link>
-      <div className="flex gap-5 items-center text-sm">
+      {/* Hamburger button — mobile only */}
+      <button
+        className="md:hidden flex flex-col gap-1 p-1"
+        onClick={() => setMobileOpen(!mobileOpen)}
+        aria-label="Menu"
+        style={{ color: 'var(--text-secondary)' }}
+      >
+        <span className="block w-5 h-0.5" style={{ background: 'currentColor' }} />
+        <span className="block w-5 h-0.5" style={{ background: 'currentColor' }} />
+        <span className="block w-5 h-0.5" style={{ background: 'currentColor' }} />
+      </button>
+
+      {/* Desktop nav links */}
+      <div className="hidden md:flex gap-5 items-center text-sm">
         <Link href="/" className="transition-colors hover:text-[var(--accent-amber)]"
           style={{ color: pathname === '/' ? 'var(--accent-amber)' : 'var(--text-secondary)' }}
           data-testid="nav-link-home">
@@ -156,6 +170,63 @@ export function Navbar() {
           {otherLocale.toUpperCase()}
         </button>
       </div>
+
+      {/* Mobile nav menu */}
+      {mobileOpen && (
+        <div
+          className="md:hidden absolute top-full left-0 right-0 flex flex-col gap-3 px-6 py-4 text-sm z-40"
+          style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-subtle)' }}
+        >
+          <Link href="/" onClick={() => setMobileOpen(false)} className="transition-colors hover:text-[var(--accent-amber)]"
+            style={{ color: pathname === '/' ? 'var(--accent-amber)' : 'var(--text-secondary)' }}>
+            {t('home')}
+          </Link>
+          <Link href="/editor" onClick={() => setMobileOpen(false)} className="transition-colors hover:text-[var(--accent-amber)]"
+            style={{ color: pathname === '/editor' ? 'var(--accent-amber)' : 'var(--text-secondary)' }}>
+            {t('editor')}
+          </Link>
+          <Link href="/gallery" onClick={() => setMobileOpen(false)} className="transition-colors hover:text-[var(--accent-amber)]"
+            style={{ color: pathname === '/gallery' ? 'var(--accent-amber)' : 'var(--text-secondary)' }}>
+            {t('gallery')}
+          </Link>
+          <Link href="/help" onClick={() => setMobileOpen(false)} className="transition-colors hover:text-[var(--accent-amber)]"
+            style={{ color: pathname === '/help' ? 'var(--accent-amber)' : 'var(--text-secondary)' }}>
+            {t('help')}
+          </Link>
+          {username ? (
+            <>
+              <Link href="/profile" onClick={() => setMobileOpen(false)} className="transition-colors hover:text-[var(--accent-amber)]"
+                style={{ color: 'var(--text-secondary)' }}>
+                {t('profile')}
+              </Link>
+              <Link href="/presets" onClick={() => setMobileOpen(false)} className="transition-colors hover:text-[var(--accent-amber)]"
+                style={{ color: 'var(--text-secondary)' }}>
+                {t('presets')}
+              </Link>
+              <button onClick={() => { setMobileOpen(false); handleLogout(); }}
+                className="text-left transition-colors hover:text-[var(--accent-amber)]"
+                style={{ color: 'var(--text-secondary)' }}>
+                {t('logout')}
+              </button>
+            </>
+          ) : (
+            <Link href="/auth/login" onClick={() => setMobileOpen(false)} className="transition-colors hover:text-[var(--accent-amber)]"
+              style={{ color: 'var(--text-secondary)' }}>
+              {tAuth('login')}
+            </Link>
+          )}
+          <div className="flex gap-3 items-center pt-2" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+            <button
+              onClick={switchLocale}
+              aria-label={t('switchLocale')}
+              className="font-mono-display text-xs px-2.5 py-1 rounded"
+              style={{ border: '1px solid var(--border-active)', color: 'var(--text-secondary)' }}
+            >
+              {otherLocale.toUpperCase()}
+            </button>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }

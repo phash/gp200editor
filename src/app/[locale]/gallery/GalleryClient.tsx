@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/routing';
 import { MODULE_COLORS } from '@/core/effectNames';
 
 type GalleryPreset = {
@@ -164,7 +165,17 @@ export function GalleryClient() {
       </div>
 
       {/* Results */}
-      {presets.length === 0 && !loading ? (
+      {loading && presets.length === 0 ? (
+        <div className="flex items-center gap-2 py-8">
+          <span
+            className="inline-block w-2 h-2 rounded-full animate-pulse"
+            style={{ background: 'var(--accent-amber)' }}
+          />
+          <span className="font-mono-display text-sm" style={{ color: 'var(--text-muted)' }}>
+            {t('loading')}
+          </span>
+        </div>
+      ) : presets.length === 0 && !loading ? (
         <p style={{ color: 'var(--text-muted)' }}>{t('noResults')}</p>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
@@ -242,7 +253,7 @@ export function GalleryClient() {
                   {preset.downloadCount} {t('downloads')}
                 </span>
                 <div className="flex gap-2">
-                  <a
+                  <Link
                     href={`/editor?share=${preset.shareToken}`}
                     className="font-mono-display text-[10px] font-bold tracking-wider uppercase px-3 py-1 rounded transition-all duration-150 hover:!bg-[var(--accent-amber)] hover:!text-[var(--bg-primary)]"
                     style={{
@@ -252,7 +263,7 @@ export function GalleryClient() {
                     }}
                   >
                     {t('openInEditor')}
-                  </a>
+                  </Link>
                   <a
                     href={`/api/share/${preset.shareToken}/download`}
                     className="font-mono-display text-[10px] font-bold tracking-wider uppercase px-3 py-1 rounded transition-all duration-150 hover:!bg-[var(--accent-amber)] hover:!text-[var(--bg-primary)]"

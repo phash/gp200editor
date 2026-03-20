@@ -6,8 +6,12 @@ import { uploadPresetSchema } from '@/lib/validators';
 import { PRSTDecoder } from '@/core/PRSTDecoder';
 import type { GP200Preset } from '@/core/types';
 import { extractModules } from '@/core/extractModules';
+import { verifyCsrf } from '@/lib/csrf';
 
 export async function POST(request: Request) {
+  if (!verifyCsrf(request)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
   const { user, session } = await validateSession();
   if (!user || !session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

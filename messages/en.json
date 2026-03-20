@@ -43,7 +43,10 @@
     "customStyle": "Custom style…",
     "customStylePlaceholder": "e.g. Progressive Metal",
     "cancel": "Cancel",
-    "styleFilter": "Style"
+    "styleFilter": "Style",
+    "author": "Author",
+    "styleLabel": "Style",
+    "noteLabel": "Note"
   },
   "auth": {
     "loginTitle": "Sign In",
@@ -139,7 +142,8 @@
     "by": "by",
     "loadMore": "Load More",
     "download": "Download",
-    "openInEditor": "Open in Editor"
+    "openInEditor": "Open in Editor",
+    "loading": "Loading…"
   },
   "device": {
     "connect": "Connect GP-200",

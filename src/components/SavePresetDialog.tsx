@@ -35,6 +35,7 @@ export function SavePresetDialog({ presetName, defaultAuthor, onSave, onCancel, 
       className="fixed inset-0 z-50 flex items-center justify-center"
       style={{ background: 'rgba(0,0,0,0.7)' }}
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
+      onKeyDown={(e) => { if (e.key === 'Escape') onCancel(); }}
     >
       <div
         className="w-full max-w-md rounded-lg p-6"
@@ -62,7 +63,7 @@ export function SavePresetDialog({ presetName, defaultAuthor, onSave, onCancel, 
               htmlFor="save-author"
               style={{ color: 'var(--text-secondary)' }}
             >
-              Author
+              {t('author')}
             </label>
             <input
               id="save-author"
@@ -70,6 +71,7 @@ export function SavePresetDialog({ presetName, defaultAuthor, onSave, onCancel, 
               value={author}
               onChange={(e) => setAuthor(e.target.value)}
               maxLength={50}
+              autoFocus
               className="w-full rounded px-3 py-2 text-sm focus:outline-none"
               style={{
                 background: 'var(--bg-elevated)',
@@ -88,7 +90,7 @@ export function SavePresetDialog({ presetName, defaultAuthor, onSave, onCancel, 
               htmlFor="save-style"
               style={{ color: 'var(--text-secondary)' }}
             >
-              Style
+              {t('styleLabel')}
             </label>
             <select
               id="save-style"
@@ -132,7 +134,7 @@ export function SavePresetDialog({ presetName, defaultAuthor, onSave, onCancel, 
               htmlFor="save-note"
               style={{ color: 'var(--text-secondary)' }}
             >
-              Note
+              {t('noteLabel')}
             </label>
             <textarea
               id="save-note"
