@@ -136,14 +136,27 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
     await persistPlaylist(updated);
   }, [playlist, player.currentEntry, persistPlaylist]);
 
-  const onCueFire = useCallback((cp: CuePoint) => {
+  const onCueFire = useCallback(async (cp: CuePoint) => {
     if (midiDevice.status !== 'connected') return;
-    if (cp.action === 'preset-switch' && cp.slot !== undefined) {
-      midiDevice.sendSlotChange(cp.slot);
+    if (cp.action === 'preset-switch') {
+      // Prefer presetId (from playlist), fallback to raw slot number
+      const entry = player.currentEntry;
+      if (cp.presetId && entry) {
+        const preset = entry.presets.find(p => p.id === cp.presetId);
+        if (preset && midiDevice.currentSlot !== null) {
+          try {
+            const bytes = new Uint8Array(preset.binary);
+            const decoded = new PRSTDecoder(bytes).decode();
+            await midiDevice.pushPreset(decoded, midiDevice.currentSlot);
+          } catch { /* push failed, skip */ }
+        }
+      } else if (cp.slot !== undefined) {
+        midiDevice.sendSlotChange(cp.slot);
+      }
     } else if (cp.action === 'effect-toggle' && cp.blockIndex !== undefined) {
       midiDevice.sendToggle(cp.blockIndex, cp.enabled ?? false);
     }
-  }, [midiDevice]);
+  }, [midiDevice, player]);
 
   const timeline = useTimelinePlayer(cuePoints, onCueFire);
 
@@ -274,11 +287,16 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
                 key={preset.id}
                 role="tab"
                 aria-selected={isActive}
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('text/preset-id', preset.id);
+                  e.dataTransfer.effectAllowed = 'copy';
+                }}
                 onClick={() => {
                   player.goToPreset(idx);
                   pushCurrentPreset();
                 }}
-                className="font-mono-display text-xs font-bold uppercase tracking-wider px-4 py-2 rounded transition-all duration-150"
+                className="font-mono-display text-xs font-bold uppercase tracking-wider px-4 py-2 rounded transition-all duration-150 cursor-grab active:cursor-grabbing"
                 style={{
                   background: isActive ? 'var(--accent-amber)' : 'transparent',
                   color: isActive ? 'var(--bg-deep)' : 'var(--text-secondary)',
@@ -336,6 +354,7 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
           </div>
           <CuePointTable
             cuePoints={cuePoints}
+            presets={currentPresets}
             onAdd={handleAddCuePoint}
             onUpdate={handleUpdateCuePoint}
             onDelete={handleDeleteCuePoint}

@@ -2,8 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import type { CuePoint } from '@/lib/playlistDb';
-import { SysExCodec } from '@/core/SysExCodec';
+import type { CuePoint, PlaylistPreset } from '@/lib/playlistDb';
 
 const BLOCK_NAMES = ['PRE', 'WAH', 'DST', 'AMP', 'NR', 'CAB', 'EQ', 'MOD', 'DLY', 'RVB', 'VOL'];
 
@@ -33,6 +32,7 @@ export function parseTime(str: string): number {
 
 interface CuePointTableProps {
   cuePoints: CuePoint[];
+  presets: PlaylistPreset[];  // song's presets for preset-switch dropdown
   onAdd: () => void;
   onUpdate: (id: string, patch: Partial<CuePoint>) => void;
   onDelete: (id: string) => void;
@@ -45,6 +45,7 @@ interface CuePointTableProps {
 
 export function CuePointTable({
   cuePoints,
+  presets,
   onAdd,
   onUpdate,
   onDelete,
@@ -120,6 +121,7 @@ export function CuePointTable({
             <CuePointRow
               key={cp.id}
               cuePoint={cp}
+              presets={presets}
               onUpdate={onUpdate}
               onDelete={onDelete}
               isFired={firedIds.has(cp.id)}
@@ -150,6 +152,7 @@ export function CuePointTable({
 
 interface CuePointRowProps {
   cuePoint: CuePoint;
+  presets: PlaylistPreset[];
   onUpdate: (id: string, patch: Partial<CuePoint>) => void;
   onDelete: (id: string) => void;
   isFired: boolean;
@@ -159,6 +162,7 @@ interface CuePointRowProps {
 
 function CuePointRow({
   cuePoint,
+  presets,
   onUpdate,
   onDelete,
   isFired,
@@ -234,7 +238,7 @@ function CuePointRow({
 
       {/* Ziel */}
       {cuePoint.action === 'preset-switch' ? (
-        <PresetSwitchTarget cuePoint={cuePoint} onUpdate={onUpdate} />
+        <PresetSwitchTarget cuePoint={cuePoint} presets={presets} onUpdate={onUpdate} />
       ) : (
         <EffectToggleTarget cuePoint={cuePoint} onUpdate={onUpdate} />
       )}
@@ -256,45 +260,49 @@ function CuePointRow({
 
 function PresetSwitchTarget({
   cuePoint,
+  presets,
   onUpdate,
 }: {
   cuePoint: CuePoint;
+  presets: PlaylistPreset[];
   onUpdate: (id: string, patch: Partial<CuePoint>) => void;
 }) {
   const t = useTranslations('playlists');
-  const [slotInput, setSlotInput] = useState(
-    cuePoint.slot != null ? SysExCodec.slotToLabel(cuePoint.slot) : '1A',
-  );
-
-  const handleBlur = () => {
-    try {
-      const slot = SysExCodec.labelToSlot(slotInput.toUpperCase());
-      setSlotInput(SysExCodec.slotToLabel(slot));
-      if (slot !== cuePoint.slot) {
-        onUpdate(cuePoint.id, { slot });
-      }
-    } catch {
-      // Reset to current value on invalid input
-      setSlotInput(
-        cuePoint.slot != null ? SysExCodec.slotToLabel(cuePoint.slot) : '1A',
-      );
-    }
-  };
+  const [dragOver, setDragOver] = useState(false);
 
   return (
-    <input
-      type="text"
-      value={slotInput}
-      onChange={(e) => setSlotInput(e.target.value)}
-      onBlur={handleBlur}
-      className="w-full rounded px-1.5 py-0.5 text-xs font-mono-display"
-      style={{
-        background: 'var(--bg-elevated)',
-        border: '1px solid var(--border-active)',
-        color: 'var(--text-primary)',
+    <div
+      className="relative"
+      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setDragOver(false);
+        const presetId = e.dataTransfer.getData('text/preset-id');
+        if (presetId) {
+          onUpdate(cuePoint.id, { presetId });
+        }
       }}
-      aria-label={t('targetLabel')}
-    />
+    >
+      <select
+        value={cuePoint.presetId ?? ''}
+        onChange={(e) => onUpdate(cuePoint.id, { presetId: e.target.value || undefined })}
+        className="w-full rounded px-1.5 py-0.5 text-xs font-mono-display"
+        style={{
+          background: dragOver ? 'var(--glow-amber)' : 'var(--bg-elevated)',
+          border: dragOver ? '1px solid var(--accent-amber)' : '1px solid var(--border-active)',
+          color: 'var(--text-primary)',
+        }}
+        aria-label={t('targetLabel')}
+      >
+        <option value="">— {t('presetSwitch')} —</option>
+        {presets.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.label || p.presetName}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 }
 

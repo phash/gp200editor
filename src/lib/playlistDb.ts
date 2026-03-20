@@ -13,7 +13,8 @@ export interface CuePoint {
   id: string;
   timeSeconds: number;
   action: 'preset-switch' | 'effect-toggle';
-  slot?: number;        // preset-switch: GP-200 slot 0-255
+  slot?: number;        // preset-switch: GP-200 slot 0-255 (legacy)
+  presetId?: string;    // preset-switch: references PlaylistPreset.id
   blockIndex?: number;  // effect-toggle: 0-10
   enabled?: boolean;    // effect-toggle: on/off
 }
