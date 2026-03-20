@@ -7,11 +7,12 @@ import { PRSTDecoder } from '@/core/PRSTDecoder';
 import { PRSTEncoder } from '@/core/PRSTEncoder';
 import { useCallback, useState, useEffect } from 'react';
 import { useRouter } from '@/i18n/routing';
-import { useMidiDevice } from '@/hooks/useMidiDevice';
+import { useMidiDeviceContext } from '@/contexts/MidiDeviceContext';
 import { DeviceStatusBar } from '@/components/DeviceStatusBar';
 import { DeviceSlotBrowser } from '@/components/DeviceSlotBrowser';
 import { FirmwareWarningBanner } from '@/components/FirmwareWarningBanner';
 import { SavePresetDialog } from '@/components/SavePresetDialog';
+import { AddToPlaylistDialog } from '@/components/AddToPlaylistDialog';
 import { SysExCodec } from '@/core/SysExCodec';
 import type { GP200Preset } from '@/core/types';
 
@@ -19,7 +20,7 @@ export default function EditorPage() {
   const t = useTranslations('editor');
   const router = useRouter();
   const { preset, loadPreset, setPatchName, toggleEffect, changeEffect, reorderEffects, setParam } = usePreset();
-  const midiDevice = useMidiDevice();
+  const midiDevice = useMidiDeviceContext();
   const [slotBrowserMode, setSlotBrowserMode] = useState<'pull' | 'push' | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -31,6 +32,7 @@ export default function EditorPage() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [username, setUsername] = useState('');
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showPlaylistDialog, setShowPlaylistDialog] = useState(false);
   const [firmwareWarningDismissed, setFirmwareWarningDismissed] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -66,11 +68,6 @@ export default function EditorPage() {
       });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Disconnect MIDI on page unload to abort any running loadPresetNames loop
-  useEffect(() => {
-    return () => { midiDevice.disconnect(); };
-  }, [midiDevice.disconnect]);
 
   // Reset firmware warning when device disconnects
   useEffect(() => {
@@ -433,6 +430,14 @@ export default function EditorPage() {
         >
           {t('download')}
         </button>
+        <button
+          onClick={() => setShowPlaylistDialog(true)}
+          disabled={!preset}
+          className="rounded-lg px-4 py-2 font-mono-display text-sm font-bold transition-colors disabled:opacity-50"
+          style={{ color: 'var(--accent-amber)', border: '1px solid var(--accent-amber)' }}
+        >
+          {t('addToPlaylist')}
+        </button>
         <label
           className="font-mono-display text-sm font-bold tracking-wider uppercase px-6 py-3 rounded-lg transition-all duration-200 cursor-pointer"
           style={{
@@ -567,6 +572,14 @@ export default function EditorPage() {
           currentSlot={midiDevice.currentSlot}
           onConfirm={slotBrowserMode === 'pull' ? handlePullConfirm : handlePushConfirm}
           onCancel={() => setSlotBrowserMode(null)}
+        />
+      )}
+
+      {showPlaylistDialog && preset && (
+        <AddToPlaylistDialog
+          presetName={preset.patchName}
+          presetBinary={encodePreset()!}
+          onClose={() => setShowPlaylistDialog(false)}
         />
       )}
     </div>
