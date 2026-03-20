@@ -66,6 +66,7 @@ export const patchPresetSchema = z.object({
 export const galleryQuerySchema = z.object({
   q: z.string().max(100).optional(),
   modules: z.string().optional().transform((v) => v ? v.split(',').filter(Boolean) : undefined),
+  effects: z.string().optional().transform((v) => v ? v.split(',').filter(Boolean) : undefined),
   style: z.string().max(50).optional(),
   sort: z.enum(['newest', 'popular']).default('newest'),
   page: z.string().optional().transform((v) => Math.max(1, parseInt(v ?? '1', 10) || 1)),

@@ -5,7 +5,7 @@ import { uploadPreset, deletePreset } from '@/lib/storage';
 import { patchPresetSchema } from '@/lib/validators';
 import { PRSTDecoder } from '@/core/PRSTDecoder';
 import type { GP200Preset } from '@/core/types';
-import { extractModules } from '@/core/extractModules';
+import { extractModules, extractEffects } from '@/core/extractModules';
 import { verifyCsrf } from '@/lib/csrf';
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -69,6 +69,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     description?: string | null;
     tags?: string[];
     modules?: string[];
+    effects?: string[];
     presetKey?: string;
   } = {};
 
@@ -114,6 +115,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       updateData.name = decoded.patchName.trim() || 'Untitled';
     }
     updateData.modules = extractModules(decoded);
+    updateData.effects = extractEffects(decoded);
   }
 
   // 2. Update DB

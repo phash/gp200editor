@@ -38,6 +38,7 @@ model Preset {
   downloadCount Int      @default(0)
   public        Boolean  @default(false)
   modules       String[]
+  effects       String[]   // individual effect names (e.g. "UK 800", "Green OD")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)

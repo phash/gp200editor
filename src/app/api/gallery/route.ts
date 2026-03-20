@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
   }
 
-  const { q, modules, style, sort, page, limit } = parsed.data;
+  const { q, modules, effects, style, sort, page, limit } = parsed.data;
 
   const where: Prisma.PresetWhereInput = { public: true };
 
@@ -22,7 +22,11 @@ export async function GET(request: NextRequest) {
     ];
   }
 
-  if (modules && modules.length > 0) {
+  if (effects && effects.length > 0) {
+    // Fine-grained: filter by specific effect names
+    where.effects = { hasSome: effects };
+  } else if (modules && modules.length > 0) {
+    // Coarse: filter by module category
     where.modules = { hasSome: modules };
   }
 
@@ -45,6 +49,7 @@ export async function GET(request: NextRequest) {
         description: true,
         tags: true,
         modules: true,
+        effects: true,
         author: true,
         style: true,
         shareToken: true,

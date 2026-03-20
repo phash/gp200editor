@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
-import { MODULE_COLORS } from '@/core/effectNames';
+import { MODULE_COLORS, getEffectsByModule } from '@/core/effectNames';
 
 type GalleryPreset = {
   id: string;
@@ -11,6 +11,7 @@ type GalleryPreset = {
   description: string | null;
   tags: string[];
   modules: string[];
+  effects: string[];
   author: string | null;
   style: string | null;
   shareToken: string;
@@ -28,6 +29,8 @@ export function GalleryClient() {
   const [page, setPage] = useState(1);
   const [query, setQuery] = useState('');
   const [activeModules, setActiveModules] = useState<string[]>([]);
+  const [activeEffects, setActiveEffects] = useState<string[]>([]);
+  const [expandedModule, setExpandedModule] = useState<string | null>(null);
   const [sort, setSort] = useState<'newest' | 'popular'>('newest');
   const [styleFilter, setStyleFilter] = useState('');
   const [loading, setLoading] = useState(true);
@@ -37,7 +40,8 @@ export function GalleryClient() {
     setLoading(true);
     const params = new URLSearchParams();
     if (query) params.set('q', query);
-    if (activeModules.length > 0) params.set('modules', activeModules.join(','));
+    if (activeEffects.length > 0) params.set('effects', activeEffects.join(','));
+    else if (activeModules.length > 0) params.set('modules', activeModules.join(','));
     if (styleFilter) params.set('style', styleFilter);
     params.set('sort', sort);
     params.set('page', String(p));
@@ -50,7 +54,7 @@ export function GalleryClient() {
       setTotal(data.total);
     }
     setLoading(false);
-  }, [query, activeModules, styleFilter, sort]);
+  }, [query, activeModules, activeEffects, styleFilter, sort]);
 
   // Fetch on filter/sort change (reset to page 1)
   useEffect(() => {
@@ -106,26 +110,86 @@ export function GalleryClient() {
         />
       </div>
 
-      {/* Module filter chips */}
-      <div className="flex flex-wrap gap-1.5 mb-4">
-        {ALL_MODULES.map((mod) => {
-          const colors = MODULE_COLORS[mod];
-          const active = activeModules.includes(mod);
-          return (
+      {/* Module filter chips — click to toggle, click again to expand effect picker */}
+      <div className="mb-4">
+        <div className="flex flex-wrap gap-1.5">
+          {ALL_MODULES.map((mod) => {
+            const colors = MODULE_COLORS[mod];
+            const active = activeModules.includes(mod);
+            const hasEffectFilter = activeEffects.some(e => {
+              const modEffects = getEffectsByModule(mod);
+              return modEffects.some(me => me.name === e);
+            });
+            return (
+              <button
+                key={mod}
+                onClick={() => {
+                  if (expandedModule === mod) {
+                    setExpandedModule(null);
+                  } else if (active) {
+                    setExpandedModule(mod);
+                  } else {
+                    toggleModule(mod);
+                    setExpandedModule(mod);
+                  }
+                }}
+                className="font-mono-display text-[10px] font-bold tracking-widest px-2.5 py-1 rounded uppercase transition-all duration-150"
+                style={{
+                  background: active || hasEffectFilter ? colors.glow : 'transparent',
+                  border: `1px solid ${active || hasEffectFilter ? colors.accent : 'var(--border-active)'}`,
+                  color: active || hasEffectFilter ? colors.accent : 'var(--text-muted)',
+                }}
+              >
+                {mod} {(active || hasEffectFilter) && expandedModule !== mod ? '▸' : expandedModule === mod ? '▾' : ''}
+              </button>
+            );
+          })}
+          {(activeModules.length > 0 || activeEffects.length > 0) && (
             <button
-              key={mod}
-              onClick={() => toggleModule(mod)}
-              className="font-mono-display text-[10px] font-bold tracking-widest px-2.5 py-1 rounded uppercase transition-all duration-150"
-              style={{
-                background: active ? colors.glow : 'transparent',
-                border: `1px solid ${active ? colors.accent : 'var(--border-active)'}`,
-                color: active ? colors.accent : 'var(--text-muted)',
-              }}
+              onClick={() => { setActiveModules([]); setActiveEffects([]); setExpandedModule(null); }}
+              className="font-mono-display text-[10px] tracking-wider px-2 py-1 rounded"
+              style={{ color: 'var(--text-muted)', border: '1px solid var(--border-active)' }}
             >
-              {mod}
+              ✕
             </button>
+          )}
+        </div>
+
+        {/* Expanded effect picker for selected module */}
+        {expandedModule && (() => {
+          const colors = MODULE_COLORS[expandedModule];
+          const modEffects = getEffectsByModule(expandedModule);
+          return (
+            <div
+              className="mt-2 p-3 rounded-lg flex flex-wrap gap-1.5"
+              style={{ background: 'var(--bg-surface)', border: `1px solid ${colors.accentDim}` }}
+            >
+              {modEffects.map(({ name }) => {
+                const isActive = activeEffects.includes(name);
+                return (
+                  <button
+                    key={name}
+                    onClick={() => {
+                      setActiveEffects(prev =>
+                        isActive ? prev.filter(e => e !== name) : [...prev, name]
+                      );
+                      // Remove module-level filter when picking specific effects
+                      setActiveModules(prev => prev.filter(m => m !== expandedModule));
+                    }}
+                    className="font-mono-display text-[10px] font-medium px-2 py-0.5 rounded transition-all duration-100"
+                    style={{
+                      background: isActive ? colors.glow : 'transparent',
+                      border: `1px solid ${isActive ? colors.accent : 'var(--border-subtle)'}`,
+                      color: isActive ? colors.accent : 'var(--text-secondary)',
+                    }}
+                  >
+                    {name}
+                  </button>
+                );
+              })}
+            </div>
           );
-        })}
+        })()}
       </div>
 
       {/* Style filter + Sort toggle */}

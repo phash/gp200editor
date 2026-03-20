@@ -5,7 +5,7 @@ import { uploadPreset } from '@/lib/storage';
 import { uploadPresetSchema } from '@/lib/validators';
 import { PRSTDecoder } from '@/core/PRSTDecoder';
 import type { GP200Preset } from '@/core/types';
-import { extractModules } from '@/core/extractModules';
+import { extractModules, extractEffects } from '@/core/extractModules';
 import { verifyCsrf } from '@/lib/csrf';
 
 export async function POST(request: Request) {
@@ -90,6 +90,7 @@ export async function POST(request: Request) {
         style: parsed.data.style ?? null,
         public: parsed.data.publish ?? false,
         modules: extractModules(decoded),
+        effects: extractEffects(decoded),
       },
       select: {
         id: true,
