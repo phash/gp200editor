@@ -143,22 +143,12 @@ export default async function SharePage({ params }: Props) {
         <a
           href={`/api/share/${token}/download`}
           data-testid="share-download-button"
-          className="inline-block font-mono-display text-sm font-bold tracking-wider uppercase px-8 py-3 rounded-lg transition-all duration-150"
+          className="inline-block font-mono-display text-sm font-bold tracking-wider uppercase px-8 py-3 rounded-lg transition-all duration-150 hover:[background:var(--accent-amber)] hover:[color:var(--bg-primary)] hover:[box-shadow:0_0_20px_var(--glow-amber)]"
           style={{
             background: 'var(--glow-amber)',
             border: '1px solid var(--accent-amber)',
             color: 'var(--accent-amber)',
             boxShadow: '0 0 12px var(--glow-amber)',
-          }}
-          onMouseEnter={(e: React.MouseEvent<HTMLAnchorElement>) => {
-            e.currentTarget.style.background = 'var(--accent-amber)';
-            e.currentTarget.style.color = 'var(--bg-primary)';
-            e.currentTarget.style.boxShadow = '0 0 20px var(--glow-amber)';
-          }}
-          onMouseLeave={(e: React.MouseEvent<HTMLAnchorElement>) => {
-            e.currentTarget.style.background = 'var(--glow-amber)';
-            e.currentTarget.style.color = 'var(--accent-amber)';
-            e.currentTarget.style.boxShadow = '0 0 12px var(--glow-amber)';
           }}
         >
           {t('download')}

@@ -44,7 +44,7 @@ export function RatingWidget({ presetId, initialAverage, initialCount, canRate, 
   return (
     <div className="flex items-center gap-3 my-3">
       <GuitarRating
-        value={canRate ? myRating : avg}
+        value={canRate && myRating > 0 ? myRating : avg}
         count={count}
         onRate={canRate ? handleRate : undefined}
         size="md"
