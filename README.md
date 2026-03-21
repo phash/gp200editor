@@ -1,25 +1,39 @@
-# Preset Forge — GP-200 Editor
+# Preset Forge — Valeton GP-200 Preset Editor
 
-Inoffizieller Browser-Editor für Valeton GP-200 Gitarren-Multi-Effektpedal. Live USB-MIDI Editing, Preset-Galerie, Community-Sharing.
+**The only browser-based Valeton GP-200 preset editor. Works on Linux, Windows, macOS, and Chrome OS — no installation required.**
 
-**https://preset-forge.com** · Firmware 1.8.0
+The official Valeton GP-200 editor software is Windows-only. Preset Forge runs in any modern browser (Chrome/Chromium recommended for USB MIDI). Tested on Linux Mint, Windows 11, and macOS.
+
+**https://preset-forge.com** · Supports GP-200 firmware 1.8.0 · Open source · Free
+
+## What is this?
+
+Preset Forge lets you edit Valeton GP-200 multi-effects pedal presets (`.prst` files) directly in the browser. You can:
+
+- **Load and edit presets** — open `.prst` files, tweak all 305 effects across 11 slots, download the result
+- **Live USB MIDI editing** — connect your GP-200 via USB and push changes to the device in real time (toggle effects, adjust parameters, reorder the signal chain)
+- **Import Line6 HX Stomp presets** (experimental) — convert `.hlx` files to GP-200 format
+- **Build live setlists** — timed cue points for automatic preset switching during gigs, with 3-2-1 count-in
+- **Share and discover presets** — community gallery with per-effect filtering across all 305 effects
+
+## Linux Support
+
+Preset Forge is the **only GP-200 editor that runs on Linux**. Tested on Linux Mint with Chrome. The official Valeton software requires Windows.
+
+For USB MIDI on Linux: install Chrome or Chromium, connect the GP-200 via USB, and grant MIDI permission when the browser asks.
 
 ## Features
 
-- **Preset Editor** — `.prst` Dateien laden, bearbeiten, speichern. Pedalboard-View mit Patch Cables
-- **305 Effekte** mit Namen und Parametern aus der offiziellen Valeton-Software
-- **Live USB MIDI** — Effekte togglen, Parameter ändern, Signal-Kette umordnen in Echtzeit
-- **HX Stomp Import** (experimental) — Line6 HX Stomp `.hlx` Presets importieren und konvertieren
-- **Author & Metadata** — Author-Name wird in .prst Datei + per SysEx ans Gerät geschrieben
-- **Playlists & Cue Points** — Setlists mit zeitgesteuerten Preset-Wechseln für Live-Gigs
-- **Slot-basierte Cue Points** — Slots direkt vom GP-200 wählen, instant Switching per `sendSlotChange`
-- **3-2-1 Count-In** — Countdown vor Timeline-Start
-- **Preset-Galerie** — Presets teilen, suchen, filtern nach Modul UND einzelnem Effekt
-- **MIDI Auto-Reconnect** — 3 automatische Reconnect-Versuche bei USB-Unterbrechung
-- **PWA / Offline** — Editor funktioniert offline, Galerie braucht Internet
-- **Kontextuelle Hilfe** — ? Button auf jeder Seite verlinkt zur relevanten Hilfe-Sektion
-- Account-System mit Profil, Avatar, Email-Verifikation
-- Vollständig zweisprachig (DE/EN) · WCAG 2.1 AA
+- **Preset Editor** — `.prst` files (1224 bytes, 11 slots, 305 effects, 15 parameters per effect). Pedalboard view with patch cables
+- **305 Effects** — names and parameters extracted from the official Valeton `algorithm.xml`
+- **Live USB MIDI** — SysEx protocol reverse-engineered and hardware-verified with firmware 1.8.0 (14 message types)
+- **HX Stomp Import** (experimental) — Line6 HX Stomp `.hlx` → GP-200 format
+- **Playlists & Cue Points** — timed setlists for live gigs, slot-based preset switching, 3-2-1 count-in
+- **Preset Gallery** — community sharing, per-effect filtering (305 effects × 12 modules)
+- **MIDI Auto-Reconnect** — 3 automatic reconnect attempts on USB disconnect
+- **PWA / Offline** — editor works offline; gallery requires internet
+- Account system with profile, avatar, email verification
+- Fully bilingual (DE/EN) · WCAG 2.1 AA
 
 ## Stack
 
