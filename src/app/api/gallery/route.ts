@@ -35,7 +35,9 @@ export async function GET(request: NextRequest) {
   }
 
   const orderBy: Prisma.PresetOrderByWithRelationInput =
-    sort === 'popular' ? { downloadCount: 'desc' } : { createdAt: 'desc' };
+    sort === 'popular'   ? { downloadCount: 'desc' } :
+    sort === 'top-rated' ? { ratingAverage: 'desc' } :
+                           { createdAt: 'desc' };
 
   const [presets, total] = await Promise.all([
     prisma.preset.findMany({
@@ -54,6 +56,8 @@ export async function GET(request: NextRequest) {
         style: true,
         shareToken: true,
         downloadCount: true,
+        ratingAverage: true,
+        ratingCount: true,
         createdAt: true,
         user: { select: { username: true } },
       },
