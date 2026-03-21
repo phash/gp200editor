@@ -54,7 +54,8 @@
     "styleFilter": "Style",
     "author": "Author",
     "styleLabel": "Style",
-    "noteLabel": "Note"
+    "noteLabel": "Note",
+    "ratePreset": "Rate preset"
   },
   "auth": {
     "loginTitle": "Sign In",
@@ -137,13 +138,17 @@
     "uploadedOn": "Uploaded on",
     "publish": "Publish",
     "unpublish": "Unpublish",
-    "published": "In Gallery"
+    "published": "In Gallery",
+    "rateThis": "Rate this preset",
+    "yourRating": "Your rating",
+    "ratingError": "Could not save rating"
   },
   "gallery": {
     "title": "Preset Gallery",
     "search": "Search presets…",
     "sortNewest": "Newest",
     "sortPopular": "Most Popular",
+    "sortTopRated": "Top Rated",
     "allModules": "All Modules",
     "noResults": "No presets found.",
     "downloads": "downloads",

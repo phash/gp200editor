@@ -54,7 +54,8 @@
     "styleFilter": "Style",
     "author": "Autor",
     "styleLabel": "Style",
-    "noteLabel": "Notiz"
+    "noteLabel": "Notiz",
+    "ratePreset": "Preset bewerten"
   },
   "auth": {
     "loginTitle": "Anmelden",
@@ -137,13 +138,17 @@
     "uploadedOn": "Hochgeladen am",
     "publish": "Veröffentlichen",
     "unpublish": "Zurückziehen",
-    "published": "In Galerie"
+    "published": "In Galerie",
+    "rateThis": "Preset bewerten",
+    "yourRating": "Deine Bewertung",
+    "ratingError": "Bewertung konnte nicht gespeichert werden"
   },
   "gallery": {
     "title": "Preset-Galerie",
     "search": "Presets durchsuchen…",
     "sortNewest": "Neueste",
     "sortPopular": "Beliebteste",
+    "sortTopRated": "Top-Bewertet",
     "allModules": "Alle Module",
     "noResults": "Keine Presets gefunden.",
     "downloads": "Downloads",

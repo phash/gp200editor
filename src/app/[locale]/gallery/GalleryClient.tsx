@@ -226,7 +226,7 @@ export function GalleryClient() {
               color: sort === s ? 'var(--accent-amber)' : 'var(--text-muted)',
             }}
           >
-            {s === 'newest' ? t('sortNewest') : s === 'popular' ? t('sortPopular') : 'Top Rated'}
+            {s === 'newest' ? t('sortNewest') : s === 'popular' ? t('sortPopular') : t('sortTopRated')}
           </button>
         ))}
       </div>
