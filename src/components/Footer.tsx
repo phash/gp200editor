@@ -30,6 +30,13 @@ export function Footer() {
       </a>
       <span style={{ margin: '0 8px' }}>·</span>
       <a
+        href="mailto:phash@phash.de"
+        style={{ color: 'var(--text-muted)', textDecoration: 'none' }}
+      >
+        Contact
+      </a>
+      <span style={{ margin: '0 8px' }}>·</span>
+      <a
         href="https://buymeacoffee.com/phash"
         target="_blank"
         rel="noopener noreferrer"
