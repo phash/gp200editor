@@ -10,11 +10,17 @@ import { Navbar } from '@/components/Navbar';
 import { ClientProviders } from './ClientProviders';
 
 export const metadata: Metadata = {
-  title: 'Preset Forge — GP-200 Preset Editor | HX Stomp Import | Live Setlists',
-  description: 'Free browser-based editor for Valeton GP-200 guitar presets. Import Line6 HX Stomp .hlx files, live USB MIDI editing, timed preset switching for gigs, 305 effects with per-effect gallery filtering, community sharing. No install needed — works offline as PWA.',
+  title: 'Preset Forge — GP-200 Preset Editor | Linux & Windows | HX Stomp Import',
+  description: 'Free browser-based editor for Valeton GP-200 guitar presets — the only GP-200 editor that runs on Linux (tested on Linux Mint). Import Line6 HX Stomp .hlx files, live USB MIDI editing, timed preset switching for gigs, 305 effects with per-effect gallery filtering, community sharing. No install needed — works offline as PWA.',
   keywords: [
     'Valeton GP-200',
     'GP-200 preset editor',
+    'GP-200 Linux',
+    'GP-200 Linux Mint',
+    'GP-200 editor Linux',
+    'Valeton GP-200 Linux',
+    'GP-200 Ubuntu',
+    'GP-200 editor alternative',
     'guitar effects',
     'multi-effects pedal',
     'USB MIDI',
@@ -44,8 +50,8 @@ export const metadata: Metadata = {
   ],
   manifest: '/manifest.json',
   openGraph: {
-    title: 'Preset Forge — GP-200 Preset Editor | HX Stomp Import | Live Setlists',
-    description: 'Free browser editor for Valeton GP-200. Import HX Stomp .hlx presets, build timed setlists with cue points for live gigs, browse 305 effects in the gallery. USB MIDI, offline PWA.',
+    title: 'Preset Forge — GP-200 Preset Editor | Linux & Windows | HX Stomp Import',
+    description: 'The only GP-200 editor that runs on Linux (tested on Linux Mint). Import HX Stomp .hlx presets, build timed setlists with cue points for live gigs, browse 305 effects in the gallery. USB MIDI, offline PWA.',
     siteName: 'Preset Forge',
     type: 'website',
     url: 'https://preset-forge.com',
@@ -56,17 +62,17 @@ const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebApplication',
   name: 'Preset Forge',
-  description: 'Free browser-based editor for Valeton GP-200 guitar presets. Import Line6 HX Stomp .hlx files, build timed setlists with automatic preset switching, browse 305 effects in the community gallery.',
+  description: 'Free browser-based editor for Valeton GP-200 guitar presets — the only GP-200 editor that runs on Linux (tested on Linux Mint). The official Valeton app is Windows-only. Import Line6 HX Stomp .hlx files, build timed setlists with automatic preset switching, browse 305 effects in the community gallery.',
   url: 'https://preset-forge.com',
   applicationCategory: 'Music',
-  operatingSystem: 'Web',
+  operatingSystem: 'Windows, macOS, Linux, Linux Mint, Ubuntu, Chrome OS',
   offers: {
     '@type': 'Offer',
     price: '0',
     priceCurrency: 'USD',
   },
   browserRequirements: 'Requires Chrome or Edge for USB MIDI features',
-  featureList: 'GP-200 preset editing, Line6 HX Stomp .hlx import, USB MIDI live editing, timed cue points for live setlists, 3-2-1 count-in, auto-reconnect, preset gallery with per-effect filtering (305 effects), pedalboard view, offline PWA, community sharing',
+  featureList: 'GP-200 preset editing, Linux support (Linux Mint tested), Line6 HX Stomp .hlx import, USB MIDI live editing, timed cue points for live setlists, 3-2-1 count-in, auto-reconnect, preset gallery with per-effect filtering (305 effects), pedalboard view, offline PWA, community sharing',
 };
 
 type Props = {

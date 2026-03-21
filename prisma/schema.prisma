@@ -23,6 +23,7 @@ model User {
   resetTokens         PasswordResetToken[]
   emailVerifyTokens   EmailVerificationToken[]
   presets             Preset[]
+  ratings             PresetRating[]
 }
 
 model Preset {
@@ -39,9 +40,12 @@ model Preset {
   public        Boolean  @default(false)
   modules       String[]
   effects       String[]   // individual effect names (e.g. "UK 800", "Green OD")
+  ratingAverage Float    @default(0)
+  ratingCount   Int      @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ratings       PresetRating[]
 
   @@index([userId])
 }
@@ -72,4 +76,19 @@ model EmailVerificationToken {
   usedAt    DateTime?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PresetRating {
+  id        String   @id @default(cuid())
+  presetId  String
+  userId    String
+  score     Int      // 1–5
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  preset Preset @relation(fields: [presetId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([presetId, userId])
+  @@index([presetId])
 }

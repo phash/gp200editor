@@ -1,10 +1,31 @@
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import type { Metadata } from 'next';
 import { prisma } from '@/lib/prisma';
+import { validateSession } from '@/lib/session';
+import { RatingWidget } from './RatingWidget';
 
 type Props = {
   params: Promise<{ token: string }>;
 };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { token } = await params;
+  const preset = await prisma.preset.findUnique({
+    where: { shareToken: token },
+    select: { name: true, description: true, user: { select: { username: true } } },
+  });
+  if (!preset) return {};
+  const title = `${preset.name} — GP-200 Preset by @${preset.user.username} | Preset Forge`;
+  const description = preset.description
+    ? `${preset.description} — Download this free Valeton GP-200 preset and edit it in the browser.`
+    : `Free Valeton GP-200 preset "${preset.name}" by @${preset.user.username}. Open in the browser editor — works on Linux, Windows, macOS.`;
+  return {
+    title,
+    description,
+    openGraph: { title, description },
+  };
+}
 
 export default async function SharePage({ params }: Props) {
   const { token } = await params;
@@ -12,10 +33,43 @@ export default async function SharePage({ params }: Props) {
 
   const preset = await prisma.preset.findUnique({
     where: { shareToken: token },
-    include: { user: { select: { username: true } } },
+    select: {
+      id: true,
+      userId: true,
+      name: true,
+      description: true,
+      tags: true,
+      downloadCount: true,
+      ratingAverage: true,
+      ratingCount: true,
+      createdAt: true,
+      user: { select: { username: true } },
+    },
   });
 
   if (!preset) notFound();
+
+  // Check session and existing rating for interactive widget
+  let existingRating = 0;
+  let canRate = false;
+  let sessionUserId: string | null = null;
+
+  const { user } = await validateSession();
+  if (user) {
+    sessionUserId = user.id;
+    // Can rate if logged in and not the preset owner
+    if (preset.userId !== sessionUserId) {
+      canRate = true;
+      // Look up existing rating
+      const existing = await prisma.presetRating.findUnique({
+        where: { presetId_userId: { presetId: preset.id, userId: sessionUserId } },
+        select: { score: true },
+      });
+      if (existing) {
+        existingRating = existing.score;
+      }
+    }
+  }
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-8">
@@ -78,16 +132,18 @@ export default async function SharePage({ params }: Props) {
           </div>
         </dl>
 
+        <RatingWidget
+          presetId={preset.id}
+          initialAverage={preset.ratingAverage}
+          initialCount={preset.ratingCount}
+          canRate={canRate}
+          existingRating={existingRating}
+        />
+
         <a
           href={`/api/share/${token}/download`}
           data-testid="share-download-button"
-          className="inline-block font-mono-display text-sm font-bold tracking-wider uppercase px-8 py-3 rounded-lg transition-all duration-150 hover:shadow-[0_0_20px_var(--glow-amber)]"
-          style={{
-            background: 'var(--glow-amber)',
-            border: '1px solid var(--accent-amber)',
-            color: 'var(--accent-amber)',
-            boxShadow: '0 0 12px var(--glow-amber)',
-          }}
+          className="inline-block font-mono-display text-sm font-bold tracking-wider uppercase px-8 py-3 rounded-lg transition-all duration-150 bg-[var(--glow-amber)] text-[var(--accent-amber)] border border-[var(--accent-amber)] [box-shadow:0_0_12px_var(--glow-amber)] hover:!bg-[var(--accent-amber)] hover:!text-[var(--bg-primary)] hover:[box-shadow:0_0_20px_var(--glow-amber)]"
         >
           {t('download')}
         </a>

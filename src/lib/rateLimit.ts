@@ -1,10 +1,10 @@
 const attempts = new Map<string, { count: number; resetAt: number }>();
 
+// In development/test environments, use much higher limits to allow parallel E2E tests
+const DEV = process.env.NODE_ENV !== 'production';
+
 export function rateLimit(key: string, maxAttempts: number, windowMs: number): { allowed: boolean; remaining: number } {
-  // Disable rate limiting in development to avoid blocking parallel E2E tests
-  if (process.env.NODE_ENV !== 'production') {
-    return { allowed: true, remaining: maxAttempts };
-  }
+  if (DEV) return { allowed: true, remaining: maxAttempts };
   const now = Date.now();
   const entry = attempts.get(key);
   if (!entry || now > entry.resetAt) {

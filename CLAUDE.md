@@ -186,8 +186,13 @@ User          id, email, username, passwordHash, bio, website, avatarKey, create
 Session       id, userId, expiresAt  (Lucia v3)
 PasswordResetToken  id, userId, token, expiresAt, usedAt
 Preset        id, userId, presetKey, name(VarChar32), description, tags(String[]),
-              shareToken(@unique), downloadCount, createdAt, updatedAt
+              shareToken(@unique), downloadCount, publish, style, author,
+              ratingAverage(Float), ratingCount(Int), modules(String[]),
+              createdAt, updatedAt
               @@index([userId])
+PresetRating  id, presetId, userId, score(Int 1-5), createdAt, updatedAt
+              @@unique([presetId, userId])
+              @@index([presetId])
 ```
 
 ---
@@ -223,6 +228,8 @@ Preset        id, userId, presetKey, name(VarChar32), description, tags(String[]
 | `POST /api/presets/[id]/share/revoke` | Ja (Owner) | Share-Link widerrufen |
 | `GET /api/share/[token]` | Nein | Öffentliche Preset-Info |
 | `GET /api/share/[token]/download` | Nein | Öffentlicher Download (zählt downloadCount) |
+| `POST /api/presets/[id]/rate` | Ja | Rating abgeben (1-5) — kein eigenes Preset |
+| `GET /api/gallery` | Nein | Galerie-Presets (sort: newest/popular/top-rated, filter: style/modules/effects) |
 
 ---
 
@@ -328,9 +335,17 @@ E2E-Tests in `tests/e2e/`:
 - `editor.spec.ts` – Datei-Upload, Preset-Anzeige, Effekt-Toggle
 - `a11y.spec.ts` – WCAG 2.1 AA mit axe-core
 - `auth.spec.ts` – Register, Login, Logout, Passwort-Reset
-- `profile.spec.ts` – Profil bearbeiten, Avatar
+- `profile.spec.ts` – Profil bearbeiten, Avatar (⚠ Register-Helper veraltet, siehe Issue #53)
 - `presets.spec.ts` – Preset hochladen, teilen, bearbeiten, löschen, Link widerrufen
 - `save-and-gallery.spec.ts` – Save-Dialog, Galerie-Suche/Filter, Gallery→Editor Link
+- `ratings.spec.ts` – Preset-Ratings: Anzeige, Bewerten, Persistenz, Editor-Widget
+
+**E2E-Test-Konventionen (wichtig für parallele Tests):**
+- Register-Helper: Mailhog-Suche per Recipient (`/api/v2/search?kind=to&query=EMAIL`) — kein globaler DELETE
+- Email-Body ist Quoted-Printable: `raw.replace(/=\r?\n/g,'').replace(/=([0-9A-Fa-f]{2})/g, ...decode...)`
+- Rate Limiting ist in `NODE_ENV !== 'production'` deaktiviert (für parallele Test-Registrierungen)
+- `.prst`-Dateien für Tests: `prst/63-B American Idiot.prst` (author=Galtone Studio, DST aktiv), `prst/63-C claude1.prst` (author leer, DST aktiv aber Round-Trip verliert DST — Bug #53)
+- Gallery-Locators: immer `.first()` — mehrere Presets gleichen Namens akkumulieren im Test-DB
 
 ---
 
@@ -592,3 +607,7 @@ Impulse-Response Dateien werden als Multi-Chunk Transfer über sub=0x1C gesendet
 - Garage Secret Key nicht sofort speichern — wird nach Erstellung nur einmal angezeigt, danach `(redacted)`
 - Prod manuell mit `docker compose up -d --build app` deployen — immer `bash scripts/deploy-update.sh` verwenden (führt Migrationen automatisch aus)
 - `npx prisma` im Docker-Standalone-Build verwenden — Prisma wird global installiert, direkt `prisma` nutzen
+- `inline style={}` mit `onMouseEnter`/`onMouseLeave` für Hover-Effekte verwenden — immer Tailwind `hover:` Klassen (inkl. `hover:!bg-[var(--accent-amber)]` mit `!` für wichtige Overrides)
+- `DELETE /api/v1/messages` in Mailhog-Tests — killt parallele Test-Emails; stattdessen `/api/v2/search?kind=to&query=EMAIL`
+- `writeTempPreset()` mit 512 Bytes — API erwartet 1224 Bytes mit TSRP-Magic; korrektes Format: `TSRP` at 0x00, `2-PG` at 0x10, name at 0x44
+- `validateSession()` mit Argumenten aufrufen — es liest cookies intern (keine Parameter)
