@@ -44,20 +44,21 @@ async function registerUser(page: import('@playwright/test').Page) {
 }
 
 // Helper: create a temporary .prst file on disk
-// Matches the actual binary format used by PRSTEncoder/PRSTDecoder:
-//   offset 0:  'PRST' magic (4 bytes)
-//   offset 4:  version uint8
-//   offset 8:  patch name ASCII (12 bytes, max 12 chars)
-//   total size: 512 bytes
+// Real format: 1224 bytes, magic 'TSRP' at 0x00, device '2-PG' at 0x10,
+// patch name (null-terminated, max 16 chars) at 0x44, author at 0x54.
 function writeTempPreset(name = 'Test Preset'): string {
-  const filePath = path.join('/tmp', `test-${Date.now()}.prst`);
-  const buf = Buffer.alloc(512, 0);
-  // Write 'PRST' magic at offset 0
-  buf.write('PRST', 0, 'ascii');
-  // Write version 1 at offset 4
-  buf.writeUInt8(1, 4);
-  // Write patch name at offset 8 (max 12 chars)
-  buf.write(name.slice(0, 12), 8, 'ascii');
+  const filePath = path.join('/tmp', `test-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.prst`);
+  const buf = Buffer.alloc(1224, 0);
+  // Header magic and device ID
+  buf.write('TSRP', 0x00, 'ascii');
+  buf.write('2-PG', 0x10, 'ascii');
+  // Firmware version
+  buf.writeUInt8(1, 0x15);
+  // Chunk marker + size
+  buf.write('MRAP', 0x28, 'ascii');
+  buf.writeUInt32LE(1172, 0x2C);
+  // Patch name (max 16 chars, null-terminated)
+  buf.write(name.slice(0, 16), 0x44, 'ascii');
   fs.writeFileSync(filePath, buf);
   return filePath;
 }
@@ -76,13 +77,13 @@ test.describe('Preset sharing flows', () => {
     await expect(page.locator('h1')).toBeVisible();
 
     // Trigger upload via file input
-    const fileInput = page.locator('input[type="file"][accept=".prst"]');
+    const fileInput = page.locator('#preset-file-input');
     await fileInput.setInputFiles(presetPath);
 
     // Wait for the preset to appear in the list
     await expect(page.locator('[data-testid="preset-card"]').first()).toBeVisible({ timeout: 10000 });
 
-    fs.unlinkSync(presetPath);
+    try { fs.unlinkSync(presetPath); } catch { /* cleanup */ }
   });
 
   test('authenticated user can copy share link', async ({ page }) => {
@@ -90,7 +91,7 @@ test.describe('Preset sharing flows', () => {
     const presetPath = writeTempPreset('Share Link Test');
 
     await page.goto('/en/presets');
-    const fileInput = page.locator('input[type="file"][accept=".prst"]');
+    const fileInput = page.locator('#preset-file-input');
     await fileInput.setInputFiles(presetPath);
     await expect(page.locator('[data-testid="preset-card"]').first()).toBeVisible({ timeout: 10000 });
 
@@ -99,7 +100,7 @@ test.describe('Preset sharing flows', () => {
     await page.locator('[data-testid="preset-copy-link"]').first().click();
     await expect(page.locator('[data-testid="preset-link-copied"]').first()).toBeVisible();
 
-    fs.unlinkSync(presetPath);
+    try { fs.unlinkSync(presetPath); } catch { /* cleanup */ }
   });
 
   test('share page is accessible without login', async ({ page }) => {
@@ -109,7 +110,7 @@ test.describe('Preset sharing flows', () => {
     const presetPath = writeTempPreset('Public Share');
 
     await userPage.goto('/en/presets');
-    const fileInput = userPage.locator('input[type="file"][accept=".prst"]');
+    const fileInput = userPage.locator('#preset-file-input');
     await fileInput.setInputFiles(presetPath);
     await expect(userPage.locator('[data-testid="preset-card"]').first()).toBeVisible({ timeout: 10000 });
 
@@ -126,7 +127,7 @@ test.describe('Preset sharing flows', () => {
     await expect(page.locator('[data-testid="share-preset-name"]')).toBeVisible();
     await expect(page.locator('[data-testid="share-download-button"]')).toBeVisible();
 
-    fs.unlinkSync(presetPath);
+    try { fs.unlinkSync(presetPath); } catch { /* cleanup */ }
   });
 
   test('share download increments download count', async ({ page, request }) => {
@@ -135,7 +136,7 @@ test.describe('Preset sharing flows', () => {
     const presetPath = writeTempPreset('Download Count');
 
     await userPage.goto('/en/presets');
-    const fileInput = userPage.locator('input[type="file"][accept=".prst"]');
+    const fileInput = userPage.locator('#preset-file-input');
     await fileInput.setInputFiles(presetPath);
     await expect(userPage.locator('[data-testid="preset-card"]').first()).toBeVisible({ timeout: 10000 });
 
@@ -159,7 +160,7 @@ test.describe('Preset sharing flows', () => {
     const afterData = await after.json();
     expect(afterData.downloadCount).toBe(1);
 
-    fs.unlinkSync(presetPath);
+    try { fs.unlinkSync(presetPath); } catch { /* cleanup */ }
   });
 
   test('owner can edit preset name and tags', async ({ page }) => {
@@ -167,7 +168,7 @@ test.describe('Preset sharing flows', () => {
     const presetPath = writeTempPreset('Edit Me');
 
     await page.goto('/en/presets');
-    const fileInput = page.locator('input[type="file"][accept=".prst"]');
+    const fileInput = page.locator('#preset-file-input');
     await fileInput.setInputFiles(presetPath);
     await expect(page.locator('[data-testid="preset-card"]').first()).toBeVisible({ timeout: 10000 });
 
@@ -179,7 +180,7 @@ test.describe('Preset sharing flows', () => {
     await page.click('[data-testid="preset-save-button"]');
     await expect(page.locator('[data-testid="preset-saved-indicator"]')).toBeVisible();
 
-    fs.unlinkSync(presetPath);
+    try { fs.unlinkSync(presetPath); } catch { /* cleanup */ }
   });
 
   test('owner can delete preset', async ({ page }) => {
@@ -187,7 +188,7 @@ test.describe('Preset sharing flows', () => {
     const presetPath = writeTempPreset('Delete Me');
 
     await page.goto('/en/presets');
-    const fileInput = page.locator('input[type="file"][accept=".prst"]');
+    const fileInput = page.locator('#preset-file-input');
     await fileInput.setInputFiles(presetPath);
     await expect(page.locator('[data-testid="preset-card"]').first()).toBeVisible({ timeout: 10000 });
 
@@ -198,7 +199,7 @@ test.describe('Preset sharing flows', () => {
     // Card should disappear
     await expect(page.locator('[data-testid="preset-card"]')).toHaveCount(0, { timeout: 5000 });
 
-    fs.unlinkSync(presetPath);
+    try { fs.unlinkSync(presetPath); } catch { /* cleanup */ }
   });
 
   test('owner can reset share link and old link 404s', async ({ page, request }) => {
@@ -206,7 +207,7 @@ test.describe('Preset sharing flows', () => {
     const presetPath = writeTempPreset('Revoke Me');
 
     await page.goto('/en/presets');
-    const fileInput = page.locator('input[type="file"][accept=".prst"]');
+    const fileInput = page.locator('#preset-file-input');
     await fileInput.setInputFiles(presetPath);
     await expect(page.locator('[data-testid="preset-card"]').first()).toBeVisible({ timeout: 10000 });
 
@@ -234,6 +235,6 @@ test.describe('Preset sharing flows', () => {
     const oldRes = await request.get(`/api/share/${oldToken}`);
     expect(oldRes.status()).toBe(404);
 
-    fs.unlinkSync(presetPath);
+    try { fs.unlinkSync(presetPath); } catch { /* cleanup */ }
   });
 });

@@ -85,27 +85,25 @@ test.describe('Auth flows', () => {
     // Logout
     await page.click('[data-testid="nav-logout"]');
 
-    // Clear Mailhog so only the reset email remains
-    await page.context().request.delete('http://localhost:8025/api/v1/messages');
-
     // Forgot password
     await page.goto('/en/auth/forgot-password');
     await page.fill('[name="email"]', email);
     await page.click('[type="submit"]');
     await expect(page.locator('[data-testid="forgot-password-sent"]')).toBeVisible();
 
-    // Verify reset email in Mailhog
-    let resetEmail: unknown;
+    // Verify reset email in Mailhog (search by recipient — parallel-safe)
+    // Expect 2 emails: verification email + password reset email
+    let emailCount = 0;
     for (let i = 0; i < 10; i++) {
-      const mailhog = await page.context().request.get('http://localhost:8025/api/v2/messages');
-      const messages = await mailhog.json() as { items?: Array<{ To: Array<{ Mailbox: string; Domain: string }> }> };
-      resetEmail = messages.items?.find(
-        (m) => `${m.To[0].Mailbox}@${m.To[0].Domain}` === email,
+      const resp = await page.context().request.get(
+        `http://localhost:8025/api/v2/search?kind=to&query=${encodeURIComponent(email)}`,
       );
-      if (resetEmail) break;
+      const data = await resp.json() as { items?: Array<unknown> };
+      emailCount = data.items?.length ?? 0;
+      if (emailCount >= 2) break;
       await page.waitForTimeout(500);
     }
-    expect(resetEmail).toBeDefined();
+    expect(emailCount).toBeGreaterThanOrEqual(2);
   });
 
   test('unauthenticated user is redirected from /profile to /auth/login', async ({ page }) => {
