@@ -315,16 +315,16 @@ export function GalleryClient() {
               )}
 
               {/* Footer: downloads + buttons */}
-              <div className="flex items-center justify-between mt-3 pt-2" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    {preset.downloadCount} {t('downloads')}
+              <div className="flex items-center justify-between gap-2 mt-3 pt-2" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
+                    {preset.downloadCount} ↓
                   </span>
                   {preset.ratingCount > 0 && (
                     <GuitarRating value={preset.ratingAverage} count={preset.ratingCount} size="sm" />
                   )}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 shrink-0">
                   <Link
                     href={`/editor?share=${preset.shareToken}`}
                     className="font-mono-display text-[10px] font-bold tracking-wider uppercase px-3 py-1 rounded transition-all duration-150 hover:!bg-[var(--accent-amber)] hover:!text-[var(--bg-primary)]"

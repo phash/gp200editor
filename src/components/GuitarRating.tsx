@@ -10,7 +10,7 @@ type Props = {
 
 export function GuitarRating({ value, count, onRate, size = 'md' }: Props) {
   const [hover, setHover] = useState(0);
-  const fontSize = size === 'sm' ? '0.85rem' : '1.1rem';
+  const fontSize = size === 'sm' ? '0.7rem' : '1.1rem';
   const display = hover || Math.round(value);
 
   return (
