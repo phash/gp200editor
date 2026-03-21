@@ -143,13 +143,7 @@ export default async function SharePage({ params }: Props) {
         <a
           href={`/api/share/${token}/download`}
           data-testid="share-download-button"
-          className="inline-block font-mono-display text-sm font-bold tracking-wider uppercase px-8 py-3 rounded-lg transition-all duration-150 hover:[background:var(--accent-amber)] hover:[color:var(--bg-primary)] hover:[box-shadow:0_0_20px_var(--glow-amber)]"
-          style={{
-            background: 'var(--glow-amber)',
-            border: '1px solid var(--accent-amber)',
-            color: 'var(--accent-amber)',
-            boxShadow: '0 0 12px var(--glow-amber)',
-          }}
+          className="inline-block font-mono-display text-sm font-bold tracking-wider uppercase px-8 py-3 rounded-lg transition-all duration-150 bg-[var(--glow-amber)] text-[var(--accent-amber)] border border-[var(--accent-amber)] [box-shadow:0_0_12px_var(--glow-amber)] hover:!bg-[var(--accent-amber)] hover:!text-[var(--bg-primary)] hover:[box-shadow:0_0_20px_var(--glow-amber)]"
         >
           {t('download')}
         </a>
