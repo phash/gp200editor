@@ -24,6 +24,7 @@ export default async function EditPresetPage({ params }: Props) {
       name: true,
       description: true,
       tags: true,
+      style: true,
       shareToken: true,
       userId: true,
     },

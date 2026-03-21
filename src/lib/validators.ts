@@ -61,6 +61,7 @@ export const patchPresetSchema = z.object({
   name: z.string().min(1).max(32).optional(),
   description: z.string().max(500).nullable().optional(),
   tags: tagSchema.array().max(10, 'At most 10 tags allowed').optional(),
+  style: z.string().max(50).nullable().optional(),
 });
 
 export const galleryQuerySchema = z.object({

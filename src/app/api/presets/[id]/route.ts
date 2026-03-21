@@ -48,6 +48,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   const rawName = formData.get('name');
   const rawDescription = formData.get('description');
+  const rawStyle = formData.get('style');
 
   const parsed = patchPresetSchema.safeParse({
     name: rawName && typeof rawName === 'string' ? rawName : undefined,
@@ -58,6 +59,7 @@ export async function PATCH(request: Request, context: RouteContext) {
           ? rawDescription
           : undefined,
     tags: tagsArray,
+    style: rawStyle === '' ? null : rawStyle && typeof rawStyle === 'string' ? rawStyle : undefined,
   });
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
@@ -68,6 +70,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     name?: string;
     description?: string | null;
     tags?: string[];
+    style?: string | null;
     modules?: string[];
     effects?: string[];
     presetKey?: string;
@@ -76,6 +79,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   if (parsed.data.name !== undefined) updateData.name = parsed.data.name;
   if (parsed.data.description !== undefined) updateData.description = parsed.data.description;
   if (parsed.data.tags !== undefined) updateData.tags = parsed.data.tags;
+  if (parsed.data.style !== undefined) updateData.style = parsed.data.style;
 
   // Handle file replacement
   const file = formData.get('preset');
