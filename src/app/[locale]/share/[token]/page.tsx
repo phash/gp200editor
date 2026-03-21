@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
 import { prisma } from '@/lib/prisma';
+import { validateSession } from '@/lib/session';
+import { RatingWidget } from './RatingWidget';
 
 type Props = {
   params: Promise<{ token: string }>;
@@ -31,10 +33,43 @@ export default async function SharePage({ params }: Props) {
 
   const preset = await prisma.preset.findUnique({
     where: { shareToken: token },
-    include: { user: { select: { username: true } } },
+    select: {
+      id: true,
+      userId: true,
+      name: true,
+      description: true,
+      tags: true,
+      downloadCount: true,
+      ratingAverage: true,
+      ratingCount: true,
+      createdAt: true,
+      user: { select: { username: true } },
+    },
   });
 
   if (!preset) notFound();
+
+  // Check session and existing rating for interactive widget
+  let existingRating = 0;
+  let canRate = false;
+  let sessionUserId: string | null = null;
+
+  const { user } = await validateSession();
+  if (user) {
+    sessionUserId = user.id;
+    // Can rate if logged in and not the preset owner
+    if (preset.userId !== sessionUserId) {
+      canRate = true;
+      // Look up existing rating
+      const existing = await prisma.presetRating.findUnique({
+        where: { presetId_userId: { presetId: preset.id, userId: sessionUserId } },
+        select: { score: true },
+      });
+      if (existing) {
+        existingRating = existing.score;
+      }
+    }
+  }
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-8">
@@ -96,6 +131,14 @@ export default async function SharePage({ params }: Props) {
             <dd>{t('downloads')}</dd>
           </div>
         </dl>
+
+        <RatingWidget
+          presetId={preset.id}
+          initialAverage={preset.ratingAverage}
+          initialCount={preset.ratingCount}
+          canRate={canRate}
+          existingRating={existingRating}
+        />
 
         <a
           href={`/api/share/${token}/download`}
