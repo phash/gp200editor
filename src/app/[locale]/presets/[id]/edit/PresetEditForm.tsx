@@ -4,11 +4,17 @@ import { useState, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 
+const PRESET_STYLES = [
+  'Rock', 'Metal', 'Blues', 'Jazz', 'Country', 'Funk',
+  'Pop', 'Punk', 'Ambient', 'Clean', 'Acoustic', 'Experimental',
+];
+
 type PresetData = {
   id: string;
   name: string;
   description: string | null;
   tags: string[];
+  style: string | null;
   shareToken: string;
 };
 
@@ -18,10 +24,18 @@ type Props = {
 
 export function PresetEditForm({ preset }: Props) {
   const t = useTranslations('presets');
+  const te = useTranslations('editor');
   const [name, setName] = useState(preset.name);
   const [description, setDescription] = useState(preset.description ?? '');
   const [tags, setTags] = useState<string[]>(preset.tags);
   const [tagInput, setTagInput] = useState('');
+  const initialStyle = preset.style
+    ? PRESET_STYLES.includes(preset.style) ? preset.style : '__custom__'
+    : '';
+  const [style, setStyle] = useState(initialStyle);
+  const [customStyle, setCustomStyle] = useState(
+    preset.style && !PRESET_STYLES.includes(preset.style) ? preset.style : ''
+  );
   const [replaceFile, setReplaceFile] = useState<File | null>(null);
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -49,6 +63,8 @@ export function PresetEditForm({ preset }: Props) {
     formData.append('name', name);
     formData.append('description', description);
     formData.append('tags', JSON.stringify(tags));
+    const finalStyle = style === '__custom__' ? customStyle.trim() : style;
+    formData.append('style', finalStyle);
     if (replaceFile) {
       formData.append('preset', replaceFile);
     }
@@ -188,6 +204,43 @@ export function PresetEditForm({ preset }: Props) {
             onBlur={handleInputBlur}
             disabled={tags.length >= 10}
           />
+        </div>
+
+        {/* Style */}
+        <div>
+          <label
+            className="block font-mono-display text-[11px] font-medium tracking-wider uppercase mb-1.5"
+            htmlFor="preset-style"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            {te('styleLabel')}
+          </label>
+          <select
+            id="preset-style"
+            value={style}
+            onChange={(e) => setStyle(e.target.value)}
+            className="w-full rounded px-3 py-2 text-sm focus:outline-none transition-shadow"
+            style={inputStyle}
+          >
+            <option value="">—</option>
+            {PRESET_STYLES.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+            <option value="__custom__">{te('customStyle')}</option>
+          </select>
+          {style === '__custom__' && (
+            <input
+              type="text"
+              value={customStyle}
+              onChange={(e) => setCustomStyle(e.target.value)}
+              maxLength={50}
+              placeholder={te('customStylePlaceholder')}
+              className="w-full rounded px-3 py-2 text-sm focus:outline-none transition-shadow mt-2"
+              style={inputStyle}
+              onFocus={handleInputFocus}
+              onBlur={handleInputBlur}
+            />
+          )}
         </div>
 
         {/* Replace file */}
