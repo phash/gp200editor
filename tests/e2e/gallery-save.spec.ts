@@ -1,16 +1,58 @@
 import { test, expect } from '@playwright/test';
+import type { APIRequestContext } from '@playwright/test';
 
-// Tests run against Docker at localhost:3320.
-// Seed users once in beforeAll, then reuse across tests.
+// QP decode helper (Mailhog returns Quoted-Printable encoded bodies)
+function decodeQP(text: string): string {
+  return text
+    .replace(/=\r?\n/g, '')
+    .replace(/=([0-9A-Fa-f]{2})/g, (_, hex: string) =>
+      String.fromCharCode(parseInt(hex, 16)),
+    );
+}
 
-const BASE = 'http://localhost:3320';
+async function registerAndVerifyUser(
+  request: APIRequestContext,
+  email: string,
+  username: string,
+  password: string,
+): Promise<boolean> {
+  const regRes = await request.post('/api/auth/register', {
+    data: { email, username, password },
+  });
+  if (!regRes.ok()) return false;
+
+  const mailbox = email.split('@')[0];
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    await new Promise((r) => setTimeout(r, 500));
+
+    const mailhogRes = await request.get(
+      `http://localhost:8025/api/v2/search?kind=to&query=${mailbox}`,
+    );
+    const result = await mailhogRes.json();
+    const verifyEmail = result.items?.find(
+      (m: { Content: { Body: string } }) =>
+        m.Content.Body.includes('verify-email'),
+    );
+
+    if (verifyEmail) {
+      const body = decodeQP(verifyEmail.Content.Body);
+      const tokenMatch = body.match(/token=([a-f0-9]{64})/);
+      if (tokenMatch) {
+        const verifyRes = await request.get(`/api/auth/verify-email?token=${tokenMatch[1]}`);
+        return verifyRes.ok();
+      }
+    }
+  }
+  return false;
+}
 
 test.describe.serial('Gallery Preset Save/Update', () => {
   let ownerShareToken: string;
-  const ownerEmail = 'gallerysave-owner@test.com';
-  const ownerUser = 'gallerysave_owner';
-  const otherEmail = 'gallerysave-other@test.com';
-  const otherUser = 'gallerysave_other';
+  const ownerEmail = `gallerysave_owner_${Date.now()}@test.com`;
+  const ownerUser = `gallerysave_owner_${Date.now() % 100000}`;
+  const otherEmail = `gallerysave_other_${Date.now()}@test.com`;
+  const otherUser = `gallerysave_other_${Date.now() % 100000}`;
   const password = 'TestPass123!';
 
   test.beforeAll(async ({ browser }) => {
@@ -18,36 +60,36 @@ test.describe.serial('Gallery Preset Save/Update', () => {
     const page = await ctx.newPage();
 
     // Register owner
-    const regOwner = await page.request.post(`${BASE}/api/auth/register`, {
-      data: { email: ownerEmail, username: ownerUser, password },
-    });
-    // May already exist — that's fine
+    const ownerOk = await registerAndVerifyUser(page.request, ownerEmail, ownerUser, password);
 
-    // Register other user
-    await page.request.post(`${BASE}/api/auth/register`, {
-      data: { email: otherEmail, username: otherUser, password },
-    });
+    // Register other user (separate context to avoid session conflicts)
+    const ctx2 = await browser.newContext();
+    const page2 = await ctx2.newPage();
+    await registerAndVerifyUser(page2.request, otherEmail, otherUser, password);
+    await ctx2.close();
 
-    // Login as owner (may fail if email not verified — we'll handle in tests)
-    const loginRes = await page.request.post(`${BASE}/api/auth/login`, {
-      data: { email: ownerEmail, password },
-    });
-
-    if (loginRes.ok()) {
-      // Upload a preset
-      const fs = require('fs');
-      const buffer = fs.readFileSync('prst/63-B American Idiot.prst');
-      const uploadRes = await page.request.post(`${BASE}/api/presets`, {
-        multipart: {
-          preset: { name: 'test.prst', mimeType: 'application/octet-stream', buffer },
-          author: ownerUser,
-          style: 'Rock',
-          publish: 'true',
-        },
+    if (ownerOk) {
+      // Login as owner (verification created session in the request context)
+      const loginRes = await page.request.post('/api/auth/login', {
+        data: { email: ownerEmail, password },
       });
-      if (uploadRes.ok()) {
-        const data = await uploadRes.json();
-        ownerShareToken = data.shareToken;
+
+      if (loginRes.ok()) {
+        // Upload a preset
+        const fs = require('fs');
+        const buffer = fs.readFileSync('prst/63-B American Idiot.prst');
+        const uploadRes = await page.request.post('/api/presets', {
+          multipart: {
+            preset: { name: 'test.prst', mimeType: 'application/octet-stream', buffer },
+            author: ownerUser,
+            style: 'Rock',
+            publish: 'true',
+          },
+        });
+        if (uploadRes.ok()) {
+          const data = await uploadRes.json();
+          ownerShareToken = data.shareToken;
+        }
       }
     }
 
@@ -55,10 +97,8 @@ test.describe.serial('Gallery Preset Save/Update', () => {
   });
 
   test('not logged in — sees login prompt, no save buttons', async ({ page }) => {
-    // If no share token was created (auth issues), use gallery instead
     if (!ownerShareToken) {
-      // Fall back to checking a gallery preset
-      const galRes = await page.request.get(`${BASE}/api/gallery`);
+      const galRes = await page.request.get('/api/gallery');
       const galData = await galRes.json();
       if (galData.presets?.length > 0) {
         ownerShareToken = galData.presets[0].shareToken;
@@ -66,15 +106,10 @@ test.describe.serial('Gallery Preset Save/Update', () => {
     }
     test.skip(!ownerShareToken, 'No share token available — auth seeding failed');
 
-    await page.goto(`${BASE}/de/editor?share=${ownerShareToken}`);
-
-    // Wait for preset to load
+    await page.goto(`/de/editor?share=${ownerShareToken}`);
     await expect(page.getByTestId('patch-name-input')).toBeVisible({ timeout: 10000 });
 
-    // Should see login-to-save prompt
     await expect(page.locator('text=Anmelden, um zu speichern')).toBeVisible();
-
-    // Should NOT see update or save-as-new buttons
     await expect(page.locator('button:has-text("Preset aktualisieren")')).not.toBeVisible({ timeout: 2000 });
     await expect(page.locator('button:has-text("Als neues Preset")')).not.toBeVisible();
   });
@@ -82,70 +117,50 @@ test.describe.serial('Gallery Preset Save/Update', () => {
   test('owner sees Update button for own preset', async ({ page }) => {
     test.skip(!ownerShareToken, 'No share token available');
 
-    // Login via page
-    await page.goto(`${BASE}/de/auth/login`);
+    await page.goto('/de/auth/login');
     await page.fill('input[name="email"]', ownerEmail);
     await page.fill('input[name="password"]', password);
     await page.click('[type="submit"]');
     await page.waitForTimeout(2000);
 
-    // Go to editor with share link
-    await page.goto(`${BASE}/de/editor?share=${ownerShareToken}`);
-
-    // Wait for preset to load
+    await page.goto(`/de/editor?share=${ownerShareToken}`);
     await expect(page.getByTestId('patch-name-input')).toBeVisible({ timeout: 10000 });
-
-    // Owner should see Update button
     await expect(page.locator('button:has-text("Preset aktualisieren")')).toBeVisible({ timeout: 10000 });
-
-    // And save-as-new
     await expect(page.locator('button:has-text("Als neues Preset")')).toBeVisible();
   });
 
   test('other user sees Save-as-New but NOT Update', async ({ page }) => {
     test.skip(!ownerShareToken, 'No share token available');
 
-    // Login as other user
-    await page.goto(`${BASE}/de/auth/login`);
+    await page.goto('/de/auth/login');
     await page.fill('input[name="email"]', otherEmail);
     await page.fill('input[name="password"]', password);
     await page.click('[type="submit"]');
     await page.waitForTimeout(2000);
 
-    await page.goto(`${BASE}/de/editor?share=${ownerShareToken}`);
+    await page.goto(`/de/editor?share=${ownerShareToken}`);
     await expect(page.getByTestId('patch-name-input')).toBeVisible({ timeout: 10000 });
-
-    // Should NOT see Update (not their preset)
     await expect(page.locator('button:has-text("Preset aktualisieren")')).not.toBeVisible({ timeout: 5000 });
-
-    // Should see Save-as-New
     await expect(page.locator('button:has-text("Als neues Preset")')).toBeVisible();
   });
 
   test('loading from file clears gallery source', async ({ page }) => {
     test.skip(!ownerShareToken, 'No share token available');
 
-    // Login as owner
-    await page.goto(`${BASE}/de/auth/login`);
+    await page.goto('/de/auth/login');
     await page.fill('input[name="email"]', ownerEmail);
     await page.fill('input[name="password"]', password);
     await page.click('[type="submit"]');
     await page.waitForTimeout(2000);
 
-    // Load from gallery
-    await page.goto(`${BASE}/de/editor?share=${ownerShareToken}`);
+    await page.goto(`/de/editor?share=${ownerShareToken}`);
     await expect(page.getByTestId('patch-name-input')).toBeVisible({ timeout: 10000 });
     await expect(page.locator('button:has-text("Preset aktualisieren")')).toBeVisible({ timeout: 10000 });
 
-    // Load from file — should clear source
-    // The file input in the loaded editor is inside the "load from disk" label
-    await page.locator('input[type="file"][accept=".prst"]').last().setInputFiles('prst/63-C claude1.prst');
+    await page.locator('input[type="file"][accept=".prst,.hlx"]').last().setInputFiles('prst/63-C claude1.prst');
     await page.waitForTimeout(1000);
 
-    // Update button gone
     await expect(page.locator('button:has-text("Preset aktualisieren")')).not.toBeVisible({ timeout: 3000 });
-
-    // Regular save (not "Als neues Preset")
     await expect(page.locator('button:has-text("In Presets speichern")')).toBeVisible();
   });
 });

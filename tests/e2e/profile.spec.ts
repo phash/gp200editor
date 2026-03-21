@@ -1,27 +1,14 @@
 import { test, expect } from '@playwright/test';
-
-const UNIQUE = () => `user_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-
-async function registerAndLogin(page: import('@playwright/test').Page) {
-  const username = UNIQUE();
-  const email = `${username}@test.com`;
-  await page.goto('/en/auth/register');
-  await page.fill('[name="email"]', email);
-  await page.fill('[name="username"]', username);
-  await page.fill('[name="password"]', 'testpass123');
-  await page.click('[type="submit"]');
-  await page.waitForURL('**/profile');
-  return { username, email };
-}
+import { registerAndVerify } from './helpers';
 
 test.describe('Profile page', () => {
   test('shows own username after login', async ({ page }) => {
-    const { username } = await registerAndLogin(page);
+    const { username } = await registerAndVerify(page);
     await expect(page.locator(`text=${username}`)).toBeVisible();
   });
 
   test('can update bio and it persists', async ({ page }) => {
-    await registerAndLogin(page);
+    await registerAndVerify(page);
     await page.fill('[name="bio"]', 'Guitar enthusiast');
     await page.click('[data-testid="save-profile"]');
     await expect(page.locator('[data-testid="save-success"]')).toBeVisible();
@@ -31,17 +18,12 @@ test.describe('Profile page', () => {
   });
 
   test('other user profile page shows username and no edit form', async ({ page }) => {
-    const { username: user1 } = await registerAndLogin(page);
+    const { username: user1 } = await registerAndVerify(page);
 
-    // Logout and register user2 to get a second session
+    // Logout and register user2
     await page.click('[data-testid="nav-logout"]');
-    const username2 = UNIQUE();
-    await page.goto('/en/auth/register');
-    await page.fill('[name="email"]', `${username2}@test.com`);
-    await page.fill('[name="username"]', username2);
-    await page.fill('[name="password"]', 'testpass123');
-    await page.click('[type="submit"]');
-    await page.waitForURL('**/profile');
+    const { username: user2 } = await registerAndVerify(page);
+    void user2;
 
     // Visit user1's read-only profile
     await page.goto(`/en/profile/${user1}`);

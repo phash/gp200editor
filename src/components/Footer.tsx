@@ -14,7 +14,7 @@ export function Footer() {
       <span style={{ margin: '0 8px' }}>·</span>
       <Link
         href="/legal"
-        style={{ color: 'var(--text-muted)', textDecoration: 'none' }}
+        style={{ color: 'var(--text-secondary)', textDecoration: 'underline' }}
       >
         {t('legal')}
       </Link>
@@ -24,7 +24,7 @@ export function Footer() {
         href="https://phash.de"
         target="_blank"
         rel="noopener noreferrer"
-        style={{ color: 'var(--accent-amber)', textDecoration: 'none' }}
+        style={{ color: 'var(--accent-amber)', textDecoration: 'underline' }}
       >
         phash.de
       </a>
@@ -33,7 +33,7 @@ export function Footer() {
         href="https://buymeacoffee.com/phash"
         target="_blank"
         rel="noopener noreferrer"
-        style={{ color: '#ffdd33', textDecoration: 'none' }}
+        style={{ color: '#ffdd33', textDecoration: 'underline' }}
       >
         ☕ Buy me a coffee
       </a>

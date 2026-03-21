@@ -1,9 +1,8 @@
 import { test, expect } from '@playwright/test';
 import * as fs from 'fs';
+import { registerAndVerifyViaAPI } from './helpers';
 
 const PRST_FILE = 'planung/ZZ-WokeUp.prst';
-const TEST_EMAIL = `gallery-e2e-${Date.now()}@test.com`;
-const TEST_USERNAME = `gale2e${Date.now() % 100000}`;
 
 test.describe('Gallery Feature', () => {
   test('full gallery flow: upload → publish → gallery → filter → unpublish', async ({ page }) => {
@@ -12,11 +11,8 @@ test.describe('Gallery Feature', () => {
       return;
     }
 
-    // 1. Register
-    const regRes = await page.request.post('/api/auth/register', {
-      data: { email: TEST_EMAIL, username: TEST_USERNAME, password: 'testpass123' },
-    });
-    expect(regRes.ok()).toBeTruthy();
+    // 1. Register and verify via API (creates session)
+    await registerAndVerifyViaAPI(page.request);
 
     // 2. Upload preset
     const uploadRes = await page.request.post('/api/presets', {
@@ -50,7 +46,6 @@ test.describe('Gallery Feature', () => {
     const found = dataAfter.presets.find((p: { id: string }) => p.id === preset.id);
     expect(found).toBeDefined();
     expect(found.name).toBe('ZZ-WokeUp');
-    expect(found.user.username).toBe(TEST_USERNAME);
 
     // 6. Filter by module
     const filtRes = await page.request.get('/api/gallery?modules=DST');

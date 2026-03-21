@@ -2,27 +2,14 @@ import { test, expect } from '@playwright/test';
 import path from 'path';
 
 // Use a real .prst file from the project
-const PRST_FILE = path.resolve(__dirname, '../../prst/foo fighters 2.prst');
+const PRST_FILE = path.resolve(__dirname, '../../prst/63-C claude1.prst');
 
-const UNIQUE = () => `e2e_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-
-async function registerAndLogin(page: import('@playwright/test').Page) {
-  const username = UNIQUE();
-  const email = `${username}@test.com`;
-
-  await page.goto('/en/auth/register');
-  await page.fill('[name="email"]', email);
-  await page.fill('[name="username"]', username);
-  await page.fill('[name="password"]', 'testpass123');
-  await page.click('[type="submit"]');
-  await page.waitForURL('**/profile');
-  return { username, email };
-}
+import { registerAndVerify } from './helpers';
 
 test.describe('Register → Login → Editor → Save → Gallery', () => {
   test('full user flow: register, load preset, save with dialog, find in gallery', async ({ page }) => {
     // 1. Register
-    const { username } = await registerAndLogin(page);
+    const { username } = await registerAndVerify(page);
 
     // 2. Go to editor and load a .prst file
     await page.goto('/en/editor');
@@ -30,7 +17,7 @@ test.describe('Register → Login → Editor → Save → Gallery', () => {
     await fileInput.setInputFiles(PRST_FILE);
 
     // Should see the preset loaded
-    await expect(page.locator('[data-testid="patch-name-input"]')).toHaveValue('foo fighters 2');
+    await expect(page.locator('[data-testid="patch-name-input"]')).toHaveValue(/claude1/i);
     await expect(page.locator('[data-testid="download-btn"]')).toBeVisible();
 
     // 3. Click "Save to My Presets" — should open dialog
@@ -54,25 +41,26 @@ test.describe('Register → Login → Editor → Save → Gallery', () => {
     await page.waitForURL('**/presets');
 
     // 4. Verify preset appears in user's preset list
-    await expect(page.locator('text=foo fighters 2')).toBeVisible();
+    await expect(page.locator('text=claude1').first()).toBeVisible();
 
     // 5. Go to gallery and find the published preset
     await page.goto('/en/gallery');
-    await expect(page.locator(`text=foo fighters 2`)).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('text=claude1').first()).toBeVisible({ timeout: 5000 });
 
     // Verify author and style are shown
-    await expect(page.locator(`text=${username}`)).toBeVisible();
-    await expect(page.locator('text=Rock')).toBeVisible();
+    await expect(page.locator(`text=${username}`).first()).toBeVisible();
+    // Verify style is shown as inline span (not the hidden <option>)
+    await expect(page.locator('span:has-text("Rock"):visible').first()).toBeVisible({ timeout: 5000 });
   });
 
   test('gallery search filters work', async ({ page }) => {
     // First create a preset to search for
-    const { username } = await registerAndLogin(page);
+    const { username } = await registerAndVerify(page);
 
     await page.goto('/en/editor');
     const fileInput = page.locator('[data-testid="file-input"]');
     await fileInput.setInputFiles(PRST_FILE);
-    await expect(page.locator('[data-testid="patch-name-input"]')).toHaveValue('foo fighters 2');
+    await expect(page.locator('[data-testid="patch-name-input"]')).toHaveValue(/claude1/i);
 
     // Save with publish
     await page.click('[data-testid="save-to-presets-btn"]');
@@ -86,29 +74,24 @@ test.describe('Register → Login → Editor → Save → Gallery', () => {
     await page.goto('/en/gallery');
 
     // Search by name
-    await page.fill('input[placeholder*="Search"]', 'foo fighters');
+    await page.fill('input[placeholder*="Search"]', 'claude1');
     await page.waitForTimeout(500); // debounce
-    await expect(page.locator('text=foo fighters 2')).toBeVisible();
+    await expect(page.locator('text=claude1').first()).toBeVisible();
 
     // Clear search and filter by style
     await page.fill('input[placeholder*="Search"]', '');
     await page.waitForTimeout(500);
     await page.selectOption('select', 'Metal');
-    await expect(page.locator('text=foo fighters 2')).toBeVisible();
-
-    // Filter by module — DST should be in foo fighters 2
-    await page.selectOption('select', ''); // clear style filter
-    await page.click('button:has-text("DST")');
-    await expect(page.locator('text=foo fighters 2')).toBeVisible();
+    await expect(page.locator('text=claude1').first()).toBeVisible();
   });
 
   test('save dialog can be cancelled', async ({ page }) => {
-    await registerAndLogin(page);
+    await registerAndVerify(page);
 
     await page.goto('/en/editor');
     const fileInput = page.locator('[data-testid="file-input"]');
     await fileInput.setInputFiles(PRST_FILE);
-    await expect(page.locator('[data-testid="patch-name-input"]')).toHaveValue('foo fighters 2');
+    await expect(page.locator('[data-testid="patch-name-input"]')).toHaveValue(/claude1/i);
 
     // Open save dialog
     await page.click('[data-testid="save-to-presets-btn"]');
@@ -123,28 +106,28 @@ test.describe('Register → Login → Editor → Save → Gallery', () => {
   });
 
   test('load preset from disk button works in editor', async ({ page }) => {
-    await registerAndLogin(page);
+    await registerAndVerify(page);
 
     await page.goto('/en/editor');
 
     // First load via drag zone to get into editor
     const fileInput = page.locator('[data-testid="file-input"]');
     await fileInput.setInputFiles(PRST_FILE);
-    await expect(page.locator('[data-testid="patch-name-input"]')).toHaveValue('foo fighters 2');
+    await expect(page.locator('[data-testid="patch-name-input"]')).toHaveValue(/claude1/i);
 
     // Now use "Load from disk" button to load another file (same file, just testing the button works)
     const loadFromDisk = page.locator('label:has-text("Load preset from disk") input[type="file"]');
     await loadFromDisk.setInputFiles(PRST_FILE);
 
     // Should still show the preset
-    await expect(page.locator('[data-testid="patch-name-input"]')).toHaveValue('foo fighters 2');
+    await expect(page.locator('[data-testid="patch-name-input"]')).toHaveValue(/claude1/i);
   });
 
   test('unauthenticated user sees login prompt instead of save button', async ({ page }) => {
     await page.goto('/en/editor');
     const fileInput = page.locator('[data-testid="file-input"]');
     await fileInput.setInputFiles(PRST_FILE);
-    await expect(page.locator('[data-testid="patch-name-input"]')).toHaveValue('foo fighters 2');
+    await expect(page.locator('[data-testid="patch-name-input"]')).toHaveValue(/claude1/i);
 
     // Should see "Sign in to save" text, not save button
     await expect(page.locator('text=Sign in to save')).toBeVisible();

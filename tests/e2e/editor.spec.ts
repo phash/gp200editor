@@ -3,8 +3,9 @@ import { test, expect } from '@playwright/test';
 test.describe('Home Page', () => {
   test('zeigt Headline und Upload-CTA', async ({ page }) => {
     await page.goto('/de');
-    await expect(page.getByTestId('home-upload-cta')).toBeVisible();
-    await expect(page.locator('h1')).toContainText('GP-200');
+    // Home redirects to editor — check upload zone as CTA
+    await expect(page.getByTestId('file-upload-zone')).toBeVisible();
+    await expect(page.locator('h1')).toContainText('Preset');
   });
 
   test('Navbar zeigt Sprachschalter', async ({ page }) => {
@@ -16,7 +17,7 @@ test.describe('Home Page', () => {
     await page.goto('/de');
     await page.getByTestId('nav-locale-switcher').click();
     await expect(page).toHaveURL(/\/en/);
-    await expect(page.locator('h1')).toContainText('GP-200');
+    await expect(page.locator('h1')).toContainText('Preset');
   });
 });
 
