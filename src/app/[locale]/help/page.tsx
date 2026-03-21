@@ -73,6 +73,7 @@ export default async function HelpPage() {
   ];
 
   const faq = [
+    { q: t('faqLinuxQ'), a: t('faqLinuxA') },
     { q: t('faqBrowserQ'), a: t('faqBrowserA') },
     { q: t('faqFirmwareQ'), a: t('faqFirmwareA') },
     { q: t('faqFormatQ'), a: t('faqFormatA') },
