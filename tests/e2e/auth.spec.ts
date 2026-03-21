@@ -2,18 +2,52 @@ import { test, expect } from '@playwright/test';
 
 const UNIQUE = () => `user_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
+async function registerAndVerify(page: import('@playwright/test').Page) {
+  const username = UNIQUE();
+  const email = `${username}@test.com`;
+
+  // Clear Mailhog before registering to avoid finding old emails
+  await page.context().request.delete('http://localhost:8025/api/v1/messages');
+
+  await page.goto('/en/auth/register');
+  await page.fill('[name="email"]', email);
+  await page.fill('[name="username"]', username);
+  await page.fill('[name="password"]', 'testpass123');
+  await page.click('[type="submit"]');
+
+  // Wait for "check your email" success state
+  await page.waitForTimeout(1000);
+
+  // Get verification email from Mailhog
+  let verifyUrl: string | undefined;
+  for (let i = 0; i < 10; i++) {
+    const resp = await page.context().request.get('http://localhost:8025/api/v2/messages');
+    const data = await resp.json() as { items?: Array<{ To: Array<{ Mailbox: string; Domain: string }>; Content: { Body: string } }> };
+    const mail = data.items?.find(m => `${m.To[0].Mailbox}@${m.To[0].Domain}` === email);
+    if (mail) {
+      const body = mail.Content?.Body ?? '';
+      const match = body.match(/http[^\s"<]+verify-email[^\s"<]+/);
+      verifyUrl = match?.[0];
+      if (verifyUrl) break;
+    }
+    await page.waitForTimeout(500);
+  }
+
+  if (!verifyUrl) throw new Error(`No verification email found for ${email}`);
+
+  // Visit verify URL → auto-logs in → redirects to /editor
+  await page.goto(verifyUrl);
+  await page.waitForURL('**/editor', { timeout: 10000 });
+
+  return { username, email };
+}
+
 test.describe('Auth flows', () => {
   test('register → auto-login → redirected to profile', async ({ page }) => {
-    const username = UNIQUE();
-    const email = `${username}@test.com`;
+    await registerAndVerify(page);
 
-    await page.goto('/en/auth/register');
-    await page.fill('[name="email"]', email);
-    await page.fill('[name="username"]', username);
-    await page.fill('[name="password"]', 'testpass123');
-    await page.click('[type="submit"]');
-
-    await page.waitForURL('**/profile');
+    // After email verification we land on /editor; navigate to /profile to verify auth works
+    await page.goto('/en/profile');
     await expect(page.locator('h1')).toBeVisible();
   });
 
@@ -27,40 +61,32 @@ test.describe('Auth flows', () => {
   });
 
   test('register then login then logout', async ({ page }) => {
-    const username = UNIQUE();
-    const email = `${username}@test.com`;
+    const { email } = await registerAndVerify(page);
     const password = 'testpass123';
 
-    await page.goto('/en/auth/register');
-    await page.fill('[name="email"]', email);
-    await page.fill('[name="username"]', username);
-    await page.fill('[name="password"]', password);
-    await page.click('[type="submit"]');
-    await page.waitForURL('**/profile');
+    // Navigate to profile to confirm we are logged in
+    await page.goto('/en/profile');
+    await expect(page.locator('h1')).toBeVisible();
 
+    // Logout
     await page.click('[data-testid="nav-logout"]');
     await page.waitForURL('**/auth/login');
 
+    // Log back in
     await page.fill('[name="email"]', email);
     await page.fill('[name="password"]', password);
     await page.click('[type="submit"]');
     await page.waitForURL('**/profile');
   });
 
-  test('forgot password sends email to Mailhog', async ({ page, request }) => {
-    const username = UNIQUE();
-    const email = `${username}@test.com`;
-
-    // Register
-    await page.goto('/en/auth/register');
-    await page.fill('[name="email"]', email);
-    await page.fill('[name="username"]', username);
-    await page.fill('[name="password"]', 'testpass123');
-    await page.click('[type="submit"]');
-    await page.waitForURL('**/profile');
+  test('forgot password sends email to Mailhog', async ({ page }) => {
+    const { email } = await registerAndVerify(page);
 
     // Logout
     await page.click('[data-testid="nav-logout"]');
+
+    // Clear Mailhog so only the reset email remains
+    await page.context().request.delete('http://localhost:8025/api/v1/messages');
 
     // Forgot password
     await page.goto('/en/auth/forgot-password');
@@ -68,13 +94,17 @@ test.describe('Auth flows', () => {
     await page.click('[type="submit"]');
     await expect(page.locator('[data-testid="forgot-password-sent"]')).toBeVisible();
 
-    // Verify email in Mailhog
-    const mailhog = await request.get('http://localhost:8025/api/v2/messages');
-    const messages = await mailhog.json();
-    const resetEmail = messages.items?.find(
-      (m: { To: Array<{ Mailbox: string; Domain: string }> }) =>
-        `${m.To[0].Mailbox}@${m.To[0].Domain}` === email,
-    );
+    // Verify reset email in Mailhog
+    let resetEmail: unknown;
+    for (let i = 0; i < 10; i++) {
+      const mailhog = await page.context().request.get('http://localhost:8025/api/v2/messages');
+      const messages = await mailhog.json() as { items?: Array<{ To: Array<{ Mailbox: string; Domain: string }> }> };
+      resetEmail = messages.items?.find(
+        (m) => `${m.To[0].Mailbox}@${m.To[0].Domain}` === email,
+      );
+      if (resetEmail) break;
+      await page.waitForTimeout(500);
+    }
     expect(resetEmail).toBeDefined();
   });
 
