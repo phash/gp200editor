@@ -1,10 +1,29 @@
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import type { Metadata } from 'next';
 import { prisma } from '@/lib/prisma';
 
 type Props = {
   params: Promise<{ token: string }>;
 };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { token } = await params;
+  const preset = await prisma.preset.findUnique({
+    where: { shareToken: token },
+    select: { name: true, description: true, user: { select: { username: true } } },
+  });
+  if (!preset) return {};
+  const title = `${preset.name} — GP-200 Preset by @${preset.user.username} | Preset Forge`;
+  const description = preset.description
+    ? `${preset.description} — Download this free Valeton GP-200 preset and edit it in the browser.`
+    : `Free Valeton GP-200 preset "${preset.name}" by @${preset.user.username}. Open in the browser editor — works on Linux, Windows, macOS.`;
+  return {
+    title,
+    description,
+    openGraph: { title, description },
+  };
+}
 
 export default async function SharePage({ params }: Props) {
   const { token } = await params;

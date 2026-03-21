@@ -1,4 +1,14 @@
 import { getTranslations } from 'next-intl/server';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Help & FAQ — GP-200 Editor, Linux Support, USB MIDI | Preset Forge',
+  description: 'How to use Preset Forge: load and edit GP-200 presets, connect via USB MIDI, import HX Stomp presets, build live setlists. Works on Linux (tested on Linux Mint), Windows, and macOS.',
+  openGraph: {
+    title: 'Help & FAQ — GP-200 Preset Editor | Preset Forge',
+    description: 'Complete guide to Preset Forge: GP-200 preset editing, Linux support (Linux Mint tested), USB MIDI live editing, HX Stomp import, live setlists with cue points.',
+  },
+};
 
 export default async function HelpPage() {
   const t = await getTranslations('help');
@@ -81,8 +91,20 @@ export default async function HelpPage() {
     { q: t('faqHxStompQ'), a: t('faqHxStompA') },
   ];
 
+  // JSON-LD: static translation strings only, not user input — safe
+  const faqJsonLd = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faq.map(({ q, a }) => ({
+      '@type': 'Question',
+      name: q,
+      acceptedAnswer: { '@type': 'Answer', text: a },
+    })),
+  });
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqJsonLd }} />
       <h1
         className="font-mono-display text-2xl font-bold tracking-tight mb-8"
         style={{ color: 'var(--accent-amber)' }}
