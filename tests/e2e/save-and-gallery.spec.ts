@@ -29,8 +29,10 @@ async function registerAndLogin(page: import('@playwright/test').Page) {
     const data = await resp.json() as { items?: Array<{ To: Array<{ Mailbox: string; Domain: string }>; Content: { Body: string } }> };
     const mail = data.items?.find(m => `${m.To[0].Mailbox}@${m.To[0].Domain}` === email);
     if (mail) {
-      const body = mail.Content?.Body ?? '';
-      const match = body.match(/http[^\s"<]+verify-email[^\s"<]+/);
+      // Email body is quoted-printable encoded: decode soft line breaks and =XX hex sequences
+      const raw = mail.Content?.Body ?? '';
+      const body = raw.replace(/=\r?\n/g, '').replace(/=([0-9A-Fa-f]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
+      const match = body.match(/http[^\s"<>]+verify-email[^\s"<>]+/);
       verifyUrl = match?.[0];
       if (verifyUrl) break;
     }

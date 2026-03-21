@@ -25,8 +25,10 @@ async function registerAndVerify(page: import('@playwright/test').Page) {
     const data = await resp.json() as { items?: Array<{ To: Array<{ Mailbox: string; Domain: string }>; Content: { Body: string } }> };
     const mail = data.items?.find(m => `${m.To[0].Mailbox}@${m.To[0].Domain}` === email);
     if (mail) {
-      const body = mail.Content?.Body ?? '';
-      const match = body.match(/http[^\s"<]+verify-email[^\s"<]+/);
+      // Email body is quoted-printable encoded: decode soft line breaks and =XX hex sequences
+      const raw = mail.Content?.Body ?? '';
+      const body = raw.replace(/=\r?\n/g, '').replace(/=([0-9A-Fa-f]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
+      const match = body.match(/http[^\s"<>]+verify-email[^\s"<>]+/);
       verifyUrl = match?.[0];
       if (verifyUrl) break;
     }
@@ -68,11 +70,13 @@ test.describe('Auth flows', () => {
     await page.goto('/en/profile');
     await expect(page.locator('h1')).toBeVisible();
 
-    // Logout
+    // Logout — redirects to home page (/en)
     await page.click('[data-testid="nav-logout"]');
-    await page.waitForURL('**/auth/login');
+    // Wait for navigation away from /profile to complete
+    await page.waitForFunction(() => !window.location.pathname.includes('/profile'), { timeout: 10000 });
 
     // Log back in
+    await page.goto('/en/auth/login');
     await page.fill('[name="email"]', email);
     await page.fill('[name="password"]', password);
     await page.click('[type="submit"]');
