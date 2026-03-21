@@ -3,8 +3,10 @@ data_dir     = "/var/lib/garage/data"
 
 replication_factor = 1
 
-# Required: random hex string, any value works for single-node dev
-rpc_secret = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+# IMPORTANT: Generate a real secret before first use!
+#   openssl rand -hex 32
+# Never commit garage.toml with the actual secret.
+rpc_secret = "REPLACE_ME_WITH_openssl_rand_hex_32"
 
 rpc_bind_addr = "0.0.0.0:3901"
 

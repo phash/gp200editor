@@ -48,25 +48,51 @@ GARAGE_SECRET_ACCESS_KEY=
 GARAGE_BUCKET=avatars
 GARAGE_PRESET_BUCKET=presets
 
+# SMTP — configure a real provider before first deploy!
+# Mailhog (dev-only) does NOT deliver emails.
 EMAIL_FROM=noreply@${DOMAIN}
-EMAIL_SMTP_HOST=mailhog
-EMAIL_SMTP_PORT=1025
+EMAIL_SMTP_HOST=
+EMAIL_SMTP_PORT=465
 EMAIL_SMTP_USER=
 EMAIL_SMTP_PASS=
 ENVEOF
   info "Generated .env.prod with random Postgres password"
+  warn "IMPORTANT: Edit .env.prod and set EMAIL_SMTP_HOST/USER/PASS before starting!"
 else
   info ".env.prod already exists, keeping it"
+fi
+
+# Verify SMTP is configured
+SMTP_HOST=$(grep '^EMAIL_SMTP_HOST=' .env.prod | cut -d= -f2)
+if [ -z "$SMTP_HOST" ] || [ "$SMTP_HOST" = "mailhog" ]; then
+  warn "═══════════════════════════════════════════════════════════════"
+  warn " EMAIL_SMTP_HOST is not configured (or still set to mailhog)!"
+  warn " Password reset and email verification will NOT work."
+  warn " Edit .env.prod and set EMAIL_SMTP_HOST, EMAIL_SMTP_USER,"
+  warn " EMAIL_SMTP_PASS to a real SMTP provider, then restart."
+  warn "═══════════════════════════════════════════════════════════════"
 fi
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Step 2: Build and start GP-200 stack
 # ══════════════════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════════════════
+# Step 1b: Generate garage.toml with random rpc_secret (if not present)
+# ══════════════════════════════════════════════════════════════════════════════
+if [ ! -f garage.toml ]; then
+  info "Generating garage.toml with random rpc_secret..."
+  RPC_SECRET=$(openssl rand -hex 32)
+  sed "s/REPLACE_ME_WITH_openssl_rand_hex_32/${RPC_SECRET}/" garage.toml.example > garage.toml
+  info "garage.toml created (secret generated)"
+else
+  info "garage.toml already exists, keeping it"
+fi
+
 info "Building Docker images..."
 docker compose -f docker-compose.prod.yml --env-file .env.prod build
 
-info "Starting Postgres + Garage + Mailhog..."
-docker compose -f docker-compose.prod.yml --env-file .env.prod up -d postgres garage mailhog
+info "Starting Postgres + Garage..."
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d postgres garage
 
 info "Waiting for Postgres..."
 until docker compose -f docker-compose.prod.yml exec -T postgres pg_isready -U gp200prod &>/dev/null; do sleep 1; done

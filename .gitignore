@@ -25,11 +25,12 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# local env files
-.env
-.env*.local
-.env.dev
-.env.prod
+# local env files — broad pattern, only keep examples
+.env*
+!.env*.example
+
+# garage config (contains rpc_secret — only commit garage.toml.example)
+garage.toml
 
 # backups
 backups/
