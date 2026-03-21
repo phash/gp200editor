@@ -6,24 +6,21 @@ async function registerAndVerify(page: import('@playwright/test').Page) {
   const username = UNIQUE();
   const email = `${username}@test.com`;
 
-  // Clear Mailhog before registering to avoid finding old emails
-  await page.context().request.delete('http://localhost:8025/api/v1/messages');
-
   await page.goto('/en/auth/register');
   await page.fill('[name="email"]', email);
   await page.fill('[name="username"]', username);
   await page.fill('[name="password"]', 'testpass123');
   await page.click('[type="submit"]');
 
-  // Wait for "check your email" success state
-  await page.waitForTimeout(1000);
-
-  // Get verification email from Mailhog
+  // Wait for email to arrive, then search by recipient (parallel-safe — no global delete)
   let verifyUrl: string | undefined;
-  for (let i = 0; i < 10; i++) {
-    const resp = await page.context().request.get('http://localhost:8025/api/v2/messages');
-    const data = await resp.json() as { items?: Array<{ To: Array<{ Mailbox: string; Domain: string }>; Content: { Body: string } }> };
-    const mail = data.items?.find(m => `${m.To[0].Mailbox}@${m.To[0].Domain}` === email);
+  for (let i = 0; i < 15; i++) {
+    await page.waitForTimeout(500);
+    const resp = await page.context().request.get(
+      `http://localhost:8025/api/v2/search?kind=to&query=${encodeURIComponent(email)}`
+    );
+    const data = await resp.json() as { items?: Array<{ Content: { Body: string } }> };
+    const mail = data.items?.[0];
     if (mail) {
       // Email body is quoted-printable encoded: decode soft line breaks and =XX hex sequences
       const raw = mail.Content?.Body ?? '';
@@ -32,7 +29,6 @@ async function registerAndVerify(page: import('@playwright/test').Page) {
       verifyUrl = match?.[0];
       if (verifyUrl) break;
     }
-    await page.waitForTimeout(500);
   }
 
   if (!verifyUrl) throw new Error(`No verification email found for ${email}`);
