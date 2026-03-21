@@ -69,10 +69,15 @@ export const galleryQuerySchema = z.object({
   modules: z.string().optional().transform((v) => v ? v.split(',').filter(Boolean) : undefined),
   effects: z.string().optional().transform((v) => v ? v.split(',').filter(Boolean) : undefined),
   style: z.string().max(50).optional(),
-  sort: z.enum(['newest', 'popular']).default('newest'),
+  sort: z.enum(['newest', 'popular', 'top-rated']).default('newest'),
   page: z.string().optional().transform((v) => Math.max(1, parseInt(v ?? '1', 10) || 1)),
   limit: z.string().optional().transform((v) => Math.min(50, Math.max(1, parseInt(v ?? '20', 10) || 20))),
 });
+
+export const ratePresetSchema = z.object({
+  score: z.number().int().min(1).max(5),
+});
+export type RatePresetInput = z.infer<typeof ratePresetSchema>;
 
 export type UploadPresetInput = z.infer<typeof uploadPresetSchema>;
 export type PatchPresetInput = z.infer<typeof patchPresetSchema>;
