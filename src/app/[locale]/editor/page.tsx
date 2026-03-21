@@ -17,6 +17,7 @@ import { HelpButton } from '@/components/HelpButton';
 // Firmware compat now uses version check (sub=0x0A) result, not version string matching
 import { SavePresetDialog } from '@/components/SavePresetDialog';
 import { AddToPlaylistDialog } from '@/components/AddToPlaylistDialog';
+import { GuitarRating } from '@/components/GuitarRating';
 import { SysExCodec } from '@/core/SysExCodec';
 import { convertHLX } from '@/core/HLXConverter';
 import type { GP200Preset } from '@/core/types';
@@ -45,6 +46,7 @@ export default function EditorPage() {
   // Track source preset when loaded from gallery (for update vs save-as-new)
   const [sourcePreset, setSourcePreset] = useState<{ id: string; username: string; author: string; style: string; description: string } | null>(null);
   const [importedFromHLX, setImportedFromHLX] = useState(false);
+  const [myRating, setMyRating] = useState(0);
 
   useEffect(() => {
     fetch('/api/profile')
@@ -204,6 +206,16 @@ export default function EditorPage() {
       setSaveStatus('error');
       setTimeout(() => setSaveStatus('idle'), 3000);
     }
+  }
+
+  async function handleRate(score: number) {
+    if (!sourcePreset) return;
+    await fetch(`/api/presets/${sourcePreset.id}/rate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ score }),
+    });
+    setMyRating(score);
   }
 
   async function handlePullConfirm(slot: number) {
@@ -634,6 +646,15 @@ export default function EditorPage() {
                  saveStatus === 'saved' ? t('updatedPreset') :
                  t('updatePreset')}
               </button>
+            )}
+            {/* Rate preset — only when loaded from someone else's gallery */}
+            {sourcePreset && sourcePreset.username !== username && isLoggedIn && (
+              <div className="flex items-center gap-2">
+                <span className="font-mono-display text-[10px] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                  {t('ratePreset')}
+                </span>
+                <GuitarRating value={myRating} onRate={handleRate} size="md" />
+              </div>
             )}
             {/* Save as new — always available when logged in */}
             <button
