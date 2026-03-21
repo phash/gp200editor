@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { MODULE_COLORS, getEffectsByModule } from '@/core/effectNames';
+import { GuitarRating } from '@/components/GuitarRating';
 
 type GalleryPreset = {
   id: string;
@@ -16,6 +17,8 @@ type GalleryPreset = {
   style: string | null;
   shareToken: string;
   downloadCount: number;
+  ratingAverage: number;
+  ratingCount: number;
   createdAt: string;
   user: { username: string };
 };
@@ -31,7 +34,7 @@ export function GalleryClient() {
   const [activeModules, setActiveModules] = useState<string[]>([]);
   const [activeEffects, setActiveEffects] = useState<string[]>([]);
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
-  const [sort, setSort] = useState<'newest' | 'popular'>('newest');
+  const [sort, setSort] = useState<'newest' | 'popular' | 'top-rated'>('newest');
   const [styleFilter, setStyleFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -212,7 +215,7 @@ export function GalleryClient() {
         <span style={{ width: 1, height: 20, background: 'var(--border-active)' }} />
       </div>
       <div className="flex gap-2 mb-6">
-        {(['newest', 'popular'] as const).map((s) => (
+        {(['newest', 'popular', 'top-rated'] as const).map((s) => (
           <button
             key={s}
             onClick={() => setSort(s)}
@@ -223,7 +226,7 @@ export function GalleryClient() {
               color: sort === s ? 'var(--accent-amber)' : 'var(--text-muted)',
             }}
           >
-            {s === 'newest' ? t('sortNewest') : t('sortPopular')}
+            {s === 'newest' ? t('sortNewest') : s === 'popular' ? t('sortPopular') : 'Top Rated'}
           </button>
         ))}
       </div>
@@ -313,9 +316,14 @@ export function GalleryClient() {
 
               {/* Footer: downloads + buttons */}
               <div className="flex items-center justify-between mt-3 pt-2" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  {preset.downloadCount} {t('downloads')}
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    {preset.downloadCount} {t('downloads')}
+                  </span>
+                  {preset.ratingCount > 0 && (
+                    <GuitarRating value={preset.ratingAverage} count={preset.ratingCount} size="sm" />
+                  )}
+                </div>
                 <div className="flex gap-2">
                   <Link
                     href={`/editor?share=${preset.shareToken}`}
