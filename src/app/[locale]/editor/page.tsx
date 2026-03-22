@@ -38,6 +38,8 @@ export default function EditorPage() {
   const [bankDragIndex, setBankDragIndex] = useState<number | null>(null);
   const [bankDragOverIndex, setBankDragOverIndex] = useState<number | null>(null);
   const [swapping, setSwapping] = useState(false);
+  // Track which bank slots have been reordered but not yet saved to device
+  const [bankDirtySlots, setBankDirtySlots] = useState<Set<number>>(new Set());
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [username, setUsername] = useState('');
@@ -240,6 +242,7 @@ export default function EditorPage() {
 
     setBankPresets(pulled);
     setBankBaseSlot(baseSlot);
+    setBankDirtySlots(new Set());
     setActiveTab(tabIndex);
     // Load the selected slot into the editor + switch device to that slot
     if (pulled[tabIndex]) {
@@ -273,34 +276,40 @@ export default function EditorPage() {
   }
 
 
-  async function handleBankSwap(fromTab: number, toTab: number) {
-    if (fromTab === toTab || bankBaseSlot === null || midiDevice.status !== 'connected') return;
+  function handleBankSwap(fromTab: number, toTab: number) {
+    if (fromTab === toTab || bankBaseSlot === null || swapping) return;
     const presetA = bankPresets[fromTab];
     const presetB = bankPresets[toTab];
-    if (!presetA && !presetB) return; // nothing to swap
+    if (!presetA && !presetB) return;
 
+    // Swap locally only — no device push until user clicks Save
+    const newBank = [...bankPresets];
+    newBank[fromTab] = presetB;
+    newBank[toTab] = presetA;
+    setBankPresets(newBank);
+
+    // Mark both slots as dirty
+    setBankDirtySlots(prev => new Set([...prev, fromTab, toTab]));
+
+    // Update editor if active tab was involved
+    if (activeTab === fromTab) {
+      if (presetB) loadPreset(presetB);
+    } else if (activeTab === toTab) {
+      if (presetA) loadPreset(presetA);
+    }
+  }
+
+  async function handleBankSave() {
+    if (bankBaseSlot === null || midiDevice.status !== 'connected' || bankDirtySlots.size === 0) return;
     setSwapping(true);
     try {
-      const slotA = bankBaseSlot + fromTab;
-      const slotB = bankBaseSlot + toTab;
-
-      // Push A's preset to B's slot and vice versa
-      if (presetA) await midiDevice.pushPreset(presetA, slotB);
-      if (presetB) await midiDevice.pushPreset(presetB, slotA);
-
-      // Update local bank state
-      const newBank = [...bankPresets];
-      newBank[fromTab] = presetB;
-      newBank[toTab] = presetA;
-      setBankPresets(newBank);
-
-      // If the active tab was involved, update the editor
-      if (activeTab === fromTab) {
-        if (presetB) loadPreset(presetB);
-      } else if (activeTab === toTab) {
-        if (presetA) loadPreset(presetA);
+      for (const tabIdx of bankDirtySlots) {
+        const preset = bankPresets[tabIdx];
+        if (preset) {
+          await midiDevice.pushPreset(preset, bankBaseSlot + tabIdx);
+        }
       }
-
+      setBankDirtySlots(new Set());
       // Switch device to the active tab's slot
       midiDevice.sendSlotChange(bankBaseSlot + activeTab);
     } catch {
@@ -503,7 +512,7 @@ export default function EditorPage() {
               <button
                 key={i}
                 onClick={() => handleTabSwitch(i)}
-                draggable={midiDevice.status === 'connected' && !swapping}
+                draggable={!swapping}
                 onDragStart={(e) => {
                   setBankDragIndex(i);
                   e.dataTransfer.effectAllowed = 'move';
@@ -540,10 +549,10 @@ export default function EditorPage() {
                     : isActive ? '2px solid var(--accent-amber)' : '2px solid transparent',
                   color: isActive ? 'var(--accent-amber)' : 'var(--text-muted)',
                   opacity: isDragSource ? 0.4 : 1,
-                  cursor: midiDevice.status === 'connected' && !swapping ? 'grab' : undefined,
+                  cursor: !swapping ? 'grab' : undefined,
                 }}
               >
-                <div className="font-bold">{label}</div>
+                <div className="font-bold">{label}{bankDirtySlots.has(i) ? ' •' : ''}</div>
                 <div className="truncate" style={{ fontSize: '0.85em', opacity: name ? 1 : 0.4 }}>
                   {name ?? '—'}
                 </div>
@@ -561,6 +570,20 @@ export default function EditorPage() {
           >
             &gt;
           </button>
+          {bankDirtySlots.size > 0 && midiDevice.status === 'connected' && (
+            <button
+              onClick={handleBankSave}
+              disabled={swapping}
+              className="font-mono-display text-[10px] font-bold uppercase px-3 rounded transition-colors"
+              style={{
+                border: '1px solid rgba(74,222,128,0.5)',
+                color: 'var(--accent-green)',
+                background: 'rgba(74,222,128,0.08)',
+              }}
+            >
+              {swapping ? '…' : t('saveBankOrder')}
+            </button>
+          )}
         </div>
       )}
 
