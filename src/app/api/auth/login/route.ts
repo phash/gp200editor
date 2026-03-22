@@ -36,6 +36,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Email not verified. Please check your inbox.' }, { status: 403 });
   }
 
+  if (user.suspended) {
+    return NextResponse.json({ error: 'Account suspended.' }, { status: 403 });
+  }
+
   const session = await lucia.createSession(user.id, {});
   const sessionCookie = lucia.createSessionCookie(session.id);
   const cookieStore = await cookies();

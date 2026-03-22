@@ -7,6 +7,7 @@ function toResponse(user: {
   id: string;
   username: string;
   email: string;
+  role: string;
   bio: string | null;
   website: string | null;
   avatarKey: string | null;
@@ -16,6 +17,7 @@ function toResponse(user: {
     id: user.id,
     username: user.username,
     email: user.email,
+    role: user.role,
     bio: user.bio,
     website: user.website,
     avatarUrl: user.avatarKey ? `/api/avatar/${user.avatarKey}` : null,

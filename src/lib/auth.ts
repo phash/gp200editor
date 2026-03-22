@@ -15,6 +15,8 @@ export const lucia = new Lucia(adapter, {
   getUserAttributes: (attributes) => ({
     username: attributes.username,
     email: attributes.email,
+    role: attributes.role,
+    suspended: attributes.suspended,
   }),
 });
 
@@ -24,6 +26,8 @@ declare module 'lucia' {
     DatabaseUserAttributes: {
       username: string;
       email: string;
+      role: 'USER' | 'ADMIN';
+      suspended: boolean;
     };
   }
 }
