@@ -12,16 +12,25 @@ export function Navbar() {
   const pathname = usePathname();
   const [username, setUsername] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [role, setRole] = useState<string | null>(null);
+  const [errorCount, setErrorCount] = useState(0);
 
   const otherLocale = locale === 'de' ? 'en' : 'de';
 
   useEffect(() => {
     fetch('/api/profile')
       .then((r) => (r.ok ? r.json() : null))
-      .then((data: { username?: string } | null) =>
-        setUsername(data?.username ?? null),
-      )
-      .catch(() => setUsername(null));
+      .then((data: { username?: string; role?: string } | null) => {
+        setUsername(data?.username ?? null);
+        setRole(data?.role ?? null);
+        if (data?.role === 'ADMIN') {
+          fetch('/api/admin/stats')
+            .then((r) => (r.ok ? r.json() : null))
+            .then((stats: { errorCount?: number } | null) => setErrorCount(stats?.errorCount ?? 0))
+            .catch(() => setErrorCount(0));
+        }
+      })
+      .catch(() => { setUsername(null); setRole(null); });
   }, [pathname]);
 
   function switchLocale() {
@@ -91,6 +100,20 @@ export function Navbar() {
           data-testid="nav-link-help">
           {t('help')}
         </Link>
+        {role === 'ADMIN' && (
+          <Link href="/admin" className="font-mono-display text-xs px-2.5 py-1 rounded transition-all relative"
+            style={{
+              border: '1px solid rgba(245,158,11,0.3)',
+              color: 'var(--accent-amber)',
+              background: pathname === '/admin' ? 'rgba(245,158,11,0.15)' : 'transparent',
+            }}
+            data-testid="nav-link-admin">
+            {t('admin')}
+            {errorCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full" style={{ background: '#ef4444' }} />
+            )}
+          </Link>
+        )}
         {username ? (
           <>
             <Link href="/profile" className="transition-colors hover:text-[var(--accent-amber)]"
@@ -208,6 +231,16 @@ export function Navbar() {
             style={{ color: pathname === '/help' ? 'var(--accent-amber)' : 'var(--text-secondary)' }}>
             {t('help')}
           </Link>
+          {role === 'ADMIN' && (
+            <Link href="/admin" onClick={() => setMobileOpen(false)}
+              className="transition-colors hover:text-[var(--accent-amber)] relative"
+              style={{ color: pathname === '/admin' ? 'var(--accent-amber)' : 'var(--text-secondary)' }}>
+              {t('admin')}
+              {errorCount > 0 && (
+                <span className="inline-block w-2 h-2 rounded-full ml-1" style={{ background: '#ef4444' }} />
+              )}
+            </Link>
+          )}
           {username ? (
             <>
               <Link href="/profile" onClick={() => setMobileOpen(false)} className="transition-colors hover:text-[var(--accent-amber)]"
