@@ -100,20 +100,6 @@ export function Navbar() {
           data-testid="nav-link-help">
           {t('help')}
         </Link>
-        {role === 'ADMIN' && (
-          <Link href="/admin" className="font-mono-display text-xs px-2.5 py-1 rounded transition-all relative"
-            style={{
-              border: '1px solid rgba(245,158,11,0.3)',
-              color: 'var(--accent-amber)',
-              background: pathname === '/admin' ? 'rgba(245,158,11,0.15)' : 'transparent',
-            }}
-            data-testid="nav-link-admin">
-            {t('admin')}
-            {errorCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full" style={{ background: '#ef4444' }} />
-            )}
-          </Link>
-        )}
         {username ? (
           <>
             <Link href="/profile" className="transition-colors hover:text-[var(--accent-amber)]"
@@ -203,6 +189,20 @@ export function Navbar() {
         >
           {otherLocale.toUpperCase()}
         </button>
+        {role === 'ADMIN' && (
+          <Link href="/admin" className="font-mono-display text-xs px-2.5 py-1 rounded transition-all relative"
+            style={{
+              border: '1px solid rgba(245,158,11,0.3)',
+              color: 'var(--accent-amber)',
+              background: pathname === '/admin' ? 'rgba(245,158,11,0.15)' : 'transparent',
+            }}
+            data-testid="nav-link-admin">
+            {t('admin')}
+            {errorCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full" style={{ background: '#ef4444' }} />
+            )}
+          </Link>
+        )}
       </div>
 
       {/* Mobile nav menu */}

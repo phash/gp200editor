@@ -153,21 +153,6 @@ export function AdminDashboard() {
 
   return (
     <div>
-      {/* Stats Bar */}
-      <div className="grid grid-cols-4 gap-px rounded-lg overflow-hidden mb-6" style={{ background: 'var(--border-subtle)' }}>
-        {[
-          { label: t('stats.users'), value: stats.userCount, color: 'var(--accent-amber)' },
-          { label: t('stats.presets'), value: stats.presetCount, color: 'var(--accent-amber)' },
-          { label: t('stats.errors'), value: stats.errorCount, color: stats.errorCount > 0 ? '#ef4444' : 'var(--accent-amber)' },
-          { label: t('stats.suspended'), value: stats.suspendedCount, color: 'var(--accent-amber)' },
-        ].map((s) => (
-          <div key={s.label} className="text-center py-4" style={{ background: 'var(--bg-surface)' }}>
-            <div className="text-2xl font-mono" style={{ color: s.color }}>{s.value}</div>
-            <div className="text-[11px] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{s.label}</div>
-          </div>
-        ))}
-      </div>
-
       {/* Tab Navigation */}
       <div className="flex border-b mb-4" style={{ borderColor: 'var(--border-subtle)' }}>
         {tabs.map((t_) => (
