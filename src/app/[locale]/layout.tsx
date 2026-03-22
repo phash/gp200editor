@@ -9,54 +9,48 @@ import { Footer } from '@/components/Footer';
 import { Navbar } from '@/components/Navbar';
 import { ClientProviders } from './ClientProviders';
 
-export const metadata: Metadata = {
-  title: 'Preset Forge — GP-200 Preset Editor | Linux & Windows | HX Stomp Import',
-  description: 'Free browser-based editor for Valeton GP-200 guitar presets — the only GP-200 editor that runs on Linux (tested on Linux Mint). Import Line6 HX Stomp .hlx files, live USB MIDI editing, timed preset switching for gigs, 305 effects with per-effect gallery filtering, community sharing. No install needed — works offline as PWA.',
-  keywords: [
-    'Valeton GP-200',
-    'GP-200 preset editor',
-    'GP-200 Linux',
-    'GP-200 Linux Mint',
-    'GP-200 editor Linux',
-    'Valeton GP-200 Linux',
-    'GP-200 Ubuntu',
-    'GP-200 editor alternative',
-    'guitar effects',
-    'multi-effects pedal',
-    'USB MIDI',
-    'Web MIDI',
-    '.prst editor',
-    'pedalboard',
-    'tone sharing',
-    'guitar presets',
-    'Line6 HX Stomp',
-    'HX Stomp preset converter',
-    '.hlx import',
-    'Helix preset',
-    'preset converter',
-    'guitar tone',
-    'amp simulator',
-    'signal chain editor',
-    'GP-200 firmware 1.8',
-    'live setlist',
-    'cue points',
-    'preset switching',
-    'gig automation',
-    'guitar preset gallery',
-    'effect filter',
-    'pedalboard view',
-    'PWA offline',
-    'MIDI auto-reconnect',
-  ],
-  manifest: '/manifest.json',
-  openGraph: {
+const BASE_URL = 'https://preset-forge.com';
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  return {
     title: 'Preset Forge — GP-200 Preset Editor | Linux & Windows | HX Stomp Import',
-    description: 'The only GP-200 editor that runs on Linux (tested on Linux Mint). Import HX Stomp .hlx presets, build timed setlists with cue points for live gigs, browse 305 effects in the gallery. USB MIDI, offline PWA.',
-    siteName: 'Preset Forge',
-    type: 'website',
-    url: 'https://preset-forge.com',
-  },
-};
+    description: 'Free browser-based editor for Valeton GP-200 guitar presets — the only GP-200 editor that runs on Linux (tested on Linux Mint). Import Line6 HX Stomp .hlx files, live USB MIDI editing, timed preset switching for gigs, 305 effects with per-effect gallery filtering, community sharing. No install needed — works offline as PWA.',
+    keywords: [
+      'Valeton GP-200', 'GP-200 preset editor', 'GP-200 Linux', 'GP-200 Linux Mint',
+      'GP-200 editor Linux', 'Valeton GP-200 Linux', 'GP-200 Ubuntu', 'GP-200 editor alternative',
+      'guitar effects', 'multi-effects pedal', 'USB MIDI', 'Web MIDI', '.prst editor',
+      'pedalboard', 'tone sharing', 'guitar presets', 'Line6 HX Stomp',
+      'HX Stomp preset converter', '.hlx import', 'Helix preset', 'preset converter',
+      'guitar tone', 'amp simulator', 'signal chain editor', 'GP-200 firmware 1.8',
+      'live setlist', 'cue points', 'preset switching', 'gig automation',
+      'guitar preset gallery', 'effect filter', 'pedalboard view', 'PWA offline', 'MIDI auto-reconnect',
+    ],
+    manifest: '/manifest.json',
+    alternates: {
+      canonical: `${BASE_URL}/${locale}`,
+      languages: {
+        de: `${BASE_URL}/de`,
+        en: `${BASE_URL}/en`,
+        'x-default': `${BASE_URL}/de`,
+      },
+    },
+    openGraph: {
+      title: 'Preset Forge — GP-200 Preset Editor | Linux & Windows | HX Stomp Import',
+      description: 'The only GP-200 editor that runs on Linux (tested on Linux Mint). Import HX Stomp .hlx presets, build timed setlists with cue points for live gigs, browse 305 effects in the gallery. USB MIDI, offline PWA.',
+      siteName: 'Preset Forge',
+      type: 'website',
+      url: `${BASE_URL}/${locale}`,
+      images: [{ url: `${BASE_URL}/og-image.png`, width: 1200, height: 630, alt: 'Preset Forge — GP-200 Preset Editor' }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: 'Preset Forge — GP-200 Preset Editor',
+      description: 'The only GP-200 editor that runs on Linux. Edit presets, sync via USB MIDI, import HX Stomp .hlx files.',
+      images: [`${BASE_URL}/og-image.png`],
+    },
+  };
+}
 
 const jsonLd = {
   '@context': 'https://schema.org',
