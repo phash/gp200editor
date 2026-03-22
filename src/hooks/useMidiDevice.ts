@@ -343,6 +343,11 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     const commitMsg = SysExCodec.buildPresetChange(slot);
     console.log(`[GP-200] push preset-change: ${commitMsg.length}B`);
     outputRef.current.send(commitMsg);
+
+    // Update cached preset name for the target slot
+    presetNamesRef.current[slot] = preset.patchName;
+    setPresetNames([...presetNamesRef.current]);
+
     console.log('[GP-200] push complete');
   }, []);
 
