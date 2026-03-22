@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { MODULE_COLORS, getEffectsByModule } from '@/core/effectNames';
 import { GuitarRating } from '@/components/GuitarRating';
+import { AdminActions } from '@/components/AdminActions';
 
 type GalleryPreset = {
   id: string;
@@ -20,6 +21,7 @@ type GalleryPreset = {
   ratingAverage: number;
   ratingCount: number;
   createdAt: string;
+  flagged: boolean;
   user: { username: string };
 };
 
@@ -37,6 +39,7 @@ export function GalleryClient() {
   const [sort, setSort] = useState<'newest' | 'popular' | 'top-rated'>('newest');
   const [styleFilter, setStyleFilter] = useState('');
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchPresets = useCallback(async (p: number, append: boolean) => {
@@ -64,6 +67,14 @@ export function GalleryClient() {
     setPage(1);
     fetchPresets(1, false);
   }, [fetchPresets]);
+
+  // Fetch current user role for admin actions
+  useEffect(() => {
+    fetch('/api/profile')
+      .then((r) => r.ok ? r.json() : null)
+      .then((d: { role?: string } | null) => setUserRole(d?.role ?? null))
+      .catch(() => {});
+  }, []);
 
   function handleSearchChange(value: string) {
     setQuery(value);
@@ -349,6 +360,18 @@ export function GalleryClient() {
                   </a>
                 </div>
               </div>
+
+              {userRole === 'ADMIN' && (
+                <div className="mt-2 pt-2" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                  <AdminActions
+                    type="preset"
+                    targetId={preset.id}
+                    isPublic={true}
+                    flagged={preset.flagged}
+                    onAction={() => fetchPresets(page, false)}
+                  />
+                </div>
+              )}
             </div>
           ))}
         </div>

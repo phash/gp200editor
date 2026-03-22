@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import { validateSession } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
 import Image from 'next/image';
+import { AdminActions } from '@/components/AdminActions';
 
 type Props = {
   params: Promise<{ username: string }>;
@@ -19,15 +20,23 @@ export default async function UserProfilePage({ params }: Props) {
   const profileUser = await prisma.user.findUnique({
     where: { username },
     select: {
+      id: true,
       username: true,
       bio: true,
       website: true,
       avatarKey: true,
       createdAt: true,
+      suspended: true,
     },
   });
 
   if (!profileUser) notFound();
+
+  // Check if current user is admin (for contextual admin actions)
+  const isAdmin = !!user && (await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { role: true },
+  }))?.role === 'ADMIN';
 
   const avatarUrl = profileUser.avatarKey
     ? `/api/avatar/${profileUser.avatarKey}`
@@ -108,6 +117,17 @@ export default async function UserProfilePage({ params }: Props) {
           >
             {profileUser.website}
           </a>
+        )}
+
+        {isAdmin && profileUser.id !== user!.id && (
+          <div style={{ borderTop: '1px solid var(--border-subtle)' }} className="pt-3 mt-3">
+            <AdminActions
+              type="user"
+              targetId={profileUser.id}
+              username={profileUser.username}
+              suspended={profileUser.suspended}
+            />
+          </div>
         )}
       </div>
     </div>
