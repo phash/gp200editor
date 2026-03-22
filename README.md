@@ -15,6 +15,7 @@ Preset Forge lets you edit Valeton GP-200 multi-effects pedal presets (`.prst` f
 - **Import Line6 HX Stomp presets** (experimental) — convert `.hlx` files to GP-200 format
 - **Build live setlists** — timed cue points for automatic preset switching during gigs, with 3-2-1 count-in
 - **Share and discover presets** — community gallery with per-effect filtering across all 305 effects
+- **Admin dashboard** — user/preset management, error console with GitHub issue creation, audit log
 
 ## Linux Support
 
@@ -32,7 +33,9 @@ For USB MIDI on Linux: install Chrome or Chromium, connect the GP-200 via USB, a
 - **Preset Gallery** — community sharing, per-effect filtering (305 effects × 12 modules)
 - **MIDI Auto-Reconnect** — 3 automatic reconnect attempts on USB disconnect
 - **PWA / Offline** — editor works offline; gallery requires internet
-- Account system with profile, avatar, email verification
+- **Admin Area** — user management (suspend/warn/delete), preset moderation (flag/unpublish/delete), error console with GH issue creation, audit log
+- Account system with profile, avatar, email verification, login via email or username
+- Role-based access (USER/ADMIN)
 - Fully bilingual (DE/EN) · WCAG 2.1 AA
 
 ## Stack
@@ -43,7 +46,7 @@ For USB MIDI on Linux: install Chrome or Chromium, connect the GP-200 via USB, a
 - **Lucia v3** (Session-Auth, Argon2id)
 - **Garage** (S3-kompatibler Object Store) für Avatare und Presets
 - **next-intl 4** (DE/EN)
-- **Vitest** (271 Unit-Tests) + **Playwright** (E2E + A11y)
+- **Vitest** (288 Unit-Tests) + **Playwright** (E2E + A11y)
 
 ## Entwicklung
 
@@ -80,7 +83,7 @@ npm run dev       # http://localhost:3000
 ### Tests
 
 ```bash
-npm run test          # 271 Unit-Tests (Vitest)
+npm run test          # 288 Unit-Tests (Vitest)
 npm run test:coverage # Coverage-Report
 npm run test:e2e      # Playwright E2E (App + Garage + DB erforderlich)
 ```

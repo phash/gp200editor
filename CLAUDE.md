@@ -21,7 +21,7 @@ Live USB-MIDI Editing, Preset-Galerie, Community-Sharing.
 ```bash
 npm install --legacy-peer-deps   # legacy-peer-deps wegen lokaler npm-Version (11.x vs lock-file)
 npm run dev                      # http://localhost:3000
-npm run test                     # Vitest Unit-Tests (271 Tests)
+npm run test                     # Vitest Unit-Tests (288 Tests)
 npm run test:e2e                 # Playwright E2E (App muss laufen + Garage + DB)
 npm run build                    # Production Build
 ```
@@ -135,34 +135,43 @@ src/
 │   └── useTimelinePlayer.ts # rAF-basierter Timer für Playlist Cue Points
 │
 ├── components/
-│   ├── Navbar.tsx            # Auth-Status, Locale-Switcher, Links (Profile, Presets)
+│   ├── Navbar.tsx            # Auth-Status, Locale-Switcher, Links (Profile, Presets, Admin)
 │   ├── FileUpload.tsx        # Drag & Drop + Keyboard (WCAG)
 │   ├── EffectSlot.tsx        # Effekt-Slot: Modul-Badge, Effekt-Dropdown, LED-Toggle,
 │   │                        #   Drag & Drop Reorder, aufklappbare Parameter
 │   ├── EffectParams.tsx      # Parameter-Controls: Slider, Switch, Combox
 │   ├── CuePointTable.tsx     # Timeline-Tabelle für Playlist Cue Points (device slot-basiert)
+│   ├── AdminDashboard.tsx    # Admin-Dashboard: Users/Presets/Errors/Audit-Log Tabs
+│   ├── AdminActions.tsx      # Kontextuelle Admin-Buttons (Profil, Galerie)
+│   ├── ConfirmDialog.tsx     # Bestätigungs-Dialog für destruktive Aktionen
+│   ├── WarnDialog.tsx        # Warnung-Dialog (Grund + Nachricht per E-Mail)
 │   └── Footer.tsx
 │
 ├── lib/
-│   ├── auth.ts              # Lucia v3 Instanz (PrismaAdapter, session cookie)
+│   ├── auth.ts              # Lucia v3 Instanz (PrismaAdapter, session cookie, role+suspended)
 │   ├── prisma.ts            # Prisma Client Singleton
 │   ├── session.ts           # validateSession(), refreshSessionCookie()
-│   ├── email.ts             # Nodemailer, sendPasswordResetEmail()
+│   ├── admin.ts             # requireAdmin() Guard, logAdminAction() Audit-Trail
+│   ├── errorLog.ts          # logError() → DB-basiertes Error-Logging
+│   ├── email.ts             # Nodemailer, sendPasswordResetEmail(), sendWarningEmail()
 │   ├── storage.ts           # Garage S3: Avatar (bucket()) + Preset (presetBucket())
-│   └── validators.ts        # Zod-Schemas für Auth, Profile, Preset
+│   ├── validators.ts        # Zod-Schemas für Auth, Profile, Preset
+│   └── validators.admin.ts  # Zod-Schemas für Admin-API (Patch/Warn/Query)
 │
 ├── app/[locale]/
 │   ├── layout.tsx            # NextIntlClientProvider, Navbar, Footer
 │   ├── page.tsx              # Home-Seite
 │   ├── editor/page.tsx       # Editor: FileUpload + 11x EffectSlot + Drag & Drop
-│   ├── auth/                 # Login, Register, Forgot-Password, Reset-Password
-│   ├── profile/              # Eigenes Profil (edit), /[username] (read-only)
+│   ├── auth/                 # Login (Email/Username), Register, Forgot-Password, Reset-Password
+│   ├── admin/page.tsx        # Admin-Dashboard (role-gated)
+│   ├── profile/              # Eigenes Profil (edit), /[username] (read-only + Admin-Actions)
 │   ├── presets/              # Preset-Liste + Upload, /[id]/edit
 │   └── share/[token]/        # Öffentliche Preset-Seite (kein Login nötig)
 │
 ├── app/api/
-│   ├── auth/                 # register, login, logout, forgot-password, reset-password
-│   ├── profile/              # GET/PATCH Profil, POST Avatar-Upload
+│   ├── auth/                 # register, login (email/username), logout, forgot/reset-password
+│   ├── admin/                # stats, users (CRUD+warn), presets (CRUD), errors, actions
+│   ├── profile/              # GET/PATCH Profil (+role), POST Avatar-Upload
 │   ├── avatar/[key]/         # Avatar-Proxy (verhindert direkte Garage-Exposition)
 │   ├── presets/              # POST/GET Presets, PATCH/DELETE/download/share/revoke
 │   └── share/[token]/        # Öffentliche Preset-Info + Download (kein Auth)
@@ -171,7 +180,7 @@ src/
 │   ├── routing.ts            # defineRouting + createNavigation
 │   └── request.ts            # getRequestConfig für next-intl
 │
-└── middleware.ts             # next-intl + Auth-Guards (profile, presets)
+└── middleware.ts             # next-intl + Auth-Guards (profile, presets, admin)
 
 scripts/
 └── generate-effect-params.mjs  # Parst algorithm.xml → src/core/effectParams.ts
@@ -182,17 +191,28 @@ scripts/
 ## Datenbankschema (Prisma)
 
 ```prisma
-User          id, email, username, passwordHash, bio, website, avatarKey, createdAt
+enum Role     { USER, ADMIN }
+User          id, email, username, passwordHash, emailVerified, bio, website, avatarKey,
+              role(Role @default(USER)), suspended(Boolean @default(false)),
+              createdAt
+              Relations: sessions, resetTokens, emailVerifyTokens, presets, ratings, adminActions
 Session       id, userId, expiresAt  (Lucia v3)
-PasswordResetToken  id, userId, token, expiresAt, usedAt
+PasswordResetToken  id, userId, tokenHash, expiresAt, usedAt
+EmailVerificationToken  id, userId, tokenHash, expiresAt, usedAt
 Preset        id, userId, presetKey, name(VarChar32), description, tags(String[]),
-              shareToken(@unique), downloadCount, publish, style, author,
-              ratingAverage(Float), ratingCount(Int), modules(String[]),
+              shareToken(@unique), downloadCount, public, style, author,
+              flagged(Boolean @default(false)),
+              ratingAverage(Float), ratingCount(Int), modules(String[]), effects(String[]),
               createdAt, updatedAt
               @@index([userId])
 PresetRating  id, presetId, userId, score(Int 1-5), createdAt, updatedAt
               @@unique([presetId, userId])
               @@index([presetId])
+ErrorLog      id, level, message, stack?, url?, userId?, metadata(Json?), createdAt
+              @@index([createdAt])
+AdminAction   id, adminId?(→User onDelete:SetNull), action, targetType, targetId,
+              reason?, metadata(Json?), createdAt
+              @@index([adminId]) @@index([createdAt])
 ```
 
 ---
@@ -203,6 +223,10 @@ PresetRating  id, presetId, userId, score(Int 1-5), createdAt, updatedAt
 - Session-Cookie: `auth_session` (Lucia-Standard)
 - Passwort-Hashing: Argon2id (`@node-rs/argon2`)
 - Session-Validation: `validateSession()` in `src/lib/session.ts` — immer auch `refreshSessionCookie()` aufrufen
+- `getUserAttributes` liefert: `username`, `email`, `role`, `suspended`
+- Login akzeptiert Email oder Username (`loginSchema.login` Feld, `@`-Check für Lookup)
+- Gesperrte User (`suspended=true`) können sich nicht einloggen (403)
+- Admin-Guard: `requireAdmin()` in `src/lib/admin.ts` — prüft `role === 'ADMIN'`
 - Zod-Fehler: `.issues[0].message` (nicht `.errors` — das ist Zod v4)
 
 ---
@@ -233,13 +257,48 @@ PresetRating  id, presetId, userId, score(Int 1-5), createdAt, updatedAt
 
 ---
 
+## Admin-API
+
+Alle Routen unter `/api/admin/` — jede beginnt mit `requireAdmin()`.
+
+| Route | Method | Beschreibung |
+|-------|--------|-------------|
+| `/api/admin/stats` | GET | Dashboard-Statistiken (Users, Presets, Errors, Suspended) |
+| `/api/admin/users` | GET | User-Liste (paginiert, durchsuchbar) |
+| `/api/admin/users/[id]` | PATCH | Suspend/Unsuspend, Edit (username, email, bio, role) |
+| `/api/admin/users/[id]` | DELETE | User + S3-Files + Sessions löschen (Cascade) |
+| `/api/admin/users/[id]/warn` | POST | Warnung per E-Mail (Grund + Nachricht) |
+| `/api/admin/presets` | GET | Preset-Liste (paginiert, durchsuchbar, filterbar) |
+| `/api/admin/presets/[id]` | PATCH | Unpublish/Flag/Edit |
+| `/api/admin/presets/[id]` | DELETE | Preset + S3-File löschen |
+| `/api/admin/errors` | GET | Error-Liste (paginiert, Level-Filter) |
+| `/api/admin/errors/[id]` | DELETE | Einzelnen Fehler löschen |
+| `/api/admin/errors` | DELETE | Alle Fehler löschen |
+| `/api/admin/actions` | GET | Audit-Log (paginiert) |
+
+### Error-Logging
+
+- `logError()` in `src/lib/errorLog.ts` — schreibt in `ErrorLog`-Tabelle + `console.error`
+- Fire-and-forget: `logError({...}).catch(() => {})` — blockiert nicht den Request
+- Ersetzt `console.error` in allen API-Routes
+
+### Admin-Dashboard UI
+
+- `/[locale]/admin` — Server Component mit DB-Rollen-Check
+- Tabs: Users | Presets | Errors | Audit Log
+- Kontextuelle Admin-Actions auf Profilen + Galerie-Karten (`AdminActions` Component)
+- Fehlerkonsole: aufklappbare Einträge, GH-Issue per Pre-filled URL erstellen
+- Navbar: Admin-Link ganz rechts, roter Dot bei Error-Count > 0
+
+---
+
 ## i18n-Konventionen
 
 - `routing.ts` exportiert typisierte Navigation: `import { Link, useRouter, usePathname } from '@/i18n/routing'`
 - Nie `next/link` oder `next/navigation` direkt importieren (Ausnahme: `redirect()` in Server Components — next-intl's redirect benötigt `{ href: string }`)
 - Alle UI-Strings über `useTranslations()` / `getTranslations()` (kein Hardcoding)
 - Translations in `messages/de.json` und `messages/en.json`
-- Namespaces: `nav`, `home`, `editor`, `auth`, `profile`, `presets`
+- Namespaces: `nav`, `home`, `editor`, `auth`, `profile`, `presets`, `gallery`, `admin`
 
 ---
 
@@ -314,7 +373,7 @@ LE uint16 → **Algorithmus gelöst (2026-03-18):** `sum(bytes[0:0x4C6]) & 0xFFF
 ## Tests
 
 ```bash
-npm run test              # 271 Unit-Tests (Vitest)
+npm run test              # 288 Unit-Tests (Vitest)
 npm run test:coverage     # Coverage-Report
 npm run test:e2e          # Playwright E2E (App + Garage + DB erforderlich)
 ```
@@ -328,8 +387,10 @@ Unit-Tests in `tests/unit/`:
 - `useMidiDevice.test.ts` — MIDI Hook Tests
 - `validators.preset.test.ts` — Upload/Patch Schema + author/style/publish
 - `usePreset.test.ts`, `smoke.test.ts`
-- `lib/validators.test.ts` – Auth + Profile Schemas
+- `lib/validators.test.ts` – Auth + Profile Schemas (Login akzeptiert Email/Username)
 - `validators.preset.test.ts` – uploadPresetSchema + patchPresetSchema
+- `validators.admin.test.ts` – Admin-Schemas (Patch/Warn/Query)
+- `errorLog.test.ts` – Error-Logging (Prisma-Mock)
 
 E2E-Tests in `tests/e2e/`:
 - `editor.spec.ts` – Datei-Upload, Preset-Anzeige, Effekt-Toggle
