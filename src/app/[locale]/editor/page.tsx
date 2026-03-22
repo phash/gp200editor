@@ -289,7 +289,12 @@ export default function EditorPage() {
     setBankPresets(newBank);
 
     // Mark both slots as dirty
-    setBankDirtySlots(prev => new Set([...prev, fromTab, toTab]));
+    setBankDirtySlots(prev => {
+      const next = new Set(Array.from(prev));
+      next.add(fromTab);
+      next.add(toTab);
+      return next;
+    });
 
     // Update editor if active tab was involved
     if (activeTab === fromTab) {
@@ -303,7 +308,7 @@ export default function EditorPage() {
     if (bankBaseSlot === null || midiDevice.status !== 'connected' || bankDirtySlots.size === 0) return;
     setSwapping(true);
     try {
-      for (const tabIdx of bankDirtySlots) {
+      for (const tabIdx of Array.from(bankDirtySlots)) {
         const preset = bankPresets[tabIdx];
         if (preset) {
           await midiDevice.pushPreset(preset, bankBaseSlot + tabIdx);
