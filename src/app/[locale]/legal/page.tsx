@@ -1,4 +1,18 @@
 import { getTranslations } from 'next-intl/server';
+import type { Metadata } from 'next';
+
+const BASE_URL = 'https://preset-forge.com';
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+    title: 'Legal & Privacy — Preset Forge',
+    alternates: {
+      canonical: `${BASE_URL}/${locale}/legal`,
+      languages: { de: `${BASE_URL}/de/legal`, en: `${BASE_URL}/en/legal` },
+    },
+  };
+}
 
 export default async function LegalPage() {
   const t = await getTranslations('legal');
