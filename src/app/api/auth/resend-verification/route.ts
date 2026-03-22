@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { sendVerificationEmail } from '@/lib/email';
 import { rateLimit } from '@/lib/rateLimit';
+import { logError } from '@/lib/errorLog';
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
@@ -47,7 +48,11 @@ export async function POST(request: NextRequest) {
   try {
     await sendVerificationEmail(email, verifyUrl);
   } catch (err) {
-    console.error('Failed to resend verification email:', err);
+    logError({
+      message: `Failed to resend verification email: ${err instanceof Error ? err.message : String(err)}`,
+      stack: err instanceof Error ? err.stack : undefined,
+      url: '/api/auth/resend-verification',
+    }).catch(() => {});
   }
 
   return NextResponse.json({ sent: true });

@@ -6,6 +6,7 @@ import { registerSchema } from '@/lib/validators';
 import { sendVerificationEmail } from '@/lib/email';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { rateLimit } from '@/lib/rateLimit';
+import { logError } from '@/lib/errorLog';
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get('x-real-ip') || 'unknown';
@@ -76,7 +77,12 @@ export async function POST(request: NextRequest) {
   try {
     await sendVerificationEmail(email, verifyUrl);
   } catch (err) {
-    console.error('Failed to send verification email:', err);
+    logError({
+      message: `Failed to send verification email: ${err instanceof Error ? err.message : String(err)}`,
+      stack: err instanceof Error ? err.stack : undefined,
+      url: '/api/auth/register',
+      userId: user.id,
+    }).catch(() => {});
     // Don't fail registration if email sending fails — user can request resend
   }
 

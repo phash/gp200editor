@@ -24,7 +24,7 @@ export function logError(opts: {
       stack: opts.stack ?? null,
       url: opts.url ?? null,
       userId: opts.userId ?? null,
-      metadata: opts.metadata as Prisma.InputJsonValue ?? undefined,
+      metadata: opts.metadata as Prisma.InputJsonValue ?? null,
     },
   });
 }

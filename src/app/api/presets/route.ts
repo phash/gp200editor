@@ -7,6 +7,7 @@ import { PRSTDecoder } from '@/core/PRSTDecoder';
 import type { GP200Preset } from '@/core/types';
 import { extractModules, extractEffects } from '@/core/extractModules';
 import { verifyCsrf } from '@/lib/csrf';
+import { logError } from '@/lib/errorLog';
 
 export async function POST(request: Request) {
   if (!verifyCsrf(request)) {
@@ -103,7 +104,12 @@ export async function POST(request: Request) {
 
     return NextResponse.json(preset, { status: 201 });
   } catch (err) {
-    console.error('Failed to create preset:', err);
+    logError({
+      message: `Failed to create preset: ${err instanceof Error ? err.message : String(err)}`,
+      stack: err instanceof Error ? err.stack : undefined,
+      url: '/api/presets',
+      userId: user.id,
+    }).catch(() => {});
     return NextResponse.json({ error: 'Failed to save preset' }, { status: 500 });
   }
 }
