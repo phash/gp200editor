@@ -50,3 +50,22 @@ export async function sendVerificationEmail(
     `,
   });
 }
+
+export async function sendWarningEmail(
+  to: string,
+  reason: string,
+  message?: string,
+): Promise<void> {
+  await getTransporter().sendMail({
+    from: getFrom(),
+    to,
+    subject: 'Warning — Preset Forge',
+    html: `
+      <p>You have received a warning from the Preset Forge moderation team.</p>
+      <p><strong>Reason:</strong> ${reason}</p>
+      ${message ? `<p><strong>Details:</strong> ${message}</p>` : ''}
+      <p>Please review your content and ensure it complies with our community guidelines.
+      Continued violations may result in account suspension.</p>
+    `,
+  });
+}
