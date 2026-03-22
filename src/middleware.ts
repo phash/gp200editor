@@ -35,6 +35,16 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Protect /[locale]/admin routes.
+  const adminPattern = /^\/(de|en)(\/admin)(\/|$)/;
+  if (adminPattern.test(pathname)) {
+    const sessionCookie = request.cookies.get(SESSION_COOKIE);
+    if (!sessionCookie) {
+      const locale = pathname.startsWith('/en') ? 'en' : 'de';
+      return NextResponse.redirect(new URL(`/${locale}/auth/login`, request.url));
+    }
+  }
+
   return intlMiddleware(request);
 }
 

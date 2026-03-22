@@ -10,7 +10,8 @@
     "gallery": "Gallery",
     "playlists": "Playlists",
     "help": "Help",
-    "switchLocale": "Switch language"
+    "switchLocale": "Switch language",
+    "admin": "Admin"
   },
   "home": {
     "headline": "Preset Forge",
@@ -328,5 +329,71 @@
     "on": "ON",
     "off": "OFF",
     "elapsed": "Elapsed"
+  },
+  "admin": {
+    "title": "Admin",
+    "dashboard": "Dashboard",
+    "users": "Users",
+    "presets": "Presets",
+    "errors": "Errors",
+    "auditLog": "Audit Log",
+    "search": "Search...",
+    "searchUsers": "Search users (name, email)...",
+    "searchPresets": "Search presets (name, author)...",
+    "searchErrors": "Search errors...",
+    "allLevels": "All levels",
+    "stats": {
+      "users": "Users",
+      "presets": "Presets",
+      "errors": "Errors",
+      "suspended": "Suspended"
+    },
+    "actions": {
+      "edit": "Edit",
+      "warn": "Warn",
+      "suspend": "Suspend",
+      "unsuspend": "Unsuspend",
+      "delete": "Delete",
+      "unpublish": "Unpublish",
+      "republish": "Republish",
+      "flag": "Flag",
+      "unflag": "Unflag",
+      "createIssue": "Create GH Issue",
+      "copy": "Copy",
+      "deleteAll": "Delete all"
+    },
+    "badges": {
+      "admin": "ADMIN",
+      "suspended": "SUSPENDED",
+      "flagged": "FLAGGED"
+    },
+    "confirm": {
+      "deleteUser": "Really delete this user? All presets and data will be removed.",
+      "suspendUser": "Suspend this user? They will no longer be able to log in.",
+      "deletePreset": "Really delete this preset?",
+      "deleteError": "Delete this error entry?",
+      "deleteAllErrors": "Delete all error entries?",
+      "yes": "Yes, proceed",
+      "cancel": "Cancel"
+    },
+    "warn": {
+      "title": "Warning to {username}",
+      "subtitle": "The user will receive an email with your message.",
+      "reason": "Reason",
+      "message": "Message (optional)",
+      "reasons": {
+        "inappropriate": "Inappropriate content",
+        "spam": "Spam",
+        "copyright": "Copyright violation",
+        "other": "Other"
+      },
+      "send": "Send warning",
+      "cancel": "Cancel"
+    },
+    "memberSince": "since {date}",
+    "presetCount": "{count} presets",
+    "downloads": "{count} downloads",
+    "noResults": "No results",
+    "page": "Page {page} of {total}"
   }
 }

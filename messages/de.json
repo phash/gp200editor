@@ -10,7 +10,8 @@
     "gallery": "Galerie",
     "playlists": "Playlists",
     "help": "Hilfe",
-    "switchLocale": "Sprache wechseln"
+    "switchLocale": "Sprache wechseln",
+    "admin": "Admin"
   },
   "home": {
     "headline": "Preset Forge",
@@ -328,5 +329,71 @@
     "on": "AN",
     "off": "AUS",
     "elapsed": "Vergangen"
+  },
+  "admin": {
+    "title": "Admin",
+    "dashboard": "Dashboard",
+    "users": "Benutzer",
+    "presets": "Presets",
+    "errors": "Fehler",
+    "auditLog": "Audit Log",
+    "search": "Suchen...",
+    "searchUsers": "Benutzer suchen (Name, E-Mail)...",
+    "searchPresets": "Presets suchen (Name, Autor)...",
+    "searchErrors": "Fehler suchen...",
+    "allLevels": "Alle Level",
+    "stats": {
+      "users": "Benutzer",
+      "presets": "Presets",
+      "errors": "Fehler",
+      "suspended": "Gesperrt"
+    },
+    "actions": {
+      "edit": "Bearbeiten",
+      "warn": "Warnung",
+      "suspend": "Sperren",
+      "unsuspend": "Entsperren",
+      "delete": "Löschen",
+      "unpublish": "Unpublish",
+      "republish": "Republish",
+      "flag": "Flag",
+      "unflag": "Unflag",
+      "createIssue": "GH Issue erstellen",
+      "copy": "Kopieren",
+      "deleteAll": "Alle löschen"
+    },
+    "badges": {
+      "admin": "ADMIN",
+      "suspended": "GESPERRT",
+      "flagged": "GEMELDET"
+    },
+    "confirm": {
+      "deleteUser": "Diesen Benutzer wirklich löschen? Alle Presets und Daten werden entfernt.",
+      "suspendUser": "Diesen Benutzer sperren? Er kann sich nicht mehr einloggen.",
+      "deletePreset": "Dieses Preset wirklich löschen?",
+      "deleteError": "Diesen Fehler-Eintrag löschen?",
+      "deleteAllErrors": "Alle Fehler-Einträge löschen?",
+      "yes": "Ja, fortfahren",
+      "cancel": "Abbrechen"
+    },
+    "warn": {
+      "title": "Warnung an {username}",
+      "subtitle": "Der Benutzer erhält eine E-Mail mit deiner Nachricht.",
+      "reason": "Grund",
+      "message": "Nachricht (optional)",
+      "reasons": {
+        "inappropriate": "Unangemessener Inhalt",
+        "spam": "Spam",
+        "copyright": "Urheberrechtsverletzung",
+        "other": "Sonstiges"
+      },
+      "send": "Warnung senden",
+      "cancel": "Abbrechen"
+    },
+    "memberSince": "seit {date}",
+    "presetCount": "{count} Presets",
+    "downloads": "{count} Downloads",
+    "noResults": "Keine Ergebnisse",
+    "page": "Seite {page} von {total}"
   }
 }
