@@ -30,6 +30,7 @@
     "loadFromDisk": "Load preset from disk",
     "loadError": "Error loading file",
     "pushError": "Failed to save to device",
+    "swapError": "Failed to swap presets on device",
     "effectOn": "ON",
     "effectOff": "OFF",
     "effectEnabled": "enabled",

@@ -34,6 +34,10 @@ export default function EditorPage() {
   const [bankPresets, setBankPresets] = useState<(GP200Preset | null)[]>([null, null, null, null]);
   const [bankBaseSlot, setBankBaseSlot] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState(0);
+  // Bank tab drag & drop (swap slots within bank)
+  const [bankDragIndex, setBankDragIndex] = useState<number | null>(null);
+  const [bankDragOverIndex, setBankDragOverIndex] = useState<number | null>(null);
+  const [swapping, setSwapping] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [username, setUsername] = useState('');
@@ -269,6 +273,43 @@ export default function EditorPage() {
   }
 
 
+  async function handleBankSwap(fromTab: number, toTab: number) {
+    if (fromTab === toTab || bankBaseSlot === null || midiDevice.status !== 'connected') return;
+    const presetA = bankPresets[fromTab];
+    const presetB = bankPresets[toTab];
+    if (!presetA && !presetB) return; // nothing to swap
+
+    setSwapping(true);
+    try {
+      const slotA = bankBaseSlot + fromTab;
+      const slotB = bankBaseSlot + toTab;
+
+      // Push A's preset to B's slot and vice versa
+      if (presetA) await midiDevice.pushPreset(presetA, slotB);
+      if (presetB) await midiDevice.pushPreset(presetB, slotA);
+
+      // Update local bank state
+      const newBank = [...bankPresets];
+      newBank[fromTab] = presetB;
+      newBank[toTab] = presetA;
+      setBankPresets(newBank);
+
+      // If the active tab was involved, update the editor
+      if (activeTab === fromTab) {
+        if (presetB) loadPreset(presetB);
+      } else if (activeTab === toTab) {
+        if (presetA) loadPreset(presetA);
+      }
+
+      // Switch device to the active tab's slot
+      midiDevice.sendSlotChange(bankBaseSlot + activeTab);
+    } catch {
+      setLoadError(t('swapError'));
+    } finally {
+      setSwapping(false);
+    }
+  }
+
   function handleOpenBrowser(mode: 'pull' | 'push') {
     setSlotBrowserMode(mode);
     if (midiDevice.presetNames.every(n => n === null)) {
@@ -456,15 +497,50 @@ export default function EditorPage() {
             const label = SysExCodec.slotToLabel(slotNum);
             const name = bankPresets[i]?.patchName;
             const isActive = activeTab === i;
+            const isDragSource = bankDragIndex === i;
+            const isDragOver = bankDragOverIndex === i && bankDragIndex !== null && bankDragIndex !== i;
             return (
               <button
                 key={i}
                 onClick={() => handleTabSwitch(i)}
+                draggable={midiDevice.status === 'connected' && !swapping}
+                onDragStart={(e) => {
+                  setBankDragIndex(i);
+                  e.dataTransfer.effectAllowed = 'move';
+                  e.dataTransfer.setData('text/plain', String(i));
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = 'move';
+                  if (bankDragIndex !== null && bankDragIndex !== i) {
+                    setBankDragOverIndex(i);
+                  }
+                }}
+                onDragLeave={() => {
+                  if (bankDragOverIndex === i) setBankDragOverIndex(null);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const from = bankDragIndex;
+                  setBankDragIndex(null);
+                  setBankDragOverIndex(null);
+                  if (from !== null && from !== i) {
+                    handleBankSwap(from, i);
+                  }
+                }}
+                onDragEnd={() => {
+                  setBankDragIndex(null);
+                  setBankDragOverIndex(null);
+                }}
                 className="flex-1 font-mono-display text-xs py-2 px-2 transition-colors"
                 style={{
-                  background: isActive ? 'rgba(212,162,78,0.15)' : 'rgba(255,255,255,0.03)',
-                  borderBottom: isActive ? '2px solid var(--accent-amber)' : '2px solid transparent',
+                  background: isDragOver ? 'rgba(212,162,78,0.3)'
+                    : isActive ? 'rgba(212,162,78,0.15)' : 'rgba(255,255,255,0.03)',
+                  borderBottom: isDragOver ? '2px solid var(--accent-amber)'
+                    : isActive ? '2px solid var(--accent-amber)' : '2px solid transparent',
                   color: isActive ? 'var(--accent-amber)' : 'var(--text-muted)',
+                  opacity: isDragSource ? 0.4 : 1,
+                  cursor: midiDevice.status === 'connected' && !swapping ? 'grab' : undefined,
                 }}
               >
                 <div className="font-bold">{label}</div>

@@ -30,6 +30,7 @@
     "loadFromDisk": "Preset von Festplatte laden",
     "loadError": "Fehler beim Laden",
     "pushError": "Speichern auf Gerät fehlgeschlagen",
+    "swapError": "Tauschen der Presets fehlgeschlagen",
     "effectOn": "AN",
     "effectOff": "AUS",
     "effectEnabled": "aktiviert",
