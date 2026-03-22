@@ -8,7 +8,7 @@ import { PasswordInput } from '@/components/PasswordInput';
 export default function LoginPage() {
   const t = useTranslations('auth');
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -24,7 +24,7 @@ export default function LoginPage() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ login, password }),
       });
       if (res.ok) {
         router.push('/profile');
@@ -66,17 +66,18 @@ export default function LoginPage() {
           <div>
             <label
               className="block font-mono-display text-[11px] font-medium tracking-wider uppercase mb-1.5"
-              htmlFor="email"
+              htmlFor="login"
               style={{ color: 'var(--text-secondary)' }}
             >
-              {t('email')}
+              {t('emailOrUsername')}
             </label>
             <input
-              id="email"
-              name="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              id="login"
+              name="login"
+              type="text"
+              autoComplete="username"
+              value={login}
+              onChange={(e) => setLogin(e.target.value)}
               required
               className="w-full rounded px-3 py-2 text-sm focus:outline-none transition-shadow"
               style={{
@@ -121,7 +122,7 @@ export default function LoginPage() {
                     await fetch('/api/auth/resend-verification', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ email }),
+                      body: JSON.stringify({ email: login }),
                     });
                     setResendSent(true);
                   }}

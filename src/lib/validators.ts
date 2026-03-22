@@ -11,7 +11,8 @@ export const registerSchema = z.object({
 });
 
 export const loginSchema = z.object({
-  email: z.string().email(),
+  // Accepts email or username
+  login: z.string().min(1),
   // min(1) not min(8): don't reject a login attempt just because the password
   // is shorter than our current minimum — the user might have an old account
   password: z.string().min(1),

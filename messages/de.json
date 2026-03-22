@@ -66,6 +66,7 @@
     "forgotPasswordTitle": "Passwort zurücksetzen",
     "resetPasswordTitle": "Neues Passwort setzen",
     "email": "E-Mail",
+    "emailOrUsername": "E-Mail oder Benutzername",
     "username": "Benutzername",
     "password": "Passwort",
     "newPassword": "Neues Passwort",

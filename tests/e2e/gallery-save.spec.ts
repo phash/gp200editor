@@ -118,7 +118,7 @@ test.describe.serial('Gallery Preset Save/Update', () => {
     test.skip(!ownerShareToken, 'No share token available');
 
     await page.goto('/de/auth/login');
-    await page.fill('input[name="email"]', ownerEmail);
+    await page.fill('input[name="login"]', ownerEmail);
     await page.fill('input[name="password"]', password);
     await page.click('[type="submit"]');
     await page.waitForTimeout(2000);
@@ -133,7 +133,7 @@ test.describe.serial('Gallery Preset Save/Update', () => {
     test.skip(!ownerShareToken, 'No share token available');
 
     await page.goto('/de/auth/login');
-    await page.fill('input[name="email"]', otherEmail);
+    await page.fill('input[name="login"]', otherEmail);
     await page.fill('input[name="password"]', password);
     await page.click('[type="submit"]');
     await page.waitForTimeout(2000);
@@ -148,7 +148,7 @@ test.describe.serial('Gallery Preset Save/Update', () => {
     test.skip(!ownerShareToken, 'No share token available');
 
     await page.goto('/de/auth/login');
-    await page.fill('input[name="email"]', ownerEmail);
+    await page.fill('input[name="login"]', ownerEmail);
     await page.fill('input[name="password"]', password);
     await page.click('[type="submit"]');
     await page.waitForTimeout(2000);

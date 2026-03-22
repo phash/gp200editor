@@ -66,6 +66,7 @@
     "forgotPasswordTitle": "Reset Password",
     "resetPasswordTitle": "Set New Password",
     "email": "Email",
+    "emailOrUsername": "Email or Username",
     "username": "Username",
     "password": "Password",
     "newPassword": "New Password",

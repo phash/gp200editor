@@ -30,14 +30,17 @@ describe('registerSchema', () => {
 });
 
 describe('loginSchema', () => {
-  it('accepts valid input', () => {
-    expect(loginSchema.safeParse({ email: 'a@b.com', password: 'x' }).success).toBe(true);
+  it('accepts email login', () => {
+    expect(loginSchema.safeParse({ login: 'a@b.com', password: 'x' }).success).toBe(true);
   });
-  it('rejects invalid email', () => {
-    expect(loginSchema.safeParse({ email: 'notanemail', password: 'pass' }).success).toBe(false);
+  it('accepts username login', () => {
+    expect(loginSchema.safeParse({ login: 'myuser', password: 'x' }).success).toBe(true);
+  });
+  it('rejects empty login', () => {
+    expect(loginSchema.safeParse({ login: '', password: 'pass' }).success).toBe(false);
   });
   it('rejects empty password', () => {
-    expect(loginSchema.safeParse({ email: 'a@b.com', password: '' }).success).toBe(false);
+    expect(loginSchema.safeParse({ login: 'a@b.com', password: '' }).success).toBe(false);
   });
 });
 

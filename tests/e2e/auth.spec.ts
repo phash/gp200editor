@@ -9,7 +9,7 @@ test.describe('Auth flows', () => {
 
   test('login with wrong password shows error', async ({ page }) => {
     await page.goto('/en/auth/login');
-    await page.fill('[name="email"]', 'nobody@example.com');
+    await page.fill('[name="login"]', 'nobody@example.com');
     await page.fill('[name="password"]', 'wrongpass');
     await page.click('[type="submit"]');
 
@@ -25,7 +25,7 @@ test.describe('Auth flows', () => {
 
     // Login again
     await page.goto('/en/auth/login');
-    await page.fill('[name="email"]', email);
+    await page.fill('[name="login"]', email);
     await page.fill('[name="password"]', password);
     await page.click('[type="submit"]');
     await page.waitForURL('**/profile');
