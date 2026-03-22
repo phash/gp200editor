@@ -1,5 +1,6 @@
 import { validateSession, refreshSessionCookie } from './session';
 import { prisma } from './prisma';
+import type { Prisma } from '@prisma/client';
 import type { User, Session } from 'lucia';
 
 export class AdminForbiddenError extends Error {
@@ -31,7 +32,7 @@ export function logAdminAction(opts: {
       targetType: opts.targetType,
       targetId: opts.targetId,
       reason: opts.reason ?? null,
-      metadata: opts.metadata ?? null,
+      metadata: opts.metadata as Prisma.InputJsonValue ?? undefined,
     },
   });
 }

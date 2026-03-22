@@ -1,4 +1,5 @@
 import { prisma } from './prisma';
+import type { Prisma } from '@prisma/client';
 
 export function logError(opts: {
   message: string;
@@ -23,7 +24,7 @@ export function logError(opts: {
       stack: opts.stack ?? null,
       url: opts.url ?? null,
       userId: opts.userId ?? null,
-      metadata: opts.metadata ?? null,
+      metadata: opts.metadata as Prisma.InputJsonValue ?? undefined,
     },
   });
 }
