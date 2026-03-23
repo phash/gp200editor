@@ -9,7 +9,12 @@ set -euo pipefail
 # Pulls latest code, rebuilds the app, runs migrations automatically on startup.
 
 INSTALL_DIR="/opt/gp200editor"
-APP_PORT="${APP_PORT:-3320}"
+COMPOSE_FILES="-f docker-compose.prod.yml"
+
+# Use Caddy override if present (no host ports, routed via Docker network)
+if [ -f docker-compose.caddy.yml ]; then
+  COMPOSE_FILES="$COMPOSE_FILES -f docker-compose.caddy.yml"
+fi
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; AMBER='\033[0;33m'; NC='\033[0m'
 info()  { echo -e "${GREEN}[deploy]${NC} $*"; }
@@ -28,25 +33,29 @@ git pull
 # Step 2: Rebuild and restart app (migrations run via docker-entrypoint.sh)
 # ══════════════════════════════════════════════════════════════════════════════
 info "Rebuilding app container..."
-docker compose -f docker-compose.prod.yml --env-file .env.prod build app
+docker compose $COMPOSE_FILES --env-file .env.prod build app
 
 info "Restarting app (migrations run automatically on startup)..."
-docker compose -f docker-compose.prod.yml --env-file .env.prod up -d app
+docker compose $COMPOSE_FILES --env-file .env.prod up -d app
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Step 3: Wait for app to be ready
 # ══════════════════════════════════════════════════════════════════════════════
 info "Waiting for app..."
+APP_CONTAINER=$(docker compose $COMPOSE_FILES ps -q app 2>/dev/null)
 for i in $(seq 1 60); do
-  if curl -sf "http://localhost:${APP_PORT}/" >/dev/null 2>&1; then break; fi
+  # Check via docker exec (works with or without host port mapping)
+  if docker exec "$APP_CONTAINER" wget -qO- http://localhost:3000/ >/dev/null 2>&1; then break; fi
+  # Fallback: try host port if mapped
+  if curl -sf "http://localhost:${APP_PORT:-3320}/" >/dev/null 2>&1; then break; fi
   sleep 1
 done
 
-if curl -sf "http://localhost:${APP_PORT}/" >/dev/null 2>&1; then
-  info "App is running on port ${APP_PORT}."
+if docker exec "$APP_CONTAINER" wget -qO- http://localhost:3000/ >/dev/null 2>&1; then
+  info "App is running."
 else
   error "App not responding after 60s! Check logs:"
-  echo "  docker compose -f docker-compose.prod.yml logs --tail 50 app"
+  echo "  docker compose $COMPOSE_FILES logs --tail 50 app"
   exit 1
 fi
 
@@ -55,5 +64,5 @@ fi
 # ══════════════════════════════════════════════════════════════════════════════
 info "════════════════════════════════════════════════════"
 info " Update deployed!"
-info " Logs: docker compose -f docker-compose.prod.yml logs -f app"
+info " Logs: docker compose $COMPOSE_FILES logs -f app"
 info "════════════════════════════════════════════════════"
