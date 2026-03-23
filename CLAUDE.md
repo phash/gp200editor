@@ -143,6 +143,7 @@ src/
 │   ├── CuePointTable.tsx     # Timeline-Tabelle für Playlist Cue Points (device slot-basiert)
 │   ├── AdminDashboard.tsx    # Admin-Dashboard: Users/Presets/Errors/Audit-Log Tabs
 │   ├── AdminActions.tsx      # Kontextuelle Admin-Buttons (Profil, Galerie)
+│   ├── ControllerPanel.tsx    # EXP 1/2 Assignment-Panel (Param-Select + Min/Max)
 │   ├── ConfirmDialog.tsx     # Bestätigungs-Dialog für destruktive Aktionen
 │   ├── WarnDialog.tsx        # Warnung-Dialog (Grund + Nachricht per E-Mail)
 │   └── Footer.tsx
@@ -373,7 +374,7 @@ LE uint16 → **Algorithmus gelöst (2026-03-18):** `sum(bytes[0:0x4C6]) & 0xFFF
 ## Tests
 
 ```bash
-npm run test              # 293 Unit-Tests (Vitest)
+npm run test              # 309 Unit-Tests (Vitest)
 npm run test:coverage     # Coverage-Report
 npm run test:e2e          # Playwright E2E (App + Garage + DB erforderlich)
 ```
