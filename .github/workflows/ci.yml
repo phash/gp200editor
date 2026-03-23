@@ -21,5 +21,8 @@ jobs:
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
+      - name: Lint
+        run: npx next lint
+
       - name: Run unit tests
         run: npx vitest run --exclude tests/unit/usePreset.test.ts
