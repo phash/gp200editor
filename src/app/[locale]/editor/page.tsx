@@ -160,6 +160,17 @@ export default function EditorPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [midiDevice.status]);
 
+  // Direct effect type change from hardware (sub=0x0C parsed: block + new effectId)
+  useEffect(() => {
+    if (midiDevice.status !== 'connected') return;
+    midiDevice.setOnDeviceEffectChange((blockIndex, effectId) => {
+      console.log(`[GP-200] onDeviceEffectChange: block=${blockIndex} effectId=0x${effectId.toString(16)}`);
+      changeEffect(blockIndex, effectId);
+    });
+    return () => midiDevice.setOnDeviceEffectChange(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [midiDevice.status]);
+
   // Send all effect data to device for live preview (no save)
   const sendPresetToDevice = useCallback((decoded: GP200Preset) => {
     if (midiDevice.status !== 'connected') return;

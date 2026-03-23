@@ -51,6 +51,7 @@ export interface UseMidiDeviceReturn {
   sendNote: (note: string) => void;
   setOnDeviceChange: (cb: ((slot: number | null) => void) | null) => void;
   setOnDeviceToggle: (cb: ((blockIndex: number, enabled: boolean) => void) | null) => void;
+  setOnDeviceEffectChange: (cb: ((blockIndex: number, effectId: number) => void) | null) => void;
 }
 
 // Minimal shape we actually use — avoids conflicts with DOM's MIDIInput / MIDIOutput
@@ -143,7 +144,9 @@ export function useMidiDevice(): UseMidiDeviceReturn {
   const onDeviceChangeRef = useRef<((slot: number | null) => void) | null>(null);
   // Callback for device-initiated effect toggles (direct state update, no pull needed)
   const onDeviceToggleRef = useRef<((blockIndex: number, enabled: boolean) => void) | null>(null);
-  // Suppress FX state toggles briefly after an effect change (pull will bring correct state)
+  // Callback for device-initiated effect type changes (e.g. Green OD → Penesas)
+  const onDeviceEffectChangeRef = useRef<((blockIndex: number, effectId: number) => void) | null>(null);
+  // Suppress FX state toggles briefly after an effect change
   const effectChangePendingRef = useRef(false);
 
   const onMidiMessage = useCallback((event: { data: unknown }) => {
@@ -172,12 +175,17 @@ export function useMidiDevice(): UseMidiDeviceReturn {
       }
     }
     // sub=0x0C D→H: effect change response (user changed effect type on hardware)
-    // Device READ returns saved data, not the editing buffer — pull is useless here.
-    // TODO: parse sub=0x0C payload to extract new effect ID and update UI directly.
-    // Format: 38 bytes raw, partially decoded — needs capture from Valeton software.
-    if (isSysEx(data, 0x12, 0x0C)) {
-      console.log('[GP-200] device effect change (sub=0x0C) — not yet synced to UI (protocol TODO)');
-      // Suppress FX state responses that follow effect changes (they have stale data)
+    // Format (38B raw): payload[12]=blockIndex, payload[26]=module(high byte),
+    // payload[19:21]=variant nibble-encoded: effectId = (module<<24) | (p[19]<<4) | p[20]
+    if (isSysEx(data, 0x12, 0x0C) && data.length >= 38) {
+      const p = data.subarray(10); // payload starts after header
+      const blockIndex = p[12];
+      const module = p[26];
+      const variant = (p[19] << 4) | p[20];
+      const effectId = (module << 24) | variant;
+      console.log(`[GP-200] device effect change: block=${blockIndex} effectId=0x${effectId.toString(16).padStart(8,'0')}`);
+      onDeviceEffectChangeRef.current?.(blockIndex, effectId);
+      // Suppress FX state responses that follow (they report stale toggle states)
       effectChangePendingRef.current = true;
       setTimeout(() => { effectChangePendingRef.current = false; }, 500);
     }
@@ -597,5 +605,6 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     sendAuthor, sendStyleName, sendNote,
     setOnDeviceChange: (cb: ((slot: number | null) => void) | null) => { onDeviceChangeRef.current = cb; },
     setOnDeviceToggle: (cb: ((blockIndex: number, enabled: boolean) => void) | null) => { onDeviceToggleRef.current = cb; },
+    setOnDeviceEffectChange: (cb: ((blockIndex: number, effectId: number) => void) | null) => { onDeviceEffectChangeRef.current = cb; },
   };
 }
