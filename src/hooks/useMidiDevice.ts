@@ -242,7 +242,6 @@ export function useMidiDevice(): UseMidiDeviceReturn {
         setAssignments(assignmentEntries);
 
         // Step 10: Pull current preset + bank (4 slots) via normal read
-        const slotLabel = SysExCodec.slotToLabel(slot);
         const bankBase = Math.floor(slot / 4) * 4;
         const bankPresets: (GP200Preset | null)[] = [null, null, null, null];
         for (let i = 0; i < 4; i++) {
