@@ -143,11 +143,13 @@ export function useMidiDevice(): UseMidiDeviceReturn {
   const onDeviceChangeRef = useRef<((slot: number | null) => void) | null>(null);
   // Callback for device-initiated effect toggles (direct state update, no pull needed)
   const onDeviceToggleRef = useRef<((blockIndex: number, enabled: boolean) => void) | null>(null);
+  // Suppress FX state toggles briefly after an effect change (pull will bring correct state)
+  const effectChangePendingRef = useRef(false);
 
   const onMidiMessage = useCallback((event: { data: unknown }) => {
     const data = getBytes(event.data);
     // sub=0x08 D→H: multipurpose — preset change echo vs FX state response
-    // Distinguish by data[14]: 0x08 = preset change echo, 0x01/0x05 = FX state response
+    // Distinguish by data[14]: 0x08 = preset change echo, other = FX state response
     if (isSysEx(data, 0x12, 0x08) && data.length >= 28) {
       if (data[14] === 0x08) {
         // Preset change echo — data[26] is the slot number
@@ -157,29 +159,35 @@ export function useMidiDevice(): UseMidiDeviceReturn {
           setCurrentSlot(slot); currentSlotRef.current = slot;
           onDeviceChangeRef.current?.(slot);
         }
-      } else {
+      } else if (!effectChangePendingRef.current) {
         // FX state response — device reports effect toggle from hardware
-        // data[22]=block_id (0=PRE..10=VOL), data[24]=state (0=OFF, 1=ON)
+        // data[22]=block_id (0=PRE..10=VOL), data[24]=state (0=OFF, non-zero=ON)
+        // Suppressed during effect-change pending (pull will bring correct state)
         const blockId = data[22];
         const state = data[24];
         if (blockId >= 0 && blockId <= 10) {
-          console.log(`[GP-200] device FX toggle: block=${blockId} state=${state ? 'ON' : 'OFF'}`);
-          onDeviceToggleRef.current?.(blockId, state === 1);
+          console.log(`[GP-200] device FX toggle: block=${blockId} state=${state}`);
+          onDeviceToggleRef.current?.(blockId, state !== 0);
         }
       }
     }
-    // sub=0x0C D→H: effect change response
+    // sub=0x0C D→H: effect change response (user changed effect type on hardware)
+    // Device READ returns saved data, not the editing buffer — pull is useless here.
+    // TODO: parse sub=0x0C payload to extract new effect ID and update UI directly.
+    // Format: 38 bytes raw, partially decoded — needs capture from Valeton software.
     if (isSysEx(data, 0x12, 0x0C)) {
-      console.log('[GP-200] device effect change');
-      onDeviceChangeRef.current?.(currentSlotRef.current);
+      console.log('[GP-200] device effect change (sub=0x0C) — not yet synced to UI (protocol TODO)');
+      // Suppress FX state responses that follow effect changes (they have stale data)
+      effectChangePendingRef.current = true;
+      setTimeout(() => { effectChangePendingRef.current = false; }, 500);
     }
-    // sub=0x10 D→H: toggle response (device-initiated)
+    // sub=0x10 D→H: toggle response (device-initiated, e.g. initial state on slot switch)
     if (isSysEx(data, 0x12, 0x10) && data.length >= 42) {
       const blockId = data[38];
       const state = data[40];
       if (blockId >= 0 && blockId <= 10) {
-        console.log(`[GP-200] device toggle: block=${blockId} state=${state ? 'ON' : 'OFF'}`);
-        onDeviceToggleRef.current?.(blockId, state === 1);
+        console.log(`[GP-200] device toggle: block=${blockId} state=${state}`);
+        onDeviceToggleRef.current?.(blockId, state !== 0);
       }
     }
   }, []);

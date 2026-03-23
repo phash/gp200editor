@@ -1,526 +1,855 @@
-# Valeton GP-200 SysEx Protocol
+# Valeton GP-200 SysEx Protocol Reference
 
-**Status:** Fully reverse-engineered (2026-03-18)
-**Sources:**
-- USB MIDI captures via tshark/usbmon (own device, Wine + Windows VM)
-- Targeted capture: `/home/manuel/gp200-capture-targeted.pcap` (1.3 MB, 4370 frames, all 256 presets)
-- Write capture (Linux): `/home/manuel/gp200-capture-windows.pcap` (22 KB, slot 9 "Pretender" write)
-- **Write capture (Windows, 2026-03-18):** `scripts/gp200-capture-20260318-231056.pcap` (1.9 MB, slot 9 "American Idiot" full write — confirmed 7-chunk/1184B write format)
-- .prst files from device: `prst/63-B American Idiot.prst`, `prst/63-C claude1.prst`, `prst/63-D It's GP-200.prst`
-- Reddit thread by `dvanverseveld` on `/r/ValetonGP2OO` — GP-200LT (same header/protocol)
-- GP-5 BLE controller repo `helvecioneto/gp5-wc` (different transport, same Valeton command concepts)
+**Status:** Reverse-engineered (2026-03-18/19/20/23)
+**Firmware tested:** v1.8.0 (Normal mode, 6-In/4-Out)
+**Sources:** USB MIDI captures via tshark/USBPcap (own device), Valeton GP-200 Editor under Wine/Windows, GP-200LT Reddit post, GP-5 BLE controller repo
 
 ---
 
-## 1. SysEx Header
+## 1. Message Format
 
-All SysEx messages share the same 8-byte header:
+All messages share a common envelope:
 
 ```
-F0  21  25  7E  47  50  2D  32
-│   │   │   │   └──────────────── "GP-2" (ASCII)
-│   │   │   └───────────────────── ~ (0x7E separator)
-│   │   └───────────────────────── 0x25 (sub-ID)
-│   └───────────────────────────── 0x21 (Valeton manufacturer ID)
-└───────────────────────────────── SysEx start
+F0 21 25 7E 47 50 2D 32 [CMD] [SUB] [payload...] F7
+|  |     |  |           |     |
+|  |     |  "GP-2"      CMD   SUB-command
+|  |     0x7E separator
+|  Valeton manufacturer ID (0x21 0x25)
+SysEx start
 ```
 
-Full message structure:
-```
-F0 21 25 7E 47 50 2D 32  [CMD]  [PAYLOAD...]  F7
-```
+| Field | Bytes | Description |
+|-------|-------|-------------|
+| `F0` | 1 | SysEx start |
+| `21 25` | 2 | Valeton manufacturer ID |
+| `7E` | 1 | Separator |
+| `47 50 2D 32` | 4 | Device identifier "GP-2" (ASCII) |
+| CMD | 1 | Command type (byte 8) |
+| SUB | 1 | Sub-command (byte 9) |
+| payload | variable | Command-specific data |
+| `F7` | 1 | SysEx end |
 
 ---
 
 ## 2. CMD Byte (byte 8)
 
-| CMD  | Direction      | Meaning                            |
-|------|----------------|------------------------------------|
-| 0x11 | host → device  | REQUEST — query current state/data |
-| 0x12 | host → device  | SET — write state/data to device   |
-| 0x12 | device → host  | RESPONSE — device reply to request |
+| CMD | Direction | Meaning |
+|-----|-----------|---------|
+| `0x11` | Host -> Device | **REQUEST** -- query state or data |
+| `0x12` | Host -> Device | **SET** -- write state or data |
+| `0x12` | Device -> Host | **RESPONSE** -- reply to a request |
 
-Note: Both SET and RESPONSE use CMD=0x12. USB endpoint direction disambiguates.
-
----
-
-## 3. Data Encoding: Nibble Encoding
-
-All preset payload data (both read sub=0x18 and write sub=0x20) uses **nibble encoding**:
-
-- Every raw SysEx byte holds only 4 bits (values 0x00–0x0F)
-- Two consecutive nibble-bytes form one decoded byte:
-
-```
-decoded[i] = (raw[2i] << 4) | raw[2i+1]
-```
-
-Example: nibble bytes `05 09` → decoded byte `0x59`.
-
-This is NOT the same as Roland 7-bit MIDI encoding.
+Both SET and RESPONSE use CMD=0x12. USB endpoint direction disambiguates.
 
 ---
 
-## 4. Sub-Commands (byte 9)
+## 3. Nibble Encoding
 
-### 4.1 Toggle FX Block (CMD=0x12, sub=0x10, 46 bytes)
-
-Turn an effect block on or off:
+Preset payload data (sub=0x18, 0x20, 0x38, and parts of 0x10/0x14) uses nibble encoding. Each SysEx data byte carries only 4 bits (0x00-0x0F). Two consecutive nibble bytes form one decoded byte:
 
 ```
-F0 21 25 7E 47 50 2D 32  12  10  [20B context]  [BLOCK:1B]  00  [STATE:1B]  [3B]  F7
-                                                 ^38              ^40
+decoded[i] = (raw[2*i] << 4) | raw[2*i + 1]
 ```
 
-**Block IDs (byte 38):**
+Example: `05 09` decodes to `0x59`.
 
-| ID   | Module                          |
-|------|---------------------------------|
-| 0x00 | PRE (Pre-amp / compressor / EQ) |
-| 0x01 | WAH                             |
-| 0x02 | BOOST                           |
-| 0x03 | AMP                             |
-| 0x04 | NR (Noise Reduction)            |
-| 0x05 | CAB                             |
-| 0x06 | EQ                              |
-| 0x07 | MOD                             |
-| 0x08 | DLY (Delay)                     |
-| 0x09 | RVB (Reverb)                    |
-| 0x0A | VOL (Volume)                    |
-
-**State (byte 40):** `0x00` = bypass/off, `0x01` = active/on
-
-**Examples:**
-```
-# Turn Amp ON:
-F0 21 25 7E 47 50 2D 32  12 10  00 00 00 00 00 00 00 00 04 00 00 00 00 00 00 01 01 00 00 01 05 00 00 00 04 00 00 00  03  00  01  0C 0F 00 02  F7
-#                                                                                                                    ^AMP    ^ON
-
-# Turn Amp OFF:
-F0 21 25 7E 47 50 2D 32  12 10  00 00 00 00 00 00 00 00 04 00 00 00 00 00 00 01 01 00 00 01 05 00 00 00 04 00 00 00  03  00  00  0C 0F 00 02  F7
-#                                                                                                                    ^AMP    ^OFF
-```
-
-### 4.2 Query FX Block State (CMD=0x11, sub=0x10)
-
-Same 46-byte structure as toggle, CMD=0x11, byte 40 = 0x00 (don't care). Device responds with CMD=0x12, sub=0x08.
-
-```
-# Query Boost state:
-F0 21 25 7E 47 50 2D 32  11 10  00 00 00 00 00 00 00 00 04 00 00 00 00 00 00 00 00 00 00 01 05 00 00 00 04 00 00 00  02  00  00  0C 0F 00 02  F7
-```
-
-**State response (CMD=0x12, sub=0x08, 31 bytes):**
-```
-# Boost ON:   F0 21 25 7E 47 50 2D 32  12 08  ... 02 00 00  01  03 0F 08 00  F7  (01=ON)
-# Boost OFF:  F0 21 25 7E 47 50 2D 32  12 08  ... 02 00 00  00  03 0F 08 00  F7  (00=OFF)
-```
-
-### 4.3 Change Preset (CMD=0x12, sub=0x08, 30 bytes)
-
-Switch active preset. Preset number (0-based) at byte 26:
-
-```
-F0 21 25 7E 47 50 2D 32  12 08  00 00 00 00 08 01 00 00 04 00 00 00 00 00 00 00  [PRESET:1B]  00 00  F7
-                                                                                 ^26
-
-# Switch to preset 0:  ...  00  00 00  F7
-# Switch to preset 1:  ...  01  00 00  F7
-```
-
-### 4.4 Request Full Preset Data (CMD=0x11, sub=0x10, 46 bytes)
-
-Request all effect data for a preset slot. Slot number at bytes 16, 29, and 33 (0-based):
-
-```
-# Preset slot 0:
-F0 21 25 7E 47 50 2D 32  11 10  00 00 00 00 00 00 00 00 04 00 00 00 01 00 00 00  00  00 00 00 01 00 00 00 04 00 00 00  00  00 00 00  00  00 00  F7
-#                                                                                ^16                                  ^29          ^33
-
-# Preset slot 1:
-F0 21 25 7E 47 50 2D 32  11 10  00 00 00 00 00 00 00 00 04 00 00 00 01 00 00 00  01  00 00 00 01 00 00 00 04 00 00 00  01  00 00 00  01  00 00  F7
-```
-
-Device responds with 7 sub=0x18 chunks (see §4.5).
-
-### 4.5 Preset Data Response (CMD=0x12, sub=0x18, device→host)
-
-Device sends **7 chunks** per preset in response to a sub=0x10 request:
-
-```
-F0 21 25 7E 47 50 2D 32  12  18  [SLOT:1B]  [OFFSET:2B LE]  [NIBBLE_DATA...]  F7
-                                 ^payload[1]  ^payload[2:4]   ^payload[4:]
-```
-
-| Chunk | Offset  | Nibble bytes | Decoded bytes |
-|-------|---------|-------------|---------------|
-| 1     | 0       | 370         | 185           |
-| 2     | 313     | 370         | 185           |
-| 3     | 626     | 370         | 185           |
-| 4     | 1067    | 370         | 185           |
-| 5     | 1380    | 370         | 185           |
-| 6     | 1821    | 370         | 185           |
-| 7     | 2134    | 132         | 66            |
-
-Total: **2352 nibble bytes** → **1176 decoded bytes** per preset.
-
-**Assembly:** Concatenate all 7 chunks' `payload[4:]` in chunk order, then nibble-decode.
-
-### 4.6 Preset Chunk Write (CMD=0x12, sub=0x20, host→device)
-
-Write a preset in **7 chunks** (confirmed via Windows USB capture 2026-03-18):
-
-```
-F0 21 25 7E 47 50 2D 32  12  20  [SLOT:1B]  [OFFSET:2B LE]  [NIBBLE_DATA...]  F7
-```
-
-| Chunk | Offset | Nibble bytes | Notes                              |
-|-------|--------|--------------|------------------------------------|
-| 1     | 0      | 366          | Write header + metadata + name     |
-| 2     | 311    | 366          | Author/URL + routing + blocks 0–1  |
-| 3     | 622    | 366          | Effect blocks 2–4                  |
-| 4     | 1061   | 366          | Effect blocks 5–7                  |
-| 5     | 1372   | 366          | Effect blocks 8–10                 |
-| 6     | 1811   | 366          | Controller/pedal assignments       |
-| 7     | 2122   | 172          | Remaining assignments              |
-
-Total: **2368 nibble bytes** → **1184 decoded bytes** per preset.
-
-**All 11 effect blocks** and controller/pedal data are sent (previous docs incorrectly stated only blocks 0–8 partial were sent — this was based on older firmware/captures).
-
-The offset field in chunk headers is metadata for the device's reassembly, NOT a position in the nibble stream. Chunks must be concatenated in order.
-
-**Assembly:** Concatenate all 7 chunks' `payload[4:]` in chunk order, then nibble-decode.
-
-### 4.7 Initial State Dump (CMD=0x12, sub=0x4E, device→host)
-
-On device connect, device sends several sub=0x4E messages (same chunk format as sub=0x18).
-Contains current active preset state.
+This is NOT Roland 7-bit MIDI encoding. Some messages (sub=0x08, 0x10 toggle, 0x14 effect change) use raw bytes instead.
 
 ---
 
-## 5. Decoded Preset Format (READ, 1176 bytes)
+## 4. Sub-Command Overview
 
-After nibble-decoding the 7 sub=0x18 chunks, you get **1176 bytes**:
+| SUB | CMD | Dir | Size (bytes) | Encoding | Description |
+|-----|-----|-----|-------------|----------|-------------|
+| `0x04` | `0x11` | H->D | 22 | raw | Identity Query |
+| `0x04` | `0x11` | H->D | 22 | raw | State Dump Request |
+| `0x08` | `0x12` | H->D | 30 | raw | Preset Change |
+| `0x08` | `0x12` | H->D | 30 | raw | Drum Machine Control |
+| `0x08` | `0x12` | D->H | 30 | raw | Identity Response / FX State / ACK |
+| `0x0A` | `0x11` | H->D | 34 | raw | Version Check Request |
+| `0x0A` | `0x12` | D->H | ~34 | raw | Version Check Response |
+| `0x0C` | `0x12` | D->H | 38 | raw | Effect Change Response |
+| `0x10` | `0x11` | H->D | 46 | raw | Read Request |
+| `0x10` | `0x12` | H->D | 46 | raw | Toggle Effect / Patch Settings |
+| `0x10` | `0x12` | D->H | 46 | raw | Toggle Response (device-initiated) |
+| `0x12` | `0x11` | H->D | 14 | raw | Enter Editor Mode |
+| `0x14` | `0x12` | H->D | 54 | raw | Effect Change / Controller Assignment |
+| `0x14` | `0x12` | D->H | 54 | raw | Reorder Response |
+| `0x18` | `0x12` | H->D | 62 | nibble | Param Change / Style Name / Save Commit |
+| `0x18` | `0x12` | D->H | variable | nibble | Read Response Chunks |
+| `0x1C` | `0x11` | H->D | ~70 | raw | Assignment Query |
+| `0x1C` | `0x12` | D->H | variable | nibble | Assignment Response / IR Upload |
+| `0x20` | `0x11` | H->D | ~46 | raw | Request Preset Name |
+| `0x20` | `0x12` | H->D | 78 | nibble | Reorder / Author / Write Chunks |
+| `0x38` | `0x12` | H->D | 126 | nibble | Note Text |
+| `0x4E` | `0x12` | D->H | variable | nibble | State Dump Response |
 
-### 5.1 Header (bytes 0–27, 28 bytes)
+---
 
-| Offset | Size | Value          | Notes                          |
-|--------|------|----------------|--------------------------------|
-| 0      | 4    | `00 00 04 00`  | Constant                       |
-| 4      | 2    | `01 00`        | Constant (LE16 = 1)            |
-| 6      | 2    | `NN 00`        | **Slot number** (LE16, 0-based)|
-| 8      | 2    | `02 00`        | Constant (LE16 = 2)            |
-| 10     | 2    | `58 00`        | Constant (LE16 = 88)           |
-| 12     | 2    | `NN 00`        | Slot number repeated           |
-| 14     | 2    | Variable       | Tempo BPM or similar metadata  |
-| 16     | 12   | Variable       | Other preset metadata          |
+## 5. Handshake Sequence
 
-### 5.2 Preset Name (bytes 28–59, 32 bytes)
+When connecting to the GP-200 via Web MIDI, the following sequence is used:
 
-Null-terminated ASCII, up to 31 characters + null.
+| Step | Direction | Message | Expected Response |
+|------|-----------|---------|-------------------|
+| 1 | H->D | Identity Query (CMD=0x11, sub=0x04) | Identity Response (CMD=0x12, sub=0x08) |
+| 2 | H->D | Enter Editor Mode (CMD=0x11, sub=0x12) | *(wait 100ms, no response expected)* |
+| 3 | H->D | State Dump Request (CMD=0x11, sub=0x04) | 5x State Dump chunks (CMD=0x12, sub=0x4E) |
+| 4 | H->D | Version Check (CMD=0x11, sub=0x0A) | Version Response (CMD=0x12, sub=0x0A) |
+| 5 | H->D | Assignment Queries (CMD=0x11, sub=0x1C) | Assignment Responses (CMD=0x12, sub=0x1C) |
+| 6 | H->D | Read Requests for current bank (4 slots) | 7 chunks each (CMD=0x12, sub=0x18) |
 
-### 5.3 Middle Section (bytes 60–119, 60 bytes)
+After the handshake completes, the connection is ready for live editing.
 
-| Offset | Size | Value          | Notes                          |
-|--------|------|----------------|--------------------------------|
-| 60     | 40   | zeros          | Padding                        |
-| 100    | 2    | `08 00`        | Constant                       |
-| 102    | 2    | `10 00`        | Constant                       |
-| 104    | 2    | Slot number    | LE16, 0-based                  |
-| 106    | 2    | `04 04`        | Constant                       |
-| 108    | 11   | Block order    | Signal chain routing (see §5.4)|
-| 119    | 1    | `00`           | Terminator                     |
+---
 
-### 5.4 Block Routing Order (bytes 108–118, 11 bytes)
+## 6. Message Details
 
-The 11 block IDs in **signal chain order** (PRE=0x00 … VOL=0x0A):
+### 6.1 Identity Query (CMD=0x11, sub=0x04)
 
-- Default order: `00 01 02 04 03 05 06 07 08 09 0A`
-  = PRE → WAH → BOOST → NR → AMP → CAB → EQ → MOD → DLY → RVB → VOL
-- Can vary per preset (e.g., VOL first, different NR/AMP order)
+Request device identification.
 
-### 5.5 Effect Blocks (bytes 120–911, 11 × 72 = 792 bytes)
+```
+F0 21 25 7E 47 50 2D 32 11 04 00 00 00 00 01 02 00 00 00 00 00 F7
+```
 
-**11 blocks, each 72 bytes, starting at offset 120.**
-Identical structure to `.prst` file effect blocks (same marker, layout, params):
+Total: 22 bytes.
+
+### 6.2 Identity Response (CMD=0x12, sub=0x08)
+
+Device responds with identity information. Byte 18 contains device type.
+
+**Note:** Bytes [22] and [26] always show `1.2` regardless of actual firmware version. These are protocol version numbers, not firmware version. Use the Version Check (sub=0x0A) for firmware compatibility.
+
+### 6.3 Enter Editor Mode (CMD=0x11, sub=0x12)
+
+Puts the device into editor mode.
+
+```
+F0 21 25 7E 47 50 2D 32 11 12 00 00 00 F7
+```
+
+Total: 14 bytes. No response expected; wait ~100ms before proceeding.
+
+### 6.4 State Dump Request (CMD=0x11, sub=0x04)
+
+Request current device state (different payload from Identity Query).
+
+```
+F0 21 25 7E 47 50 2D 32 11 04 00 00 00 00 06 01 00 00 00 00 00 F7
+```
+
+Total: 22 bytes. Distinguished from Identity Query by byte[14] = `0x06` (vs `0x01`).
+
+### 6.5 State Dump Response (CMD=0x12, sub=0x4E)
+
+Device sends 5 chunks in the same format as Read Response chunks (sub=0x18). Contains current active preset state. Byte[10] in each chunk is `0x06` (chunk count or protocol marker, NOT the slot number).
+
+**Known gap:** The actual current-slot encoding within the nibble payload is not yet decoded. Implementation defaults to slot 0.
+
+### 6.6 Version Check (CMD=0x11, sub=0x0A)
+
+Firmware compatibility check.
+
+```
+F0 21 25 7E 47 50 2D 32 11 0A
+00 00 00 00 00 01 00 00 06 00 00
+0D 04 0F 07 08 0B 00 00 0C 0B 04 05
+F7
+```
+
+Total: 34 bytes. The trailing 12 bytes appear to be a version/capability descriptor.
+
+### 6.7 Version Check Response (CMD=0x12, sub=0x0A)
+
+Device responds to indicate acceptance. If bytes [21:33] are all zero, the version check is accepted (compatible firmware).
+
+### 6.8 Preset Change (CMD=0x12, sub=0x08, 30 bytes, raw)
+
+Switch the active preset slot. Also used as a commit step after write operations.
+
+```
+Offset  Value         Description
+[0-7]   F0 header     SysEx header
+[8]     12            CMD = SET
+[9]     08            SUB
+[10-13] 00 00 00 00   Padding
+[14-15] 08 01         Constant
+[16-17] 00 00         Padding
+[18-21] 04 00 00 00   Constant
+[22-25] 00 00 00 00   Padding
+[26]    NN            Slot number (0-255, raw byte)
+[27-28] 00 00         Padding
+[29]    F7            SysEx end
+```
+
+Bidirectional: Device echoes a sub=0x08 message when the slot changes (D->H). Byte[14]=0x08 distinguishes a preset change echo from an FX state response (byte[14]!=0x08).
+
+### 6.9 Drum Machine Control (CMD=0x12, sub=0x08, 30 bytes, raw)
+
+Same sub as Preset Change, distinguished by byte[13] and byte[22]:
+
+```
+[13]    Mode          0x00 = BPM/Volume control, 0x01 = Pattern/Play-Stop
+[14]    0x01          Constant
+[22]    BPM Flag      0x01 = BPM control, 0x00 = Pattern control
+[25-26] Nibble value  BPM or Pattern index (high nibble, low nibble)
+```
+
+### 6.10 FX State Response (CMD=0x12, sub=0x08, D->H)
+
+Device reports effect block state (in response to state query or hardware toggle).
+
+```
+[22]    Block ID      0x00-0x0A (see Block ID table)
+[24]    State         0x00 = OFF, 0x01 = ON
+```
+
+Distinguished from Preset Change echo by byte[14] != 0x08.
+
+### 6.11 Effect Change Response (CMD=0x12, sub=0x0C, 38 bytes, D->H)
+
+Device notifies the host when an effect is changed (swapped to a different algorithm). Triggers a full preset re-pull in the editor.
+
+### 6.12 Toggle Effect (CMD=0x12, sub=0x10, 46 bytes, raw)
+
+Turn an effect block on or off.
+
+```
+Offset  Value         Description
+[0-7]   F0 header     SysEx header
+[8-9]   12 10         CMD, SUB
+[10-17] 00 00 00 00 00 00 00 00   Padding
+[18-21] 04 00 00 00   Constant
+[22-24] 00 00 00      Padding
+[25-26] 00 00         Zeros
+[27-28] 00 00         Padding
+[29-30] 01 05         Constant
+[31-33] 00 00 00      Padding
+[34-37] 04 00 00 00   Constant
+[38]    BB            Block index (0x00-0x0A)
+[39]    00            Padding
+[40]    SS            State: 0x00=OFF, 0x01=ON
+[41-42] 09 0C         Constant
+[43-44] 00 02         Constant
+[45]    F7            SysEx end
+```
+
+Device also sends sub=0x10 (D->H) to notify the host of hardware-initiated toggles (e.g., footswitch press). Same byte layout: block at [38], state at [40].
+
+### 6.13 Patch Settings (CMD=0x12, sub=0x10, 46 bytes, raw)
+
+Same sub and size as Toggle, but byte[40] is always `0x00` (flag). Distinguished by context.
+
+```
+[38]    Target        0x00=VOL, 0x01=Tempo, 0x02=Style, 0x06=PAN
+[40]    0x00          Always zero (vs 0/1 for toggle)
+[41-42] Nibble value  (high<<4 | low) = value
+[43-44] Nibble value  Second word (used for Tempo >255)
+```
+
+Verified: Patch VOL=51 (display shows 50), Tempo=119 (display shows 120), Style=index number.
+
+### 6.14 Read Request (CMD=0x11, sub=0x10, 46 bytes, raw)
+
+Request full preset data for a slot. Slot number encoded as nibble pair at three positions.
+
+```
+Offset  Value         Description
+[0-7]   F0 header     SysEx header
+[8-9]   11 10         CMD=REQUEST, SUB
+[10-17] 00 00 00 00 00 00 00 00   Padding
+[18-21] 04 00 00 00   Constant
+[22-23] 01 00         Constant
+[24]    00            Padding
+[25-26] SH SL         Slot nibble-encoded (high, low)
+[27-29] 00 00 00      Padding
+[30-31] 01 00         Constant
+[32-33] 00 00         Padding
+[34-36] 04 00 00      Constant
+[37-38] SH SL         Slot nibble-encoded (repeated)
+[39-40] 00 00         Padding
+[41-42] SH SL         Slot nibble-encoded (repeated)
+[43-44] 00 00         Padding
+[45]    F7            SysEx end
+```
+
+Where `SH = (slot >> 4) & 0x0F` and `SL = slot & 0x0F`.
+
+Device responds with 7 chunks of sub=0x18.
+
+### 6.15 Read Response Chunks (CMD=0x12, sub=0x18, D->H, variable, nibble)
+
+Device sends 7 chunks per preset in response to a Read Request.
+
+```
+F0 21 25 7E 47 50 2D 32 12 18 [SLOT:1B] [OFF_LO:1B] [OFF_HI:1B] [nibble_data...] F7
+```
+
+| Field | Offset | Description |
+|-------|--------|-------------|
+| SLOT | [10] | Slot number (raw byte) |
+| OFF_LO | [11] | Chunk offset low byte |
+| OFF_HI | [12] | Chunk offset high byte |
+| nibble_data | [13:-1] | Nibble-encoded payload |
+
+**Chunk layout:**
+
+| Chunk | Offset | Nibble bytes | Decoded bytes |
+|-------|--------|-------------|---------------|
+| 1 | 0 | 370 | 185 |
+| 2 | 313 | 370 | 185 |
+| 3 | 626 | 370 | 185 |
+| 4 | 1067 | 370 | 185 |
+| 5 | 1380 | 370 | 185 |
+| 6 | 1821 | 370 | 185 |
+| 7 | 2134 | 132 | 66 |
+
+Total: 2352 nibble bytes -> **1176 decoded bytes** per preset.
+
+**Assembly:** Sort chunks by offset, concatenate nibble data, nibble-decode.
+
+### 6.16 Param Change (CMD=0x12, sub=0x18, 62 bytes, nibble)
+
+Change a single parameter value on an effect block.
+
+```
+SysEx: F0 21 25 7E 47 50 2D 32 12 18 00 00 00 [48 nibble bytes] F7
+```
+
+Nibble-decoded payload (24 bytes):
+
+| Offset | Size | Value | Description |
+|--------|------|-------|-------------|
+| 0-1 | 2 | `00 00` | Padding |
+| 2 | 1 | `04` | Constant |
+| 3-7 | 5 | `00 00 00 00 00` | Padding |
+| 8 | 1 | `05` | Message type: Param Change |
+| 9 | 1 | `00` | Padding |
+| 10 | 1 | `0C` | Constant |
+| 11 | 1 | `00` | Padding |
+| 12 | 1 | BB | Block index (0-10) |
+| 13 | 1 | PP | Parameter index (0-14) |
+| 14 | 1 | `6F` | Marker (normal) / `FA` (Combox controls) |
+| 15 | 1 | `00` | Padding |
+| 16-19 | 4 | uint32 LE | Effect ID |
+| 20-23 | 4 | float32 LE | Parameter value |
+
+Verified with:
+- **AMP Mess4 LD** (0x07000055): Param 0=Gain, 1=Presence, 2=Volume, 3=Bass, 4=Middle, 5=Treble (0-100)
+- **DLY Ping Pong** (0x0B000004): Param 0=Mix, 1=Feedback(0-500), 2=Time(0-10 enum), 3=Sync(1-4), 4=Trail(0/1)
+
+### 6.17 Style Name (CMD=0x12, sub=0x18, 62 bytes, nibble)
+
+Write a style name to the current preset. Same sub as Param Change but different header.
+
+Nibble-decoded payload (24 bytes):
+
+| Offset | Size | Value | Description |
+|--------|------|-------|-------------|
+| 0 | 1 | `03` | Style header marker |
+| 1 | 1 | `20` | Constant |
+| 2 | 1 | `14` | Constant |
+| 3 | 1 | `00` | Padding |
+| 4 | 1 | `01` | Constant |
+| 5 | 1 | `00` | Padding |
+| 6 | 1 | `A1` | Marker |
+| 7 | 1 | `00` | Padding |
+| 8-23 | 16 | ASCII | Style name (null-terminated, max 16 chars) |
+
+Distinguished from Param Change by decoded[0]=0x03 (vs 0x00).
+
+**Note:** Style name is NOT stored in the `.prst` file. It is only transmitted via SysEx and stored in app DB metadata.
+
+### 6.18 Save Commit / Save-to-Slot (CMD=0x12, sub=0x18, 62 bytes, nibble)
+
+Persist the current editing buffer to flash storage.
+
+Nibble-decoded payload (24 bytes):
+
+| Offset | Size | Value | Description |
+|--------|------|-------|-------------|
+| 0 | 1 | `03` | Save header marker |
+| 1 | 1 | `20` | Constant |
+| 2 | 1 | `14` | Constant |
+| 3 | 1 | `00` | Padding |
+| 4 | 1 | SS | Sub-slot index within bank (A=0, B=1, C=2, D=3) |
+| 5-7 | 3 | `00 00 00` | Padding |
+| 8-23 | 16 | ASCII | Preset name (null-terminated, max 16 chars) |
+
+**Important:** `decoded[4]` must be `slot % 4` (the sub-slot within the bank). Incorrect values cause the device to save to the wrong slot.
+
+Typical flow after live edits: Save Commit -> Preset Change (re-select slot to confirm).
+
+### 6.19 Effect Change (CMD=0x12, sub=0x14, 54 bytes, raw)
+
+Swap an effect in a slot to a different algorithm. Also used for Controller/EXP assignments.
+
+**Status: Not yet implemented.** Capture TODO exists at `docs/capture-todo.md`. The format is known to be 54 bytes raw (not nibble-encoded). Byte[28] distinguishes effect change (0x00) from controller assignment (0x01).
+
+Device responds with sub=0x0C (38 bytes) confirming the change.
+
+### 6.20 Reorder Response (CMD=0x12, sub=0x14, 54 bytes, D->H)
+
+Device confirms a new signal chain order after receiving a Reorder command (sub=0x20). Same sub as Effect Change but sent from device.
+
+### 6.21 Reorder Effects (CMD=0x12, sub=0x20, 78 bytes, nibble)
+
+Change the signal chain order of all 11 effect blocks.
+
+```
+SysEx: F0 21 25 7E 47 50 2D 32 12 20 00 00 00 [64 nibble bytes] F7
+```
+
+Nibble-decoded payload (32 bytes):
+
+| Offset | Size | Value | Description |
+|--------|------|-------|-------------|
+| 0-1 | 2 | `00 00` | Padding |
+| 2 | 1 | `04` | Constant |
+| 3-7 | 5 | `00 00 00 00 00` | Padding |
+| 8 | 1 | `08` | Message type: Reorder |
+| 9 | 1 | `00` | Padding |
+| 10 | 1 | `10` | Constant |
+| 11-13 | 3 | `00 00 00` | Padding |
+| 14-15 | 2 | `04 04` | Constant |
+| 16-26 | 11 | indices | New routing order (11 block slot indices) |
+| 27 | 1 | `44` | Terminator |
+| 28-31 | 4 | `00 00 00 00` | Padding |
+
+Verified: capture 101538 (NR <-> AMP swap), capture 101714 (NR <-> AMP + DLY <-> RVB).
+
+Device responds with sub=0x14 (54 bytes) echoing the confirmed routing order.
+
+### 6.22 Author Name (CMD=0x12, sub=0x20, 78 bytes, nibble)
+
+Write an author name to the current preset. Same sub as Reorder but different decoded[8] message type.
+
+Nibble-decoded payload (32 bytes):
+
+| Offset | Size | Value | Description |
+|--------|------|-------|-------------|
+| 0-1 | 2 | `00 00` | Padding |
+| 2 | 1 | `04` | Constant |
+| 3-5 | 3 | `00 00 00` | Padding |
+| 6 | 1 | `01` | Constant |
+| 7 | 1 | `00` | Padding |
+| 8 | 1 | `09` | Message type: Author |
+| 9 | 1 | `00` | Padding |
+| 10 | 1 | `14` | Constant |
+| 11 | 1 | `00` | Padding |
+| 12 | 1 | `01` | Constant |
+| 13 | 1 | `00` | Padding |
+| 14 | 1 | `70` | Marker |
+| 15 | 1 | `0B` | Constant |
+| 16-31 | 16 | ASCII | Author name (null-terminated, max 16 chars) |
+
+Verified: capture 143029, packet 71 -- Author "Manuel".
+
+### 6.23 Write Chunks (CMD=0x12, sub=0x20, H->D, variable, nibble)
+
+Write a full preset to a device slot. Same sub as Reorder/Author but with large payloads (>100 bytes after sub).
+
+```
+F0 21 25 7E 47 50 2D 32 12 20 [SLOT:1B] [OFF_LO:1B] [OFF_HI:1B] [nibble_data...] F7
+```
+
+**4-chunk write format** (confirmed via capture, used by `buildWriteChunks`):
+
+| Chunk | Offset | Nibble bytes | Decoded bytes |
+|-------|--------|-------------|---------------|
+| 1 | 0 | 366 | 183 |
+| 2 | 311 | 366 | 183 |
+| 3 | 622 | 366 | 183 |
+| 4 | 1061 | 366 | 183 |
+
+Total: 1464 nibble bytes -> **732 decoded bytes**.
+
+**7-chunk write format** (full write from Valeton PC editor):
+
+| Chunk | Offset | Nibble bytes |
+|-------|--------|-------------|
+| 1 | 0 | 366 |
+| 2 | 311 | 366 |
+| 3 | 622 | 366 |
+| 4 | 1061 | 366 |
+| 5 | 1372 | 366 |
+| 6 | 1811 | 366 |
+| 7 | 2122 | 172 |
+
+Total: 2368 nibble bytes -> **1184 decoded bytes**.
+
+The 4-chunk format writes blocks 0-8 (partial); blocks 9 (RVB) and 10 (VOL) are omitted and the device retains existing values. The 7-chunk format writes all 11 blocks plus controller/pedal assignments.
+
+### 6.24 Note Text (CMD=0x12, sub=0x38, 126 bytes, nibble)
+
+Write a note/description to the current preset.
+
+```
+SysEx: F0 21 25 7E 47 50 2D 32 12 38 00 00 00 [112 nibble bytes] F7
+```
+
+Nibble-decoded payload (56 bytes):
+
+| Offset | Size | Value | Description |
+|--------|------|-------|-------------|
+| 0-1 | 2 | `00 00` | Padding |
+| 2 | 1 | `04` | Constant |
+| 3-5 | 3 | `00 00 00` | Padding |
+| 6 | 1 | `01` | Constant |
+| 7 | 1 | `00` | Padding |
+| 8 | 1 | `0B` | Message type: Note |
+| 9 | 1 | `00` | Padding |
+| 10 | 1 | `2C` | Constant |
+| 11 | 1 | `00` | Padding |
+| 12 | 1 | `01` | Constant |
+| 13 | 1 | `00` | Padding |
+| 14 | 1 | `A1` | Marker |
+| 15 | 1 | `00` | Padding |
+| 16-55 | 40 | ASCII | Note text (null-terminated, max 40 chars) |
+
+Verified: capture 143029, packet 129 -- Note "TestNote".
+
+### 6.25 Request Preset Name (CMD=0x11, sub=0x20, ~46 bytes, raw)
+
+Request only the preset name for a slot (faster than a full read).
+
+```
+Offset  Value
+[0-7]   F0 header
+[8-9]   11 20         CMD=REQUEST, SUB
+[10-17] padding
+[18-21] 04 00 00 00   Constant
+[22-25] 00 00 00 00   Padding
+[26]    NN            Slot number
+[27-29] 00 00 00
+[30]    07            Constant
+[31-33] 00 00 01
+[34-37] 04 00 00 00   Constant
+[38]    NN            Slot number (repeated)
+[39-40] 00 00 00
+[41]    NN            Slot number (repeated)
+[42-43] 00 00
+[44]    F7
+```
+
+Device responds with a single sub=0x18 chunk (offset=0) from which the name can be extracted at decoded[28:44].
+
+### 6.26 Assignment Query (CMD=0x11, sub=0x1C, ~70 bytes, raw)
+
+Query controller/EXP pedal assignments.
+
+Organized by section (0 or 1) and page/block:
+- Section 0: pages [0 with 16 blocks, 1 with 4 blocks]
+- Section 1: pages [0 with 10 blocks]
+
+Device responds with sub=0x1C (CMD=0x12) containing nibble-encoded assignment data. Block number at response byte[22], nibble payload from byte[27] onward.
+
+### 6.27 Assignment / IR Upload Response (CMD=0x12, sub=0x1C, D->H, variable, nibble)
+
+Assignment responses contain controller name and configuration data. Also used for IR upload transfer (multi-chunk, marker byte `0x20` at decoded[10]).
+
+IR upload is a multi-chunk transfer (23+ chunks for a full IR). Not yet reliably implemented due to USB timing issues.
+
+---
+
+## 7. Block IDs
+
+Block IDs identify effect slots in toggle, param change, reorder, and state messages.
+
+| ID | Name | Description |
+|----|------|-------------|
+| `0x00` | PRE | Pre-amp (Compressor, Noise Gate, Boost) |
+| `0x01` | WAH | Wah pedal |
+| `0x02` | BOOST | Boost / Overdrive |
+| `0x03` | AMP | Amplifier model |
+| `0x04` | NR | Noise Reduction |
+| `0x05` | CAB | Cabinet / IR |
+| `0x06` | EQ | Equalizer |
+| `0x07` | MOD | Modulation (Chorus, Flanger, Phaser, Tremolo) |
+| `0x08` | DLY | Delay |
+| `0x09` | RVB | Reverb |
+| `0x0A` | VOL | Volume |
+
+Default signal chain order: PRE -> WAH -> BOOST -> NR -> AMP -> CAB -> EQ -> MOD -> DLY -> RVB -> VOL
+
+---
+
+## 8. Effect ID Structure
+
+Each effect has a 32-bit unsigned integer ID (LE). The high byte encodes the module type:
+
+| High byte | Module | Example effects |
+|-----------|--------|-----------------|
+| `0x00` | PRE/NR | Compressor, Noise Gate, Boost |
+| `0x01` | PRE/EQ/MOD | AC Sim, Guitar EQ, Detune |
+| `0x03` | DST | Green OD, Force, Scream OD |
+| `0x04` | MOD | Chorus, Flanger, Phaser, Tremolo |
+| `0x05` | WAH | V-Wah, C-Wah |
+| `0x06` | VOL | Volume |
+| `0x07` | AMP | UK 800, Mess DualV, Eagle 120+ |
+| `0x08` | AMP (extra) | AC Pre, Mini Bass |
+| `0x0A` | CAB | UK GRN 2, EV, User IR |
+| `0x0B` | DLY | Pure, Analog, Tape, Ping Pong |
+| `0x0C` | RVB | Room, Hall, Shimmer |
+| `0x0F` | SnapTone | SnapTone (AMP/DST presets) |
+
+305 effects are mapped in `src/core/effectNames.ts`. 322 parameter definitions per effect in `src/core/effectParams.ts`.
+
+---
+
+## 9. Decoded Preset Format (READ, 1176 bytes)
+
+After nibble-decoding the 7 sub=0x18 chunks:
+
+### 9.1 Header (bytes 0-27, 28 bytes)
+
+| Offset | Size | Value | Description |
+|--------|------|-------|-------------|
+| 0-3 | 4 | `00 00 04 00` | Constant |
+| 4-5 | 2 | `01 00` | Constant (LE16 = 1) |
+| 6-7 | 2 | NN 00 | Slot number (LE16, 0-based) |
+| 8-9 | 2 | `02 00` | Constant (LE16 = 2) |
+| 10-11 | 2 | `58 00` | Constant (LE16 = 88) |
+| 12-13 | 2 | NN 00 | Slot number (repeated) |
+| 14-15 | 2 | variable | Tempo BPM or metadata |
+| 16-27 | 12 | variable | Other preset metadata |
+
+### 9.2 Name and Author (bytes 28-59)
+
+| Offset | Size | Description |
+|--------|------|-------------|
+| 28-43 | 16 | Preset name (null-terminated ASCII, max 16 chars) |
+| 44-59 | 16 | Author (null-terminated ASCII, max 16 chars) |
+
+### 9.3 Routing Section (bytes 100-119)
+
+| Offset | Size | Value | Description |
+|--------|------|-------|-------------|
+| 100-101 | 2 | `08 00` | Constant |
+| 102-103 | 2 | `10 00` | Constant |
+| 104-105 | 2 | NN 00 | Slot number (LE16) |
+| 106-107 | 2 | `04 04` | Constant |
+| 108-118 | 11 | block IDs | Signal chain routing order |
+| 119 | 1 | `00` | Terminator |
+
+### 9.4 Effect Blocks (bytes 120-911, 11 x 72 = 792 bytes)
+
+Each block is 72 bytes:
 
 ```
 +0   4B   14 00 44 00   Block marker (constant)
-+4   1B   [0–10]        Slot index
++4   1B   [0-10]        Slot index
 +5   1B   [0 or 1]      Active flag: 0=bypass, 1=active
 +6   2B   00 0F         Constant
-+8   4B   LE uint32     Effect ID (high byte = module type)
-+12  60B  15× float32   Parameters (LE)
++8   4B   uint32 LE     Effect ID (high byte = module type)
++12  60B  15x float32   Parameters (LE)
 ```
 
-**Effect ID high byte → module type:**
+Blocks are stored in slot-index order (0=PRE through 10=VOL), independent of routing order.
 
-| High byte | Module | Example effects              |
-|-----------|--------|------------------------------|
-| 0x00      | PRE/NR | Compressor, Noise Gate       |
-| 0x01      | PRE/EQ | Guitar EQ, AC Sim            |
-| 0x03      | DST    | Green OD, Scream, Force      |
-| 0x04      | MOD    | Chorus, Flanger, Phaser      |
-| 0x05      | WAH    | V-Wah, C-Wah                 |
-| 0x06      | VOL    | Volume                       |
-| 0x07      | AMP    | UK 800, Mess DualV           |
-| 0x08      | AMP    | AC Pre, Mini Bass            |
-| 0x0A      | CAB    | UK GRN 2, EV, User IR        |
-| 0x0B      | DLY    | Pure, Analog, Tape           |
-| 0x0C      | RVB    | Room, Hall, Shimmer          |
+### 9.5 Trailing Data (bytes 912-1175, 264 bytes)
 
-Blocks are stored in **slot-index order** (slot 0 = PRE first, slot 10 = VOL last),
-regardless of the routing order in §5.4.
-
-### 5.6 Trailing Data (bytes 912–1175, 264 bytes)
-
-Controller assignments and pedal mappings. Pattern: 16-byte records starting with `0C 00 0C 00`.
-Appears constant across presets (not preset-specific data).
+Controller/pedal assignments. Contains 16-byte records starting with `0C 00 0C 00`.
 
 ---
 
-## 6. Write Format (1184 bytes)
+## 10. Decoded Write Format (732/1184 bytes)
 
-Write payload is nibble-decoded from 7 sub=0x20 chunks. Confirmed via Windows USB capture 2026-03-18.
+### 10.1 Write Header (bytes 0-35, 36 bytes)
 
-**Relationship to .prst file:** The write payload is the .prst PARM data (bytes 48–1219) with a different 16-byte header prepended instead of the 48-byte TSRP/MRAP header. The effect block data, routing, and controller assignments are identical.
-
-### 6.1 Write Header (bytes 0–15, 16 bytes)
+Contains `0x27` write markers (static, not slot-dependent). Slot is identified by byte[10] in the SysEx chunk header.
 
 ```
-00 00 04 00 01 00 [SLOT:2B LE] 01 00 04 00 [SLOT:2B LE] [SLOT:2B LE]
+00 00 04 00 01 00 27 00 01 00 04 00 27 00 27 00
+02 00 58 00 27 00 78 00 32 00 00 00 00 00 00 00
+00 00 00 00
 ```
 
-| Offset | Size | Value            | Notes                  |
-|--------|------|------------------|------------------------|
-| 0–1    | 2    | `00 00`          | Padding                |
-| 2–3    | 2    | `04 00`          | Constant (LE16 = 4)    |
-| 4–5    | 2    | `01 00`          | Constant (LE16 = 1)    |
-| 6–7    | 2    | `NN 00`          | **Slot number** (LE16) |
-| 8–9    | 2    | `01 00`          | Constant (LE16 = 1)    |
-| 10–11  | 2    | `04 00`          | Constant (LE16 = 4)    |
-| 12–13  | 2    | `NN 00`          | Slot repeated          |
-| 14–15  | 2    | `NN 00`          | Slot repeated          |
+### 10.2 Name + Author (bytes 36-67, 32 bytes)
 
-### 6.2 Pre-Name Metadata (bytes 16–35, 20 bytes)
+| Offset | Size | Description |
+|--------|------|-------------|
+| 36-51 | 16 | Preset name (null-terminated) |
+| 52-67 | 16 | Author (null-terminated) |
 
-```
-02 00  58 00  [SLOT:2B LE]  78 00  [VAR:2B]  00 00  [VAR:2B]  00 00 00 00 00 00
-```
+### 10.3 Routing Section (bytes 108-127, 20 bytes)
 
-Constants: `02 00` at [16], `58 00` at [18], `78 00` at [22]. Slot at [20]. Other fields may encode category/subcategory metadata.
+Same structure as read format (section 9.3):
 
-### 6.3 Name + Author + URL (bytes 36–107, 72 bytes)
+| Offset | Size | Value | Description |
+|--------|------|-------|-------------|
+| 108-109 | 2 | `08 00` | Constant |
+| 110-111 | 2 | `10 00` | Constant |
+| 112-113 | 2 | `25 00` | Static write marker |
+| 114-115 | 2 | `04 04` | Constant |
+| 116-126 | 11 | block IDs | Routing order |
+| 127 | 1 | `00` | Terminator |
 
-| Offset | Size | Content                        |
-|--------|------|--------------------------------|
-| 36–51  | 16   | Preset name (null-terminated)  |
-| 52–67  | 16   | Author name (null-terminated)  |
-| 68–103 | 36   | URL (null-terminated)          |
-| 104–107| 4    | Padding (zeros)                |
+### 10.4 Effect Blocks (bytes 128+)
 
-Author and URL are metadata from the Valeton PC editor; Web MIDI writes leave these as zeros.
+4-chunk write: blocks 0-7 complete (8 x 72 = 576 bytes) + block 8 partial (28 bytes) at offset 704.
 
-### 6.4 Routing Section (bytes 108–127, 20 bytes)
-
-Same structure as read format bytes 100–119:
-
-| Offset | Size | Value               | Notes                     |
-|--------|------|---------------------|---------------------------|
-| 108–109| 2    | `08 00`             | Constant                  |
-| 110–111| 2    | `10 00`             | Constant                  |
-| 112–113| 2    | Slot reference      | LE16                      |
-| 114–115| 2    | `04 04`             | Constant                  |
-| 116–126| 11   | Block routing order | Signal chain (§5.4)       |
-| 127    | 1    | `00`                | Terminator                |
-
-### 6.5 Effect Blocks (bytes 128–919, 11 × 72 = 792 bytes)
-
-**All 11 blocks** are sent, identical structure to read format (§5.5). Blocks 9 (RVB) and 10 (VOL) ARE included.
-
-### 6.6 Controller/Pedal Assignments (bytes 920–1183, 264 bytes)
-
-Three record types:
-
-| Prefix         | Size | Count | Description                |
-|----------------|------|-------|----------------------------|
-| `0C 00 0C 00`  | 16B  | 9     | Expression pedal assigns   |
-| `10 00 04 00`  | 8B   | 3     | Footswitch assignments     |
-| `0F 00 08 00`  | 12B  | 8     | Parameter assignments      |
+7-chunk write: all 11 blocks complete (bytes 128-919), followed by controller/pedal assignments (bytes 920-1183).
 
 ---
 
-## 7. Device Capacity
+## 11. .prst Binary File Format (1224 bytes)
 
-- **256 preset slots** (0-based, 0–255)
-- Slots 0–248: user presets
-- Slots 249–255: factory defaults ("It's GP-200")
-- Device always responds to all 256 slot read requests
+### 11.1 File Header (bytes 0x00-0x2F, 48 bytes)
+
+| Offset | Size | Value | Description |
+|--------|------|-------|-------------|
+| 0x00 | 4 | `TSRP` | Magic ("PRST" reversed) |
+| 0x10 | 4 | `2-PG` | Device ID ("GP-2" reversed) |
+| 0x14 | 4 | `00 01 01 00` | Firmware version |
+| 0x1C | 4 | variable | Timestamp / Preset ID |
+| 0x28 | 4 | `MRAP` | Chunk marker ("PARM" reversed) |
+| 0x2C | 4 | `94 04 00 00` | Chunk size (LE uint32 = 1172) |
+
+### 11.2 Preset Name + Author (bytes 0x44-0x63)
+
+| Offset | Size | Description |
+|--------|------|-------------|
+| 0x44 | 16 | Preset name (null-terminated ASCII, max 16 chars) |
+| 0x54 | 16 | Author (null-terminated ASCII, max 16 chars) |
+
+### 11.3 Effect Blocks (bytes 0xA0-0x3AF, 11 x 72 = 792 bytes)
+
+Same structure as SysEx decoded blocks (see section 9.4).
+
+### 11.4 Checksum (last 2 bytes, 0x4C6)
+
+```
+checksum = sum(file_bytes[0x000 .. 0x4C5]) & 0xFFFF
+```
+
+Stored as **big-endian** uint16 at bytes [0x4C6:0x4C8].
+
+### 11.5 .prst to SysEx Mapping
+
+| Component | .prst offset | SysEx Write offset | Size |
+|-----------|-------------|-------------------|------|
+| File header | 0-47 | -- | 48B |
+| Write header | -- | 0-15 | 16B |
+| Pre-name metadata | 48-67 | 16-35 | 20B |
+| Name + Author | 68-99 | 36-67 | 32B |
+| URL + padding | 100-139 | 68-107 | 40B |
+| Routing section | 140-159 | 108-127 | 20B |
+| 11 effect blocks | 160-951 | 128-919 | 792B |
+| Controller/pedal | 952-1219 | 920-1183 | 264B |
+| Footer+checksum | 1220-1223 | -- | 4B |
+
+Conversion: `.prst[48:]` is approximately equal to `SysEx_write[16:]`.
 
 ---
 
-## 8. USB MIDI Transport
+## 12. Device Capacity
 
-MIDI bytes are wrapped in USB MIDI Event Packets (4 bytes each, per USB MIDI 1.0 spec):
-
-| CIN  | Meaning              | MIDI bytes |
-|------|----------------------|------------|
-| 0x04 | SysEx start/continue | 3 bytes    |
-| 0x05 | SysEx end (1 byte)   | 1 byte     |
-| 0x06 | SysEx end (2 bytes)  | 2 bytes    |
-| 0x07 | SysEx end (3 bytes)  | 3 bytes    |
+- **256 preset slots** (0-based, 0-255)
+- Slots 0-248: user presets
+- Slots 249-255: factory defaults ("It's GP-200")
+- Slot labels: bank number (1-64) + letter (A-D), e.g., slot 0 = "1A", slot 255 = "64D"
 
 ---
 
-## 9. Read All Presets — Full Protocol Sequence
+## 13. USB MIDI Transport
 
-The Windows Valeton editor reads all 256 presets on connect:
+MIDI bytes are wrapped in USB MIDI Event Packets (4 bytes each, USB MIDI 1.0 spec):
 
-1. **Handshake** (CMD=0x12, sub=0x08, ~20 bytes)
-2. **Device capabilities** (CMD=0x12, sub=0x4E, same chunk format as sub=0x18)
-3. For each slot 0–255:
-   - Host sends `CMD=0x11, sub=0x10` with slot number at bytes 16, 29, 33
-   - Device responds with 7 `CMD=0x12, sub=0x18` chunks → 1176 bytes per preset
+| CIN | Meaning | MIDI bytes carried |
+|-----|---------|--------------------|
+| `0x04` | SysEx start/continue | 3 bytes |
+| `0x05` | SysEx end (1 byte) | 1 byte |
+| `0x06` | SysEx end (2 bytes) | 2 bytes |
+| `0x07` | SysEx end (3 bytes) | 3 bytes |
+| `0x0F` | Single byte | 1 byte (GP-200 uses for standalone F7 ACK) |
+
+SysEx messages can span multiple USB frames. Accumulate MIDI bytes across consecutive frames (same direction) until F7 is found.
 
 ---
 
-## 10. Implementation (Web MIDI API)
+## 14. Nibble-Encoded Message Type Summary
 
-```javascript
-const HEADER = [0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32];
+Several messages share the same SUB byte but are distinguished by their nibble-decoded payload header:
 
-// Access MIDI with SysEx permission
-const access = await navigator.requestMIDIAccess({ sysex: true });
-const output = [...access.outputs.values()].find(p => p.name.includes('GP-200'));
-const input  = [...access.inputs.values()].find(p => p.name.includes('GP-200'));
+### sub=0x18 (62 bytes) -- Distinguished by decoded[0] and decoded[8]
 
-// Toggle an effect block on/off
-function toggleEffect(blockId, enabled) {
-  output.send([
-    ...HEADER, 0x12, 0x10,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-    0x01, 0x00, 0x00, 0x01, 0x05, 0x00, 0x00, 0x00,
-    0x04, 0x00, 0x00, 0x00,
-    blockId,                    // byte 38
-    0x00,
-    enabled ? 0x01 : 0x00,      // byte 40
-    0x0C, 0x0F, 0x00, 0x02,
-    0xF7,
-  ]);
-}
+| decoded[0] | decoded[8] | Message |
+|------------|------------|---------|
+| `0x00` | `0x05` | Param Change |
+| `0x03` | -- | Style Name (decoded[0:3] = `03 20 14`) |
+| `0x03` | -- | Save Commit (decoded[0:3] = `03 20 14`, decoded[4] = sub-slot) |
 
-// Request full preset data for slot N
-function requestPreset(slotN) {
-  const n = slotN & 0xFF;
-  output.send([
-    ...HEADER, 0x11, 0x10,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
-    n,                          // byte 16: slot
-    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00,
-    n,                          // byte 29: slot (repeated)
-    0x00, 0x00, 0x00,
-    n,                          // byte 33: slot (repeated)
-    0x00, 0x00,
-    0xF7,
-  ]);
-}
+### sub=0x20 (78 bytes) -- Distinguished by decoded[8]
 
-// Nibble-decode: raw[0..2N-1] → decoded[0..N-1]
-function nibbleDecode(raw) {
-  const out = new Uint8Array(Math.floor(raw.length / 2));
-  for (let i = 0; i < out.length; i++) {
-    out[i] = (raw[2*i] << 4) | raw[2*i+1];
-  }
-  return out;
-}
+| decoded[8] | Message |
+|------------|---------|
+| `0x08` | Reorder Effects |
+| `0x09` | Author Name |
 
-// Nibble-encode: decoded[0..N-1] → raw[0..2N-1]
-function nibbleEncode(decoded) {
-  const out = new Uint8Array(decoded.length * 2);
-  for (let i = 0; i < decoded.length; i++) {
-    out[2*i]   = (decoded[i] >> 4) & 0x0F;
-    out[2*i+1] = decoded[i] & 0x0F;
-  }
-  return out;
-}
+### sub=0x20 (variable, >100 bytes after sub) -- Write Chunks
 
-// Parse 1176-byte decoded preset data
-function parsePreset(decoded) {
-  const slotNum = decoded[6] | (decoded[7] << 8);
-  const name = new TextDecoder().decode(
-    decoded.slice(28, 60).subarray(0, decoded.slice(28).indexOf(0))
-  );
-  const effects = [];
-  for (let i = 0; i < 11; i++) {
-    const base = 120 + i * 72;
-    const slotIdx = decoded[base + 4];
-    const active  = decoded[base + 5] === 1;
-    const effectId = new DataView(decoded.buffer).getUint32(base + 8, true);
-    const params = [];
-    for (let p = 0; p < 15; p++) {
-      params.push(new DataView(decoded.buffer).getFloat32(base + 12 + p * 4, true));
-    }
-    effects.push({ slotIdx, active, effectId, params });
-  }
-  return { slotNum, name, effects };
-}
+Large payloads indicate preset write data, not reorder/author.
+
+### sub=0x08 (30 bytes) -- Distinguished by byte[14] and direction
+
+| byte[14] | Direction | Message |
+|----------|-----------|---------|
+| `0x08` | H->D | Preset Change |
+| `0x08` | D->H | Preset Change Echo |
+| other | D->H | FX State Response |
+| `0x01` | H->D | Drum Machine Control |
+
+---
+
+## 15. Capture Reference
+
+| File | Size | Content |
+|------|------|---------|
+| 100548 | 9KB | Toggle FX + Save to Slot |
+| 101538 | 15KB | Toggle + Reorder + Effect Change + Save |
+| 101714 | 50KB | Param Change + Effect Change + Reorder + Toggle |
+| 102448 | 23MB | DLY Ping Pong: all knobs 0->max + Sync/Trail |
+| 102857 | 22MB | AMP Mess4 LD: all 6 knobs 0->max |
+| 103852 | 46MB | Patch Settings (VOL/PAN/Tempo) + Controller |
+| 104211 | 170MB | EXP 1/2 Settings + Quick Access + FX Loop |
+| 104836 | 22MB | Author/Style/Note editing |
+| 105520 | 22MB | Drum Machine: BPM, Pattern, Play/Stop |
+| 105713 | 27KB | IR Upload (timeout, 23 chunks, no response) |
+| 143029 | -- | Author "Manuel", Style "Green Day", Note "TestNote" |
+| 222343 | -- | Preset Change (slot switch) |
+
+Captures are located in `scripts/gp200-capture-*.pcap`. Analyze with:
+
+```bash
+python scripts/analyze-sysex.py <capture.pcap>
 ```
 
 ---
 
-## 11. .prst Checksum Algorithm (SOLVED 2026-03-18)
+## 16. Known Gaps / TODO
 
-**Algorithm:** Simple byte sum, stored as big-endian uint16.
-
-```
-checksum = sum(file_bytes[0 .. 0x4C5]) & 0xFFFF
-stored as BE16 at file_bytes[0x4C6 .. 0x4C7]
-```
-
-Verified against 5 real .prst files exported from GP-200 firmware v1.1.0.
-
-Note: the `.prst` file also has a 4-byte footer at [0x4C0:0x4C4] containing the data-end offset as LE32 (always 0x04C0 = 1216), followed by 2 bytes padding, then the checksum.
-
----
-
-## 12. .prst ↔ SysEx Format Mapping
-
-| Component         | .prst offset | SysEx Write offset | Size   |
-|-------------------|--------------|--------------------|--------|
-| File header       | 0–47         | —                  | 48B    |
-| Write header      | —            | 0–15               | 16B    |
-| Pre-name metadata | 48–67        | 16–35              | 20B    |
-| Name + Author     | 68–99        | 36–67              | 32B    |
-| URL + padding     | 100–139      | 68–107             | 40B    |
-| Routing section   | 140–159      | 108–127            | 20B    |
-| 11 effect blocks  | 160–951      | 128–919            | 792B   |
-| Controller/pedal  | 952–1219     | 920–1183           | 264B   |
-| Footer+checksum   | 1220–1223    | —                  | 4B     |
-
-Conversion: `.prst[48:]` ≈ `SysEx[16:]` — the payload data is identical except for:
-- Slot number field at pre-name metadata offset 4 (may differ between export and write)
+- [ ] **Effect Change (sub=0x14, H->D):** Not implemented. Required to swap effect algorithms on a slot (e.g., Green OD -> Force). See `docs/capture-todo.md`.
+- [ ] **State Dump slot decoding:** sub=0x4E chunks received during handshake. Byte[10]=0x06 is NOT the slot. Actual slot position in nibble payload unknown. Currently defaults to slot 0.
+- [ ] **Header metadata bytes [14:28]:** Exact semantics in read format (BPM? Scene? Category?).
+- [ ] **Pre-name metadata bytes [24:36]:** Category/subcategory fields in write format.
+- [ ] **Controller/EXP assignment write format:** sub=0x14 assignment variant. Byte[28] distinguishes sections. Min/max values and full parameter mapping not decoded.
+- [ ] **IR Upload reliability:** sub=0x1C multi-chunk transfer times out. Device never responds (0 D->H messages). May need longer timeouts or chunk acknowledgment protocol.
+- [ ] **Device-initiated effect change details:** sub=0x0C response fields beyond notification.
+- [ ] **Drum Machine full protocol:** BPM >255 encoding, all pattern IDs.
+- [x] ~~Checksum algorithm~~ -- Solved: `sum(bytes[0:0x4C6]) & 0xFFFF`, stored BE16.
+- [x] ~~Write format~~ -- Confirmed 4-chunk and 7-chunk formats.
+- [x] ~~Toggle, Param, Reorder~~ -- Hardware-verified.
+- [x] ~~Author, Style, Note~~ -- Capture-verified.
 
 ---
 
-## 13. Known Unknowns
+## 17. Related Resources
 
-- [ ] Header bytes [14:28] in read format: exact semantics (BPM? Scene metadata?)
-- [ ] Pre-name metadata bytes [24:36]: category/subcategory fields
-- [ ] Full handshake/capabilities sequence on device connect
-- [ ] Read protocol on Windows: Valeton editor uses `change_preset` + unknown mechanism (no sub=0x18 chunks observed in USB capture — may use HID or cached data)
-- [x] ~~Checksum algorithm in `.prst` binary format~~ → §11
-- [x] ~~Write header format~~ → §6.1
-- [x] ~~Why write omits blocks 9–10~~ → It doesn't; full 11-block write confirmed
-
----
-
-## 12. Related Resources
-
-- GP-5 BLE SysEx (different transport): `helvecioneto/gp5-wc` → `src/lib/ble_sysex.json`
-- GP-5 SysEx reference doc: https://www.scribd.com/document/963614194/GP-5-SysEx-1
-- Capture scripts: `scripts/analyze-sysex.py`, `scripts/capture-windows.ps1`
-- Captures (Linux): `/home/manuel/gp200-capture-windows.pcap` (write, 22KB), `/home/manuel/gp200-capture-targeted.pcap` (read all 256 slots, 1.3MB)
-- Captures (Windows): `scripts/gp200-capture-20260318-*.pcap` (write + toggle FX, 2026-03-18)
+- GP-5 SysEx reference: https://www.scribd.com/document/963614194/GP-5-SysEx-1
+- GP-5 BLE controller repo: `helvecioneto/gp5-wc`
+- Implementation: `src/core/SysExCodec.ts`, `src/hooks/useMidiDevice.ts`
+- Capture analyzer: `scripts/analyze-sysex.py`
+- Capture tool (Windows): `scripts/capture-windows.ps1`

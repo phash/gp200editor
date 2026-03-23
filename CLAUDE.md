@@ -473,24 +473,73 @@ Sub-Befehle sind **multipurpose** — gleicher Sub hat verschiedene Bedeutungen 
 
 | Sub | Richtung | Bytes | Beschreibung | Encoding |
 |-----|----------|-------|-------------|----------|
-| 0x08 | H→D | 30 | Preset wechseln / Save-Commit | raw |
+| 0x08 | H→D | 30 | Preset wechseln (data[14]=0x08, slot=data[26]) | raw |
 | 0x08 | H→D | 30 | Drum-Computer Steuerung (BPM, Pattern, Play/Stop) | raw |
-| 0x08 | D→H | 30 | ACK / Block-State-Response | raw |
-| 0x0C | D→H | 38 | Effekt-Change-Response | raw |
-| 0x10 | H→D | 46 | Toggle Effekt an/aus (byte[40]=0/1) | raw |
+| 0x08 | D→H | 30 | Preset-Change-Echo (data[14]=0x08, slot=data[26]) | raw |
+| 0x08 | D→H | 30 | FX-State-Response (data[14]≠0x08, block=data[22], state=data[24]) | raw |
+| 0x08 | D→H | 120 | Extended State (nach Effekt-Wechsel, Format unbekannt) | raw |
+| 0x0A | D→H | var | Version-Check-Response | raw |
+| 0x0C | D→H | 38 | Effekt-Change-Response (Effekt-Wechsel am Gerät) | raw |
+| 0x10 | H→D | 46 | Toggle Effekt an/aus (byte[38]=block, byte[40]=0/1) | raw |
 | 0x10 | H→D | 46 | Patch Settings: VOL/PAN/Tempo/Style (byte[40]=0) | raw |
 | 0x10 | H→D | 46 | Read Request (CMD=0x11) | raw |
-| 0x14 | H→D | 54 | Effekt wechseln | raw |
+| 0x10 | D→H | 46 | Toggle-Notification (byte[38]=block, byte[40]=state) | raw |
+| 0x14 | H→D | 54 | Effekt wechseln (TODO: nicht implementiert) | raw |
 | 0x14 | H→D | 54 | Controller/EXP-Assignment ändern | raw |
 | 0x14 | D→H | 54 | Reorder-Response (neue Routing-Order) | raw |
 | 0x18 | H→D | 62 | Parameter-Change — decoded[8]=0x05 | nibble |
-| 0x18 | H→D | 62 | Style-Name schreiben — anderer Header | nibble |
-| 0x18 | H→D | 62 | Save-to-Slot (Preset-Name + Commit) | nibble |
+| 0x18 | H→D | 62 | Style-Name — decoded[0:3]=03 20 14, [4]=01, [6]=A1 | nibble |
+| 0x18 | H→D | 62 | Save-to-Slot — decoded[0:3]=03 20 14, [4]=sub-slot(A=0,B=1,C=2,D=3) | nibble |
 | 0x18 | D→H | var | Read-Response Chunks | nibble |
 | 0x20 | H→D | 78 | Effekt-Reihenfolge — decoded[8]=0x08 | nibble |
 | 0x20 | H→D | 78 | Author-Name schreiben — decoded[8]=0x09 | nibble |
 | 0x20 | H→D | var | Write Chunks (7× für Full Write) | nibble |
 | 0x38 | H→D | 126 | Note-Text schreiben — decoded[8]=0x0B | nibble |
+| 0x4E | D→H | var | State-Dump (5 Chunks, beim Handshake) | nibble |
+
+#### sub=0x08 (30 Bytes, raw) — Preset Change / FX State (KRITISCH)
+
+**Multipurpose:** `data[14]` unterscheidet die Nachrichtentypen:
+
+| data[14] | Typ | Beschreibung |
+|----------|-----|-------------|
+| 0x08 | Preset-Change | data[26] = Slot-Nummer (0-255). H→D: Slot wechseln. D→H: Echo/Bestätigung |
+| 0x01, 0x05 | FX-State-Response | data[22] = Block-ID (0-10), data[24] = State (0=OFF, 1=ON) |
+
+**WICHTIG:** Nicht alle sub=0x08 als Slot-Wechsel behandeln! FX-State-Responses haben zufällige
+Werte an data[26] — wenn man die als Slot interpretiert, werden falsche Presets geladen.
+
+**FX-State-Response (D→H):** Wird gesendet wenn Effekte am Gerät getoggelt werden.
+- Device-READ liefert nur **gespeicherte** Daten, nicht den Live-Editing-Buffer
+- Daher: FX-State direkt aus der SysEx-Nachricht parsen, NICHT per Pull aktualisieren
+- Block-IDs: 0=PRE, 1=WAH, 2=BOOST, 3=AMP, 4=NR, 5=CAB, 6=EQ, 7=MOD, 8=DLY, 9=RVB, 10=VOL
+
+**120-Byte-Variante (D→H):** Nach Effekt-Wechsel am Gerät kommt eine erweiterte sub=0x08
+mit 120 Bytes. Format noch nicht vollständig dekodiert.
+
+#### Save-to-Slot (sub=0x18, 62 Bytes, nibble-encoded)
+
+SysEx: `F0 ... 12 18 00 00 00 [48 nibble bytes] F7`
+Nibble-decoded Payload (24 Bytes):
+
+```
+[0:3]   03 20 14                   Header (gleich wie Style-Name)
+[4]     Sub-Slot-Index             A=0, B=1, C=2, D=3 (KRITISCH — sonst wird falscher Slot überschrieben!)
+[6]     variiert                   In Valeton-Captures nicht-null (9c, 6f, 4f, af), bei uns 0x00 funktioniert
+[8:24]  Preset-Name                Null-terminierter ASCII-String (max 16 Zeichen)
+```
+
+**Verifiziert (2026-03-23):** Ohne korrekten Sub-Slot-Index schrieb der Save immer nach Slot A.
+Capture-Vergleich: Valeton sendet decoded[4]=0x01 für 1B, decoded[4]=0x00 für 1A.
+
+#### sub=0x0C (38 Bytes, raw) — Effekt-Change-Response
+
+Wird gesendet wenn am Gerät der Effekt-Typ gewechselt wird (z.B. Green OD → Yellow OD).
+Enthält Info über den neuen Effekt. Format teilweise dekodiert.
+
+**WICHTIG:** Device-READ liefert auch bei Effekt-Wechseln NUR gespeicherte Daten — ein Pull
+nach sub=0x0C bringt den alten Effekt zurück. Lösung: sub=0x0C Payload direkt parsen.
+**TODO:** Format vollständig dekodieren (benötigt Capture von Valeton-Software bei Effekt-Wechsel).
 
 #### sub=0x10 (46 Bytes, raw) — Toggle / Patch Settings / Style
 

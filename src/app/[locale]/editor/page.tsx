@@ -130,6 +130,7 @@ export default function EditorPage() {
       pulling = true;
       console.log(`[GP-200] onDeviceChange: re-pulling slot ${slot}`);
       midiDevice.pullPreset(slot).then((fresh) => {
+        console.log(`[GP-200] pull complete: name="${fresh.patchName}" effects=`, fresh.effects.map(e => `${e.slotIndex}:${e.effectId.toString(16)}:${e.enabled?'ON':'OFF'}`));
         loadPreset(fresh);
         const base = bankBaseSlotRef.current;
         if (base !== null) {
