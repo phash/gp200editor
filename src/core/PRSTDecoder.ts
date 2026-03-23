@@ -38,7 +38,7 @@ export class PRSTDecoder {
     }
 
     const version = String(this.parser.readUint8(OFFSET_VERSION));
-    const patchName = this.parser.readAscii(OFFSET_PATCH_NAME, PATCH_NAME_MAX);
+    const patchName = this.parser.readAscii(OFFSET_PATCH_NAME, PATCH_NAME_MAX).trim();
     const author = this.parser.readAscii(OFFSET_AUTHOR, AUTHOR_MAX);
 
     const effects: GP200Preset['effects'] = [];

@@ -102,6 +102,7 @@ export const SysExCodec = {
         patchName += String.fromCharCode(b);
       }
     }
+    patchName = patchName.trim();
     if (!patchName && fallbackName) patchName = fallbackName;
 
     // Author at decoded[44:60] (16 bytes, null-terminated)
