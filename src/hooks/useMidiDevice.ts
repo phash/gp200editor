@@ -49,6 +49,7 @@ export interface UseMidiDeviceReturn {
   sendAuthor: (author: string) => void;
   sendStyleName: (styleName: string) => void;
   sendNote: (note: string) => void;
+  sendEffectChange: (blockIndex: number, effectId: number) => void;
   sendPatchVolume: (value: number) => void;
   sendPatchPan: (deviceValue: number) => void;
   sendPatchTempo: (bpm: number) => void;
@@ -531,6 +532,14 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     if (inputRef.current) inputRef.current.onmidimessage = onMidiMessage;
   }, [onMidiMessage]);
 
+  const sendEffectChange = useCallback((blockIndex: number, effectId: number) => {
+    if (!outputRef.current) return;
+    suppressFxBriefly();
+    const msg = SysExCodec.buildEffectChange(blockIndex, effectId);
+    console.log(`[GP-200] effect change: block=${blockIndex} effectId=0x${effectId.toString(16).padStart(8, '0')}`);
+    outputRef.current.send(msg);
+  }, []);
+
   const sendToggle = useCallback((blockIndex: number, enabled: boolean) => {
     if (!outputRef.current) return;
     suppressFxBriefly();
@@ -650,7 +659,7 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     status, handshakeStep, errorMessage, deviceName, currentSlot, presetNames, namesLoadProgress,
     deviceInfo, currentPreset, assignments,
     connect, disconnect, loadPresetNames, pullPreset, pushPreset, writePresetToSlot, saveToSlot,
-    sendToggle, sendParamChange, sendReorder, sendSlotChange,
+    sendEffectChange, sendToggle, sendParamChange, sendReorder, sendSlotChange,
     sendAuthor, sendStyleName, sendNote, sendPatchVolume, sendPatchPan, sendPatchTempo, sendRawChunks,
     setOnDeviceChange: (cb: ((slot: number | null) => void) | null) => { onDeviceChangeRef.current = cb; },
     setOnDeviceToggle: (cb: ((blockIndex: number, enabled: boolean) => void) | null) => { onDeviceToggleRef.current = cb; },

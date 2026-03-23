@@ -7,6 +7,10 @@ const MidiDeviceContext = createContext<UseMidiDeviceReturn | null>(null);
 
 export function MidiDeviceProvider({ children }: { children: ReactNode }) {
   const midiDevice = useMidiDevice();
+  // Expose for console debugging (NAM upload experiments etc.)
+  if (typeof window !== 'undefined') {
+    (window as unknown as Record<string, unknown>).__midi = midiDevice;
+  }
   return (
     <MidiDeviceContext.Provider value={midiDevice}>
       {children}

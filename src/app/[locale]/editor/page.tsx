@@ -857,7 +857,12 @@ export default function EditorPage() {
                 midiDevice.sendToggle(eff.slotIndex, !eff.enabled);
               }
             },
-            onChangeEffect: changeEffect,
+            onChangeEffect: (slotIndex: number, effectId: number) => {
+              changeEffect(slotIndex, effectId);
+              if (midiDevice.status === 'connected') {
+                midiDevice.sendEffectChange(slotIndex, effectId);
+              }
+            },
             onParamChange: (slotIndex: number, paramIndex: number, value: number) => {
               setParam(slotIndex, paramIndex, value);
               if (midiDevice.status === 'connected' && preset) {

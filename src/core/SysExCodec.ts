@@ -370,6 +370,33 @@ export const SysExCodec = {
     ]);
   },
 
+  buildEffectChange(blockIndex: number, effectId: number): Uint8Array {
+    // CMD=0x12, sub=0x14, 54 bytes — raw SysEx (not nibble-encoded)
+    // Confirmed: captures 134828 (COMP→COMP4→AC Boost) + 143107 (AMP→SnapTone)
+    // raw[38]=block, raw[45:47]=variant nibble-encoded, raw[52]=module type
+    const module = (effectId >> 24) & 0xFF;
+    const variant = effectId & 0xFFFF;
+    return new Uint8Array([
+      0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, // [0-7]   header
+      0x12, 0x14,                                        // [8-9]   CMD=SET, sub=EFFECT_CHANGE
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // [10-17]
+      0x04, 0x00, 0x00, 0x00,                            // [18-21] constant
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,         // [22-28]
+      0x01, 0x06,                                        // [29-30] constant
+      0x00, 0x00, 0x00,                                  // [31-33]
+      0x08,                                              // [34]    constant
+      0x00, 0x00, 0x00,                                  // [35-37]
+      blockIndex & 0x0F,                                 // [38]    block index
+      0x00, 0x00,                                        // [39-40]
+      0x07, 0x06, 0x00, 0x02,                            // [41-44] constant
+      (variant >> 4) & 0x0F,                             // [45]    variant high nibble
+      variant & 0x0F,                                    // [46]    variant low nibble
+      0x00, 0x00, 0x00, 0x00, 0x00,                     // [47-51]
+      module & 0xFF,                                     // [52]    module type
+      0xF7,                                              // [53]    end
+    ]);
+  },
+
   buildParamChange(blockIndex: number, paramIndex: number, effectId: number, value: number): Uint8Array {
     // CMD=0x12, sub=0x18, 62 bytes — nibble-encoded 24-byte payload
     // Confirmed: capture 102448 (DLY Ping Pong: Mix/Feedback/Time/Sync/Trail)
