@@ -275,7 +275,7 @@ export default function EditorPage() {
   async function handlePushConfirm(slot: number) {
     if (!preset) return;
     try {
-      await midiDevice.pushPreset(preset, slot);
+      await midiDevice.writePresetToSlot(preset, slot);
       setLoadError(null);
     } catch {
       setLoadError(t('pushError'));
@@ -343,7 +343,7 @@ export default function EditorPage() {
       for (const tabIdx of Array.from(bankDirtySlots)) {
         const preset = bankPresets[tabIdx];
         if (preset) {
-          await midiDevice.pushPreset(preset, bankBaseSlot + tabIdx);
+          await midiDevice.writePresetToSlot(preset, bankBaseSlot + tabIdx);
         }
       }
       setBankDirtySlots(new Set());

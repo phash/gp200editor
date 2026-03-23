@@ -40,6 +40,7 @@ export interface UseMidiDeviceReturn {
   loadPresetNames: () => Promise<void>;
   pullPreset: (slot: number) => Promise<GP200Preset>;
   pushPreset: (preset: GP200Preset, slot: number) => Promise<void>;
+  writePresetToSlot: (preset: GP200Preset, slot: number) => Promise<void>;
   saveToSlot: (presetName: string) => void;
   sendToggle: (blockIndex: number, enabled: boolean) => void;
   sendParamChange: (blockIndex: number, paramIndex: number, effectId: number, value: number) => void;
@@ -381,6 +382,41 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     outputRef.current.send(msg);
   }, []);
 
+  const writePresetToSlot = useCallback(async (preset: GP200Preset, slot: number): Promise<void> => {
+    if (!outputRef.current) throw new Error('Not connected');
+    const output = outputRef.current;
+    console.log(`[GP-200] writeToSlot: slot=${slot} (${SysExCodec.slotToLabel(slot)}) name="${preset.patchName}"`);
+
+    // Step 1: Switch device to the target slot
+    output.send(SysExCodec.buildPresetChange(slot));
+    await new Promise(r => setTimeout(r, 100));
+
+    // Step 2: Send all effects via live editing (toggle + params for each slot)
+    for (const eff of preset.effects) {
+      output.send(SysExCodec.buildToggleEffect(eff.slotIndex, eff.enabled));
+      await new Promise(r => setTimeout(r, 10));
+      for (let p = 0; p < eff.params.length; p++) {
+        if (eff.params[p] !== undefined) {
+          output.send(SysExCodec.buildParamChange(eff.slotIndex, p, eff.effectId, eff.params[p]));
+          await new Promise(r => setTimeout(r, 5));
+        }
+      }
+    }
+
+    // Step 3: Send author + save-commit to persist
+    if (preset.author) {
+      output.send(SysExCodec.buildAuthorName(preset.author));
+      await new Promise(r => setTimeout(r, 20));
+    }
+    output.send(SysExCodec.buildSaveCommit(preset.patchName));
+    console.log(`[GP-200] writeToSlot complete: ${preset.patchName}`);
+
+    // Update local state
+    presetNamesRef.current[slot] = preset.patchName;
+    setPresetNames([...presetNamesRef.current]);
+    setCurrentSlot(slot);
+  }, []);
+
   const loadPresetNames = useCallback(async (): Promise<void> => {
     if (!outputRef.current || !inputRef.current) return;
     namesLoadAbortRef.current = false;
@@ -503,7 +539,7 @@ export function useMidiDevice(): UseMidiDeviceReturn {
   return {
     status, handshakeStep, errorMessage, deviceName, currentSlot, presetNames, namesLoadProgress,
     deviceInfo, currentPreset, assignments,
-    connect, disconnect, loadPresetNames, pullPreset, pushPreset, saveToSlot,
+    connect, disconnect, loadPresetNames, pullPreset, pushPreset, writePresetToSlot, saveToSlot,
     sendToggle, sendParamChange, sendReorder, sendSlotChange,
     sendAuthor, sendStyleName, sendNote,
   };
