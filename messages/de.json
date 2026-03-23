@@ -195,7 +195,11 @@
     "firmwareCompatAck": "Mir ist das Risiko bewusst",
     "firmwareCompatContinue": "Weiter",
     "firmwareCompatDisconnect": "Verbindung trennen",
-    "saveToActiveSlot": "Auf {slot} speichern"
+    "saveToActiveSlot": "Auf {slot} speichern",
+    "confirmSaveToSlot": "»{name}« auf Slot {slot} speichern?",
+    "savingToSlot": "Speichere auf {slot}…",
+    "confirmSave": "Speichern",
+    "cancelSave": "Abbrechen"
   },
   "help": {
     "title": "Hilfe",

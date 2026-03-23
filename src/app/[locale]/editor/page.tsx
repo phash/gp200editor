@@ -119,19 +119,21 @@ export default function EditorPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [midiDevice.currentPreset]);
 
-  // Re-pull current preset when device state changes (user edits on hardware)
+  // Re-pull current preset when device slot changes (hardware slot switch)
+  const bankBaseSlotRef = useRef(bankBaseSlot);
+  bankBaseSlotRef.current = bankBaseSlot;
   useEffect(() => {
     if (midiDevice.status !== 'connected') return;
     let pulling = false;
-    midiDevice.setOnDeviceChange(() => {
-      if (pulling) return;
-      const slot = midiDevice.currentSlot;
-      if (slot === null) return;
+    midiDevice.setOnDeviceChange((slot) => {
+      if (pulling || slot === null) return;
       pulling = true;
+      console.log(`[GP-200] onDeviceChange: re-pulling slot ${slot}`);
       midiDevice.pullPreset(slot).then((fresh) => {
         loadPreset(fresh);
-        if (bankBaseSlot !== null) {
-          const tabIdx = slot - bankBaseSlot;
+        const base = bankBaseSlotRef.current;
+        if (base !== null) {
+          const tabIdx = slot - base;
           if (tabIdx >= 0 && tabIdx < 4) {
             setBankPresets(prev => {
               const updated = [...prev];
@@ -145,6 +147,17 @@ export default function EditorPage() {
     return () => midiDevice.setOnDeviceChange(null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [midiDevice.status, midiDevice.currentSlot, bankBaseSlot]);
+
+  // Direct toggle update from hardware (no pull needed — device editing buffer isn't in saved data)
+  useEffect(() => {
+    if (midiDevice.status !== 'connected') return;
+    midiDevice.setOnDeviceToggle((blockIndex, enabled) => {
+      console.log(`[GP-200] onDeviceToggle: block=${blockIndex} enabled=${enabled}`);
+      toggleEffect(blockIndex, enabled);
+    });
+    return () => midiDevice.setOnDeviceToggle(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [midiDevice.status]);
 
   // Send all effect data to device for live preview (no save)
   const sendPresetToDevice = useCallback((decoded: GP200Preset) => {
@@ -322,9 +335,10 @@ export default function EditorPage() {
     }
   }
 
-  function handleSaveToActiveSlot() {
+  async function handleSaveToActiveSlot() {
     if (!preset) return;
-    midiDevice.saveToSlot(preset.patchName);
+    const slot = bankBaseSlot !== null ? bankBaseSlot + activeTab : midiDevice.currentSlot ?? 0;
+    await midiDevice.saveToSlot(preset.patchName, slot);
     // Update bank cache so tab-switching loads the saved state
     if (bankBaseSlot !== null) {
       setBankPresets(prev => {

@@ -41,7 +41,7 @@ export interface UseMidiDeviceReturn {
   pullPreset: (slot: number) => Promise<GP200Preset>;
   pushPreset: (preset: GP200Preset, slot: number) => Promise<void>;
   writePresetToSlot: (preset: GP200Preset, slot: number) => Promise<void>;
-  saveToSlot: (presetName: string) => void;
+  saveToSlot: (presetName: string, slot?: number) => Promise<void>;
   sendToggle: (blockIndex: number, enabled: boolean) => void;
   sendParamChange: (blockIndex: number, paramIndex: number, effectId: number, value: number) => void;
   sendReorder: (order: number[]) => void;
@@ -49,7 +49,8 @@ export interface UseMidiDeviceReturn {
   sendAuthor: (author: string) => void;
   sendStyleName: (styleName: string) => void;
   sendNote: (note: string) => void;
-  setOnDeviceChange: (cb: (() => void) | null) => void;
+  setOnDeviceChange: (cb: ((slot: number | null) => void) | null) => void;
+  setOnDeviceToggle: (cb: ((blockIndex: number, enabled: boolean) => void) | null) => void;
 }
 
 // Minimal shape we actually use — avoids conflicts with DOM's MIDIInput / MIDIOutput
@@ -135,32 +136,51 @@ export function useMidiDevice(): UseMidiDeviceReturn {
   const outputRef          = useRef<GP200Output | null>(null);
   const inputRef           = useRef<GP200Input | null>(null);
   const presetNamesRef     = useRef<(string | null)[]>(new Array(256).fill(null));
+  const currentSlotRef     = useRef<number | null>(null);
   const namesLoadAbortRef  = useRef<boolean>(false);
 
-  // Callback for device-initiated changes (slot switch, effect toggle, param change)
-  // Set by the editor to trigger a re-pull when the device state changes
-  const onDeviceChangeRef = useRef<(() => void) | null>(null);
+  // Callback for device-initiated changes (slot switch → full re-pull)
+  const onDeviceChangeRef = useRef<((slot: number | null) => void) | null>(null);
+  // Callback for device-initiated effect toggles (direct state update, no pull needed)
+  const onDeviceToggleRef = useRef<((blockIndex: number, enabled: boolean) => void) | null>(null);
 
   const onMidiMessage = useCallback((event: { data: unknown }) => {
     const data = getBytes(event.data);
-    // sub=0x08 D→H: device changed slot or ACK
+    // sub=0x08 D→H: multipurpose — preset change echo vs FX state response
+    // Distinguish by data[14]: 0x08 = preset change echo, 0x01/0x05 = FX state response
     if (isSysEx(data, 0x12, 0x08) && data.length >= 28) {
-      const slot = data[26];
-      if (slot >= 0 && slot < 256) {
-        console.log(`[GP-200] device slot change: ${slot} (${SysExCodec.slotToLabel(slot)})`);
-        setCurrentSlot(slot);
-        onDeviceChangeRef.current?.();
+      if (data[14] === 0x08) {
+        // Preset change echo — data[26] is the slot number
+        const slot = data[26];
+        if (slot >= 0 && slot < 256) {
+          console.log(`[GP-200] device slot change: ${slot} (${SysExCodec.slotToLabel(slot)})`);
+          setCurrentSlot(slot); currentSlotRef.current = slot;
+          onDeviceChangeRef.current?.(slot);
+        }
+      } else {
+        // FX state response — device reports effect toggle from hardware
+        // data[22]=block_id (0=PRE..10=VOL), data[24]=state (0=OFF, 1=ON)
+        const blockId = data[22];
+        const state = data[24];
+        if (blockId >= 0 && blockId <= 10) {
+          console.log(`[GP-200] device FX toggle: block=${blockId} state=${state ? 'ON' : 'OFF'}`);
+          onDeviceToggleRef.current?.(blockId, state === 1);
+        }
       }
     }
     // sub=0x0C D→H: effect change response
     if (isSysEx(data, 0x12, 0x0C)) {
       console.log('[GP-200] device effect change');
-      onDeviceChangeRef.current?.();
+      onDeviceChangeRef.current?.(currentSlotRef.current);
     }
     // sub=0x10 D→H: toggle response (device-initiated)
     if (isSysEx(data, 0x12, 0x10) && data.length >= 42) {
-      console.log('[GP-200] device toggle change');
-      onDeviceChangeRef.current?.();
+      const blockId = data[38];
+      const state = data[40];
+      if (blockId >= 0 && blockId <= 10) {
+        console.log(`[GP-200] device toggle: block=${blockId} state=${state ? 'ON' : 'OFF'}`);
+        onDeviceToggleRef.current?.(blockId, state === 1);
+      }
     }
   }, []);
 
@@ -218,7 +238,7 @@ export function useMidiDevice(): UseMidiDeviceReturn {
         output.send(SysExCodec.buildStateDumpRequest());
         const dumpChunks = await collectChunks(input, 0x12, 0x4E, 5, READ_TIMEOUT_MS, onMidiMessage);
         const { slot } = SysExCodec.parseStateDump(dumpChunks);
-        setCurrentSlot(slot);
+        setCurrentSlot(slot); currentSlotRef.current = slot;
 
         // Step 7-8: Version check
         setHandshakeStep('Firmware Check…');
@@ -300,7 +320,7 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     inputRef.current  = null;
     setStatus('disconnected');
     setDeviceName(null);
-    setCurrentSlot(null);
+    setCurrentSlot(null); currentSlotRef.current = null;
     setErrorMessage(null);
     setDeviceInfo(null);
     setCurrentPreset(null);
@@ -382,19 +402,23 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     // Update local state
     presetNamesRef.current[slot] = preset.patchName;
     setPresetNames([...presetNamesRef.current]);
-    setCurrentSlot(slot);
+    setCurrentSlot(slot); currentSlotRef.current = slot;
 
     console.log('[GP-200] push complete');
   }, []);
 
-  const saveToSlot = useCallback((presetName: string) => {
+  const saveToSlot = useCallback(async (presetName: string, slot?: number): Promise<void> => {
     if (!outputRef.current) return;
     // Save-commit persists the device's current editing buffer to flash.
     // Live edits (toggle, param, reorder) already updated the editing buffer.
-    // This is the same flow as the Valeton software: edit → save-commit.
-    const msg = SysExCodec.buildSaveCommit(presetName);
-    console.log(`[GP-200] save-commit: name="${presetName}"`);
+    // Valeton flow: save-commit → preset-change (re-select slot to confirm).
+    // decoded[4] must be the sub-slot index (A=0,B=1,C=2,D=3) — otherwise device saves to wrong slot!
+    const targetSlot = slot ?? currentSlotRef.current ?? 0;
+    const msg = SysExCodec.buildSaveCommit(presetName, targetSlot);
+    console.log(`[GP-200] save-commit: name="${presetName}" slot=${targetSlot} (sub=${targetSlot % 4})`);
     outputRef.current.send(msg);
+    // Wait for device to write to flash
+    await new Promise(r => setTimeout(r, 300));
   }, []);
 
   const writePresetToSlot = useCallback(async (preset: GP200Preset, slot: number): Promise<void> => {
@@ -427,7 +451,7 @@ export function useMidiDevice(): UseMidiDeviceReturn {
       output.send(SysExCodec.buildAuthorName(preset.author));
       await new Promise(r => setTimeout(r, 30));
     }
-    output.send(SysExCodec.buildSaveCommit(preset.patchName));
+    output.send(SysExCodec.buildSaveCommit(preset.patchName, slot));
     // Wait for device to finish writing to flash before returning
     await new Promise(r => setTimeout(r, 300));
     console.log(`[GP-200] writeToSlot complete: ${label} → "${preset.patchName}"`);
@@ -435,7 +459,7 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     // Update local state
     presetNamesRef.current[slot] = preset.patchName;
     setPresetNames([...presetNamesRef.current]);
-    setCurrentSlot(slot);
+    setCurrentSlot(slot); currentSlotRef.current = slot;
   }, []);
 
   const loadPresetNames = useCallback(async (): Promise<void> => {
@@ -511,7 +535,7 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     const msg = SysExCodec.buildPresetChange(slot);
     console.log(`[GP-200] slot change: ${slot} (${SysExCodec.slotToLabel(slot)})`);
     outputRef.current.send(msg);
-    setCurrentSlot(slot);
+    setCurrentSlot(slot); currentSlotRef.current = slot;
   }, []);
 
   const sendAuthor = useCallback((author: string) => {
@@ -563,6 +587,7 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     connect, disconnect, loadPresetNames, pullPreset, pushPreset, writePresetToSlot, saveToSlot,
     sendToggle, sendParamChange, sendReorder, sendSlotChange,
     sendAuthor, sendStyleName, sendNote,
-    setOnDeviceChange: (cb: (() => void) | null) => { onDeviceChangeRef.current = cb; },
+    setOnDeviceChange: (cb: ((slot: number | null) => void) | null) => { onDeviceChangeRef.current = cb; },
+    setOnDeviceToggle: (cb: ((blockIndex: number, enabled: boolean) => void) | null) => { onDeviceToggleRef.current = cb; },
   };
 }

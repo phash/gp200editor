@@ -11,7 +11,7 @@ interface DeviceStatusBarProps {
   hasPreset: boolean;
   onPullRequest: () => void;
   onPushRequest: () => void;
-  onSaveToActiveSlot?: () => void;
+  onSaveToActiveSlot?: () => Promise<void>;
   onPresetNameChange?: (name: string) => void;
 }
 
@@ -29,6 +29,8 @@ export function DeviceStatusBar({
   const [webMidiSupported, setWebMidiSupported] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState('');
+  const [saveConfirm, setSaveConfirm] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setWebMidiSupported('requestMIDIAccess' in navigator);
@@ -175,7 +177,7 @@ export function DeviceStatusBar({
             </button>
             {onSaveToActiveSlot && currentSlot !== null && hasPreset && (
               <button
-                onClick={onSaveToActiveSlot}
+                onClick={() => setSaveConfirm(true)}
                 className="font-mono-display text-xs font-bold px-3 py-1 rounded"
                 style={{ border: '1px solid rgba(74,222,128,0.4)', color: 'var(--accent-green)', background: 'rgba(74,222,128,0.06)' }}
               >
@@ -200,6 +202,57 @@ export function DeviceStatusBar({
           </>
         )}
       </div>
+
+      {/* Save confirm overlay */}
+      {saveConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => { if (!saving) setSaveConfirm(false); }}>
+          <div
+            className="rounded-xl p-6 max-w-sm w-full mx-4"
+            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {saving ? (
+              <div className="flex flex-col items-center gap-4 py-4">
+                <div className="w-8 h-8 border-2 rounded-full animate-spin"
+                  style={{ borderColor: 'var(--accent-green)', borderTopColor: 'transparent' }} />
+                <p className="text-sm font-mono-display" style={{ color: 'var(--accent-green)' }}>
+                  {t('savingToSlot', { slot: slotLabel })}
+                </p>
+              </div>
+            ) : (
+              <>
+                <p className="text-sm mb-6" style={{ color: 'var(--text-primary)' }}>
+                  {t('confirmSaveToSlot', { slot: slotLabel, name: currentPresetName || '?' })}
+                </p>
+                <div className="flex gap-3 justify-end">
+                  <button
+                    onClick={() => setSaveConfirm(false)}
+                    className="px-4 py-2 rounded-lg text-sm transition-colors"
+                    style={{ border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}
+                  >
+                    {t('cancelSave')}
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setSaving(true);
+                      try {
+                        await onSaveToActiveSlot!();
+                      } finally {
+                        setSaving(false);
+                        setSaveConfirm(false);
+                      }
+                    }}
+                    className="px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+                    style={{ background: 'var(--accent-green)', color: '#000' }}
+                  >
+                    {t('confirmSave')}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

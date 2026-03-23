@@ -6,7 +6,7 @@ interface PresetActions {
   loadPreset: (preset: GP200Preset) => void;
   setPatchName: (name: string) => void;
   setAuthor: (author: string) => void;
-  toggleEffect: (slotIndex: number) => void;
+  toggleEffect: (slotIndex: number, forcedState?: boolean) => void;
   changeEffect: (slotIndex: number, effectId: number) => void;
   reorderEffects: (fromIndex: number, toIndex: number) => void;
   setParam: (slotIndex: number, paramIdx: number, value: number) => void;
@@ -28,13 +28,15 @@ export function usePreset(): PresetActions {
     setPreset((prev) => prev ? { ...prev, author: author || undefined } : null);
   }, []);
 
-  const toggleEffect = useCallback((slotIndex: number) => {
+  const toggleEffect = useCallback((slotIndex: number, forcedState?: boolean) => {
     setPreset((prev) => {
       if (!prev) return null;
       return {
         ...prev,
         effects: prev.effects.map((slot) =>
-          slot.slotIndex === slotIndex ? { ...slot, enabled: !slot.enabled } : slot
+          slot.slotIndex === slotIndex
+            ? { ...slot, enabled: forcedState !== undefined ? forcedState : !slot.enabled }
+            : slot
         ),
       };
     });

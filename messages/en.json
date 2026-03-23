@@ -195,7 +195,11 @@
     "firmwareCompatAck": "I understand the risk",
     "firmwareCompatContinue": "Continue",
     "firmwareCompatDisconnect": "Disconnect",
-    "saveToActiveSlot": "Save to {slot}"
+    "saveToActiveSlot": "Save to {slot}",
+    "confirmSaveToSlot": "Save »{name}« to slot {slot}?",
+    "savingToSlot": "Saving to {slot}…",
+    "confirmSave": "Save",
+    "cancelSave": "Cancel"
   },
   "help": {
     "title": "Help",
