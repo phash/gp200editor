@@ -53,6 +53,8 @@ export default function EditorPage() {
   const [sourcePreset, setSourcePreset] = useState<{ id: string; username: string; author: string; style: string; description: string } | null>(null);
   const [importedFromHLX, setImportedFromHLX] = useState(false);
   const [myRating, setMyRating] = useState(0);
+  const [presetStyle, setPresetStyle] = useState('');
+  const [presetNote, setPresetNote] = useState('');
 
   useEffect(() => {
     fetch('/api/profile')
@@ -83,6 +85,8 @@ export default function EditorPage() {
         loadPreset(decoded);
         if (info?.id) {
           setSourcePreset({ id: info.id, username: info.username, author: info.author ?? '', style: info.style ?? '', description: info.description ?? '' });
+          setPresetStyle(info.style ?? '');
+          setPresetNote(info.description ?? '');
         }
         // Send to device if connected (live preview, not saved)
         sendPresetToDevice(decoded);
@@ -166,8 +170,10 @@ export default function EditorPage() {
   }
 
   async function handleSaveToPresets(data: { author: string; style: string; note: string; publish: boolean }) {
-    // Update author in preset before encoding
+    // Sync editor state with dialog values
     if (data.author) setAuthor(data.author);
+    if (data.style) setPresetStyle(data.style);
+    if (data.note) setPresetNote(data.note);
     const ab = encodePreset();
     if (!ab || !preset) return;
 
@@ -509,9 +515,9 @@ export default function EditorPage() {
           </span>
         )}
       </div>
-      {/* Author + Style */}
-      <div className="flex items-center gap-4 mb-8 flex-wrap">
-        <div className="flex items-center gap-3">
+      {/* Author + Style + Note */}
+      <div className="flex items-center gap-6 mb-4 flex-wrap">
+        <div className="flex items-center gap-2">
           <span className="font-mono-display text-[11px] font-medium tracking-wider uppercase flex-shrink-0"
             style={{ color: 'var(--text-muted)' }}>
             {t('author')}:
@@ -532,12 +538,46 @@ export default function EditorPage() {
             style={{ color: 'var(--text-secondary)' }}
           />
         </div>
-        {sourcePreset?.style && (
-          <span className="font-mono-display text-[11px] tracking-wider uppercase px-2 py-0.5 rounded"
-            style={{ color: 'var(--text-muted)', background: 'rgba(212,162,78,0.08)', border: '1px solid rgba(212,162,78,0.15)' }}>
-            {sourcePreset.style}
+        <div className="flex items-center gap-2">
+          <span className="font-mono-display text-[11px] font-medium tracking-wider uppercase flex-shrink-0"
+            style={{ color: 'var(--text-muted)' }}>
+            {t('styleLabel')}:
           </span>
-        )}
+          <input
+            type="text"
+            value={presetStyle}
+            onChange={(e) => {
+              setPresetStyle(e.target.value);
+              if (midiDevice.status === 'connected') {
+                midiDevice.sendStyleName(e.target.value);
+              }
+            }}
+            maxLength={16}
+            placeholder="—"
+            className="font-mono-display text-sm bg-transparent border-none outline-none"
+            style={{ color: 'var(--text-secondary)' }}
+          />
+        </div>
+      </div>
+      <div className="flex items-center gap-2 mb-8">
+        <span className="font-mono-display text-[11px] font-medium tracking-wider uppercase flex-shrink-0"
+          style={{ color: 'var(--text-muted)' }}>
+          {t('noteLabel')}:
+        </span>
+        <input
+          type="text"
+          value={presetNote}
+          onChange={(e) => {
+            setPresetNote(e.target.value);
+            if (midiDevice.status === 'connected') {
+              midiDevice.sendNote(e.target.value);
+            }
+          }}
+          maxLength={40}
+          placeholder="—"
+          className="font-mono-display text-sm bg-transparent border-none outline-none flex-1"
+          style={{ color: 'var(--text-secondary)' }}
+        />
       </div>
 
       {/* Bank tabs with prev/next navigation */}
@@ -895,6 +935,8 @@ export default function EditorPage() {
         <SavePresetDialog
           presetName={preset.patchName}
           defaultAuthor={preset.author || username}
+          defaultStyle={presetStyle}
+          defaultNote={presetNote}
           onSave={handleSaveToPresets}
           onCancel={() => setShowSaveDialog(false)}
           saving={saveStatus === 'saving'}

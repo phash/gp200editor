@@ -11,17 +11,19 @@ const PRESET_STYLES = [
 interface SavePresetDialogProps {
   presetName: string;
   defaultAuthor: string;
+  defaultStyle?: string;
+  defaultNote?: string;
   onSave: (data: { author: string; style: string; note: string; publish: boolean }) => void;
   onCancel: () => void;
   saving: boolean;
 }
 
-export function SavePresetDialog({ presetName, defaultAuthor, onSave, onCancel, saving }: SavePresetDialogProps) {
+export function SavePresetDialog({ presetName, defaultAuthor, defaultStyle, defaultNote, onSave, onCancel, saving }: SavePresetDialogProps) {
   const t = useTranslations('editor');
   const [author, setAuthor] = useState(defaultAuthor);
-  const [style, setStyle] = useState('');
+  const [style, setStyle] = useState(defaultStyle || '');
   const [customStyle, setCustomStyle] = useState('');
-  const [note, setNote] = useState('');
+  const [note, setNote] = useState(defaultNote || '');
   const [publish, setPublish] = useState(false);
 
   function handleSubmit(e: React.FormEvent) {
