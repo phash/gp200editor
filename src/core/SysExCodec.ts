@@ -395,6 +395,45 @@ export const SysExCodec = {
     return msg;
   },
 
+  buildPatchSetting(target: number, value: number): Uint8Array {
+    // CMD=0x12, sub=0x10, 46 bytes — same structure as toggle but raw[40]=0x00
+    // Confirmed: capture lautstärke-pan-beats.pcap (VOL 0→100, PAN full sweep, Tempo 110-120)
+    // target: 0x00=VOL, 0x01=Tempo, 0x06=PAN
+    // value: nibble-encoded at raw[41:43], for PAN-left also raw[43:45]=0x0F,0x0F
+    const msg = new Uint8Array([
+      0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, // [0-7]   header
+      0x12, 0x10,                                        // [8-9]   CMD, sub
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // [10-17] padding
+      0x04, 0x00, 0x00, 0x00,                            // [18-21] constant
+      0x00, 0x00, 0x00,                                  // [22-24] padding
+      0x00, 0x00,                                        // [25-26]
+      0x00, 0x00,                                        // [27-28]
+      0x01, 0x05,                                        // [29-30] constant
+      0x00, 0x00, 0x00,                                  // [31-33]
+      0x04, 0x00, 0x00, 0x00,                            // [34-37] constant
+      target & 0x0F,                                     // [38]    target (VOL/Tempo/PAN)
+      0x00,                                              // [39]
+      0x00,                                              // [40]    0x00 = patch setting (not toggle)
+      (value >> 4) & 0x0F,                               // [41]    value high nibble
+      value & 0x0F,                                      // [42]    value low nibble
+      0x00, 0x00,                                        // [43-44] 0x00 normally, 0x0F for PAN-left
+      0xF7,                                              // [45]    end
+    ]);
+    // PAN left-of-center: values 128-255, set raw[43:45] = 0x0F, 0x0F
+    if (target === 0x06 && value > 127) {
+      msg[43] = 0x0F;
+      msg[44] = 0x0F;
+    }
+    // Tempo > 255: high byte in raw[43:45]
+    if (target === 0x01 && value > 255) {
+      msg[41] = (value >> 4) & 0x0F;
+      msg[42] = value & 0x0F;
+      msg[43] = (value >> 12) & 0x0F;
+      msg[44] = (value >> 8) & 0x0F;
+    }
+    return msg;
+  },
+
   buildReorderEffects(order: number[]): Uint8Array {
     // CMD=0x12, sub=0x20, 78 bytes — nibble-encoded 32-byte payload
     // Confirmed: capture 101538 (NR↔AMP swap) + 101714 (NR↔AMP + DLY↔RVB)

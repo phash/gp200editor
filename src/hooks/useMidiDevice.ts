@@ -49,6 +49,9 @@ export interface UseMidiDeviceReturn {
   sendAuthor: (author: string) => void;
   sendStyleName: (styleName: string) => void;
   sendNote: (note: string) => void;
+  sendPatchVolume: (value: number) => void;
+  sendPatchPan: (deviceValue: number) => void;
+  sendPatchTempo: (bpm: number) => void;
   setOnDeviceChange: (cb: ((slot: number | null) => void) | null) => void;
   setOnDeviceToggle: (cb: ((blockIndex: number, enabled: boolean) => void) | null) => void;
   setOnDeviceEffectChange: (cb: ((blockIndex: number, effectId: number) => void) | null) => void;
@@ -575,6 +578,21 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     outputRef.current.send(msg);
   }, []);
 
+  const sendPatchVolume = useCallback((value: number) => {
+    if (!outputRef.current) return;
+    outputRef.current.send(SysExCodec.buildPatchSetting(0x00, value));
+  }, []);
+
+  const sendPatchPan = useCallback((deviceValue: number) => {
+    if (!outputRef.current) return;
+    outputRef.current.send(SysExCodec.buildPatchSetting(0x06, deviceValue));
+  }, []);
+
+  const sendPatchTempo = useCallback((bpm: number) => {
+    if (!outputRef.current) return;
+    outputRef.current.send(SysExCodec.buildPatchSetting(0x01, bpm));
+  }, []);
+
   // Track connection state for auto-reconnect
   useEffect(() => {
     if (status === 'connected') {
@@ -602,7 +620,7 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     deviceInfo, currentPreset, assignments,
     connect, disconnect, loadPresetNames, pullPreset, pushPreset, writePresetToSlot, saveToSlot,
     sendToggle, sendParamChange, sendReorder, sendSlotChange,
-    sendAuthor, sendStyleName, sendNote,
+    sendAuthor, sendStyleName, sendNote, sendPatchVolume, sendPatchPan, sendPatchTempo,
     setOnDeviceChange: (cb: ((slot: number | null) => void) | null) => { onDeviceChangeRef.current = cb; },
     setOnDeviceToggle: (cb: ((blockIndex: number, enabled: boolean) => void) | null) => { onDeviceToggleRef.current = cb; },
     setOnDeviceEffectChange: (cb: ((blockIndex: number, effectId: number) => void) | null) => { onDeviceEffectChangeRef.current = cb; },

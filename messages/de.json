@@ -60,7 +60,11 @@
     "author": "Autor",
     "styleLabel": "Style",
     "noteLabel": "Notiz",
-    "ratePreset": "Preset bewerten"
+    "ratePreset": "Preset bewerten",
+    "patchVol": "Patch VOL",
+    "patchPan": "Patch PAN",
+    "tempo": "Tempo",
+    "bpm": "BPM"
   },
   "auth": {
     "loginTitle": "Anmelden",

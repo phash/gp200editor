@@ -60,7 +60,11 @@
     "author": "Author",
     "styleLabel": "Style",
     "noteLabel": "Note",
-    "ratePreset": "Rate preset"
+    "ratePreset": "Rate preset",
+    "patchVol": "Patch VOL",
+    "patchPan": "Patch PAN",
+    "tempo": "Tempo",
+    "bpm": "BPM"
   },
   "auth": {
     "loginTitle": "Sign In",

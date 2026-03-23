@@ -532,14 +532,26 @@ Nibble-decoded Payload (24 Bytes):
 **Verifiziert (2026-03-23):** Ohne korrekten Sub-Slot-Index schrieb der Save immer nach Slot A.
 Capture-Vergleich: Valeton sendet decoded[4]=0x01 für 1B, decoded[4]=0x00 für 1A.
 
-#### sub=0x0C (38 Bytes, raw) — Effekt-Change-Response
+#### sub=0x0C (38 Bytes, raw) — Effekt-Change-Response (DEKODIERT 2026-03-23)
 
-Wird gesendet wenn am Gerät der Effekt-Typ gewechselt wird (z.B. Green OD → Yellow OD).
-Enthält Info über den neuen Effekt. Format teilweise dekodiert.
+Wird gesendet wenn am Gerät der Effekt-Typ gewechselt wird (z.B. Green OD → Penesas).
+Device-READ liefert nur gespeicherte Daten — Payload muss direkt geparst werden.
 
-**WICHTIG:** Device-READ liefert auch bei Effekt-Wechseln NUR gespeicherte Daten — ein Pull
-nach sub=0x0C bringt den alten Effekt zurück. Lösung: sub=0x0C Payload direkt parsen.
-**TODO:** Format vollständig dekodieren (benötigt Capture von Valeton-Software bei Effekt-Wechsel).
+```
+payload = raw[10:-1]  (27 Bytes)
+[0:4]   00 00 00 01                Konstanter Header
+[4]     06                         Konstante
+[8]     08                         Konstante
+[12]    Block-Index                0-10 (PRE..VOL)
+[19]    Variante High-Nibble       (p[19] << 4) | p[20] = Effekt-Variante
+[20]    Variante Low-Nibble
+[26]    Modul-Typ                  High-Byte der Effect-ID (0x00=PRE, 0x03=DST, 0x07=AMP, 0x0A=CAB...)
+```
+
+**effectId** = `(payload[26] << 24) | (payload[19] << 4) | payload[20]`
+
+Verifiziert (2026-03-23) gegen 6 bekannte Wechsel:
+CAB Bad-KT→UK 75→Foxy 1, NR Gate 2→Gate 1, AMP Mesa4 LD3→Juice R100, DST Green OD→Penesas.
 
 #### sub=0x10 (46 Bytes, raw) — Toggle / Patch Settings / Style
 
@@ -558,7 +570,18 @@ Multipurpose-Befehl, unterschieden durch byte[40] und Kontext:
 [45]    F7
 ```
 
-Verifiziert: Patch VOL=51 (≈Display 50), Tempo=119 (≈Display 120), Style=Index-Nummer
+**Patch Settings (H→D, raw[40]=0x00):**
+
+| raw[38] | Ziel | Wertebereich | Encoding |
+|---------|------|-------------|----------|
+| 0x00 | VOL | 0–100 | `(raw[41]<<4)\|raw[42]` |
+| 0x01 | Tempo | 40–300 BPM | `(raw[41]<<4)\|raw[42]` |
+| 0x06 | PAN | 0–100 (rechts), 156–255 (links) | `(raw[41]<<4)\|raw[42]`, links: `raw[43:45]=0F 0F` |
+
+PAN-Encoding: Center ≈ 0/255 Grenze. Links: Wert zählt von 255 runter, `raw[43:45]=0x0F 0x0F`.
+Rechts: Wert zählt von 1 hoch, `raw[43:45]=0x00 0x00`.
+
+Verifiziert (2026-03-23) mit Capture lautstärke-pan-beats.pcap: VOL 0→100, PAN full sweep, Tempo 110-120.
 
 #### Parameter-Change (sub=0x18, 62 Bytes, nibble-encoded)
 

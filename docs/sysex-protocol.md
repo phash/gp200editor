@@ -210,7 +210,20 @@ Distinguished from Preset Change echo by byte[14] != 0x08.
 
 ### 6.11 Effect Change Response (CMD=0x12, sub=0x0C, 38 bytes, D->H)
 
-Device notifies the host when an effect is changed (swapped to a different algorithm). Triggers a full preset re-pull in the editor.
+Device notifies host when an effect type is changed (e.g. Green OD → Penesas). Device READ returns saved data only — parse sub=0x0C directly.
+
+```
+payload = raw[10:-1]  (27 bytes)
+[0:4]     00 00 00 01         Constant header
+[4]       06                  Constant
+[8]       08                  Constant
+[12]      Block index         0-10 (PRE..VOL)
+[19]      Variant high nibble  \  effectId = (module << 24) | (p[19] << 4) | p[20]
+[20]      Variant low nibble   /
+[26]      Module type          High byte of effect ID (0x00=PRE, 0x03=DST, 0x07=AMP, 0x0A=CAB...)
+```
+
+Verified (2026-03-23) against 6 known changes across CAB, NR, AMP, DST modules.
 
 ### 6.12 Toggle Effect (CMD=0x12, sub=0x10, 46 bytes, raw)
 
@@ -837,7 +850,7 @@ python scripts/analyze-sysex.py <capture.pcap>
 - [ ] **Pre-name metadata bytes [24:36]:** Category/subcategory fields in write format.
 - [ ] **Controller/EXP assignment write format:** sub=0x14 assignment variant. Byte[28] distinguishes sections. Min/max values and full parameter mapping not decoded.
 - [ ] **IR Upload reliability:** sub=0x1C multi-chunk transfer times out. Device never responds (0 D->H messages). May need longer timeouts or chunk acknowledgment protocol.
-- [ ] **Device-initiated effect change details:** sub=0x0C response fields beyond notification.
+- [x] ~~Device-initiated effect change details~~ -- Decoded: payload[12]=block, payload[26]=module, variant=(p[19]<<4)|p[20].
 - [ ] **Drum Machine full protocol:** BPM >255 encoding, all pattern IDs.
 - [x] ~~Checksum algorithm~~ -- Solved: `sum(bytes[0:0x4C6]) & 0xFFFF`, stored BE16.
 - [x] ~~Write format~~ -- Confirmed 4-chunk and 7-chunk formats.

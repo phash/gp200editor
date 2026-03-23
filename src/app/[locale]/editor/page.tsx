@@ -13,6 +13,7 @@ import { useMidiDeviceContext } from '@/contexts/MidiDeviceContext';
 import { DeviceStatusBar } from '@/components/DeviceStatusBar';
 import { DeviceSlotBrowser } from '@/components/DeviceSlotBrowser';
 import { FirmwareCompatDialog } from '@/components/FirmwareCompatDialog';
+import { PatchSettingsCard } from '@/components/PatchSettingsCard';
 import { HelpButton } from '@/components/HelpButton';
 // Firmware compat now uses version check (sub=0x0A) result, not version string matching
 import { SavePresetDialog } from '@/components/SavePresetDialog';
@@ -60,6 +61,9 @@ export default function EditorPage() {
   const [myRating, setMyRating] = useState(0);
   const [presetStyle, setPresetStyle] = useState('');
   const [presetNote, setPresetNote] = useState('');
+  const [patchVolume, setPatchVolume] = useState(100);
+  const [patchPan, setPatchPan] = useState(0);
+  const [patchTempo, setPatchTempo] = useState(120);
 
   useEffect(() => {
     fetch('/api/profile')
@@ -667,6 +671,32 @@ export default function EditorPage() {
           placeholder="—"
           className="font-mono-display text-sm bg-transparent border-none outline-none flex-1"
           style={{ color: 'var(--text-secondary)' }}
+        />
+      </div>
+
+      {/* Patch Settings: Volume, Pan, Tempo */}
+      <div className="mb-4">
+        <PatchSettingsCard
+          volume={patchVolume}
+          pan={patchPan}
+          tempo={patchTempo}
+          onVolumeChange={(v) => {
+            setPatchVolume(v);
+            if (midiDevice.status === 'connected') midiDevice.sendPatchVolume(v);
+          }}
+          onPanChange={(v) => {
+            setPatchPan(v);
+            if (midiDevice.status === 'connected') {
+              // UI: -50..+50 → Device: left=255-205(v*2 from 255), right=0-100(v*2)
+              const deviceVal = v >= 0 ? v * 2 : 256 + v * 2;
+              midiDevice.sendPatchPan(deviceVal);
+            }
+          }}
+          onTempoChange={(v) => {
+            setPatchTempo(v);
+            if (midiDevice.status === 'connected') midiDevice.sendPatchTempo(v);
+          }}
+          connected={midiDevice.status === 'connected'}
         />
       </div>
 
