@@ -8,7 +8,7 @@ import { usePreset } from '@/hooks/usePreset';
 import { PRSTDecoder } from '@/core/PRSTDecoder';
 import { PRSTEncoder } from '@/core/PRSTEncoder';
 import { useCallback, useState, useEffect, useRef } from 'react';
-import { useRouter } from '@/i18n/routing';
+import { useRouter, Link } from '@/i18n/routing';
 import { useMidiDeviceContext } from '@/contexts/MidiDeviceContext';
 import { DeviceStatusBar } from '@/components/DeviceStatusBar';
 import { DeviceSlotBrowser } from '@/components/DeviceSlotBrowser';
@@ -79,10 +79,13 @@ export default function EditorPage() {
     ])
       .then(([ab, info]) => {
         const decoder = new PRSTDecoder(new Uint8Array(ab));
-        loadPreset(decoder.decode());
+        const decoded = decoder.decode();
+        loadPreset(decoded);
         if (info?.id) {
           setSourcePreset({ id: info.id, username: info.username, author: info.author ?? '', style: info.style ?? '', description: info.description ?? '' });
         }
+        // Send to device if connected (live preview, not saved)
+        sendPresetToDevice(decoded);
       })
       .catch(() => {
         setLoadError(t('loadError'));
@@ -107,20 +110,36 @@ export default function EditorPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [midiDevice.currentPreset]);
 
+  // Send all effect data to device for live preview (no save)
+  const sendPresetToDevice = useCallback((decoded: GP200Preset) => {
+    if (midiDevice.status !== 'connected') return;
+    for (const eff of decoded.effects) {
+      midiDevice.sendToggle(eff.slotIndex, eff.enabled);
+      for (let p = 0; p < eff.params.length; p++) {
+        if (eff.params[p] !== undefined) {
+          midiDevice.sendParamChange(eff.slotIndex, p, eff.effectId, eff.params[p]);
+        }
+      }
+    }
+    if (decoded.author) midiDevice.sendAuthor(decoded.author);
+  }, [midiDevice]);
+
   const handleFile = useCallback((buffer: Uint8Array, filename: string) => {
     try {
+      let decoded: GP200Preset;
       if (filename.toLowerCase().endsWith('.hlx')) {
         // HLX import (experimental)
         const text = new TextDecoder().decode(buffer);
         const hlx = JSON.parse(text);
-        const converted = convertHLX(hlx);
-        loadPreset(converted);
+        decoded = convertHLX(hlx);
         setImportedFromHLX(true);
       } else {
         const decoder = new PRSTDecoder(buffer);
-        loadPreset(decoder.decode());
+        decoded = decoder.decode();
         setImportedFromHLX(false);
       }
+      loadPreset(decoded);
+      sendPresetToDevice(decoded);
       setLoadError(null);
       setSourcePreset(null);
     } catch (err) {
@@ -760,6 +779,30 @@ export default function EditorPage() {
             }}
           />
         </label>
+        <Link
+          href="/gallery"
+          className="font-mono-display text-sm font-bold tracking-wider uppercase px-6 py-3 rounded-lg transition-all duration-200"
+          style={{
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border-active)',
+            color: 'var(--text-secondary)',
+          }}
+        >
+          {t('loadFromGallery')}
+        </Link>
+        {isLoggedIn && (
+          <Link
+            href="/presets"
+            className="font-mono-display text-sm font-bold tracking-wider uppercase px-6 py-3 rounded-lg transition-all duration-200"
+            style={{
+              background: 'var(--bg-elevated)',
+              border: '1px solid var(--border-active)',
+              color: 'var(--text-secondary)',
+            }}
+          >
+            {t('loadFromPresets')}
+          </Link>
+        )}
 
         {isLoggedIn ? (
           <>

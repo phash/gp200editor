@@ -29,6 +29,8 @@
     "slot": "Slot",
     "download": "Save preset as file",
     "loadFromDisk": "Load preset from disk",
+    "loadFromGallery": "Load from Gallery",
+    "loadFromPresets": "Load from Presets",
     "loadError": "Error loading file",
     "pushError": "Failed to save to device",
     "swapError": "Failed to save slot order to device",

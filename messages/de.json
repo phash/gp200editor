@@ -29,6 +29,8 @@
     "slot": "Slot",
     "download": "Preset als Datei speichern",
     "loadFromDisk": "Preset von Festplatte laden",
+    "loadFromGallery": "Aus Galerie laden",
+    "loadFromPresets": "Aus Presets laden",
     "loadError": "Fehler beim Laden",
     "pushError": "Speichern auf Gerät fehlgeschlagen",
     "swapError": "Slot-Reihenfolge konnte nicht gespeichert werden",
