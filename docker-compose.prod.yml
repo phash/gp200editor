@@ -1,8 +1,6 @@
 services:
   app:
     build: .
-    ports:
-      - "${APP_PORT:-3320}:3000"
     env_file:
       - .env.prod
     environment:
