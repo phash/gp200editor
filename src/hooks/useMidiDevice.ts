@@ -536,14 +536,14 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     const msg = SysExCodec.buildToggleEffect(blockIndex, enabled);
     console.log(`[GP-200] toggle: block=${blockIndex} enabled=${enabled}`);
     outputRef.current.send(msg);
-  }, [suppressFxBriefly]);
+  }, []);
 
   const sendParamChange = useCallback((blockIndex: number, paramIndex: number, effectId: number, value: number) => {
     if (!outputRef.current) return;
     suppressFxBriefly();
     const msg = SysExCodec.buildParamChange(blockIndex, paramIndex, effectId, value);
     outputRef.current.send(msg);
-  }, [suppressFxBriefly]);
+  }, []);
 
   const sendReorder = useCallback((order: number[]) => {
     if (!outputRef.current) return;
@@ -582,30 +582,30 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     outputRef.current.send(msg);
   }, []);
 
-  // Helper: suppress FX state echoes after sending commands
-  const suppressFxBriefly = useCallback(() => {
+  // Helper: suppress FX state echoes after sending commands (not a hook, just a function using refs)
+  function suppressFxBriefly() {
     suppressFxStateRef.current = true;
     if (suppressFxStateTimer.current) clearTimeout(suppressFxStateTimer.current);
     suppressFxStateTimer.current = setTimeout(() => { suppressFxStateRef.current = false; }, 200);
-  }, []);
+  }
 
   const sendPatchVolume = useCallback((value: number) => {
     if (!outputRef.current) return;
     suppressFxBriefly();
     outputRef.current.send(SysExCodec.buildPatchSetting(0x00, value));
-  }, [suppressFxBriefly]);
+  }, []);
 
   const sendPatchPan = useCallback((deviceValue: number) => {
     if (!outputRef.current) return;
     suppressFxBriefly();
     outputRef.current.send(SysExCodec.buildPatchSetting(0x06, deviceValue));
-  }, [suppressFxBriefly]);
+  }, []);
 
   const sendPatchTempo = useCallback((bpm: number) => {
     if (!outputRef.current) return;
     suppressFxBriefly();
     outputRef.current.send(SysExCodec.buildPatchSetting(0x01, bpm));
-  }, [suppressFxBriefly]);
+  }, []);
 
   // Track connection state for auto-reconnect
   useEffect(() => {

@@ -61,7 +61,7 @@ export default function EditorPage() {
   const [myRating, setMyRating] = useState(0);
   const [presetStyle, setPresetStyle] = useState('');
   const [presetNote, setPresetNote] = useState('');
-  const [patchVolume, setPatchVolume] = useState(100);
+  const [patchVolume, setPatchVolume] = useState(50);
   const [patchPan, setPatchPan] = useState(0);
   const [patchTempo, setPatchTempo] = useState(120);
 

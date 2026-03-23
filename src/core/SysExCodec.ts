@@ -396,8 +396,8 @@ export const SysExCodec = {
   },
 
   buildPatchSetting(target: number, value: number): Uint8Array {
-    // CMD=0x12, sub=0x10, 46 bytes — same structure as toggle but raw[40]=0x00
-    // Confirmed: capture lautstärke-pan-beats.pcap (VOL 0→100, PAN full sweep, Tempo 110-120)
+    // CMD=0x12, sub=0x10, 46 bytes — similar to toggle but different constants
+    // Confirmed: capture 140802 (Valeton VOL/PAN/Tempo) — bytes[29:31]=0x00,0x06 (not 0x01,0x05 like toggle)
     // target: 0x00=VOL, 0x01=Tempo, 0x06=PAN
     // value: nibble-encoded at raw[41:43], for PAN-left also raw[43:45]=0x0F,0x0F
     const msg = new Uint8Array([
@@ -408,7 +408,7 @@ export const SysExCodec = {
       0x00, 0x00, 0x00,                                  // [22-24] padding
       0x00, 0x00,                                        // [25-26]
       0x00, 0x00,                                        // [27-28]
-      0x01, 0x05,                                        // [29-30] constant
+      0x00, 0x06,                                        // [29-30] patch setting constant (toggle has 0x01,0x05)
       0x00, 0x00, 0x00,                                  // [31-33]
       0x04, 0x00, 0x00, 0x00,                            // [34-37] constant
       target & 0x0F,                                     // [38]    target (VOL/Tempo/PAN)
