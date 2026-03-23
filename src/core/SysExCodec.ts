@@ -374,7 +374,7 @@ export const SysExCodec = {
     // CMD=0x12, sub=0x14, 54 bytes — raw SysEx (not nibble-encoded)
     // Confirmed: captures 134828 (COMP→COMP4→AC Boost) + 143107 (AMP→SnapTone)
     // raw[38]=block, raw[45:47]=variant nibble-encoded, raw[52]=module type
-    const module = (effectId >> 24) & 0xFF;
+    const moduleType = (effectId >> 24) & 0xFF;
     const variant = effectId & 0xFFFF;
     return new Uint8Array([
       0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, // [0-7]   header
@@ -392,7 +392,7 @@ export const SysExCodec = {
       (variant >> 4) & 0x0F,                             // [45]    variant high nibble
       variant & 0x0F,                                    // [46]    variant low nibble
       0x00, 0x00, 0x00, 0x00, 0x00,                     // [47-51]
-      module & 0xFF,                                     // [52]    module type
+      moduleType & 0xFF,                                 // [52]    module type
       0xF7,                                              // [53]    end
     ]);
   },

@@ -12,9 +12,6 @@ const EXP_PAGES = [
   { page: 2, labelKey: 'exp2' as const },
 ] as const;
 
-/** Block index names matching the GP-200 signal chain order */
-const BLOCK_NAMES = ['PRE', 'WAH', 'BOOST', 'AMP', 'NR', 'CAB', 'EQ', 'MOD', 'DLY', 'RVB', 'VOL'];
-
 const ITEMS_PER_PAGE = 3; // Para 1, 2, 3
 
 /** Assignable parameter option with block/param indices for SysEx. */
