@@ -22,6 +22,11 @@ import { SysExCodec } from '@/core/SysExCodec';
 import { convertHLX } from '@/core/HLXConverter';
 import type { GP200Preset } from '@/core/types';
 
+const PRESET_STYLES = [
+  'Rock', 'Metal', 'Blues', 'Jazz', 'Country', 'Funk',
+  'Pop', 'Punk', 'Ambient', 'Clean', 'Acoustic', 'Experimental',
+];
+
 export default function EditorPage() {
   const t = useTranslations('editor');
   const router = useRouter();
@@ -113,6 +118,33 @@ export default function EditorPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [midiDevice.currentPreset]);
+
+  // Re-pull current preset when device state changes (user edits on hardware)
+  useEffect(() => {
+    if (midiDevice.status !== 'connected') return;
+    let pulling = false;
+    midiDevice.setOnDeviceChange(() => {
+      if (pulling) return;
+      const slot = midiDevice.currentSlot;
+      if (slot === null) return;
+      pulling = true;
+      midiDevice.pullPreset(slot).then((fresh) => {
+        loadPreset(fresh);
+        if (bankBaseSlot !== null) {
+          const tabIdx = slot - bankBaseSlot;
+          if (tabIdx >= 0 && tabIdx < 4) {
+            setBankPresets(prev => {
+              const updated = [...prev];
+              updated[tabIdx] = fresh;
+              return updated;
+            });
+          }
+        }
+      }).catch(() => {}).finally(() => { pulling = false; });
+    });
+    return () => midiDevice.setOnDeviceChange(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [midiDevice.status, midiDevice.currentSlot, bankBaseSlot]);
 
   // Send all effect data to device for live preview (no save)
   const sendPresetToDevice = useCallback((decoded: GP200Preset) => {
@@ -292,24 +324,37 @@ export default function EditorPage() {
 
   function handleSaveToActiveSlot() {
     if (!preset) return;
-    // Save-commit: persists the device's current editing buffer to flash.
-    // Live edits (toggle, param, reorder) already sent changes to the device.
     midiDevice.saveToSlot(preset.patchName);
-    // Update bank cache so tab-switching loads the saved state, not the original pull
+    // Update bank cache so tab-switching loads the saved state
     if (bankBaseSlot !== null) {
-      const updated = [...bankPresets];
-      updated[activeTab] = { ...preset };
-      setBankPresets(updated);
+      setBankPresets(prev => {
+        const updated = [...prev];
+        updated[activeTab] = { ...preset };
+        return updated;
+      });
     }
   }
 
-  function handleTabSwitch(tabIndex: number) {
+  async function handleTabSwitch(tabIndex: number) {
     setActiveTab(tabIndex);
-    if (bankPresets[tabIndex]) {
-      loadPreset(bankPresets[tabIndex]);
-    }
     if (midiDevice.status === 'connected' && bankBaseSlot !== null) {
-      midiDevice.sendSlotChange(bankBaseSlot + tabIndex);
+      const slot = bankBaseSlot + tabIndex;
+      midiDevice.sendSlotChange(slot);
+      // Pull fresh from device to stay in sync
+      try {
+        const fresh = await midiDevice.pullPreset(slot);
+        loadPreset(fresh);
+        setBankPresets(prev => {
+          const updated = [...prev];
+          updated[tabIndex] = fresh;
+          return updated;
+        });
+      } catch {
+        // Fallback to cache
+        if (bankPresets[tabIndex]) loadPreset(bankPresets[tabIndex]);
+      }
+    } else if (bankPresets[tabIndex]) {
+      loadPreset(bankPresets[tabIndex]);
     }
   }
 
@@ -543,20 +588,39 @@ export default function EditorPage() {
             style={{ color: 'var(--text-muted)' }}>
             {t('styleLabel')}:
           </span>
-          <input
-            type="text"
-            value={presetStyle}
+          <select
+            value={PRESET_STYLES.includes(presetStyle) ? presetStyle : presetStyle ? '__custom__' : ''}
             onChange={(e) => {
-              setPresetStyle(e.target.value);
-              if (midiDevice.status === 'connected') {
-                midiDevice.sendStyleName(e.target.value);
+              const val = e.target.value === '__custom__' ? '' : e.target.value;
+              setPresetStyle(val);
+              if (val && midiDevice.status === 'connected') {
+                midiDevice.sendStyleName(val);
               }
             }}
-            maxLength={16}
-            placeholder="—"
-            className="font-mono-display text-sm bg-transparent border-none outline-none"
+            className="font-mono-display text-sm bg-transparent border-none outline-none cursor-pointer"
             style={{ color: 'var(--text-secondary)' }}
-          />
+          >
+            <option value="">—</option>
+            {PRESET_STYLES.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+            <option value="__custom__">{t('customStyle')}</option>
+          </select>
+          {!PRESET_STYLES.includes(presetStyle) && presetStyle && (
+            <input
+              type="text"
+              value={presetStyle}
+              onChange={(e) => {
+                setPresetStyle(e.target.value);
+                if (midiDevice.status === 'connected') {
+                  midiDevice.sendStyleName(e.target.value);
+                }
+              }}
+              maxLength={16}
+              className="font-mono-display text-sm bg-transparent border-none outline-none"
+              style={{ color: 'var(--text-secondary)' }}
+            />
+          )}
         </div>
       </div>
       <div className="flex items-center gap-2 mb-8">
@@ -597,7 +661,7 @@ export default function EditorPage() {
           {['A', 'B', 'C', 'D'].map((letter, i) => {
             const slotNum = bankBaseSlot + i;
             const label = SysExCodec.slotToLabel(slotNum);
-            const name = bankPresets[i]?.patchName;
+            const name = (activeTab === i && preset) ? preset.patchName : bankPresets[i]?.patchName;
             const isActive = activeTab === i;
             const isDragSource = bankDragIndex === i;
             const isDragOver = bankDragOverIndex === i && bankDragIndex !== null && bankDragIndex !== i;

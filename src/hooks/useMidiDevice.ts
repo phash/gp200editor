@@ -49,6 +49,7 @@ export interface UseMidiDeviceReturn {
   sendAuthor: (author: string) => void;
   sendStyleName: (styleName: string) => void;
   sendNote: (note: string) => void;
+  setOnDeviceChange: (cb: (() => void) | null) => void;
 }
 
 // Minimal shape we actually use — avoids conflicts with DOM's MIDIInput / MIDIOutput
@@ -136,16 +137,30 @@ export function useMidiDevice(): UseMidiDeviceReturn {
   const presetNamesRef     = useRef<(string | null)[]>(new Array(256).fill(null));
   const namesLoadAbortRef  = useRef<boolean>(false);
 
+  // Callback for device-initiated changes (slot switch, effect toggle, param change)
+  // Set by the editor to trigger a re-pull when the device state changes
+  const onDeviceChangeRef = useRef<(() => void) | null>(null);
+
   const onMidiMessage = useCallback((event: { data: unknown }) => {
     const data = getBytes(event.data);
-    // sub=0x08 D→H: device changed slot — byte[26] is the new slot number
-    // Confirmed via capture 222343: device sends this when user switches preset on hardware
+    // sub=0x08 D→H: device changed slot or ACK
     if (isSysEx(data, 0x12, 0x08) && data.length >= 28) {
       const slot = data[26];
       if (slot >= 0 && slot < 256) {
         console.log(`[GP-200] device slot change: ${slot} (${SysExCodec.slotToLabel(slot)})`);
         setCurrentSlot(slot);
+        onDeviceChangeRef.current?.();
       }
+    }
+    // sub=0x0C D→H: effect change response
+    if (isSysEx(data, 0x12, 0x0C)) {
+      console.log('[GP-200] device effect change');
+      onDeviceChangeRef.current?.();
+    }
+    // sub=0x10 D→H: toggle response (device-initiated)
+    if (isSysEx(data, 0x12, 0x10) && data.length >= 42) {
+      console.log('[GP-200] device toggle change');
+      onDeviceChangeRef.current?.();
     }
   }, []);
 
@@ -385,31 +400,37 @@ export function useMidiDevice(): UseMidiDeviceReturn {
   const writePresetToSlot = useCallback(async (preset: GP200Preset, slot: number): Promise<void> => {
     if (!outputRef.current) throw new Error('Not connected');
     const output = outputRef.current;
-    console.log(`[GP-200] writeToSlot: slot=${slot} (${SysExCodec.slotToLabel(slot)}) name="${preset.patchName}"`);
+    const label = SysExCodec.slotToLabel(slot);
+    console.log(`[GP-200] writeToSlot: slot=${slot} (${label}) name="${preset.patchName}"`);
 
-    // Step 1: Switch device to the target slot
+    // Step 1: Switch device to the target slot (loads current data into editing buffer)
     output.send(SysExCodec.buildPresetChange(slot));
-    await new Promise(r => setTimeout(r, 100));
+    await new Promise(r => setTimeout(r, 200));
 
     // Step 2: Send all effects via live editing (toggle + params for each slot)
+    // Note: this can modify params and toggle state but NOT change effect IDs.
+    // Effect IDs require buildEffectChange (sub=0x14) which is not yet implemented.
     for (const eff of preset.effects) {
       output.send(SysExCodec.buildToggleEffect(eff.slotIndex, eff.enabled));
-      await new Promise(r => setTimeout(r, 10));
+      await new Promise(r => setTimeout(r, 15));
       for (let p = 0; p < eff.params.length; p++) {
         if (eff.params[p] !== undefined) {
           output.send(SysExCodec.buildParamChange(eff.slotIndex, p, eff.effectId, eff.params[p]));
-          await new Promise(r => setTimeout(r, 5));
+          await new Promise(r => setTimeout(r, 8));
         }
       }
     }
 
     // Step 3: Send author + save-commit to persist
+    await new Promise(r => setTimeout(r, 50));
     if (preset.author) {
       output.send(SysExCodec.buildAuthorName(preset.author));
-      await new Promise(r => setTimeout(r, 20));
+      await new Promise(r => setTimeout(r, 30));
     }
     output.send(SysExCodec.buildSaveCommit(preset.patchName));
-    console.log(`[GP-200] writeToSlot complete: ${preset.patchName}`);
+    // Wait for device to finish writing to flash before returning
+    await new Promise(r => setTimeout(r, 300));
+    console.log(`[GP-200] writeToSlot complete: ${label} → "${preset.patchName}"`);
 
     // Update local state
     presetNamesRef.current[slot] = preset.patchName;
@@ -542,5 +563,6 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     connect, disconnect, loadPresetNames, pullPreset, pushPreset, writePresetToSlot, saveToSlot,
     sendToggle, sendParamChange, sendReorder, sendSlotChange,
     sendAuthor, sendStyleName, sendNote,
+    setOnDeviceChange: (cb: (() => void) | null) => { onDeviceChangeRef.current = cb; },
   };
 }

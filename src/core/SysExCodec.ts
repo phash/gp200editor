@@ -422,15 +422,17 @@ export const SysExCodec = {
   buildSaveCommit(presetName: string): Uint8Array {
     // CMD=0x12, sub=0x18, 62 bytes — nibble-encoded "save to slot" commit
     // From captures 100548 + 101538: sent after live edits or write chunks to persist
-    // Decoded payload: [0:3]=03 20 14, [6:8]=varies, [8:]=space + name
+    // Decoded payload: [0:3]=03 20 14, [8:24]=name (16 bytes, null-terminated)
+    // Note: captured names had leading spaces (device convention), but the 0x20
+    // at [8] is the first byte of the name field, NOT a delimiter.
     const decoded = new Uint8Array(24);
     decoded[0] = 0x03;
     decoded[1] = 0x20;
     decoded[2] = 0x14;
-    // [3:6] = zeros, [6:8] = zeros (unknown field, device accepts zeros)
-    decoded[8] = 0x20; // leading space (matches captures)
-    for (let i = 0; i < 15 && i < presetName.length; i++) {
-      decoded[9 + i] = presetName.charCodeAt(i);
+    // [3:8] = zeros
+    // [8:24] = preset name (16 bytes, null-terminated — same as .prst format)
+    for (let i = 0; i < 16 && i < presetName.length; i++) {
+      decoded[8 + i] = presetName.charCodeAt(i);
     }
 
     const nibbles = this.nibbleEncode(decoded);
