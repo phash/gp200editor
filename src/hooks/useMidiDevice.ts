@@ -52,6 +52,7 @@ export interface UseMidiDeviceReturn {
   sendPatchVolume: (value: number) => void;
   sendPatchPan: (deviceValue: number) => void;
   sendPatchTempo: (bpm: number) => void;
+  sendRawChunks: (chunks: Uint8Array[], delayMs: number, onProgress?: (i: number, total: number) => void) => Promise<void>;
   setOnDeviceChange: (cb: ((slot: number | null) => void) | null) => void;
   setOnDeviceToggle: (cb: ((blockIndex: number, enabled: boolean) => void) | null) => void;
   setOnDeviceEffectChange: (cb: ((blockIndex: number, effectId: number) => void) | null) => void;
@@ -607,6 +608,22 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     outputRef.current.send(SysExCodec.buildPatchSetting(0x01, bpm));
   }, []);
 
+  const sendRawChunks = useCallback(async (
+    chunks: Uint8Array[], delayMs: number,
+    onProgress?: (i: number, total: number) => void,
+  ): Promise<void> => {
+    if (!outputRef.current) throw new Error('Not connected');
+    suppressFxBriefly();
+    for (let i = 0; i < chunks.length; i++) {
+      outputRef.current.send(chunks[i]);
+      onProgress?.(i + 1, chunks.length);
+      if (i < chunks.length - 1) {
+        await new Promise(r => setTimeout(r, delayMs));
+      }
+    }
+    console.log(`[GP-200] sendRawChunks: ${chunks.length} chunks sent with ${delayMs}ms delay`);
+  }, []);
+
   // Track connection state for auto-reconnect
   useEffect(() => {
     if (status === 'connected') {
@@ -634,7 +651,7 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     deviceInfo, currentPreset, assignments,
     connect, disconnect, loadPresetNames, pullPreset, pushPreset, writePresetToSlot, saveToSlot,
     sendToggle, sendParamChange, sendReorder, sendSlotChange,
-    sendAuthor, sendStyleName, sendNote, sendPatchVolume, sendPatchPan, sendPatchTempo,
+    sendAuthor, sendStyleName, sendNote, sendPatchVolume, sendPatchPan, sendPatchTempo, sendRawChunks,
     setOnDeviceChange: (cb: ((slot: number | null) => void) | null) => { onDeviceChangeRef.current = cb; },
     setOnDeviceToggle: (cb: ((blockIndex: number, enabled: boolean) => void) | null) => { onDeviceToggleRef.current = cb; },
     setOnDeviceEffectChange: (cb: ((blockIndex: number, effectId: number) => void) | null) => { onDeviceEffectChangeRef.current = cb; },
