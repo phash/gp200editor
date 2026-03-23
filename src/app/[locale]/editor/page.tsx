@@ -210,6 +210,7 @@ export default function EditorPage() {
     } catch (err) {
       setLoadError(`${t('loadError')}: ${err instanceof Error ? err.message : String(err)}`);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadPreset, t]);
 
   function encodePreset(): ArrayBuffer | null {

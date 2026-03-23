@@ -12,34 +12,6 @@ interface PatchSettingsCardProps {
   connected: boolean;
 }
 
-function SliderRow({ label, value, displayValue, min, max, step, onChange }: {
-  label: string; value: number; displayValue: string;
-  min: number; max: number; step: number;
-  onChange: (v: number) => void;
-}) {
-  const pct = ((value - min) / (max - min)) * 100;
-  return (
-    <div className="flex items-center gap-2">
-      <span className="font-mono-display text-[10px] font-medium tracking-wider uppercase w-20 flex-shrink-0"
-        style={{ color: 'var(--text-muted)' }}>{label}</span>
-      <div className="relative flex-1 h-3 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
-        <div className="h-full rounded-full transition-all duration-75"
-          style={{ width: `${pct}%`, background: 'linear-gradient(90deg, var(--accent-amber-dim), var(--accent-amber))' }} />
-      </div>
-      <input
-        type="range"
-        min={min} max={max} step={step}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="absolute inset-0 w-full opacity-0 cursor-pointer"
-        style={{ position: 'absolute', left: 0, top: 0, height: '100%', margin: 0 }}
-      />
-      <span className="font-mono-display text-xs tabular-nums w-14 text-right flex-shrink-0"
-        style={{ color: 'var(--text-secondary)' }}>{displayValue}</span>
-    </div>
-  );
-}
-
 export function PatchSettingsCard({
   volume, pan, tempo,
   onVolumeChange, onPanChange, onTempoChange,

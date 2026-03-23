@@ -184,9 +184,9 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     if (isSysEx(data, 0x12, 0x0C) && data.length >= 38) {
       const p = data.subarray(10); // payload starts after header
       const blockIndex = p[12];
-      const module = p[26];
+      const moduleType = p[26];
       const variant = (p[19] << 4) | p[20];
-      const effectId = (module << 24) | variant;
+      const effectId = (moduleType << 24) | variant;
       console.log(`[GP-200] device effect change: block=${blockIndex} effectId=0x${effectId.toString(16).padStart(8,'0')}`);
       onDeviceEffectChangeRef.current?.(blockIndex, effectId);
       // Suppress FX state responses that follow (they report stale toggle states)
