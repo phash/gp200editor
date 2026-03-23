@@ -192,7 +192,8 @@
     "firmwareCompatRisk": "With untested firmware, presets may get corrupted or the device may behave unexpectedly.",
     "firmwareCompatAck": "I understand the risk",
     "firmwareCompatContinue": "Continue",
-    "firmwareCompatDisconnect": "Disconnect"
+    "firmwareCompatDisconnect": "Disconnect",
+    "saveToActiveSlot": "Save to {slot}"
   },
   "help": {
     "title": "Help",

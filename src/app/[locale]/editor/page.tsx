@@ -265,6 +265,19 @@ export default function EditorPage() {
     }
   }
 
+  function handleSaveToActiveSlot() {
+    if (!preset) return;
+    // Save-commit: persists the device's current editing buffer to flash.
+    // Live edits (toggle, param, reorder) already sent changes to the device.
+    midiDevice.saveToSlot(preset.patchName);
+    // Update bank cache so tab-switching loads the saved state, not the original pull
+    if (bankBaseSlot !== null) {
+      const updated = [...bankPresets];
+      updated[activeTab] = { ...preset };
+      setBankPresets(updated);
+    }
+  }
+
   function handleTabSwitch(tabIndex: number) {
     setActiveTab(tabIndex);
     if (bankPresets[tabIndex]) {
@@ -427,7 +440,23 @@ export default function EditorPage() {
   }
 
   return (
-    <div className={`p-8 mx-auto ${viewMode === 'pedals' ? 'max-w-6xl' : 'max-w-2xl'}`}>
+    <div className={`mx-auto ${viewMode === 'pedals' ? 'max-w-6xl' : 'max-w-2xl'}`}>
+      {/* Sticky Device Bar — top */}
+      <div className="sticky top-0 z-30 px-8 pt-3 pb-2" style={{ background: 'var(--bg-primary)' }}>
+        <DeviceStatusBar
+          midiDevice={bankBaseSlot !== null
+            ? { ...midiDevice, currentSlot: bankBaseSlot + activeTab }
+            : midiDevice}
+          currentPresetName={preset?.patchName ?? null}
+          hasPreset={!!preset}
+          onPullRequest={() => handleOpenBrowser('pull')}
+          onPushRequest={() => handleOpenBrowser('push')}
+          onSaveToActiveSlot={midiDevice.status === 'connected' ? handleSaveToActiveSlot : undefined}
+          onPresetNameChange={preset ? (name: string) => setPatchName(name) : undefined}
+        />
+      </div>
+
+      <div className="p-8 pt-2">
       {/* Experimental HLX import badge */}
       {importedFromHLX && (
         <div className="mb-4 px-3 py-1.5 rounded-lg font-mono-display text-[11px] tracking-wider uppercase inline-flex items-center gap-2"
@@ -637,8 +666,8 @@ export default function EditorPage() {
           />
         )}
         {preset.effects.map((slot, i) => {
+          const slotKey = `${i}-${slot.effectId}`;
           const slotProps = {
-            key: `${i}-${slot.effectId}`,
             slot,
             index: i,
             onToggle: (index: number) => {
@@ -662,8 +691,8 @@ export default function EditorPage() {
             isDragOver: dragOverIndex === i && dragIndex !== i,
           };
           return viewMode === 'pedals'
-            ? <EffectSlotCard {...slotProps} />
-            : <EffectSlot {...slotProps} />;
+            ? <EffectSlotCard key={slotKey} {...slotProps} />
+            : <EffectSlot key={slotKey} {...slotProps} />;
         })}
       </div>
 
@@ -829,19 +858,6 @@ export default function EditorPage() {
         />
       )}
 
-      {/* Device sync — bottom */}
-      <div className="mt-6">
-        <DeviceStatusBar
-          midiDevice={bankBaseSlot !== null
-            ? { ...midiDevice, currentSlot: bankBaseSlot + activeTab }
-            : midiDevice}
-          currentPresetName={preset?.patchName ?? null}
-          hasPreset={!!preset}
-          onPullRequest={() => handleOpenBrowser('pull')}
-          onPushRequest={() => handleOpenBrowser('push')}
-        />
-      </div>
-
       {slotBrowserMode && (
         <DeviceSlotBrowser
           mode={slotBrowserMode}
@@ -868,6 +884,7 @@ export default function EditorPage() {
           onDisconnect={() => { midiDevice.disconnect(); setFirmwareWarningDismissed(false); }}
         />
       )}
+      </div>
     </div>
   );
 }

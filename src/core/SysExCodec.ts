@@ -143,24 +143,25 @@ export const SysExCodec = {
   buildWriteChunks(preset: GP200Preset, slot: number): Uint8Array[] {
     const SYSEX_HEADER = [0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x20];
 
-    // Build 1184-byte decoded write payload (confirmed via Windows USB capture 2026-03-18)
-    // Layout: [0:16] write header, [16:36] pre-name metadata, [36:68] name+author,
-    //         [68:104] URL, [104:108] padding, [108:128] routing section,
-    //         [128:920] 11×72B effect blocks, [920:1184] controller/pedal assignments
-    const payload = new Uint8Array(1184).fill(0);
+    // Build 732-byte decoded write payload (confirmed via Windows USB capture 2026-03-23)
+    // Captured from Valeton GP-200 Editor: 4 chunks × 366 nibble bytes = 1464 → 732 decoded
+    // Layout: [0:36] write header (with 0x27 markers), [36:68] name+author,
+    //         [68:128] middle section with routing, [128:704] 8×72B effect blocks 0-7,
+    //         [704:732] 28B effect block 8 partial (marker+slot+active+const+effID+4 params)
+    // Note: blocks 9 (RVB) and 10 (VOL) are NOT sent; device keeps existing values.
+    const payload = new Uint8Array(732).fill(0);
     const view = new DataView(payload.buffer);
 
-    // [0:16] Write header — constants + slot number at 3 positions
-    payload.set([0x00, 0x00, 0x04, 0x00, 0x01, 0x00], 0);
-    view.setUint16(6, slot, true);   // slot LE16
-    payload.set([0x01, 0x00, 0x04, 0x00], 8);
-    view.setUint16(12, slot, true);  // slot repeated
-    view.setUint16(14, slot, true);  // slot repeated
-
-    // [16:36] Pre-name metadata (20 bytes)
-    payload.set([0x02, 0x00, 0x58, 0x00], 16);
-    view.setUint16(20, slot, true);  // slot in metadata
-    payload.set([0x78, 0x00], 22);   // constant
+    // [0:36] Write header — exact bytes from captured write (Valeton GP-200 Editor)
+    // The 0x27 values are static write markers, NOT slot-dependent addresses.
+    // Slot is identified by byte[10] in each SysEx chunk header.
+    payload.set([
+      0x00, 0x00, 0x04, 0x00, 0x01, 0x00, 0x27, 0x00,  // [0:8]
+      0x01, 0x00, 0x04, 0x00, 0x27, 0x00, 0x27, 0x00,  // [8:16]
+      0x02, 0x00, 0x58, 0x00, 0x27, 0x00, 0x78, 0x00,  // [16:24]
+      0x32, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // [24:32]
+      0x00, 0x00, 0x00, 0x00,                            // [32:36]
+    ], 0);
 
     // [36:52] Preset name (16 bytes, null-terminated)
     for (let i = 0; i < 16; i++) {
@@ -174,21 +175,20 @@ export const SysExCodec = {
       }
     }
 
-    // [68:104] URL area — zeros
-    // [104:108] padding — zeros
+    // [68:108] Middle section — zeros (URL/padding area)
 
     // [108:128] Routing section
     payload.set([0x08, 0x00, 0x10, 0x00], 108);
-    view.setUint16(112, slot, true); // slot reference
-    payload.set([0x04, 0x04], 114);  // constant
-    // Default routing order: PRE→WAH→BOOST→AMP→NR→CAB→EQ→MOD→DLY→RVB→VOL
+    payload[112] = 0x25; payload[113] = 0x00; // static write marker (captured: 0x25)
+    payload.set([0x04, 0x04], 114);       // constant
+    // Routing order from preset effects' slotIndex ordering
     for (let i = 0; i < 11; i++) {
-      payload[116 + i] = i;
+      payload[116 + i] = preset.effects[i]?.slotIndex ?? i;
     }
     // [127] = 0x00 terminator (already zero)
 
-    // [128:920] All 11 effect blocks (11 × 72 = 792 bytes)
-    for (let b = 0; b < 11; b++) {
+    // [128:704] Effect blocks 0-7 complete (8 × 72 = 576 bytes)
+    for (let b = 0; b < 8; b++) {
       const base = 128 + b * 72;
       const eff = preset.effects[b];
       if (!eff) continue;
@@ -203,20 +203,28 @@ export const SysExCodec = {
       }
     }
 
-    // [920:1184] Controller/pedal assignments — zeros (not yet mapped in GP200Preset)
+    // [704:732] Effect block 8 partial (28 bytes: marker+slot+active+const+effID+4 params)
+    if (preset.effects[8]) {
+      const base = 704;
+      const eff = preset.effects[8];
+      payload[base] = 0x14; payload[base + 1] = 0x00;
+      payload[base + 2] = 0x44; payload[base + 3] = 0x00;
+      payload[base + 4] = eff.slotIndex;
+      payload[base + 5] = eff.enabled ? 1 : 0;
+      payload[base + 6] = 0x00; payload[base + 7] = 0x0F;
+      view.setUint32(base + 8, eff.effectId, true);
+      for (let p = 0; p < 4; p++) {
+        view.setFloat32(base + 12 + p * 4, eff.params[p] ?? 0, true);
+      }
+    }
 
-    // Nibble-encode → 2368 nibble bytes, split into 7 chunks
+    // Nibble-encode → 1464 nibble bytes, split into 4 chunks of 366 each
     const nibble = this.nibbleEncode(payload);
-    // Chunk sizes: 6 × 366 + 1 × 172 = 2368 nibble bytes
-    // Offsets: values placed in chunk headers (from USB capture, NOT nibble positions)
-    const CHUNK_NIBBLE_SIZES = [366, 366, 366, 366, 366, 366, 172];
-    const CHUNK_OFFSETS      = [0, 311, 622, 1061, 1372, 1811, 2122];
+    const CHUNK_OFFSETS = [0, 311, 622, 1061];
 
     const chunks: Uint8Array[] = [];
-    let nibblePos = 0;
-    for (let i = 0; i < 7; i++) {
-      const nibbleData = nibble.slice(nibblePos, nibblePos + CHUNK_NIBBLE_SIZES[i]);
-      nibblePos += CHUNK_NIBBLE_SIZES[i];
+    for (let i = 0; i < 4; i++) {
+      const nibbleData = nibble.slice(i * 366, (i + 1) * 366);
       const offLo = CHUNK_OFFSETS[i] & 0xFF;
       const offHi = (CHUNK_OFFSETS[i] >> 8) & 0xFF;
 

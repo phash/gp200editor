@@ -25,6 +25,7 @@ function getBytes(data: unknown): Uint8Array {
 
 export interface UseMidiDeviceReturn {
   status: 'disconnected' | 'connecting' | 'handshaking' | 'connected' | 'error';
+  handshakeStep: string | null;
   errorMessage: string | null;
   deviceName: string | null;
   currentSlot: number | null;
@@ -39,6 +40,7 @@ export interface UseMidiDeviceReturn {
   loadPresetNames: () => Promise<void>;
   pullPreset: (slot: number) => Promise<GP200Preset>;
   pushPreset: (preset: GP200Preset, slot: number) => Promise<void>;
+  saveToSlot: (presetName: string) => void;
   sendToggle: (blockIndex: number, enabled: boolean) => void;
   sendParamChange: (blockIndex: number, paramIndex: number, effectId: number, value: number) => void;
   sendReorder: (order: number[]) => void;
@@ -115,6 +117,7 @@ function collectChunks(
 
 export function useMidiDevice(): UseMidiDeviceReturn {
   const [status, setStatus] = useState<UseMidiDeviceReturn['status']>('disconnected');
+  const [handshakeStep, setHandshakeStep] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [deviceName, setDeviceName] = useState<string | null>(null);
   const [currentSlot, setCurrentSlot] = useState<number | null>(null);
@@ -177,10 +180,12 @@ export function useMidiDevice(): UseMidiDeviceReturn {
       input.onmidimessage = onMidiMessage;
       setDeviceName(input.name);
       setStatus('handshaking');
+      setHandshakeStep(null);
 
       // --- Handshake sequence ---
       try {
         // Step 1-2: Identity
+        setHandshakeStep('Identity…');
         output.send(SysExCodec.buildIdentityQuery());
         const identityMsg = await waitForResponse(
           input, (d) => isSysEx(d, 0x12, 0x08), READ_TIMEOUT_MS, onMidiMessage
@@ -188,16 +193,19 @@ export function useMidiDevice(): UseMidiDeviceReturn {
         const identity = SysExCodec.parseIdentityResponse(identityMsg);
 
         // Step 3-4: Enter editor mode
+        setHandshakeStep('Editor Mode…');
         output.send(SysExCodec.buildEnterEditorMode());
         await new Promise(r => setTimeout(r, 100));
 
         // Step 5-6: State dump (0x4E has different format — only extract slot number)
+        setHandshakeStep('State Dump…');
         output.send(SysExCodec.buildStateDumpRequest());
         const dumpChunks = await collectChunks(input, 0x12, 0x4E, 5, READ_TIMEOUT_MS, onMidiMessage);
         const { slot } = SysExCodec.parseStateDump(dumpChunks);
         setCurrentSlot(slot);
 
         // Step 7-8: Version check
+        setHandshakeStep('Firmware Check…');
         output.send(SysExCodec.buildVersionCheck());
         const versionMsg = await waitForResponse(
           input, (d) => isSysEx(d, 0x12, 0x0A), READ_TIMEOUT_MS, onMidiMessage
@@ -205,15 +213,19 @@ export function useMidiDevice(): UseMidiDeviceReturn {
         const { accepted } = SysExCodec.parseVersionResponse(versionMsg);
         setDeviceInfo({ ...identity, versionAccepted: accepted });
 
-        // Step 9: Assignment polling (non-critical, short timeout, skip on failure)
-        const ASSIGN_TIMEOUT = 1000;
+        // Step 9: Assignment polling (non-critical, short timeout, bail on first failure)
+        setHandshakeStep('Controller…');
+        const ASSIGN_TIMEOUT = 300;
         const assignmentEntries: UseMidiDeviceReturn['assignments'] = [];
         const assignmentPlan = [
           { section: 0, pages: [[0, 16], [1, 4]] },
           { section: 1, pages: [[0, 10]] },
         ];
+        let assignFailed = false;
         for (const { section, pages } of assignmentPlan) {
+          if (assignFailed) break;
           for (const [page, blockCount] of pages) {
+            if (assignFailed) break;
             for (let block = 0; block < blockCount; block++) {
               try {
                 output.send(SysExCodec.buildAssignmentQuery(section, page, block));
@@ -222,24 +234,39 @@ export function useMidiDevice(): UseMidiDeviceReturn {
                 );
                 assignmentEntries.push(SysExCodec.parseAssignmentResponse(resp, section, page));
               } catch {
-                // Skip failed assignment queries
+                assignFailed = true; break; // bail on first failure — device unresponsive
               }
             }
           }
         }
         setAssignments(assignmentEntries);
 
-        // Step 10: Pull current preset via normal read (0x4E format differs from stored preset)
-        try {
-          const readReq = SysExCodec.buildReadRequest(slot);
-          output.send(readReq);
-          const presetChunks = await collectChunks(input, 0x12, 0x18, 7, READ_TIMEOUT_MS, onMidiMessage);
-          setCurrentPreset(SysExCodec.parseReadChunks(presetChunks));
-        } catch {
-          // Non-critical — user can still pull manually
+        // Step 10: Pull current preset + bank (4 slots) via normal read
+        const slotLabel = SysExCodec.slotToLabel(slot);
+        const bankBase = Math.floor(slot / 4) * 4;
+        const bankPresets: (GP200Preset | null)[] = [null, null, null, null];
+        for (let i = 0; i < 4; i++) {
+          const s = bankBase + i;
+          const label = SysExCodec.slotToLabel(s);
+          setHandshakeStep(`Slot ${label}…`);
+          try {
+            output.send(SysExCodec.buildReadRequest(s));
+            const chunks = await collectChunks(input, 0x12, 0x18, 7, READ_TIMEOUT_MS, onMidiMessage);
+            const p = SysExCodec.parseReadChunks(chunks);
+            bankPresets[i] = p;
+            setHandshakeStep(`Slot ${label} · ${p.patchName}`);
+            if (s === slot) setCurrentPreset(p);
+            // Cache the name
+            presetNamesRef.current[s] = p.patchName;
+          } catch {
+            setHandshakeStep(`Slot ${label} · –`);
+          }
+          await new Promise(r => setTimeout(r, 20));
         }
+        setPresetNames([...presetNamesRef.current]);
 
         // Step 11: Done
+        setHandshakeStep(null);
         setStatus('connected');
       } catch (err) {
         setStatus('error');
@@ -319,36 +346,40 @@ export function useMidiDevice(): UseMidiDeviceReturn {
   const pushPreset = useCallback(async (preset: GP200Preset, slot: number): Promise<void> => {
     if (!outputRef.current) throw new Error('Not connected');
     console.log(`[GP-200] push: slot=${slot} (${SysExCodec.slotToLabel(slot)}) name="${preset.patchName}"`);
+
+    // Step 1: Send 4 write chunks (blocks 0-8 partial, 732 bytes decoded)
+    // Write chunks go directly to flash storage for the target slot.
+    // Captured Valeton flow: write chunks only, NO save-commit after (save-commit
+    // overwrites flash with the editing buffer, discarding write chunk data).
     const chunks = SysExCodec.buildWriteChunks(preset, slot);
     for (let i = 0; i < chunks.length; i++) {
-      console.log(`[GP-200] push chunk ${i+1}/${chunks.length}: ${chunks[i].length}B, first 20: ${Array.from(chunks[i].slice(0, 20)).map(b => b.toString(16).padStart(2,'0')).join(' ')}`);
+      console.log(`[GP-200] push chunk ${i+1}/${chunks.length}: ${chunks[i].length}B`);
       outputRef.current.send(chunks[i]);
       await new Promise(r => setTimeout(r, 20));
     }
-    // Send author/style/note metadata after write chunks
-    await new Promise(r => setTimeout(r, 100)); // wait for device to process writes
-    if (preset.author) {
-      const authorMsg = SysExCodec.buildAuthorName(preset.author);
-      console.log(`[GP-200] push author: "${preset.author}"`);
-      outputRef.current.send(authorMsg);
-      await new Promise(r => setTimeout(r, 20));
-    }
 
-    // Send save-commit after write chunks (required to persist to flash)
-    // From captures 100548/101538: sub=0x18 (name) + sub=0x08 (commit)
-    const saveMsg = SysExCodec.buildSaveCommit(preset.patchName);
-    console.log(`[GP-200] push save-commit: ${saveMsg.length}B`);
-    outputRef.current.send(saveMsg);
-    await new Promise(r => setTimeout(r, 50));
+    // Step 2: Wait for device to process write chunks, then switch to the slot
+    await new Promise(r => setTimeout(r, 150));
     const commitMsg = SysExCodec.buildPresetChange(slot);
-    console.log(`[GP-200] push preset-change: ${commitMsg.length}B`);
+    console.log(`[GP-200] push preset-change: slot=${slot}`);
     outputRef.current.send(commitMsg);
 
-    // Update cached preset name for the target slot
+    // Update local state
     presetNamesRef.current[slot] = preset.patchName;
     setPresetNames([...presetNamesRef.current]);
+    setCurrentSlot(slot);
 
     console.log('[GP-200] push complete');
+  }, []);
+
+  const saveToSlot = useCallback((presetName: string) => {
+    if (!outputRef.current) return;
+    // Save-commit persists the device's current editing buffer to flash.
+    // Live edits (toggle, param, reorder) already updated the editing buffer.
+    // This is the same flow as the Valeton software: edit → save-commit.
+    const msg = SysExCodec.buildSaveCommit(presetName);
+    console.log(`[GP-200] save-commit: name="${presetName}"`);
+    outputRef.current.send(msg);
   }, []);
 
   const loadPresetNames = useCallback(async (): Promise<void> => {
@@ -471,9 +502,9 @@ export function useMidiDevice(): UseMidiDeviceReturn {
   }, [status, connect]);
 
   return {
-    status, errorMessage, deviceName, currentSlot, presetNames, namesLoadProgress,
+    status, handshakeStep, errorMessage, deviceName, currentSlot, presetNames, namesLoadProgress,
     deviceInfo, currentPreset, assignments,
-    connect, disconnect, loadPresetNames, pullPreset, pushPreset,
+    connect, disconnect, loadPresetNames, pullPreset, pushPreset, saveToSlot,
     sendToggle, sendParamChange, sendReorder, sendSlotChange,
     sendAuthor, sendStyleName, sendNote,
   };

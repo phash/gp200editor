@@ -21,7 +21,7 @@ Live USB-MIDI Editing, Preset-Galerie, Community-Sharing.
 ```bash
 npm install --legacy-peer-deps   # legacy-peer-deps wegen lokaler npm-Version (11.x vs lock-file)
 npm run dev                      # http://localhost:3000
-npm run test                     # Vitest Unit-Tests (288 Tests)
+npm run test                     # Vitest Unit-Tests (293 Tests)
 npm run test:e2e                 # Playwright E2E (App muss laufen + Garage + DB)
 npm run build                    # Production Build
 ```
@@ -373,7 +373,7 @@ LE uint16 → **Algorithmus gelöst (2026-03-18):** `sum(bytes[0:0x4C6]) & 0xFFF
 ## Tests
 
 ```bash
-npm run test              # 288 Unit-Tests (Vitest)
+npm run test              # 293 Unit-Tests (Vitest)
 npm run test:coverage     # Coverage-Report
 npm run test:e2e          # Playwright E2E (App + Garage + DB erforderlich)
 ```

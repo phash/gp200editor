@@ -192,7 +192,8 @@
     "firmwareCompatRisk": "Bei nicht getesteter Firmware können Presets beschädigt werden oder das Gerät unerwartet reagieren.",
     "firmwareCompatAck": "Mir ist das Risiko bewusst",
     "firmwareCompatContinue": "Weiter",
-    "firmwareCompatDisconnect": "Verbindung trennen"
+    "firmwareCompatDisconnect": "Verbindung trennen",
+    "saveToActiveSlot": "Auf {slot} speichern"
   },
   "help": {
     "title": "Hilfe",

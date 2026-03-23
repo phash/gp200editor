@@ -11,6 +11,8 @@ interface DeviceStatusBarProps {
   hasPreset: boolean;
   onPullRequest: () => void;
   onPushRequest: () => void;
+  onSaveToActiveSlot?: () => void;
+  onPresetNameChange?: (name: string) => void;
 }
 
 export function DeviceStatusBar({
@@ -19,10 +21,14 @@ export function DeviceStatusBar({
   hasPreset,
   onPullRequest,
   onPushRequest,
+  onSaveToActiveSlot,
+  onPresetNameChange,
 }: DeviceStatusBarProps) {
   const t = useTranslations('device');
   const { status, errorMessage, currentSlot, connect, disconnect } = midiDevice;
   const [webMidiSupported, setWebMidiSupported] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState('');
 
   useEffect(() => {
     setWebMidiSupported('requestMIDIAccess' in navigator);
@@ -74,6 +80,11 @@ export function DeviceStatusBar({
       {status === 'handshaking' && (
         <span className="font-mono-display" style={{ color: 'var(--accent-amber)' }}>
           {t('handshaking')}
+          {midiDevice.handshakeStep && (
+            <span style={{ color: 'var(--text-muted)', marginLeft: 8, fontSize: '0.85em' }}>
+              {midiDevice.handshakeStep}
+            </span>
+          )}
         </span>
       )}
       {status === 'connected' && (
@@ -91,7 +102,34 @@ export function DeviceStatusBar({
           )}
           <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>
             · {t('loadSlot')} <strong style={{ color: 'var(--accent-amber)' }}>{slotLabel}</strong>
-            {slotName}
+            {editingName ? (
+              <input
+                autoFocus
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value.slice(0, 16))}
+                onBlur={() => { if (onPresetNameChange && nameInput) onPresetNameChange(nameInput); setEditingName(false); }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') { if (onPresetNameChange && nameInput) onPresetNameChange(nameInput); setEditingName(false); }
+                  if (e.key === 'Escape') setEditingName(false);
+                }}
+                maxLength={16}
+                className="font-mono-display text-sm bg-transparent border-b outline-none ml-2"
+                style={{ color: 'var(--accent-amber)', borderColor: 'var(--accent-amber)', width: `${Math.max(nameInput.length, 4)}ch` }}
+              />
+            ) : (
+              <span
+                onDoubleClick={() => {
+                  if (!onPresetNameChange) return;
+                  const name = currentPresetName || midiDevice.presetNames[currentSlot!] || '';
+                  setNameInput(name);
+                  setEditingName(true);
+                }}
+                style={{ cursor: onPresetNameChange ? 'text' : 'default' }}
+                title={onPresetNameChange ? t('loadSlot') : undefined}
+              >
+                {slotName}
+              </span>
+            )}
           </span>
         </span>
       )}
@@ -135,6 +173,15 @@ export function DeviceStatusBar({
             >
               {t('pull')}
             </button>
+            {onSaveToActiveSlot && currentSlot !== null && hasPreset && (
+              <button
+                onClick={onSaveToActiveSlot}
+                className="font-mono-display text-xs font-bold px-3 py-1 rounded"
+                style={{ border: '1px solid rgba(74,222,128,0.4)', color: 'var(--accent-green)', background: 'rgba(74,222,128,0.06)' }}
+              >
+                {t('saveToActiveSlot', { slot: slotLabel })}
+              </button>
+            )}
             <button
               onClick={onPushRequest}
               disabled={!hasPreset}
