@@ -47,3 +47,6 @@ next-env.d.ts
 .worktrees/
 
 /src/generated/prisma
+
+# Third-party/external files
+/others
