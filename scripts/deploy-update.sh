@@ -42,16 +42,14 @@ docker compose $COMPOSE_FILES --env-file .env.prod up -d app
 # Step 3: Wait for app to be ready
 # ══════════════════════════════════════════════════════════════════════════════
 info "Waiting for app..."
-APP_CONTAINER=$(docker compose $COMPOSE_FILES ps -q app 2>/dev/null)
+APP_CONTAINER=$(docker compose $COMPOSE_FILES ps -q app 2>/dev/null | head -1)
 for i in $(seq 1 60); do
-  # Check via docker exec (works with or without host port mapping)
-  if docker exec "$APP_CONTAINER" wget -qO- http://localhost:3000/ >/dev/null 2>&1; then break; fi
-  # Fallback: try host port if mapped
-  if curl -sf "http://localhost:${APP_PORT:-3320}/" >/dev/null 2>&1; then break; fi
+  # Check via docker exec using node (always available in node:alpine)
+  if docker exec "$APP_CONTAINER" node -e "require('http').get('http://localhost:3000/',r=>{process.exit(r.statusCode<400?0:1)}).on('error',()=>process.exit(1))" 2>/dev/null; then break; fi
   sleep 1
 done
 
-if docker exec "$APP_CONTAINER" wget -qO- http://localhost:3000/ >/dev/null 2>&1; then
+if docker exec "$APP_CONTAINER" node -e "require('http').get('http://localhost:3000/',r=>{process.exit(r.statusCode<400?0:1)}).on('error',()=>process.exit(1))" 2>/dev/null; then
   info "App is running."
 else
   error "App not responding after 60s! Check logs:"
