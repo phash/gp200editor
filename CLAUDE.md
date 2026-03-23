@@ -460,6 +460,24 @@ wine ~/.wine/drive_c/Program\ Files/Valeton/GP-200/GP-200.exe
 # 6. Capture stoppen, SysEx-Pakete analysieren (beginnen mit F0, enden mit F7)
 ```
 
+### MIDI CC Steuerung (aus offiziellem Manual V1.8.0)
+
+Alternative zu SysEx für einfache Steuerungen:
+
+| CC# | Range | Funktion |
+|-----|-------|----------|
+| 7 | 0-100 | Patch Volume |
+| 11 | 0-100 | EXP 1 |
+| 13 | 0-127 | EXP1 A/B (0-63=A, 64-127=B) |
+| 16/18/20 | 0-100 | Quick Access Knobs 1/2/3 |
+| 48-57 | 0-127 | Module on/off: PRE(48), DST(49), AMP(50), NR(51), CAB(52), EQ(53), MOD(54), DLY(55), RVB(56), WAH(57) |
+| 69-72, 76-79 | 0-127 | CTRL 1-8 |
+| 73+74 | | Tempo: CC73=MSB(0-1), CC74=40-127(low) oder 0-122(high+128) → 40-250 BPM |
+| 92 | 0-127 | Drum on/off |
+| 93 | 0-127 | Drum Play/Stop |
+| 94 | 0-99 | Drum Pattern |
+| 95 | 0-100 | Drum Volume |
+
 ### SysEx-Protokoll (Reverse Engineered, 2026-03-18/19)
 
 Alle Messages: `F0 21 25 7E 47 50 2D 32 <CMD> <SUB> <payload> F7`
@@ -575,7 +593,7 @@ Multipurpose-Befehl, unterschieden durch byte[40] und Kontext:
 | raw[38] | Ziel | Wertebereich | Encoding |
 |---------|------|-------------|----------|
 | 0x00 | VOL | 0–100 | `(raw[41]<<4)\|raw[42]` |
-| 0x01 | Tempo | 40–300 BPM | `(raw[41]<<4)\|raw[42]` |
+| 0x01 | Tempo | 40–250 BPM | `(raw[41]<<4)\|raw[42]` |
 | 0x06 | PAN | 0–100 (rechts), 156–255 (links) | `(raw[41]<<4)\|raw[42]`, links: `raw[43:45]=0F 0F` |
 
 PAN-Encoding: Center ≈ 0/255 Grenze. Links: Wert zählt von 255 runter, `raw[43:45]=0x0F 0x0F`.

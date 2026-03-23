@@ -149,8 +149,9 @@ export function useMidiDevice(): UseMidiDeviceReturn {
   const onDeviceToggleRef = useRef<((blockIndex: number, enabled: boolean) => void) | null>(null);
   // Callback for device-initiated effect type changes (e.g. Green OD → Penesas)
   const onDeviceEffectChangeRef = useRef<((blockIndex: number, effectId: number) => void) | null>(null);
-  // Suppress FX state toggles briefly after an effect change
-  const effectChangePendingRef = useRef(false);
+  // Suppress FX state toggles when we're actively sending commands (responses are echoes, not hardware changes)
+  const suppressFxStateRef = useRef(false);
+  const suppressFxStateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const onMidiMessage = useCallback((event: { data: unknown }) => {
     const data = getBytes(event.data);
@@ -165,10 +166,10 @@ export function useMidiDevice(): UseMidiDeviceReturn {
           setCurrentSlot(slot); currentSlotRef.current = slot;
           onDeviceChangeRef.current?.(slot);
         }
-      } else if (!effectChangePendingRef.current) {
+      } else if (!suppressFxStateRef.current) {
         // FX state response — device reports effect toggle from hardware
         // data[22]=block_id (0=PRE..10=VOL), data[24]=state (0=OFF, non-zero=ON)
-        // Suppressed during effect-change pending (pull will bring correct state)
+        // Suppressed during our own sends (responses are echoes, not hardware changes)
         const blockId = data[22];
         const state = data[24];
         if (blockId >= 0 && blockId <= 10) {
@@ -189,8 +190,9 @@ export function useMidiDevice(): UseMidiDeviceReturn {
       console.log(`[GP-200] device effect change: block=${blockIndex} effectId=0x${effectId.toString(16).padStart(8,'0')}`);
       onDeviceEffectChangeRef.current?.(blockIndex, effectId);
       // Suppress FX state responses that follow (they report stale toggle states)
-      effectChangePendingRef.current = true;
-      setTimeout(() => { effectChangePendingRef.current = false; }, 500);
+      suppressFxStateRef.current = true;
+      if (suppressFxStateTimer.current) clearTimeout(suppressFxStateTimer.current);
+      suppressFxStateTimer.current = setTimeout(() => { suppressFxStateRef.current = false; }, 500);
     }
     // sub=0x10 D→H: toggle response (device-initiated, e.g. initial state on slot switch)
     if (isSysEx(data, 0x12, 0x10) && data.length >= 42) {
@@ -530,16 +532,18 @@ export function useMidiDevice(): UseMidiDeviceReturn {
 
   const sendToggle = useCallback((blockIndex: number, enabled: boolean) => {
     if (!outputRef.current) return;
+    suppressFxBriefly();
     const msg = SysExCodec.buildToggleEffect(blockIndex, enabled);
     console.log(`[GP-200] toggle: block=${blockIndex} enabled=${enabled}`);
     outputRef.current.send(msg);
-  }, []);
+  }, [suppressFxBriefly]);
 
   const sendParamChange = useCallback((blockIndex: number, paramIndex: number, effectId: number, value: number) => {
     if (!outputRef.current) return;
+    suppressFxBriefly();
     const msg = SysExCodec.buildParamChange(blockIndex, paramIndex, effectId, value);
     outputRef.current.send(msg);
-  }, []);
+  }, [suppressFxBriefly]);
 
   const sendReorder = useCallback((order: number[]) => {
     if (!outputRef.current) return;
@@ -578,20 +582,30 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     outputRef.current.send(msg);
   }, []);
 
+  // Helper: suppress FX state echoes after sending commands
+  const suppressFxBriefly = useCallback(() => {
+    suppressFxStateRef.current = true;
+    if (suppressFxStateTimer.current) clearTimeout(suppressFxStateTimer.current);
+    suppressFxStateTimer.current = setTimeout(() => { suppressFxStateRef.current = false; }, 200);
+  }, []);
+
   const sendPatchVolume = useCallback((value: number) => {
     if (!outputRef.current) return;
+    suppressFxBriefly();
     outputRef.current.send(SysExCodec.buildPatchSetting(0x00, value));
-  }, []);
+  }, [suppressFxBriefly]);
 
   const sendPatchPan = useCallback((deviceValue: number) => {
     if (!outputRef.current) return;
+    suppressFxBriefly();
     outputRef.current.send(SysExCodec.buildPatchSetting(0x06, deviceValue));
-  }, []);
+  }, [suppressFxBriefly]);
 
   const sendPatchTempo = useCallback((bpm: number) => {
     if (!outputRef.current) return;
+    suppressFxBriefly();
     outputRef.current.send(SysExCodec.buildPatchSetting(0x01, bpm));
-  }, []);
+  }, [suppressFxBriefly]);
 
   // Track connection state for auto-reconnect
   useEffect(() => {

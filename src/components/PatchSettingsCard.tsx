@@ -5,7 +5,7 @@ import { useRef, useCallback } from 'react';
 interface PatchSettingsCardProps {
   volume: number;
   pan: number;       // -50 to +50
-  tempo: number;     // 40-300
+  tempo: number;     // 40-250
   onVolumeChange: (value: number) => void;
   onPanChange: (value: number) => void;
   onTempoChange: (bpm: number) => void;
@@ -106,8 +106,8 @@ export function PatchSettingsCard({
               style={{ color: 'var(--text-muted)' }}>{t('tempo')}</span>
             <div className="relative flex-1 h-2.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
               <div className="h-full rounded-full transition-all duration-75"
-                style={{ width: `${((tempo - 40) / 260) * 100}%`, background: 'linear-gradient(90deg, var(--accent-amber-dim), var(--accent-amber))' }} />
-              <input type="range" min={40} max={300} step={1} value={tempo}
+                style={{ width: `${((tempo - 40) / 210) * 100}%`, background: 'linear-gradient(90deg, var(--accent-amber-dim), var(--accent-amber))' }} />
+              <input type="range" min={40} max={250} step={1} value={tempo}
                 onChange={(e) => {
                   const v = Number(e.target.value);
                   onTempoChange(v);
