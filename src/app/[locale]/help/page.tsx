@@ -52,6 +52,7 @@ export default async function HelpPage() {
         t('usbMidiConnect'),
         t('usbMidiLive'),
         t('usbMidiPullPush'),
+        t('usbMidiNameEdit'),
       ],
     },
     {
@@ -99,6 +100,13 @@ export default async function HelpPage() {
     { q: t('faqFormatQ'), a: t('faqFormatA') },
     { q: t('faqOfflineQ'), a: t('faqOfflineA') },
     { q: t('faqHxStompQ'), a: t('faqHxStompA') },
+  ];
+
+  const changelog = [
+    { date: t('changelog20260323'), items: t('changelog20260323Items') },
+    { date: t('changelog20260320'), items: t('changelog20260320Items') },
+    { date: t('changelog20260319'), items: t('changelog20260319Items') },
+    { date: t('changelog20260316'), items: t('changelog20260316Items') },
   ];
 
   // JSON-LD: static translation strings only, not user input — safe
@@ -173,6 +181,41 @@ export default async function HelpPage() {
               <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                 {entry.a}
               </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mb-8">
+        <h2
+          className="font-mono-display text-lg font-bold tracking-tight mb-4"
+          style={{ color: 'var(--accent-amber)' }}
+        >
+          {t('changelogTitle')}
+        </h2>
+        <div className="space-y-4">
+          {changelog.map((entry) => (
+            <div key={entry.date}>
+              <h3
+                className="font-mono-display text-sm font-bold mb-1"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                {entry.date}
+              </h3>
+              <ul className="space-y-1">
+                {entry.items.split(' · ').map((item) => (
+                  <li
+                    key={item}
+                    className="text-sm pl-4"
+                    style={{
+                      color: 'var(--text-secondary)',
+                      borderLeft: '2px solid var(--border-active)',
+                    }}
+                  >
+                    {item}
+                  </li>
+                ))}
+              </ul>
             </div>
           ))}
         </div>
