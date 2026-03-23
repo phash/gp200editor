@@ -14,6 +14,7 @@ import { DeviceStatusBar } from '@/components/DeviceStatusBar';
 import { DeviceSlotBrowser } from '@/components/DeviceSlotBrowser';
 import { FirmwareCompatDialog } from '@/components/FirmwareCompatDialog';
 import { PatchSettingsCard } from '@/components/PatchSettingsCard';
+import { ControllerPanel } from '@/components/ControllerPanel';
 import { HelpButton } from '@/components/HelpButton';
 // Firmware compat now uses version check (sub=0x0A) result, not version string matching
 import { SavePresetDialog } from '@/components/SavePresetDialog';
@@ -700,6 +701,22 @@ export default function EditorPage() {
           connected={midiDevice.status === 'connected'}
         />
       </div>
+
+      {/* EXP / Controller Assignments */}
+      <ControllerPanel
+        preset={preset}
+        connected={midiDevice.status === 'connected'}
+        onParamSelect={(page, item, blockIndex, paramIdx) => {
+          if (midiDevice.status === 'connected') {
+            midiDevice.sendExpParamSelect(page, item, blockIndex, paramIdx);
+          }
+        }}
+        onMinMax={(page, item, min, max) => {
+          if (midiDevice.status === 'connected') {
+            midiDevice.sendExpMinMax(page, item, min, max);
+          }
+        }}
+      />
 
       {/* Bank tabs with prev/next navigation */}
       {bankBaseSlot !== null && (

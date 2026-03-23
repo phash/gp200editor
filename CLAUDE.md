@@ -381,7 +381,7 @@ npm run test:e2e          # Playwright E2E (App + Garage + DB erforderlich)
 Unit-Tests in `tests/unit/`:
 - `BinaryParser.test.ts`, `BufferGenerator.test.ts`, `types.test.ts`
 - `PRSTDecoder.test.ts`, `PRSTEncoder.test.ts` — inkl. Tests gegen echte .prst-Dateien
-- `SysExCodec.test.ts` — Toggle, ParamChange, Reorder, Handshake (60 Tests)
+- `SysExCodec.test.ts` — Toggle, ParamChange, Reorder, Handshake, EXP Assignment (64 Tests)
 - `effectNames.test.ts` — Effekt-ID→Name Auflösung
 - `effectParams.test.ts` — Parameter-Definitionen
 - `useMidiDevice.test.ts` — MIDI Hook Tests
@@ -694,12 +694,47 @@ Gleicher Sub wie Preset-Commit/ACK, bidirektional:
 [25:27] Nibble-encoded Wert        BPM oder Pattern-Index
 ```
 
-#### Controller/EXP Assignments (sub=0x14, 54 Bytes, raw)
+#### EXP/Controller Assignments (sub=0x14 + sub=0x18, hardware-verifiziert 2026-03-23)
 
-Gleicher Sub wie Effect-Change, für EXP-Pedal und CTRL-Zuordnungen.
-Byte[28] unterscheidet Sektionen (0x00 vs 0x01). Komplexes Format,
-enthält Block-Referenz + Parameter-Referenz + Min/Max-Werte.
-Noch nicht vollständig dekodiert — benötigt weitere Analyse.
+**Param-Auswahl** via Navigation (sub=0x18, 62 Bytes, nibble-encoded):
+Gleicher Sub wie Param-Change, aber decoded[2]=0x40 (Discriminator).
+
+```
+decoded[2]     0x40                    Discriminator: Section-Navigation
+decoded[11]    Page                    0=EXP1 ModeA, 1=EXP1 ModeB, 2=EXP2
+decoded[13]    blockIndex << 4         Effekt-Block (0=PRE..10=VOL) × 16
+decoded[14]    paramIndex << 4         Parameter-Index × 16
+```
+
+Verifiziert (2026-03-23): COMP(PRE)=00/00, WAH=10/10, VOL-Volume=A0/00.
+
+**Min/Max** via Assignment-Write (sub=0x14, 54 Bytes, raw):
+Gleicher Sub wie Effect-Change, unterschieden durch raw[29:30]:
+- `01 06` = Effect-Change (bestehend)
+- `00 0E` = EXP/Quick Access Assignment
+- `00 0F` = CTRL Button Assignment
+
+```
+[29:31]  00 0E                  Type: EXP/QA Assignment
+[34]     0x08                   Konstante
+[38]     Section                0=Min-Wert, 1=Max-Wert
+[39]     Page                   0=EXP1 ModeA, 1=EXP1 ModeB, 2=EXP2
+[40]     Item                   0=Para1, 1=Para2, 2=Para3
+[41:53]  Nibble-encoded         decoded[0:2]=Marker (variiert), decoded[2:6]=float32 LE Wert
+```
+
+Verifiziert (2026-03-23) mit Captures 203838 + 204011:
+- sec=0 float scrollt Min-Wert (0→20)
+- sec=1 float scrollt Max-Wert (100→80→50)
+- Marker-Bytes variieren je nach Kontext (0x9F0B für VOL, 0x400C für andere)
+
+**Ablauf einer EXP-Zuweisung:**
+1. sub=0x18 Navigation: Page + blockIndex<<4 + paramIndex<<4
+2. sub=0x14 sec=0: Min-Wert (float32)
+3. sub=0x14 sec=1: Max-Wert (float32)
+
+**Read:** Kein separater Assignment-Read per SysEx gefunden. Assignments werden beim Connect
+im State-Dump (sub=0x4E) mitgeliefert oder sind in den Preset-Trailing-Bytes (decoded[912:1176]).
 
 #### IR Upload (sub=0x1C, variable Länge, nibble-encoded) — Nachrangig
 

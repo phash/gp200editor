@@ -64,7 +64,18 @@
     "patchVol": "Patch VOL",
     "patchPan": "Patch PAN",
     "tempo": "Tempo",
-    "bpm": "BPM"
+    "bpm": "BPM",
+    "controllers": "Controller",
+    "controllersCollapse": "Controller-Panel ein-/ausklappen",
+    "exp1ModeA": "EXP 1 – Modus A",
+    "exp1ModeB": "EXP 1 – Modus B",
+    "exp2": "EXP 2",
+    "para": "Para {n}",
+    "paramSelect": "Parameter",
+    "minLabel": "Min",
+    "maxLabel": "Max",
+    "unassigned": "Nicht zugewiesen",
+    "expSendError": "EXP-Zuweisung konnte nicht gesendet werden"
   },
   "auth": {
     "loginTitle": "Anmelden",

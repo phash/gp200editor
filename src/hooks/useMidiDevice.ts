@@ -33,7 +33,7 @@ export interface UseMidiDeviceReturn {
   namesLoadProgress: number;
   deviceInfo: { deviceType: number; firmwareValues: number[]; versionAccepted: boolean } | null;
   currentPreset: GP200Preset | null;
-  assignments: { section: number; page: number; block: number; name: string; rawData: Uint8Array }[];
+  cabIrNames: { section: number; page: number; block: number; name: string; rawData: Uint8Array }[];
 
   connect: () => Promise<void>;
   disconnect: () => void;
@@ -54,6 +54,8 @@ export interface UseMidiDeviceReturn {
   sendPatchPan: (deviceValue: number) => void;
   sendPatchTempo: (bpm: number) => void;
   sendRawChunks: (chunks: Uint8Array[], delayMs: number, onProgress?: (i: number, total: number) => void) => Promise<void>;
+  sendExpParamSelect: (page: number, item: number, blockIndex: number, paramIdx: number) => void;
+  sendExpMinMax: (page: number, item: number, min: number, max: number) => void;
   setOnDeviceChange: (cb: ((slot: number | null) => void) | null) => void;
   setOnDeviceToggle: (cb: ((blockIndex: number, enabled: boolean) => void) | null) => void;
   setOnDeviceEffectChange: (cb: ((blockIndex: number, effectId: number) => void) | null) => void;
@@ -137,7 +139,7 @@ export function useMidiDevice(): UseMidiDeviceReturn {
   const wasConnectedRef = useRef(false);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectAttemptsRef = useRef(0);
-  const [assignments, setAssignments] = useState<UseMidiDeviceReturn['assignments']>([]);
+  const [cabIrNames, setAssignments] = useState<UseMidiDeviceReturn['cabIrNames']>([]);
 
   const outputRef          = useRef<GP200Output | null>(null);
   const inputRef           = useRef<GP200Input | null>(null);
@@ -275,7 +277,7 @@ export function useMidiDevice(): UseMidiDeviceReturn {
         // Step 9: Assignment polling (non-critical, short timeout, bail on first failure)
         setHandshakeStep('Controller…');
         const ASSIGN_TIMEOUT = 300;
-        const assignmentEntries: UseMidiDeviceReturn['assignments'] = [];
+        const assignmentEntries: UseMidiDeviceReturn['cabIrNames'] = [];
         const assignmentPlan = [
           { section: 0, pages: [[0, 16], [1, 4]] },
           { section: 1, pages: [[0, 10]] },
@@ -617,6 +619,25 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     outputRef.current.send(SysExCodec.buildPatchSetting(0x01, bpm));
   }, []);
 
+  const sendExpParamSelect = useCallback((page: number, item: number, blockIndex: number, paramIdx: number) => {
+    if (!outputRef.current) return;
+    suppressFxBriefly();
+    // Only navigation — confirmed: capture 204352 sends ONLY sub=0x18 for param change
+    // decoded[12]=item<<4 selects Para slot (0/1/2), confirmed: capture 200517
+    const msg = SysExCodec.buildExpNavigation(page, item, blockIndex, paramIdx);
+    console.log(`[GP-200] EXP nav: page=${page} item=${item} block=${blockIndex} param=${paramIdx}`);
+    outputRef.current.send(msg);
+  }, []);
+
+  const sendExpMinMax = useCallback((page: number, item: number, min: number, max: number) => {
+    if (!outputRef.current) return;
+    suppressFxBriefly();
+    const out = outputRef.current;
+    // Min (section=0) + Max (section=1) — confirmed: capture 203838
+    out.send(SysExCodec.buildExpAssignment(0, page, item, min));
+    out.send(SysExCodec.buildExpAssignment(1, page, item, max));
+  }, []);
+
   const sendRawChunks = useCallback(async (
     chunks: Uint8Array[], delayMs: number,
     onProgress?: (i: number, total: number) => void,
@@ -657,10 +678,10 @@ export function useMidiDevice(): UseMidiDeviceReturn {
 
   return {
     status, handshakeStep, errorMessage, deviceName, currentSlot, presetNames, namesLoadProgress,
-    deviceInfo, currentPreset, assignments,
+    deviceInfo, currentPreset, cabIrNames,
     connect, disconnect, loadPresetNames, pullPreset, pushPreset, writePresetToSlot, saveToSlot,
     sendEffectChange, sendToggle, sendParamChange, sendReorder, sendSlotChange,
-    sendAuthor, sendStyleName, sendNote, sendPatchVolume, sendPatchPan, sendPatchTempo, sendRawChunks,
+    sendAuthor, sendStyleName, sendNote, sendPatchVolume, sendPatchPan, sendPatchTempo, sendExpParamSelect, sendExpMinMax, sendRawChunks,
     setOnDeviceChange: (cb: ((slot: number | null) => void) | null) => { onDeviceChangeRef.current = cb; },
     setOnDeviceToggle: (cb: ((blockIndex: number, enabled: boolean) => void) | null) => { onDeviceToggleRef.current = cb; },
     setOnDeviceEffectChange: (cb: ((blockIndex: number, effectId: number) => void) | null) => { onDeviceEffectChangeRef.current = cb; },

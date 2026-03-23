@@ -577,6 +577,68 @@ export const SysExCodec = {
     return msg;
   },
 
+  buildExpNavigation(page: number, item?: number, blockIndex?: number, paramIndex?: number): Uint8Array {
+    // CMD=0x12, sub=0x18, 62 bytes — nibble-encoded "section navigation"
+    // Selects which EXP/Mode to edit AND which effect parameter to assign.
+    // Confirmed: capture 200517 — decoded[2]=0x40 discriminates from param change,
+    // decoded[11]=page (0=EXP1 ModeA, 1=EXP1 ModeB, 2=EXP2)
+    // Confirmed: capture 204352 — decoded[13]=blockIndex<<4, decoded[14]=paramIndex<<4
+    //   COMP(PRE,block0,param0): decoded[13:15]=00 00
+    //   WAH(block1,param1):      decoded[13:15]=10 10
+    //   VOL-Volume(block10):     decoded[13:15]=a0 00
+    const decoded = new Uint8Array(24);
+    decoded[2] = 0x04;                            // discriminator: section nav
+    decoded[8] = 0x0C;                            // constant
+    decoded[10] = 0x0C;                           // constant
+    decoded[11] = page & 0xFF;                    // 0=EXP1A, 1=EXP1B, 2=EXP2
+    decoded[12] = (item ?? 0) & 0x0F;            // Para slot: 0=Para1, 1=Para2, 2=Para3
+    decoded[13] = (blockIndex ?? 0) & 0x0F;       // effect block (0-10)
+    decoded[14] = (paramIndex ?? 0) & 0x0F;       // param index
+    decoded[18] = 0xC8;                           // constant (was 0x84 — off-by-one analysis error)
+    decoded[19] = 0x42;                           // constant (was 0x20)
+
+    const nibbles = this.nibbleEncode(decoded);
+    const msg = new Uint8Array(62);
+    msg.set([0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x18, 0x00, 0x00, 0x00]);
+    msg.set(nibbles, 13);
+    msg[61] = 0xF7;
+    return msg;
+  },
+
+  buildExpAssignment(section: number, page: number, item: number, value: number): Uint8Array {
+    // CMD=0x12, sub=0x14, 54 bytes — EXP/QA assignment write
+    // Confirmed: capture 200517 — type=0x0E at raw[30]
+    // raw[38]=section (0=param select, 1=min/max), raw[39]=page, raw[40]=item (Para 1-3)
+    // Nibble-decoded float32 LE at decoded[2:6] for value
+    // section=0: float=param dropdown index (0.0=unassign, 1.0+=param)
+    // section=1: float=min or max value
+    const decoded = new Uint8Array(6);
+    decoded[0] = 0x40;                            // constant marker
+    decoded[1] = 0x0C;                            // constant marker
+    const view = new DataView(decoded.buffer);
+    view.setFloat32(2, value, true);              // float32 LE
+
+    const nibbles = this.nibbleEncode(decoded);
+    const msg = new Uint8Array(54);
+    msg.set([
+      0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, // [0-7]   header
+      0x12, 0x14,                                        // [8-9]   CMD=SET, sub
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // [10-17] padding
+      0x04, 0x00, 0x00, 0x00,                            // [18-21] constant
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,         // [22-28] padding
+      0x00, 0x0E,                                        // [29-30] type=EXP/QA assignment
+      0x00, 0x00, 0x00,                                  // [31-33]
+      0x08,                                              // [34]    constant
+      0x00, 0x00, 0x00,                                  // [35-37]
+      section & 0x01,                                    // [38]    section (0=param, 1=min/max)
+      page & 0xFF,                                       // [39]    page (0=EXP1A, 1=EXP1B, 2=EXP2)
+      item & 0x0F,                                       // [40]    item (0=Para1, 1=Para2, 2=Para3)
+    ]);
+    msg.set(nibbles, 41);                                // [41-52] nibble-encoded float32
+    msg[53] = 0xF7;                                      // [53]    end
+    return msg;
+  },
+
   buildPresetChange(slot: number): Uint8Array {
     // CMD=0x12, sub=0x08, 30 bytes — switch device to preset slot
     // From capture 222343: slot as raw byte at position [26]

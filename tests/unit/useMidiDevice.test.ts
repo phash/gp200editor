@@ -120,7 +120,7 @@ describe('useMidiDevice', () => {
     expect(result.current.deviceName).toBeNull();
     expect(result.current.deviceInfo).toBeNull();
     expect(result.current.currentPreset).toBeNull();
-    expect(result.current.assignments).toEqual([]);
+    expect(result.current.cabIrNames).toEqual([]);
   });
 
   it('connect() sets status to connecting then handshaking then connected', async () => {
@@ -162,7 +162,7 @@ describe('useMidiDevice', () => {
     expect(result.current.status).toBe('disconnected');
     expect(result.current.deviceInfo).toBeNull();
     expect(result.current.currentPreset).toBeNull();
-    expect(result.current.assignments).toEqual([]);
+    expect(result.current.cabIrNames).toEqual([]);
   });
 
   it('handshake sets currentSlot to 0 (state dump byte[10] is not the slot)', async () => {

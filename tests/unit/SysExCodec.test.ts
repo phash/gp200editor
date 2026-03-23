@@ -488,6 +488,78 @@ describe('SysExCodec: parseStateDump', () => {
   });
 });
 
+describe('SysExCodec: EXP Assignment', () => {
+  it('buildExpNavigation produces 62-byte message matching Valeton format', () => {
+    // VOL-Volume (block=10, param=0) on EXP1A — must match capture 204352/211645
+    const msg = SysExCodec.buildExpNavigation(0, 0, 10, 0);
+    expect(msg.length).toBe(62);
+    expect(msg[8]).toBe(0x12); // CMD
+    expect(msg[9]).toBe(0x18); // sub
+    expect(msg[61]).toBe(0xF7);
+    // Nibble-decoded byte[2] should be 0x04 (not 0x40 — off-by-one analysis was wrong)
+    const decoded2 = (msg[13 + 4] << 4) | msg[13 + 5];
+    expect(decoded2).toBe(0x04);
+    // decoded[13] should be blockIndex=10=0x0A (not 0xA0)
+    const decoded13 = (msg[13 + 26] << 4) | msg[13 + 27];
+    expect(decoded13).toBe(0x0A);
+    // Verify key raw bytes match Valeton capture
+    expect(msg[18]).toBe(0x04); // nibble for decoded[2] low nibble
+    expect(msg[40]).toBe(0x0A); // nibble for decoded[13] low nibble
+  });
+
+  it('buildExpAssignment produces 54-byte message with float32 param', () => {
+    // EXP 1 Mode A, Para 1, select param 1 (float=1.0)
+    const msg = SysExCodec.buildExpAssignment(0, 0, 0, 1.0);
+    expect(msg.length).toBe(54);
+    expect(msg[8]).toBe(0x12); // CMD
+    expect(msg[9]).toBe(0x14); // sub
+    expect(msg[29]).toBe(0x00); // not effect change
+    expect(msg[30]).toBe(0x0E); // type=EXP/QA
+    expect(msg[38]).toBe(0);   // section=0 (param select)
+    expect(msg[39]).toBe(0);   // page=0 (EXP1A)
+    expect(msg[40]).toBe(0);   // item=0 (Para 1)
+    expect(msg[53]).toBe(0xF7);
+    // Nibble-decode the float32 at [41:53]
+    const nibbles = msg.slice(41, 53);
+    const decoded = new Uint8Array(6);
+    for (let i = 0; i < 6; i++) decoded[i] = (nibbles[2*i] << 4) | nibbles[2*i+1];
+    expect(decoded[0]).toBe(0x40); // marker
+    expect(decoded[1]).toBe(0x0C); // marker
+    // decoded[2:6] = float32 LE of 1.0 = 0x3F800000
+    const view = new DataView(decoded.buffer);
+    expect(view.getFloat32(2, true)).toBeCloseTo(1.0);
+  });
+
+  it('buildExpAssignment section=1 encodes max value as float', () => {
+    // EXP 2, Para 2, set max=99
+    const msg = SysExCodec.buildExpAssignment(1, 2, 1, 99.0);
+    expect(msg[38]).toBe(1);   // section=1 (min/max)
+    expect(msg[39]).toBe(2);   // page=2 (EXP2)
+    expect(msg[40]).toBe(1);   // item=1 (Para 2)
+    // Decode float
+    const nibbles = msg.slice(41, 53);
+    const decoded = new Uint8Array(6);
+    for (let i = 0; i < 6; i++) decoded[i] = (nibbles[2*i] << 4) | nibbles[2*i+1];
+    const view = new DataView(decoded.buffer);
+    expect(view.getFloat32(2, true)).toBeCloseTo(99.0);
+  });
+
+  it('buildExpAssignment matches capture bytes for unassign', () => {
+    // From capture 200517 pkt 55: sec=0, page=0, item=0, float=0.0
+    const msg = SysExCodec.buildExpAssignment(0, 0, 0, 0.0);
+    // raw[38:41] should be 00 00 00
+    expect(msg[38]).toBe(0);
+    expect(msg[39]).toBe(0);
+    expect(msg[40]).toBe(0);
+    // Nibble-decoded float should be 0.0
+    const nibbles = msg.slice(41, 53);
+    const decoded = new Uint8Array(6);
+    for (let i = 0; i < 6; i++) decoded[i] = (nibbles[2*i] << 4) | nibbles[2*i+1];
+    const view = new DataView(decoded.buffer);
+    expect(view.getFloat32(2, true)).toBe(0.0);
+  });
+});
+
 describe('SysExCodec: buildToggleEffect', () => {
   it('returns a 46-byte SysEx with CMD=0x12, sub=0x10', () => {
     const msg = SysExCodec.buildToggleEffect(0, true);

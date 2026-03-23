@@ -186,17 +186,4 @@ $size = (Get-Item $OutFile).Length
 Write-Host "Gespeichert: $OutFile ($($size) Bytes)" -ForegroundColor Green
 Write-Host ""
 
-# 8. Analyse
-if ($python) {
-    $analyzeScript = Join-Path $PSScriptRoot "analyze-sysex.py"
-    if (Test-Path $analyzeScript) {
-        Write-Host "Starte Analyse..." -ForegroundColor Cyan
-        Write-Host "============================================" -ForegroundColor Cyan
-        & $python $analyzeScript $OutFile
-    } else {
-        Write-Host "analyze-sysex.py nicht gefunden unter $analyzeScript" -ForegroundColor Yellow
-    }
-} else {
-    Write-Host "Manuelle Analyse:" -ForegroundColor Cyan
-    Write-Host "  python scripts\analyze-sysex.py $OutFile"
-}
+# 8. Fertig (Analyse separat: python scripts\analyze-sysex.py <datei>)
