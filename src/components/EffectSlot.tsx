@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { EffectSlot as EffectSlotType } from '@/core/types';
 import { getEffectName, getModuleName, getEffectsByModule, MODULE_COLORS } from '@/core/effectNames';
+import { EFFECT_DESCRIPTIONS } from '@/core/effectDescriptions';
 import { EffectParams } from '@/components/EffectParams';
 
 interface EffectSlotProps {
@@ -91,6 +92,15 @@ export function EffectSlot({ slot, index, onToggle, onChangeEffect, onParamChang
               <option value={slot.effectId}>{effectName}</option>
             )}
           </select>
+
+          {/* Description subtitle */}
+          {EFFECT_DESCRIPTIONS[effectName] && (
+            <span className="text-[9px] truncate max-w-[200px] hidden sm:inline"
+              style={{ color: colors.accentDim }}
+              title={EFFECT_DESCRIPTIONS[effectName]}>
+              {EFFECT_DESCRIPTIONS[effectName]}
+            </span>
+          )}
 
           {/* Expand arrow */}
           <span className="text-xs transition-transform duration-200"

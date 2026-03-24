@@ -1,6 +1,7 @@
 'use client';
 import { getEffectParams } from '@/core/effectParams';
 import { getEffectName } from '@/core/effectNames';
+import { EFFECT_DESCRIPTIONS } from '@/core/effectDescriptions';
 import type { GP200Preset } from '@/core/types';
 
 interface AmpHeadPanelProps {
@@ -74,9 +75,15 @@ export function AmpHeadPanel({ preset, onParamChange }: AmpHeadPanelProps) {
       <div className="px-4 py-2 flex items-center gap-2"
         style={{ borderBottom: '1px solid rgba(224,128,64,0.1)' }}>
         <span className="font-mono-display text-[11px] font-bold uppercase tracking-wider"
-          style={{ color: '#e08040' }}>
+          style={{ color: '#e08040' }}
+          title={EFFECT_DESCRIPTIONS[ampName] ?? ''}>
           {ampName}
         </span>
+        {EFFECT_DESCRIPTIONS[ampName] && (
+          <span className="text-[9px] truncate" style={{ color: 'rgba(224,128,64,0.5)' }}>
+            {EFFECT_DESCRIPTIONS[ampName]}
+          </span>
+        )}
         {!ampEffect.enabled && (
           <span className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
             (bypass)

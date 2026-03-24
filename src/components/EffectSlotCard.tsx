@@ -2,6 +2,7 @@
 import { useTranslations } from 'next-intl';
 import type { EffectSlot as EffectSlotType } from '@/core/types';
 import { getEffectName, getModuleName, getEffectsByModule, MODULE_COLORS } from '@/core/effectNames';
+import { EFFECT_DESCRIPTIONS } from '@/core/effectDescriptions';
 import { EffectParams } from '@/components/EffectParams';
 
 interface EffectSlotCardProps {
@@ -121,6 +122,13 @@ export function EffectSlotCard({ slot, index, onToggle, onChangeEffect, onParamC
               <option value={slot.effectId}>{effectName}</option>
             )}
           </select>
+          {EFFECT_DESCRIPTIONS[effectName] && (
+            <p className="text-[9px] text-center truncate px-2"
+              style={{ color: colors.accentDim }}
+              title={EFFECT_DESCRIPTIONS[effectName]}>
+              {EFFECT_DESCRIPTIONS[effectName]}
+            </p>
+          )}
         </div>
 
         {/* Parameters — flex-1 pushes stomp button to bottom */}
