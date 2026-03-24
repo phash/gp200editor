@@ -604,8 +604,8 @@ export default function EditorPage() {
         </div>
       )}
 
-      {/* Section toggle bar */}
-      <div className="flex gap-1 mb-3 flex-wrap">
+      {/* Section toggle bar + view mode */}
+      <div className="flex gap-1 mb-3 flex-wrap items-center">
         {[
           { key: 'amp', label: 'AMP', active: showAmpHead, toggle: () => setShowAmpHead(!showAmpHead) },
           { key: 'preset', label: 'Preset', active: showPresetInfo, toggle: () => setShowPresetInfo(!showPresetInfo) },
@@ -624,6 +624,35 @@ export default function EditorPage() {
             {label}
           </button>
         ))}
+        <div className="flex-1" />
+        <div className="flex gap-0.5">
+          <button
+            onClick={() => setViewMode('list')}
+            className="flex items-center gap-1.5 font-mono-display text-[10px] font-bold tracking-wider uppercase px-3 py-1.5 rounded-l transition-all duration-150"
+            style={{
+              background: viewMode === 'list' ? 'rgba(212,162,78,0.12)' : 'rgba(255,255,255,0.03)',
+              border: `1px solid ${viewMode === 'list' ? 'rgba(212,162,78,0.3)' : 'rgba(255,255,255,0.06)'}`,
+              color: viewMode === 'list' ? 'var(--accent-amber)' : 'var(--text-muted)',
+            }}
+            aria-pressed={viewMode === 'list'}
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><line x1="1" y1="3" x2="11" y2="3"/><line x1="1" y1="6" x2="11" y2="6"/><line x1="1" y1="9" x2="11" y2="9"/></svg>
+            {t('viewList')}
+          </button>
+          <button
+            onClick={() => setViewMode('pedals')}
+            className="flex items-center gap-1.5 font-mono-display text-[10px] font-bold tracking-wider uppercase px-3 py-1.5 rounded-r transition-all duration-150"
+            style={{
+              background: viewMode === 'pedals' ? 'rgba(212,162,78,0.12)' : 'rgba(255,255,255,0.03)',
+              border: `1px solid ${viewMode === 'pedals' ? 'rgba(212,162,78,0.3)' : 'rgba(255,255,255,0.06)'}`,
+              color: viewMode === 'pedals' ? 'var(--accent-amber)' : 'var(--text-muted)',
+            }}
+            aria-pressed={viewMode === 'pedals'}
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><circle cx="2" cy="2" r="1.2"/><circle cx="6" cy="2" r="1.2"/><circle cx="10" cy="2" r="1.2"/><circle cx="2" cy="6" r="1.2"/><circle cx="6" cy="6" r="1.2"/><circle cx="10" cy="6" r="1.2"/><circle cx="2" cy="10" r="1.2"/><circle cx="6" cy="10" r="1.2"/><circle cx="10" cy="10" r="1.2"/></svg>
+            {t('viewPedals')}
+          </button>
+        </div>
       </div>
 
       {/* AMP Head Panel — collapsible */}
@@ -895,34 +924,6 @@ export default function EditorPage() {
           )}
         </div>
       )}
-
-      {/* View toggle */}
-      <div className="flex items-center gap-1 mb-4">
-        <button
-          onClick={() => setViewMode('list')}
-          className="font-mono-display text-[10px] font-bold tracking-wider uppercase px-3 py-1.5 rounded-l transition-all duration-150"
-          style={{
-            background: viewMode === 'list' ? 'var(--glow-amber)' : 'transparent',
-            border: `1px solid ${viewMode === 'list' ? 'var(--accent-amber)' : 'var(--border-subtle)'}`,
-            color: viewMode === 'list' ? 'var(--accent-amber)' : 'var(--text-muted)',
-          }}
-          aria-pressed={viewMode === 'list'}
-        >
-          {t('viewList')}
-        </button>
-        <button
-          onClick={() => setViewMode('pedals')}
-          className="font-mono-display text-[10px] font-bold tracking-wider uppercase px-3 py-1.5 rounded-r transition-all duration-150"
-          style={{
-            background: viewMode === 'pedals' ? 'var(--glow-amber)' : 'transparent',
-            border: `1px solid ${viewMode === 'pedals' ? 'var(--accent-amber)' : 'var(--border-subtle)'}`,
-            color: viewMode === 'pedals' ? 'var(--accent-amber)' : 'var(--text-muted)',
-          }}
-          aria-pressed={viewMode === 'pedals'}
-        >
-          {t('viewPedals')}
-        </button>
-      </div>
 
       {/* Signal chain */}
       <div
