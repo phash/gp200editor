@@ -374,7 +374,7 @@ LE uint16 → **Algorithmus gelöst (2026-03-18):** `sum(bytes[0:0x4C6]) & 0xFFF
 ## Tests
 
 ```bash
-npm run test              # 309 Unit-Tests (Vitest)
+npm run test              # 310 Unit-Tests (Vitest)
 npm run test:coverage     # Coverage-Report
 npm run test:e2e          # Playwright E2E (App + Garage + DB erforderlich)
 ```
@@ -514,7 +514,25 @@ Sub-Befehle sind **multipurpose** — gleicher Sub hat verschiedene Bedeutungen 
 | 0x20 | H→D | 78 | Author-Name schreiben — decoded[8]=0x09 | nibble |
 | 0x20 | H→D | var | Write Chunks (7× für Full Write) | nibble |
 | 0x38 | H→D | 126 | Note-Text schreiben — decoded[8]=0x0B | nibble |
-| 0x4E | D→H | var | State-Dump (5 Chunks, beim Handshake) | nibble |
+| 0x4E | D→H | var | State-Dump (5 Chunks, beim Handshake), decoded[8:10] = aktiver Slot LE16 | nibble |
+
+#### sub=0x4E State-Dump (5 Chunks, nibble-encoded) — GELÖST 2026-03-24
+
+Decoded Header (verifiziert via Captures 084047=Slot13/04-B, 084156=Slot0/01-A):
+
+```
+decoded[0]     0x07              Konstante
+decoded[1]     0x10              Konstante
+decoded[2]     0x48              Konstante
+decoded[3:5]   0x00 0x00         Konstante
+decoded[5]     0x06              Konstante
+decoded[6:8]   LE16 = 1          Konstante (nicht der Slot!)
+decoded[8:10]  LE16              AKTUELLER SLOT (0-255)
+decoded[10]    0x06              Konstante
+```
+
+**WICHTIG:** `decoded[6:8]` ist NICHT der Slot (ist konstant 1). Der Slot ist bei `decoded[8:10]`.
+`byte[10]` im raw SysEx-Chunk ist ebenfalls NICHT der Slot (konstant 0x06/0x09).
 
 #### sub=0x08 (30 Bytes, raw) — Preset Change / FX State (KRITISCH)
 

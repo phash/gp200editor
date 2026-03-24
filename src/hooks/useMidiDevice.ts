@@ -146,6 +146,7 @@ export function useMidiDevice(): UseMidiDeviceReturn {
   const presetNamesRef     = useRef<(string | null)[]>(new Array(256).fill(null));
   const currentSlotRef     = useRef<number | null>(null);
   const namesLoadAbortRef  = useRef<boolean>(false);
+  const namesLoadRunningRef = useRef<boolean>(false);
 
   // Callback for device-initiated changes (slot switch → full re-pull)
   const onDeviceChangeRef = useRef<((slot: number | null) => void) | null>(null);
@@ -339,6 +340,7 @@ export function useMidiDevice(): UseMidiDeviceReturn {
 
   const disconnect = useCallback(() => {
     namesLoadAbortRef.current = true;
+    namesLoadRunningRef.current = false;
     if (inputRef.current) inputRef.current.onmidimessage = null;
     outputRef.current = null;
     inputRef.current  = null;
@@ -351,7 +353,19 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     setAssignments([]);
   }, []);
 
-  const pullPreset = useCallback((slot: number): Promise<GP200Preset> => {
+  /** Abort background name loading and wait for it to stop */
+  const pauseNameLoading = useCallback(async () => {
+    if (namesLoadRunningRef.current) {
+      namesLoadAbortRef.current = true;
+      // Wait for the running loop to finish (max ~600ms for one in-flight request)
+      for (let i = 0; i < 20 && namesLoadRunningRef.current; i++) {
+        await new Promise(r => setTimeout(r, 50));
+      }
+    }
+  }, []);
+
+  const pullPreset = useCallback(async (slot: number): Promise<GP200Preset> => {
+    await pauseNameLoading();
     return new Promise((resolve, reject) => {
       if (!outputRef.current || !inputRef.current) {
         reject(new Error('Not connected'));
@@ -380,7 +394,6 @@ export function useMidiDevice(): UseMidiDeviceReturn {
             const data = getBytes(event.data);
             console.log('[GP-200] pull rx:', Array.from(data).map(b => b.toString(16).padStart(2,'0')).join(' '));
             onMidiMessage(event);
-            // data[10] is the device's current slot, NOT the requested slot
             if (isSysEx(data, 0x12, 0x18)) {
               chunks.push(data);
               if (chunks.length === 7) {
@@ -400,9 +413,10 @@ export function useMidiDevice(): UseMidiDeviceReturn {
 
       tryRequest();
     });
-  }, [onMidiMessage]);
+  }, [onMidiMessage, pauseNameLoading]);
 
   const pushPreset = useCallback(async (preset: GP200Preset, slot: number): Promise<void> => {
+    await pauseNameLoading();
     if (!outputRef.current) throw new Error('Not connected');
     console.log(`[GP-200] push: slot=${slot} (${SysExCodec.slotToLabel(slot)}) name="${preset.patchName}"`);
 
@@ -429,7 +443,7 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     setCurrentSlot(slot); currentSlotRef.current = slot;
 
     console.log('[GP-200] push complete');
-  }, []);
+  }, [pauseNameLoading]);
 
   const saveToSlot = useCallback(async (presetName: string, slot?: number): Promise<void> => {
     if (!outputRef.current) return;
@@ -446,6 +460,7 @@ export function useMidiDevice(): UseMidiDeviceReturn {
   }, []);
 
   const writePresetToSlot = useCallback(async (preset: GP200Preset, slot: number): Promise<void> => {
+    await pauseNameLoading();
     if (!outputRef.current) throw new Error('Not connected');
     const output = outputRef.current;
     const label = SysExCodec.slotToLabel(slot);
@@ -484,10 +499,12 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     presetNamesRef.current[slot] = preset.patchName;
     setPresetNames([...presetNamesRef.current]);
     setCurrentSlot(slot); currentSlotRef.current = slot;
-  }, []);
+  }, [pauseNameLoading]);
 
   const loadPresetNames = useCallback(async (): Promise<void> => {
     if (!outputRef.current || !inputRef.current) return;
+    if (namesLoadRunningRef.current) return; // already running
+    namesLoadRunningRef.current = true;
     namesLoadAbortRef.current = false;
     const NAME_TIMEOUT = 500; // 500ms per slot (device responds in ~20ms normally)
     const BATCH_SIZE = 8;     // Update UI every 8 slots instead of every slot
@@ -531,6 +548,7 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     // Final flush in case we stopped mid-batch
     setPresetNames([...presetNamesRef.current]);
     if (inputRef.current) inputRef.current.onmidimessage = onMidiMessage;
+    namesLoadRunningRef.current = false;
   }, [onMidiMessage]);
 
   const sendEffectChange = useCallback((blockIndex: number, effectId: number) => {
