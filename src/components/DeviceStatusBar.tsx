@@ -44,9 +44,9 @@ export function DeviceStatusBar({
     '#555';
 
   const slotLabel = currentSlot !== null ? SysExCodec.slotToLabel(currentSlot) : '—';
-  const slotName  = currentSlot !== null && midiDevice.presetNames[currentSlot]
-    ? ` »${midiDevice.presetNames[currentSlot]}«`
-    : currentPresetName ? ` »${currentPresetName}«` : '';
+  // currentPresetName (from editor) takes priority over cached presetNames (from loadPresetNames)
+  const displayName = currentPresetName || (currentSlot !== null ? midiDevice.presetNames[currentSlot] : null);
+  const slotName = displayName ? ` »${displayName}«` : '';
 
   return (
     <div
