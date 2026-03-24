@@ -26,7 +26,8 @@ export async function POST(request: NextRequest) {
     where: isEmail ? { email: login } : { username: login },
   });
   if (!user) {
-    // Same message regardless — no user enumeration
+    // Dummy verify to normalize timing — prevents user enumeration via response time
+    await verify('$argon2id$v=19$m=19456,t=2,p=1$dummy000000000000000000$0000000000000000000000000000000000000000000', password).catch(() => {});
     return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
   }
 

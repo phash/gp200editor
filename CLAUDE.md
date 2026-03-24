@@ -127,11 +127,12 @@ src/
 │   ├── PRSTEncoder.ts       # GP200Preset → .prst (1224 Bytes, echtes Format)
 │   ├── effectNames.ts       # 305 Effekt-ID→Name Mappings + MODULE_COLORS (aus algorithm.xml)
 │   ├── effectParams.ts      # Parameter-Definitionen pro Effekt (Knob/Slider/Switch/Combox)
+│   ├── effectDescriptions.ts # 255 Effekt→Beschreibung Mappings (original Pedal/Amp Names)
 │   └── HLXConverter.ts      # Line6 HX Stomp .hlx (JSON) → GP200Preset Konvertierung
 │
 ├── hooks/
 │   ├── usePreset.ts         # React-State: loadPreset, setPatchName, toggleEffect,
-│   │                        #   changeEffect, reorderEffects, setParam, reset
+│   │                        #   changeEffect (applies default params), reorderEffects, setParam, reset
 │   └── useTimelinePlayer.ts # rAF-basierter Timer für Playlist Cue Points
 │
 ├── components/

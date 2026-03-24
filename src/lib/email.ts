@@ -1,5 +1,14 @@
 import nodemailer from 'nodemailer';
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
 function getTransporter() {
   const host = process.env.MAIL_HOST ?? process.env.EMAIL_SMTP_HOST;
   const port = Number(process.env.MAIL_PORT ?? process.env.EMAIL_SMTP_PORT ?? 1025);
@@ -11,6 +20,7 @@ function getTransporter() {
     port,
     secure: port === 465,
     auth: user ? { user, pass } : undefined,
+    tls: { rejectUnauthorized: false },
   });
 }
 
@@ -62,8 +72,8 @@ export async function sendWarningEmail(
     subject: 'Warning — Preset Forge',
     html: `
       <p>You have received a warning from the Preset Forge moderation team.</p>
-      <p><strong>Reason:</strong> ${reason}</p>
-      ${message ? `<p><strong>Details:</strong> ${message}</p>` : ''}
+      <p><strong>Reason:</strong> ${escapeHtml(reason)}</p>
+      ${message ? `<p><strong>Details:</strong> ${escapeHtml(message)}</p>` : ''}
       <p>Please review your content and ensure it complies with our community guidelines.
       Continued violations may result in account suspension.</p>
     `,
