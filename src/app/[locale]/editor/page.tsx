@@ -1066,6 +1066,8 @@ export default function EditorPage() {
           </Link>
         )}
 
+        {/* IR/NAM upload buttons removed — see issue #62 for protocol details */}
+
         {isLoggedIn ? (
           <>
             {/* Update button — only if loaded from gallery AND user owns it */}
