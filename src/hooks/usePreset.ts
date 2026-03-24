@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import type { GP200Preset } from '@/core/types';
+import { getEffectParams } from '@/core/effectParams';
 
 interface PresetActions {
   preset: GP200Preset | null;
@@ -47,9 +48,18 @@ export function usePreset(): PresetActions {
       if (!prev) return null;
       return {
         ...prev,
-        effects: prev.effects.map((slot) =>
-          slot.slotIndex === slotIndex ? { ...slot, effectId } : slot
-        ),
+        effects: prev.effects.map((slot) => {
+          if (slot.slotIndex !== slotIndex) return slot;
+          // Apply default param values from effectParams definitions
+          const paramDefs = getEffectParams(effectId);
+          const params = [...slot.params];
+          for (const def of paramDefs) {
+            if (def.idx >= 0 && def.idx < params.length) {
+              params[def.idx] = def.default;
+            }
+          }
+          return { ...slot, effectId, params };
+        }),
       };
     });
   }, []);
