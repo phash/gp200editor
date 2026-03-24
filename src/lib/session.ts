@@ -13,7 +13,13 @@ export async function validateSession(): Promise<SessionResult> {
   const cookieStore = await cookies();
   const sessionId = cookieStore.get(lucia.sessionCookieName)?.value ?? null;
   if (!sessionId) return { user: null, session: null };
-  return lucia.validateSession(sessionId);
+  const result = await lucia.validateSession(sessionId);
+  // Block suspended users — invalidate their session immediately
+  if (result.user?.suspended) {
+    await lucia.invalidateSession(sessionId).catch(() => {});
+    return { user: null, session: null };
+  }
+  return result;
 }
 
 /**

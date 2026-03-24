@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateSession } from '@/lib/session';
+import { verifyCsrf } from '@/lib/csrf';
 import { prisma } from '@/lib/prisma';
 import { ratePresetSchema } from '@/lib/validators';
 
@@ -7,6 +8,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (!verifyCsrf(request)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   const { user } = await validateSession();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

@@ -3,14 +3,29 @@ export function verifyCsrf(request: Request): boolean {
   const referer = request.headers.get('referer');
   const host = request.headers.get('host');
 
-  // Require at least one of origin/referer for state-changing requests.
-  // Browsers always send at least one; absence means a non-standard client
-  // or privacy proxy. Combined with SameSite=Lax cookies this blocks cross-site POSTs.
   if (!origin && !referer) return false;
 
-  const allowed = host ? [host, `https://${host}`, `http://${host}`] : [];
-  if (process.env.NEXT_PUBLIC_APP_URL) allowed.push(process.env.NEXT_PUBLIC_APP_URL);
-  if (origin && allowed.some(a => origin.startsWith(a.replace(/\/$/, '')))) return true;
-  if (referer && allowed.some(a => referer.startsWith(a.replace(/\/$/, '')))) return true;
+  const allowedOrigins = new Set<string>();
+  if (host) {
+    allowedOrigins.add(`https://${host}`);
+    allowedOrigins.add(`http://${host}`);
+  }
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    allowedOrigins.add(process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, ''));
+  }
+
+  // Exact origin match — prevents bypass via preset-forge.com.evil.com
+  if (origin && allowedOrigins.has(origin)) return true;
+
+  // For referer, extract origin portion only
+  if (referer) {
+    try {
+      const refererOrigin = new URL(referer).origin;
+      if (allowedOrigins.has(refererOrigin)) return true;
+    } catch {
+      return false;
+    }
+  }
+
   return false;
 }

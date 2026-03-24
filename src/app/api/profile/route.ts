@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { validateSession, refreshSessionCookie } from '@/lib/session';
+import { verifyCsrf } from '@/lib/csrf';
 import { patchProfileSchema } from '@/lib/validators';
 
 function toResponse(user: {
@@ -37,6 +38,7 @@ export async function GET() {
 }
 
 export async function PATCH(request: NextRequest) {
+  if (!verifyCsrf(request)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   const { user, session } = await validateSession();
   if (!user || !session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
