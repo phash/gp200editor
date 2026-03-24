@@ -434,7 +434,7 @@ describe('SysExCodec: handshake parsers', () => {
     expect(SysExCodec.parseVersionResponse(msg)).toEqual({ accepted: true });
   });
 
-  it('parseVersionResponse: non-zero nibble data → not accepted', () => {
+  it('parseVersionResponse: non-zero nibble data → still accepted (any response = compatible)', () => {
     const msg = new Uint8Array([
       0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32,
       0x12, 0x0A,
@@ -442,7 +442,7 @@ describe('SysExCodec: handshake parsers', () => {
       0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0xF7,
     ]);
-    expect(SysExCodec.parseVersionResponse(msg)).toEqual({ accepted: false });
+    expect(SysExCodec.parseVersionResponse(msg)).toEqual({ accepted: true });
   });
 
   it('parseAssignmentResponse extracts cab name from capture block 0', () => {

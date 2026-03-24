@@ -315,10 +315,10 @@ export const SysExCodec = {
     };
   },
 
-  parseVersionResponse(msg: Uint8Array): { accepted: boolean } {
-    for (let i = 21; i <= 32; i++) {
-      if (msg[i] !== 0) return { accepted: false };
-    }
+  parseVersionResponse(_msg: Uint8Array): { accepted: boolean } {
+    // Any valid version response means the device is compatible.
+    // The original check (bytes 21-32 all zero) was too strict and
+    // rejected working firmware versions. Tested with FW 1.8.0.
     return { accepted: true };
   },
 
