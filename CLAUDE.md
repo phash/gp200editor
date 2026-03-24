@@ -21,7 +21,7 @@ Live USB-MIDI Editing, Preset-Galerie, Community-Sharing.
 ```bash
 npm install --legacy-peer-deps   # legacy-peer-deps wegen lokaler npm-Version (11.x vs lock-file)
 npm run dev                      # http://localhost:3000
-npm run test                     # Vitest Unit-Tests (293 Tests)
+npm run test                     # Vitest Unit-Tests (312 Tests)
 npm run test:e2e                 # Playwright E2E (App muss laufen + Garage + DB)
 npm run build                    # Production Build
 ```
@@ -143,6 +143,8 @@ src/
 │   ├── CuePointTable.tsx     # Timeline-Tabelle für Playlist Cue Points (device slot-basiert)
 │   ├── AdminDashboard.tsx    # Admin-Dashboard: Users/Presets/Errors/Audit-Log Tabs
 │   ├── AdminActions.tsx      # Kontextuelle Admin-Buttons (Profil, Galerie)
+│   ├── AmpHeadPanel.tsx       # AMP-Block Knobs (Gain/Presence/Volume/Bass/Middle/Treble)
+│   │                        #   prominent am Editor-Top, auto-detects AMP-Modell
 │   ├── ControllerPanel.tsx    # EXP 1/2 Assignment-Panel (Param-Select + Min/Max)
 │   ├── ConfirmDialog.tsx     # Bestätigungs-Dialog für destruktive Aktionen
 │   ├── WarnDialog.tsx        # Warnung-Dialog (Grund + Nachricht per E-Mail)
@@ -162,7 +164,8 @@ src/
 ├── app/[locale]/
 │   ├── layout.tsx            # NextIntlClientProvider, Navbar, Footer
 │   ├── page.tsx              # Home-Seite
-│   ├── editor/page.tsx       # Editor: FileUpload + 11x EffectSlot + Drag & Drop
+│   ├── editor/page.tsx       # Editor: AmpHead + FileUpload + 11x EffectSlot + Drag & Drop
+│   │                        #   Collapsible sections (AMP/Preset/Controller) via toggle bar
 │   ├── auth/                 # Login (Email/Username), Register, Forgot-Password, Reset-Password
 │   ├── admin/page.tsx        # Admin-Dashboard (role-gated)
 │   ├── profile/              # Eigenes Profil (edit), /[username] (read-only + Admin-Actions)
@@ -418,9 +421,11 @@ Das GP-200 ist USB-MIDI class-compliant. Die offizielle Valeton-Software kommuni
 ### Status
 
 - **Issue #5** (Sniffing): SysEx-Protokoll reverse-engineered ✓ (14 Message-Typen, 10 Captures)
-- **Issue #6** (Feature): Web MIDI implementiert ✓ — Pull, Push, **Live-Editing (Toggle, Param, Reorder) hardware-verifiziert**
+- **Issue #6** (Feature): Web MIDI implementiert ✓ — Pull, Push, **Live-Editing (Toggle, Param, Reorder, Knob-Notifications) hardware-verifiziert**
 - Dateien: `src/core/SysExCodec.ts`, `src/hooks/useMidiDevice.ts`, `src/components/DeviceStatusBar.tsx`, `src/components/DeviceSlotBrowser.tsx`
 - **Auto-Reconnect:** `useMidiDevice` versucht bei Disconnect automatisch 3× neu zu verbinden
+- **Auto-Load:** Nach Connect werden automatisch alle 256 Preset-Namen im Hintergrund geladen
+- **Operation Serialization:** `pauseNameLoading()` unterbricht Name-Loader vor Pull/Push/Write-Operationen
 
 ### Hardware-Testing (Web MIDI)
 
@@ -540,11 +545,15 @@ decoded[10]    0x06              Konstante
 
 | data[14] | Typ | Beschreibung |
 |----------|-----|-------------|
-| 0x08 | Preset-Change | data[26] = Slot-Nummer (0-255). H→D: Slot wechseln. D→H: Echo/Bestätigung |
+| 0x08 | Preset-Change | data[25:26] = Slot nibble-encoded (slots>127). H→D: Slot wechseln. D→H: Echo/Bestätigung |
 | 0x01, 0x05 | FX-State-Response | data[22] = Block-ID (0-10), data[24] = State (0=OFF, 1=ON) |
 
 **WICHTIG:** Nicht alle sub=0x08 als Slot-Wechsel behandeln! FX-State-Responses haben zufällige
 Werte an data[26] — wenn man die als Slot interpretiert, werden falsche Presets geladen.
+
+**Slot-Encoding:** Slots > 127 müssen nibble-encoded werden (SysEx data bytes 0-127).
+`data[25]` = high nibble, `data[26]` = low nibble. Slot 252 (64-A) → `[0x0F, 0x0C]`.
+Decode: `(data[25] << 4) | data[26]`. Verifiziert mit Slot 13 (04-B) → `[0x00, 0x0D]`.
 
 **FX-State-Response (D→H):** Wird gesendet wenn Effekte am Gerät getoggelt werden.
 - Device-READ liefert nur **gespeicherte** Daten, nicht den Live-Editing-Buffer
@@ -803,6 +812,14 @@ Impulse-Response Dateien werden als Multi-Chunk Transfer über sub=0x1C gesendet
 | 104836 | 22M | Edit Info: Author "Manuel R", Style "Gnorki", Note "Das ist ein Note" |
 | 105520 | 22M | Drum-Computer: BPM ändern, Pattern wechseln, Play/Stop |
 | 105713 | 27KB | IR Upload (Timeout — 23 Chunks gesendet, keine Antwort) |
+
+#### Captures (Windows, 2026-03-24)
+
+| Datei | Bytes | Inhalt |
+|-------|-------|--------|
+| 084047 | — | State-Dump Slot 13 (04-B), Knob-Notification Verifizierung |
+| 084156 | — | State-Dump Slot 0 (01-A), Baseline |
+| 085205 | — | D→H Knob-Notifications: AMP alle 6 Knobs + VOL, je 0→100→~50 |
 
 #### Weitere Infos
 
