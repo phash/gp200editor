@@ -95,11 +95,9 @@ export function ControllerPanel({ preset, connected, onParamSelect, onMinMax }: 
     });
   }, [onMinMax]);
 
-  if (!connected) return null;
-
   return (
     <div className="rounded-lg mb-4"
-      style={{ border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)' }}>
+      style={{ border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)', opacity: connected ? 1 : 0.5 }}>
       {/* Header / collapse toggle */}
       <button
         onClick={() => setCollapsed(!collapsed)}
