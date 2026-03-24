@@ -469,11 +469,14 @@ describe('SysExCodec: handshake parsers', () => {
 });
 
 describe('SysExCodec: parseStateDump', () => {
-  it('extracts slot from decoded[6:8] LE16 (same format as read response)', () => {
-    // Slot 13 = Bank 4 Slot B (0x0D LE16 = nibbles: ...00 0D 00 00 at decoded[6:8])
-    // Nibble data for decoded[0:8] = [00 00 00 00 00 00 0D 00]:
-    //   each byte → 2 nibbles (high, low), so 16 nibble bytes
-    const nibbles = [0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0x0D, 0,0];
+  it('extracts slot from decoded[8:10] LE16 (verified via captures)', () => {
+    // Slot 13 = Bank 04-B. decoded[8]=0x0D, decoded[9]=0x00.
+    // Nibble encoding: each byte → 2 nibbles (high, low).
+    // decoded[0:10] = [07 10 48 00 00 06 01 00 0D 00] → 20 nibbles
+    const nibbles = [
+      0x00,0x07, 0x01,0x00, 0x04,0x08, 0x00,0x00, 0x00,0x00,
+      0x00,0x06, 0x00,0x01, 0x00,0x00, 0x00,0x0D, 0x00,0x00,
+    ];
     const chunk = new Uint8Array([
       0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x4E,
       0x06, 0x00, 0x00, // byte[10]=0x06, offset=0
@@ -484,8 +487,12 @@ describe('SysExCodec: parseStateDump', () => {
     expect(result.slot).toBe(13);
   });
 
-  it('returns slot 0 when decoded[6:8] is zero', () => {
-    const nibbles = new Array(16).fill(0);
+  it('returns slot 0 for slot 01-A', () => {
+    // decoded[0:10] = [07 10 48 00 00 06 01 00 00 00]
+    const nibbles = [
+      0x00,0x07, 0x01,0x00, 0x04,0x08, 0x00,0x00, 0x00,0x00,
+      0x00,0x06, 0x00,0x01, 0x00,0x00, 0x00,0x00, 0x00,0x00,
+    ];
     const chunk = new Uint8Array([
       0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x4E,
       0x06, 0x00, 0x00,

@@ -337,12 +337,13 @@ export const SysExCodec = {
   },
 
   parseStateDump(chunks: Uint8Array[]): { slot: number } {
-    // State dump uses same nibble-encoded chunk format as read responses (0x18).
-    // Decoded layout matches READ format: slot at decoded[6:8] as LE16.
+    // State dump uses same nibble-encoded chunk format as read responses.
+    // Decoded header: [0:8] constants, [8:10] current slot as LE16.
+    // Verified via captures 084047 (slot 13 = 04-B) and 084156 (slot 0 = 01-A).
     if (chunks.length === 0) return { slot: 0 };
     const decoded = this.assembleChunks(chunks);
-    if (decoded.length >= 8) {
-      const slot = decoded[6] | (decoded[7] << 8);
+    if (decoded.length >= 10) {
+      const slot = decoded[8] | (decoded[9] << 8);
       if (slot >= 0 && slot < 256) return { slot };
     }
     return { slot: 0 };

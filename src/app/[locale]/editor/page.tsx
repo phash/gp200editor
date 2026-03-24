@@ -130,25 +130,39 @@ export default function EditorPage() {
   useEffect(() => {
     if (midiDevice.status !== 'connected') return;
     let pulling = false;
-    midiDevice.setOnDeviceChange((slot) => {
+    midiDevice.setOnDeviceChange(async (slot) => {
       if (pulling || slot === null) return;
       pulling = true;
-      console.log(`[GP-200] onDeviceChange: re-pulling slot ${slot}`);
-      midiDevice.pullPreset(slot).then((fresh) => {
-        console.log(`[GP-200] pull complete: name="${fresh.patchName}" effects=`, fresh.effects.map(e => `${e.slotIndex}:${e.effectId.toString(16)}:${e.enabled?'ON':'OFF'}`));
-        loadPreset(fresh);
-        const base = bankBaseSlotRef.current;
-        if (base !== null) {
+      console.log(`[GP-200] onDeviceChange: slot ${slot} (${SysExCodec.slotToLabel(slot)})`);
+      const base = bankBaseSlotRef.current;
+      const newBankBase = Math.floor(slot / 4) * 4;
+
+      try {
+        if (base !== null && newBankBase === base) {
+          // Same bank — just pull the changed slot
+          const fresh = await midiDevice.pullPreset(slot);
+          loadPreset(fresh);
           const tabIdx = slot - base;
-          if (tabIdx >= 0 && tabIdx < 4) {
-            setBankPresets(prev => {
-              const updated = [...prev];
-              updated[tabIdx] = fresh;
-              return updated;
-            });
+          setActiveTab(tabIdx);
+          setBankPresets(prev => {
+            const updated = [...prev];
+            updated[tabIdx] = fresh;
+            return updated;
+          });
+        } else {
+          // Different bank — pull all 4 slots of the new bank
+          const pulled: (GP200Preset | null)[] = [null, null, null, null];
+          for (let i = 0; i < 4; i++) {
+            try { pulled[i] = await midiDevice.pullPreset(newBankBase + i); } catch {}
           }
+          const tabIdx = slot - newBankBase;
+          setBankPresets(pulled);
+          setBankBaseSlot(newBankBase);
+          setBankDirtySlots(new Set());
+          setActiveTab(tabIdx);
+          if (pulled[tabIdx]) loadPreset(pulled[tabIdx]);
         }
-      }).catch(() => {}).finally(() => { pulling = false; });
+      } catch {} finally { pulling = false; }
     });
     return () => midiDevice.setOnDeviceChange(null);
   // eslint-disable-next-line react-hooks/exhaustive-deps

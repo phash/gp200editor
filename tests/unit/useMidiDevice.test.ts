@@ -165,11 +165,11 @@ describe('useMidiDevice', () => {
     expect(result.current.cabIrNames).toEqual([]);
   });
 
-  it('handshake sets currentSlot from state dump decoded[6:8] LE16', async () => {
+  it('handshake sets currentSlot from state dump decoded[8:10] LE16', async () => {
     const { result } = renderHook(() => useMidiDevice());
     await act(async () => { result.current.connect(); });
     await waitFor(() => expect(result.current.status).toBe('connected'));
-    expect(result.current.currentSlot).toBe(0); // mock dump has all-zero nibble data → slot 0
+    expect(result.current.currentSlot).toBe(0); // mock state dump has all-zero nibble data → slot 0
   });
 
   it('connect sends identity query as first handshake message', async () => {

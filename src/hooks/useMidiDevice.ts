@@ -258,7 +258,7 @@ export function useMidiDevice(): UseMidiDeviceReturn {
         output.send(SysExCodec.buildEnterEditorMode());
         await new Promise(r => setTimeout(r, 100));
 
-        // Step 5-6: State dump (0x4E uses same nibble-encoded format as read responses)
+        // Step 5-6: State dump (0x4E — current slot at decoded[8:10] LE16)
         setHandshakeStep('State Dump…');
         output.send(SysExCodec.buildStateDumpRequest());
         const dumpChunks = await collectChunks(input, 0x12, 0x4E, 5, READ_TIMEOUT_MS, onMidiMessage);
@@ -302,7 +302,7 @@ export function useMidiDevice(): UseMidiDeviceReturn {
         }
         setAssignments(assignmentEntries);
 
-        // Step 10: Pull current preset + bank (4 slots) via normal read
+        // Step 10: Pull current bank (4 slots)
         const bankBase = Math.floor(slot / 4) * 4;
         const bankPresets: (GP200Preset | null)[] = [null, null, null, null];
         for (let i = 0; i < 4; i++) {
@@ -316,7 +316,6 @@ export function useMidiDevice(): UseMidiDeviceReturn {
             bankPresets[i] = p;
             setHandshakeStep(`Slot ${label} · ${p.patchName}`);
             if (s === slot) setCurrentPreset(p);
-            // Cache the name
             presetNamesRef.current[s] = p.patchName;
           } catch {
             setHandshakeStep(`Slot ${label} · –`);
