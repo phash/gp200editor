@@ -59,6 +59,7 @@ export interface UseMidiDeviceReturn {
   setOnDeviceChange: (cb: ((slot: number | null) => void) | null) => void;
   setOnDeviceToggle: (cb: ((blockIndex: number, enabled: boolean) => void) | null) => void;
   setOnDeviceEffectChange: (cb: ((blockIndex: number, effectId: number) => void) | null) => void;
+  setOnDeviceParamChange: (cb: ((blockIndex: number, paramIndex: number, value: number) => void) | null) => void;
 }
 
 // Minimal shape we actually use — avoids conflicts with DOM's MIDIInput / MIDIOutput
@@ -154,6 +155,8 @@ export function useMidiDevice(): UseMidiDeviceReturn {
   const onDeviceToggleRef = useRef<((blockIndex: number, enabled: boolean) => void) | null>(null);
   // Callback for device-initiated effect type changes (e.g. Green OD → Penesas)
   const onDeviceEffectChangeRef = useRef<((blockIndex: number, effectId: number) => void) | null>(null);
+  // Callback for device-initiated param changes (hardware knob turns)
+  const onDeviceParamChangeRef = useRef<((blockIndex: number, paramIndex: number, value: number) => void) | null>(null);
   // Suppress FX state toggles when we're actively sending commands (responses are echoes, not hardware changes)
   const suppressFxStateRef = useRef(false);
   const suppressFxStateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -199,13 +202,30 @@ export function useMidiDevice(): UseMidiDeviceReturn {
       if (suppressFxStateTimer.current) clearTimeout(suppressFxStateTimer.current);
       suppressFxStateTimer.current = setTimeout(() => { suppressFxStateRef.current = false; }, 500);
     }
-    // sub=0x10 D→H: toggle response (device-initiated, e.g. initial state on slot switch)
-    if (isSysEx(data, 0x12, 0x10) && data.length >= 42) {
-      const blockId = data[38];
-      const state = data[40];
-      if (blockId >= 0 && blockId <= 10) {
-        console.log(`[GP-200] device toggle: block=${blockId} state=${state}`);
-        onDeviceToggleRef.current?.(blockId, state !== 0);
+    // sub=0x10 D→H: toggle OR knob notification (46 bytes)
+    // Discriminator: bytes[29:37] all zeros = knob notification, otherwise = toggle
+    if (isSysEx(data, 0x12, 0x10) && data.length >= 45) {
+      const isKnob = data[29] === 0 && data[30] === 0 && data[31] === 0 && data[32] === 0 &&
+                     data[33] === 0 && data[34] === 0 && data[35] === 0 && data[36] === 0;
+      if (isKnob) {
+        // Knob notification: block at [22], param at [24], nibble float32 at [37:45]
+        const blockId = data[22];
+        const paramIdx = data[24];
+        const hi0 = data[37], lo0 = data[38], hi1 = data[39], lo1 = data[40];
+        const hi2 = data[41], lo2 = data[42], hi3 = data[43], lo3 = data[44];
+        const buf = new Uint8Array([(hi0 << 4) | lo0, (hi1 << 4) | lo1, (hi2 << 4) | lo2, (hi3 << 4) | lo3]);
+        const value = new DataView(buf.buffer).getFloat32(0, true);
+        if (blockId >= 0 && blockId <= 10) {
+          onDeviceParamChangeRef.current?.(blockId, paramIdx, value);
+        }
+      } else {
+        // Toggle notification: block at [38], state at [40]
+        const blockId = data[38];
+        const state = data[40];
+        if (blockId >= 0 && blockId <= 10) {
+          console.log(`[GP-200] device toggle: block=${blockId} state=${state}`);
+          onDeviceToggleRef.current?.(blockId, state !== 0);
+        }
       }
     }
   }, []);
@@ -702,5 +722,6 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     setOnDeviceChange: (cb: ((slot: number | null) => void) | null) => { onDeviceChangeRef.current = cb; },
     setOnDeviceToggle: (cb: ((blockIndex: number, enabled: boolean) => void) | null) => { onDeviceToggleRef.current = cb; },
     setOnDeviceEffectChange: (cb: ((blockIndex: number, effectId: number) => void) | null) => { onDeviceEffectChangeRef.current = cb; },
+    setOnDeviceParamChange: (cb: ((blockIndex: number, paramIndex: number, value: number) => void) | null) => { onDeviceParamChangeRef.current = cb; },
   };
 }

@@ -190,6 +190,16 @@ export default function EditorPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [midiDevice.status]);
 
+  // Direct param change from hardware knob turns (sub=0x10 with zeros at [29:37])
+  useEffect(() => {
+    if (midiDevice.status !== 'connected') return;
+    midiDevice.setOnDeviceParamChange((blockIndex, paramIndex, value) => {
+      setParam(blockIndex, paramIndex, value);
+    });
+    return () => midiDevice.setOnDeviceParamChange(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [midiDevice.status]);
+
   // Auto-start background loading of all preset names after connection
   useEffect(() => {
     if (midiDevice.status === 'connected' && midiDevice.namesLoadProgress < 256) {

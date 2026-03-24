@@ -210,4 +210,70 @@ describe('useMidiDevice', () => {
     // Clean up by aborting the pull (no chunks sent)
     pullPromise!.catch(() => {}); // ignore timeout error
   });
+
+  it('dispatches onDeviceParamChange for knob notifications (sub=0x10, zeros at [29:37])', async () => {
+    const { result } = renderHook(() => useMidiDevice());
+    await act(async () => { result.current.connect(); });
+    await waitFor(() => expect(result.current.status).toBe('connected'));
+
+    const paramChanges: { block: number; param: number; value: number }[] = [];
+    act(() => {
+      result.current.setOnDeviceParamChange((block, param, value) => {
+        paramChanges.push({ block, param, value });
+      });
+    });
+
+    // AMP Gain = 100.0 → float32 LE = 00 00 C8 42
+    // Nibble-encoded at [37:45]: 00 00 00 00 0C 08 04 02
+    // Real capture: F0 21 25 7E 47 50 2D 32 12 10 00 00 00 00 05 00
+    //              00 00 0C 00 00 00 03 00 00 02 00 00 00 00 00 00
+    //              00 00 00 00 00 00 00 00 00 0C 08 04 02 F7
+    const knobMsg = new Uint8Array([
+      0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x10, // [0-9]
+      0x00, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00, 0x0C, 0x00, // [10-19]
+      0x00, 0x00, 0x03, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00,       // [20-28]
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,             // [29-36] zeros
+      0x00, 0x00, 0x00, 0x00, 0x0C, 0x08, 0x04, 0x02,             // [37-44] nibble float
+      0xF7,                                                         // [45]
+    ]);
+    act(() => { mockMidi.emit(knobMsg); });
+
+    expect(paramChanges).toHaveLength(1);
+    expect(paramChanges[0].block).toBe(3);
+    expect(paramChanges[0].param).toBe(0);
+    expect(paramChanges[0].value).toBeCloseTo(100.0, 1);
+  });
+
+  it('dispatches onDeviceToggle for toggle notifications (sub=0x10, non-zero [29:37])', async () => {
+    const { result } = renderHook(() => useMidiDevice());
+    await act(async () => { result.current.connect(); });
+    await waitFor(() => expect(result.current.status).toBe('connected'));
+
+    const toggles: { block: number; enabled: boolean }[] = [];
+    act(() => {
+      result.current.setOnDeviceToggle((block, enabled) => {
+        toggles.push({ block, enabled });
+      });
+    });
+
+    // Toggle notification: non-zero at [29:37], block at [38], state at [40]
+    // 46 bytes total
+    const toggleMsg = new Uint8Array([
+      0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x10, // [0-9]
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00, // [10-19]
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,       // [20-28]
+      0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,             // [29-36] NOT all zeros
+      0x00,                                                         // [37]
+      0x07,                                                         // [38] block 7 (MOD)
+      0x00,                                                         // [39]
+      0x01,                                                         // [40] state ON
+      0x09, 0x0C, 0x00, 0x00,                                      // [41-44]
+      0xF7,                                                         // [45]
+    ]);
+    act(() => { mockMidi.emit(toggleMsg); });
+
+    expect(toggles).toHaveLength(1);
+    expect(toggles[0].block).toBe(7);
+    expect(toggles[0].enabled).toBe(true);
+  });
 });

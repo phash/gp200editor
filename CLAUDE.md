@@ -374,7 +374,7 @@ LE uint16 → **Algorithmus gelöst (2026-03-18):** `sum(bytes[0:0x4C6]) & 0xFFF
 ## Tests
 
 ```bash
-npm run test              # 310 Unit-Tests (Vitest)
+npm run test              # 312 Unit-Tests (Vitest)
 npm run test:coverage     # Coverage-Report
 npm run test:e2e          # Playwright E2E (App + Garage + DB erforderlich)
 ```
@@ -619,6 +619,25 @@ PAN-Encoding: Center ≈ 0/255 Grenze. Links: Wert zählt von 255 runter, `raw[4
 Rechts: Wert zählt von 1 hoch, `raw[43:45]=0x00 0x00`.
 
 Verifiziert (2026-03-23) mit Capture lautstärke-pan-beats.pcap: VOL 0→100, PAN full sweep, Tempo 110-120.
+
+#### sub=0x10 D→H Knob-Notification (46 Bytes, raw) — DEKODIERT 2026-03-24
+
+Wenn am Gerät ein Knob gedreht wird, sendet das GP-200 eine sub=0x10 Nachricht (gleicher Sub wie Toggle).
+
+**Diskriminator:** `bytes[29:37]` = alle Null → Knob, sonst → Toggle.
+
+```
+[22]     Block-Index               0=PRE..3=AMP..10=VOL
+[24]     Param-Index               0-14 (siehe effectParams.ts)
+[29:37]  Alles Nullen              Diskriminator (Knob vs Toggle)
+[37:45]  Nibble-encoded float32    nibbleDecode([37:45]) → float32 LE (0.0–100.0)
+```
+
+**AMP-Knobs (Block=3):** Param 0=Gain, 1=Presence, 2=Volume, 3=Bass, 4=Middle, 5=Treble.
+
+**WICHTIG:** Enthält KEINE Effect-ID — Host muss tracken welcher Effekt im Block geladen ist.
+
+Verifiziert (2026-03-24) mit Capture 085205: alle 6 AMP-Knobs + VOL, je 0→100→~50.
 
 #### Parameter-Change (sub=0x18, 62 Bytes, nibble-encoded)
 
