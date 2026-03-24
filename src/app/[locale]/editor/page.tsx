@@ -15,6 +15,7 @@ import { DeviceSlotBrowser } from '@/components/DeviceSlotBrowser';
 import { FirmwareCompatDialog } from '@/components/FirmwareCompatDialog';
 import { PatchSettingsCard } from '@/components/PatchSettingsCard';
 import { ControllerPanel } from '@/components/ControllerPanel';
+import { AmpHeadPanel } from '@/components/AmpHeadPanel';
 import { HelpButton } from '@/components/HelpButton';
 // Firmware compat now uses version check (sub=0x0A) result, not version string matching
 import { SavePresetDialog } from '@/components/SavePresetDialog';
@@ -599,117 +600,130 @@ export default function EditorPage() {
         </div>
       )}
 
-      {/* Header with patch name + author + slot */}
-      <div className="flex items-center gap-4 mb-4 flex-wrap">
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <HelpButton section="editor" />
-          <span className="font-mono-display text-sm font-bold tracking-tight flex-shrink-0"
-            style={{ color: 'var(--text-muted)' }}>
-            {t('patchName')}:
-          </span>
-          <input
-            id="patch-name"
-            type="text"
-            value={preset.patchName}
-            onChange={(e) => setPatchName(e.target.value)}
-            maxLength={16}
-            data-testid="patch-name-input"
-            className="font-mono-display text-xl font-bold tracking-tight bg-transparent border-none outline-none min-w-0 flex-1"
-            style={{ color: 'var(--accent-amber)' }}
-          />
-        </div>
-        {bankBaseSlot !== null && (
-          <span className="font-mono-display text-sm flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
-            {t('slot')}: <strong style={{ color: 'var(--accent-amber)' }}>{SysExCodec.slotToLabel(bankBaseSlot + activeTab)}</strong>
-          </span>
-        )}
-      </div>
-      {/* Author + Style + Note */}
-      <div className="flex items-center gap-6 mb-4 flex-wrap">
-        <div className="flex items-center gap-2">
-          <span className="font-mono-display text-[11px] font-medium tracking-wider uppercase flex-shrink-0"
-            style={{ color: 'var(--text-muted)' }}>
-            {t('author')}:
-          </span>
-          <input
-            type="text"
-            value={preset.author ?? ''}
-            onChange={(e) => {
-              setAuthor(e.target.value);
-              if (midiDevice.status === 'connected') {
-                midiDevice.sendAuthor(e.target.value);
-              }
-            }}
-            maxLength={16}
-            placeholder={username || '—'}
-            data-testid="author-input"
-            className="font-mono-display text-sm bg-transparent border-none outline-none"
-            style={{ color: 'var(--text-secondary)' }}
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="font-mono-display text-[11px] font-medium tracking-wider uppercase flex-shrink-0"
-            style={{ color: 'var(--text-muted)' }}>
-            {t('styleLabel')}:
-          </span>
-          <select
-            value={PRESET_STYLES.includes(presetStyle) ? presetStyle : presetStyle ? '__custom__' : ''}
-            onChange={(e) => {
-              const val = e.target.value === '__custom__' ? '' : e.target.value;
-              setPresetStyle(val);
-              if (val && midiDevice.status === 'connected') {
-                midiDevice.sendStyleName(val);
-              }
-            }}
-            className="font-mono-display text-sm bg-transparent border-none outline-none cursor-pointer"
-            style={{ color: 'var(--text-secondary)' }}
-          >
-            <option value="">—</option>
-            {PRESET_STYLES.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-            <option value="__custom__">{t('customStyle')}</option>
-          </select>
-          {!PRESET_STYLES.includes(presetStyle) && presetStyle && (
+      {/* AMP Head Panel — Volume/Gain/Presence + Bass/Middle/Treble */}
+      <AmpHeadPanel
+        preset={preset}
+        onParamChange={(slotIndex, paramIndex, value) => {
+          setParam(slotIndex, paramIndex, value);
+          if (midiDevice.status === 'connected') {
+            const eff = preset.effects.find(e => e.slotIndex === slotIndex);
+            if (eff) midiDevice.sendParamChange(slotIndex, paramIndex, eff.effectId, value);
+          }
+        }}
+      />
+
+      {/* Two-column: Preset Info (left) + Patch Settings (right) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        {/* Left: Preset Info */}
+        <div className="rounded-xl p-4 flex flex-col gap-3"
+          style={{ border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)' }}>
+          {/* Slot + Preset Name */}
+          <div className="flex items-center gap-2">
+            {bankBaseSlot !== null && (
+              <span className="font-mono-display text-sm font-bold flex-shrink-0"
+                style={{ color: 'var(--text-muted)' }}>
+                {SysExCodec.slotToLabel(bankBaseSlot + activeTab)}
+              </span>
+            )}
+            <HelpButton section="editor" />
+            <input
+              id="patch-name"
+              type="text"
+              value={preset.patchName}
+              onChange={(e) => setPatchName(e.target.value)}
+              maxLength={16}
+              data-testid="patch-name-input"
+              className="font-mono-display text-lg font-bold tracking-tight bg-transparent border-none outline-none min-w-0 flex-1"
+              style={{ color: 'var(--accent-amber)' }}
+            />
+          </div>
+          {/* Author + Style */}
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2 flex-1 min-w-[120px]">
+              <span className="font-mono-display text-[10px] font-medium tracking-wider uppercase flex-shrink-0"
+                style={{ color: 'var(--text-muted)' }}>
+                {t('author')}:
+              </span>
+              <input
+                type="text"
+                value={preset.author ?? ''}
+                onChange={(e) => {
+                  setAuthor(e.target.value);
+                  if (midiDevice.status === 'connected') {
+                    midiDevice.sendAuthor(e.target.value);
+                  }
+                }}
+                maxLength={16}
+                placeholder={username || '—'}
+                data-testid="author-input"
+                className="font-mono-display text-sm bg-transparent border-none outline-none min-w-0 flex-1"
+                style={{ color: 'var(--text-secondary)' }}
+              />
+            </div>
+            <div className="flex items-center gap-2 flex-1 min-w-[120px]">
+              <span className="font-mono-display text-[10px] font-medium tracking-wider uppercase flex-shrink-0"
+                style={{ color: 'var(--text-muted)' }}>
+                {t('styleLabel')}:
+              </span>
+              <select
+                value={PRESET_STYLES.includes(presetStyle) ? presetStyle : presetStyle ? '__custom__' : ''}
+                onChange={(e) => {
+                  const val = e.target.value === '__custom__' ? '' : e.target.value;
+                  setPresetStyle(val);
+                  if (val && midiDevice.status === 'connected') {
+                    midiDevice.sendStyleName(val);
+                  }
+                }}
+                className="font-mono-display text-sm bg-transparent border-none outline-none cursor-pointer min-w-0"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                <option value="">—</option>
+                {PRESET_STYLES.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+                <option value="__custom__">{t('customStyle')}</option>
+              </select>
+              {!PRESET_STYLES.includes(presetStyle) && presetStyle && (
+                <input
+                  type="text"
+                  value={presetStyle}
+                  onChange={(e) => {
+                    setPresetStyle(e.target.value);
+                    if (midiDevice.status === 'connected') {
+                      midiDevice.sendStyleName(e.target.value);
+                    }
+                  }}
+                  maxLength={16}
+                  className="font-mono-display text-sm bg-transparent border-none outline-none min-w-0"
+                  style={{ color: 'var(--text-secondary)' }}
+                />
+              )}
+            </div>
+          </div>
+          {/* Note */}
+          <div className="flex items-center gap-2">
+            <span className="font-mono-display text-[10px] font-medium tracking-wider uppercase flex-shrink-0"
+              style={{ color: 'var(--text-muted)' }}>
+              {t('noteLabel')}:
+            </span>
             <input
               type="text"
-              value={presetStyle}
+              value={presetNote}
               onChange={(e) => {
-                setPresetStyle(e.target.value);
+                setPresetNote(e.target.value);
                 if (midiDevice.status === 'connected') {
-                  midiDevice.sendStyleName(e.target.value);
+                  midiDevice.sendNote(e.target.value);
                 }
               }}
-              maxLength={16}
-              className="font-mono-display text-sm bg-transparent border-none outline-none"
+              maxLength={40}
+              placeholder="—"
+              className="font-mono-display text-sm bg-transparent border-none outline-none flex-1"
               style={{ color: 'var(--text-secondary)' }}
             />
-          )}
+          </div>
         </div>
-      </div>
-      <div className="flex items-center gap-2 mb-8">
-        <span className="font-mono-display text-[11px] font-medium tracking-wider uppercase flex-shrink-0"
-          style={{ color: 'var(--text-muted)' }}>
-          {t('noteLabel')}:
-        </span>
-        <input
-          type="text"
-          value={presetNote}
-          onChange={(e) => {
-            setPresetNote(e.target.value);
-            if (midiDevice.status === 'connected') {
-              midiDevice.sendNote(e.target.value);
-            }
-          }}
-          maxLength={40}
-          placeholder="—"
-          className="font-mono-display text-sm bg-transparent border-none outline-none flex-1"
-          style={{ color: 'var(--text-secondary)' }}
-        />
-      </div>
 
-      {/* Patch Settings: Volume, Pan, Tempo */}
-      <div className="mb-4">
+        {/* Right: Patch Settings */}
         <PatchSettingsCard
           volume={patchVolume}
           pan={patchPan}
