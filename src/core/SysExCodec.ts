@@ -646,8 +646,10 @@ export const SysExCodec = {
 
   buildPresetChange(slot: number): Uint8Array {
     // CMD=0x12, sub=0x08, 30 bytes — switch device to preset slot
-    // From capture 222343: slot as raw byte at position [26]
+    // Slot nibble-encoded at [25:26] (SysEx data bytes must be 0x00-0x7F)
     // H→D: device switches to slot. D→H: device notifies slot change.
+    const sh = (slot >> 4) & 0x0F;
+    const sl = slot & 0x0F;
     return new Uint8Array([
       0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, // [0-7]   header
       0x12, 0x08,                                        // [8-9]   CMD, sub
@@ -656,8 +658,8 @@ export const SysExCodec = {
       0x00, 0x00,                                        // [16-17] padding
       0x04, 0x00, 0x00, 0x00,                            // [18-21] constant
       0x00, 0x00, 0x00,                                  // [22-24] padding
-      0x00,                                              // [25]    padding
-      slot & 0xFF,                                       // [26]    slot number (raw byte)
+      sh,                                                // [25]    slot high nibble
+      sl,                                                // [26]    slot low nibble
       0x00, 0x00,                                        // [27-28] padding
       0xF7,                                              // [29]    end
     ]);

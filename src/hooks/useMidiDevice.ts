@@ -167,8 +167,8 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     // Distinguish by data[14]: 0x08 = preset change echo, other = FX state response
     if (isSysEx(data, 0x12, 0x08) && data.length >= 28) {
       if (data[14] === 0x08) {
-        // Preset change echo — data[26] is the slot number
-        const slot = data[26];
+        // Preset change echo — slot nibble-encoded at data[25:26]
+        const slot = ((data[25] & 0x0F) << 4) | (data[26] & 0x0F);
         if (slot >= 0 && slot < 256) {
           console.log(`[GP-200] device slot change: ${slot} (${SysExCodec.slotToLabel(slot)})`);
           setCurrentSlot(slot); currentSlotRef.current = slot;

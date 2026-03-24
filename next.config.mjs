@@ -9,7 +9,15 @@ const nextConfig = {
     serverComponentsExternalPackages: ['@node-rs/argon2'],
   },
   async headers() {
-    return [{
+    return [
+    // Prevent browser from caching page/JS responses in dev — forces fresh loads after rebuilds
+    ...(process.env.NODE_ENV === 'development' ? [{
+      source: '/(.*)',
+      headers: [
+        { key: 'Cache-Control', value: 'no-store, must-revalidate' },
+      ],
+    }] : []),
+    {
       source: '/(.*)',
       headers: [
         { key: 'X-Frame-Options', value: 'DENY' },
