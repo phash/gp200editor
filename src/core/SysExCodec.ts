@@ -336,11 +336,15 @@ export const SysExCodec = {
     return { section, page, block, name, rawData: decoded };
   },
 
-  parseStateDump(_chunks: Uint8Array[]): { slot: number } {
-    // 0x4E state dump: byte[10] is NOT the slot (it's consistently 0x06, likely chunk count
-    // or protocol version). The actual current slot encoding within the nibble payload is
-    // unknown. Default to slot 0 — user can manually select the correct slot.
-    // TODO: reverse-engineer the actual slot position in the state dump payload
+  parseStateDump(chunks: Uint8Array[]): { slot: number } {
+    // State dump uses same nibble-encoded chunk format as read responses (0x18).
+    // Decoded layout matches READ format: slot at decoded[6:8] as LE16.
+    if (chunks.length === 0) return { slot: 0 };
+    const decoded = this.assembleChunks(chunks);
+    if (decoded.length >= 8) {
+      const slot = decoded[6] | (decoded[7] << 8);
+      if (slot >= 0 && slot < 256) return { slot };
+    }
     return { slot: 0 };
   },
 

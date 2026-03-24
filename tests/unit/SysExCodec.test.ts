@@ -469,16 +469,30 @@ describe('SysExCodec: handshake parsers', () => {
 });
 
 describe('SysExCodec: parseStateDump', () => {
-  it('always returns slot 0 (byte[10] is NOT the slot)', () => {
-    // byte[10] is consistently 0x06 in real captures regardless of active slot
-    const fakeChunk = new Uint8Array([
+  it('extracts slot from decoded[6:8] LE16 (same format as read response)', () => {
+    // Slot 13 = Bank 4 Slot B (0x0D LE16 = nibbles: ...00 0D 00 00 at decoded[6:8])
+    // Nibble data for decoded[0:8] = [00 00 00 00 00 00 0D 00]:
+    //   each byte → 2 nibbles (high, low), so 16 nibble bytes
+    const nibbles = [0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0x0D, 0,0];
+    const chunk = new Uint8Array([
       0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x4E,
-      0x06, // NOT the slot — always 0x06
-      0x00, 0x00,
-      0x00, 0x00,
+      0x06, 0x00, 0x00, // byte[10]=0x06, offset=0
+      ...nibbles,
       0xF7,
     ]);
-    const result = SysExCodec.parseStateDump([fakeChunk]);
+    const result = SysExCodec.parseStateDump([chunk]);
+    expect(result.slot).toBe(13);
+  });
+
+  it('returns slot 0 when decoded[6:8] is zero', () => {
+    const nibbles = new Array(16).fill(0);
+    const chunk = new Uint8Array([
+      0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x4E,
+      0x06, 0x00, 0x00,
+      ...nibbles,
+      0xF7,
+    ]);
+    const result = SysExCodec.parseStateDump([chunk]);
     expect(result.slot).toBe(0);
   });
 

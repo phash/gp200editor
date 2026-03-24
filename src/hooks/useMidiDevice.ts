@@ -258,7 +258,7 @@ export function useMidiDevice(): UseMidiDeviceReturn {
         output.send(SysExCodec.buildEnterEditorMode());
         await new Promise(r => setTimeout(r, 100));
 
-        // Step 5-6: State dump (0x4E has different format — only extract slot number)
+        // Step 5-6: State dump (0x4E uses same nibble-encoded format as read responses)
         setHandshakeStep('State Dump…');
         output.send(SysExCodec.buildStateDumpRequest());
         const dumpChunks = await collectChunks(input, 0x12, 0x4E, 5, READ_TIMEOUT_MS, onMidiMessage);
