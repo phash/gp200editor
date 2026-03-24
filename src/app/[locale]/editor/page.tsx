@@ -176,6 +176,14 @@ export default function EditorPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [midiDevice.status]);
 
+  // Auto-start background loading of all preset names after connection
+  useEffect(() => {
+    if (midiDevice.status === 'connected' && midiDevice.namesLoadProgress < 256) {
+      midiDevice.loadPresetNames();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [midiDevice.status]);
+
   // Send all effect data to device for live preview (no save)
   const sendPresetToDevice = useCallback((decoded: GP200Preset) => {
     if (midiDevice.status !== 'connected') return;
@@ -441,7 +449,7 @@ export default function EditorPage() {
 
   function handleOpenBrowser(mode: 'pull' | 'push') {
     setSlotBrowserMode(mode);
-    if (midiDevice.presetNames.every(n => n === null)) {
+    if (midiDevice.namesLoadProgress < 256) {
       midiDevice.loadPresetNames();
     }
   }

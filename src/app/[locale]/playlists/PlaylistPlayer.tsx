@@ -352,7 +352,7 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
         <button
           onClick={() => {
             setShowSlotBrowser(true);
-            if (midiDevice.presetNames.every(n => n === null)) {
+            if (midiDevice.namesLoadProgress < 256) {
               midiDevice.loadPresetNames();
             }
           }}
