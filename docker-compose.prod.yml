@@ -1,6 +1,7 @@
 services:
   app:
     build: .
+    container_name: gp200editor-app
     env_file:
       - .env.prod
     environment:
@@ -13,6 +14,10 @@ services:
       garage:
         condition: service_started
     restart: unless-stopped
+    networks:
+      - caddy-proxy
+      - shared-services
+      - default
 
   postgres:
     image: postgres:16
@@ -42,3 +47,9 @@ volumes:
   postgres_data:
   garage_data:
   garage_meta:
+
+networks:
+  caddy-proxy:
+    external: true
+  shared-services:
+    external: true
