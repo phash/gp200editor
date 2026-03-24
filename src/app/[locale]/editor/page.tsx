@@ -57,7 +57,7 @@ export default function EditorPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'pedals'>('pedals');
   // Head section collapse state
-  const [showAmpHead, setShowAmpHead] = useState(true);
+  const [showAmpHead, setShowAmpHead] = useState(false);
   const [showPresetInfo, setShowPresetInfo] = useState(true);
   const [showController, setShowController] = useState(false);
   const pedalGridRef = useRef<HTMLDivElement>(null);
@@ -977,51 +977,89 @@ export default function EditorPage() {
         })}
       </div>
 
-      {/* Action buttons */}
-      <div className="flex items-center gap-4 flex-wrap">
-        <button
-          onClick={handleDownload}
-          data-testid="download-btn"
-          className="font-mono-display text-sm font-bold tracking-wider uppercase px-6 py-3 rounded-lg transition-all duration-200"
-          style={{
-            background: 'var(--glow-amber)',
-            border: '1px solid var(--accent-amber)',
-            color: 'var(--accent-amber)',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow = '0 0 20px var(--glow-amber)';
-            e.currentTarget.style.background = 'rgba(212,162,78,0.25)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.boxShadow = 'none';
-            e.currentTarget.style.background = 'var(--glow-amber)';
-          }}
-        >
-          {t('download')}
-        </button>
+      {/* Row 1: Playlist + Gallery/Presets + Save to Gallery */}
+      <div className="flex items-center gap-2 flex-wrap mb-2">
         <button
           onClick={() => setShowPlaylistDialog(true)}
           disabled={!preset}
-          className="rounded-lg px-4 py-2 font-mono-display text-sm font-bold transition-colors disabled:opacity-50"
-          style={{ color: 'var(--accent-amber)', border: '1px solid var(--accent-amber)' }}
+          className="rounded-lg px-3 py-1.5 font-mono-display text-[11px] font-bold tracking-wider uppercase transition-colors disabled:opacity-40"
+          style={{ color: 'var(--accent-amber)', border: '1px solid rgba(212,162,78,0.3)', background: 'rgba(212,162,78,0.06)' }}
         >
           {t('addToPlaylist')}
         </button>
+        <Link
+          href="/gallery"
+          className="font-mono-display text-[11px] font-bold tracking-wider uppercase px-3 py-1.5 rounded-lg transition-colors hover:!border-[rgba(212,162,78,0.4)] hover:!text-[var(--accent-amber)]"
+          style={{ background: 'rgba(212,162,78,0.08)', border: '1px solid rgba(212,162,78,0.25)', color: 'var(--accent-amber)' }}
+        >
+          {t('loadFromGallery')}
+        </Link>
+        {isLoggedIn && (
+          <Link
+            href="/presets"
+            className="font-mono-display text-[11px] font-bold tracking-wider uppercase px-3 py-1.5 rounded-lg transition-colors hover:!border-[rgba(212,162,78,0.4)] hover:!text-[var(--accent-amber)]"
+            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text-muted)' }}
+          >
+            {t('loadFromPresets')}
+          </Link>
+        )}
+        {isLoggedIn ? (
+          <>
+            {sourcePreset && sourcePreset.username === username && (
+              <button
+                onClick={handleUpdatePreset}
+                disabled={saveStatus === 'saving' || saveStatus === 'saved'}
+                className="font-mono-display text-[11px] font-bold tracking-wider uppercase px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40"
+                style={{
+                  background: saveStatus === 'saved' ? 'rgba(74,222,128,0.08)' : 'rgba(212,162,78,0.06)',
+                  border: `1px solid ${saveStatus === 'saved' ? 'rgba(74,222,128,0.3)' : 'rgba(212,162,78,0.25)'}`,
+                  color: saveStatus === 'saved' ? 'var(--accent-green)' : 'var(--accent-amber)',
+                }}
+              >
+                {saveStatus === 'saving' ? t('savingPreset') : saveStatus === 'saved' ? t('updatedPreset') : t('updatePreset')}
+              </button>
+            )}
+            {sourcePreset && sourcePreset.username !== username && (
+              <div className="flex items-center gap-2">
+                <span className="font-mono-display text-[10px] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{t('ratePreset')}</span>
+                <GuitarRating value={myRating} onRate={handleRate} size="md" />
+              </div>
+            )}
+            <button
+              onClick={() => setShowSaveDialog(true)}
+              disabled={saveStatus === 'saving' || saveStatus === 'saved'}
+              data-testid="save-to-presets-btn"
+              className="font-mono-display text-[11px] font-bold tracking-wider uppercase px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40"
+              style={{
+                background: saveStatus === 'saved' ? 'rgba(74,222,128,0.08)' : 'rgba(212,162,78,0.06)',
+                border: `1px solid ${saveStatus === 'saved' ? 'rgba(74,222,128,0.3)' : 'rgba(212,162,78,0.25)'}`,
+                color: saveStatus === 'saved' ? 'var(--accent-green)' : 'var(--accent-amber)',
+              }}
+            >
+              {saveStatus === 'saving' ? t('savingPreset') : saveStatus === 'saved' ? t('presetSaved') : sourcePreset ? t('saveAsNew') : t('saveToPresets')}
+            </button>
+            {saveStatus === 'error' && (
+              <span className="text-[11px] font-mono-display" style={{ color: 'var(--accent-red)' }}>{t('presetSaveFailed')}</span>
+            )}
+          </>
+        ) : isLoggedIn === false ? (
+          <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{t('loginToSave')}</span>
+        ) : null}
+      </div>
+
+      {/* Row 2: File save + File load */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <button
+          onClick={handleDownload}
+          data-testid="download-btn"
+          className="font-mono-display text-[11px] font-bold tracking-wider uppercase px-3 py-1.5 rounded-lg transition-colors hover:!border-[rgba(255,255,255,0.2)] hover:!text-[var(--text-primary)]"
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text-muted)' }}
+        >
+          {t('download')}
+        </button>
         <label
-          className="font-mono-display text-sm font-bold tracking-wider uppercase px-6 py-3 rounded-lg transition-all duration-200 cursor-pointer"
-          style={{
-            background: 'var(--bg-elevated)',
-            border: '1px solid var(--border-active)',
-            color: 'var(--text-secondary)',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = 'var(--accent-amber)';
-            e.currentTarget.style.color = 'var(--accent-amber)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = 'var(--border-active)';
-            e.currentTarget.style.color = 'var(--text-secondary)';
-          }}
+          className="font-mono-display text-[11px] font-bold tracking-wider uppercase px-3 py-1.5 rounded-lg transition-colors cursor-pointer hover:!border-[rgba(255,255,255,0.2)] hover:!text-[var(--text-primary)]"
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text-muted)' }}
         >
           {t('loadFromDisk')}
           <input
@@ -1041,100 +1079,6 @@ export default function EditorPage() {
             }}
           />
         </label>
-        <Link
-          href="/gallery"
-          className="font-mono-display text-sm font-bold tracking-wider uppercase px-6 py-3 rounded-lg transition-all duration-200"
-          style={{
-            background: 'var(--bg-elevated)',
-            border: '1px solid var(--border-active)',
-            color: 'var(--text-secondary)',
-          }}
-        >
-          {t('loadFromGallery')}
-        </Link>
-        {isLoggedIn && (
-          <Link
-            href="/presets"
-            className="font-mono-display text-sm font-bold tracking-wider uppercase px-6 py-3 rounded-lg transition-all duration-200"
-            style={{
-              background: 'var(--bg-elevated)',
-              border: '1px solid var(--border-active)',
-              color: 'var(--text-secondary)',
-            }}
-          >
-            {t('loadFromPresets')}
-          </Link>
-        )}
-
-        {/* IR/NAM upload buttons removed — see issue #62 for protocol details */}
-
-        {isLoggedIn ? (
-          <>
-            {/* Update button — only if loaded from gallery AND user owns it */}
-            {sourcePreset && sourcePreset.username === username && (
-              <button
-                onClick={handleUpdatePreset}
-                disabled={saveStatus === 'saving' || saveStatus === 'saved'}
-                className="font-mono-display text-sm font-bold tracking-wider uppercase px-6 py-3 rounded-lg transition-all duration-200 disabled:opacity-50"
-                style={{
-                  background: saveStatus === 'saved' ? 'var(--glow-green)' : 'var(--glow-amber)',
-                  border: `1px solid ${saveStatus === 'saved' ? 'var(--accent-green)' : 'var(--accent-amber)'}`,
-                  color: saveStatus === 'saved' ? 'var(--accent-green)' : 'var(--accent-amber)',
-                }}
-              >
-                {saveStatus === 'saving' ? t('savingPreset') :
-                 saveStatus === 'saved' ? t('updatedPreset') :
-                 t('updatePreset')}
-              </button>
-            )}
-            {/* Rate preset — only when loaded from someone else's gallery */}
-            {sourcePreset && sourcePreset.username !== username && isLoggedIn && (
-              <div className="flex items-center gap-2">
-                <span className="font-mono-display text-[10px] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-                  {t('ratePreset')}
-                </span>
-                <GuitarRating value={myRating} onRate={handleRate} size="md" />
-              </div>
-            )}
-            {/* Save as new — always available when logged in */}
-            <button
-              onClick={() => setShowSaveDialog(true)}
-              disabled={saveStatus === 'saving' || saveStatus === 'saved'}
-              data-testid="save-to-presets-btn"
-              className="font-mono-display text-sm font-bold tracking-wider uppercase px-6 py-3 rounded-lg transition-all duration-200 disabled:opacity-50"
-              style={{
-                background: saveStatus === 'saved' ? 'var(--glow-green)' : 'var(--bg-elevated)',
-                border: `1px solid ${saveStatus === 'saved' ? 'var(--accent-green)' : 'var(--border-active)'}`,
-                color: saveStatus === 'saved' ? 'var(--accent-green)' : 'var(--text-secondary)',
-              }}
-              onMouseEnter={(e) => {
-                if (saveStatus === 'idle') {
-                  e.currentTarget.style.borderColor = 'var(--accent-amber)';
-                  e.currentTarget.style.color = 'var(--accent-amber)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (saveStatus === 'idle') {
-                  e.currentTarget.style.borderColor = 'var(--border-active)';
-                  e.currentTarget.style.color = 'var(--text-secondary)';
-                }
-              }}
-            >
-              {saveStatus === 'saving' ? t('savingPreset') :
-               saveStatus === 'saved' ? t('presetSaved') :
-               sourcePreset ? t('saveAsNew') : t('saveToPresets')}
-            </button>
-            {saveStatus === 'error' && (
-              <span className="text-sm font-mono-display" style={{ color: 'var(--accent-red)' }}>
-                {t('presetSaveFailed')}
-              </span>
-            )}
-          </>
-        ) : isLoggedIn === false ? (
-          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
-            {t('loginToSave')}
-          </span>
-        ) : null}
       </div>
 
       {/* Error banner */}
