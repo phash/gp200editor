@@ -7,6 +7,8 @@ import { sendVerificationEmail } from '@/lib/email';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { rateLimit } from '@/lib/rateLimit';
 import { logError } from '@/lib/errorLog';
+import { verifyTurnstile } from '@/lib/turnstile';
+import { isDisposableEmail } from '@/lib/disposableEmails';
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get('x-real-ip') || 'unknown';
@@ -24,8 +26,36 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Honeypot: if the hidden "website" field is filled, it's a bot.
+  // Return 201 silently to not reveal the trap.
+  if (body?.website) {
+    return NextResponse.json(
+      { message: 'Account created. Please check your email to verify your account.' },
+      { status: 201 },
+    );
+  }
+
   const { email, username, password } = parsed.data;
   const locale = (body?.locale === 'de' ? 'de' : 'en') as string;
+
+  // Disposable email check
+  if (isDisposableEmail(email)) {
+    return NextResponse.json(
+      { error: 'Please use a permanent email address' },
+      { status: 400 },
+    );
+  }
+
+  // Turnstile CAPTCHA verification
+  const turnstileToken = body?.turnstileToken as string | undefined;
+  if (turnstileToken !== undefined || process.env.TURNSTILE_SECRET_KEY) {
+    if (!turnstileToken || !(await verifyTurnstile(turnstileToken, ip))) {
+      return NextResponse.json(
+        { error: 'CAPTCHA verification failed. Please try again.' },
+        { status: 400 },
+      );
+    }
+  }
 
   const existing = await prisma.user.findFirst({
     where: { OR: [{ email }, { username }] },

@@ -17,6 +17,7 @@ export const lucia = new Lucia(adapter, {
     email: attributes.email,
     role: attributes.role,
     suspended: attributes.suspended,
+    emailVerified: attributes.emailVerified,
   }),
 });
 
@@ -28,6 +29,7 @@ declare module 'lucia' {
       email: string;
       role: 'USER' | 'ADMIN';
       suspended: boolean;
+      emailVerified: boolean;
     };
   }
 }

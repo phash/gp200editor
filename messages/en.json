@@ -116,6 +116,9 @@
     "emailTaken": "This email address is already taken.",
     "usernameTaken": "This username is already taken.",
     "passwordTooShort": "Password must be at least 8 characters.",
+    "disposableEmail": "Please use a permanent email address.",
+    "captchaRequired": "Please complete the CAPTCHA verification.",
+    "captchaFailed": "CAPTCHA verification failed. Please try again.",
     "resetError": "Token invalid or expired"
   },
   "profile": {

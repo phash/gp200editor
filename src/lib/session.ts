@@ -1,5 +1,6 @@
 import { lucia } from './auth';
 import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
 import type { User, Session } from 'lucia';
 
 export type SessionResult =
@@ -27,6 +28,24 @@ export async function validateSession(): Promise<SessionResult> {
  * Lucia sets session.fresh = true when it has extended the expiry.
  * Server Components cannot set cookies, so skip this call there.
  */
+/**
+ * Validates session and requires emailVerified === true.
+ * Returns the user/session or a 403 NextResponse.
+ */
+export async function requireVerifiedUser(): Promise<
+  | { user: User; session: Session; error?: undefined }
+  | { user?: undefined; session?: undefined; error: Response }
+> {
+  const { user, session } = await validateSession();
+  if (!user || !session) {
+    return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
+  }
+  if (!user.emailVerified) {
+    return { error: NextResponse.json({ error: 'Email not verified' }, { status: 403 }) };
+  }
+  return { user, session };
+}
+
 export async function refreshSessionCookie(session: Session): Promise<void> {
   if (!session.fresh) return;
   const cookieStore = await cookies();

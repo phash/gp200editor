@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { validateSession, refreshSessionCookie } from '@/lib/session';
+import { validateSession, requireVerifiedUser, refreshSessionCookie } from '@/lib/session';
 import { uploadPreset } from '@/lib/storage';
 import { uploadPresetSchema } from '@/lib/validators';
 import { PRSTDecoder } from '@/core/PRSTDecoder';
@@ -13,10 +13,9 @@ export async function POST(request: Request) {
   if (!verifyCsrf(request)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
-  const { user, session } = await validateSession();
-  if (!user || !session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const result = await requireVerifiedUser();
+  if (result.error) return result.error;
+  const { user, session } = result;
   await refreshSessionCookie(session);
 
   const formData = await request.formData().catch(() => null);
