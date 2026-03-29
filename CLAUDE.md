@@ -28,6 +28,7 @@ npm run build                    # Production Build
 ```
 
 Docker-Setup, Env-Vars, VPS-Deployment, Hardware-Testing: **`docs/deployment.md`**
+Reverse Proxy (Caddy): **`/opt/caddyserver`** auf VPS, Container `caddy-proxy`, Reload: `docker restart caddy-proxy`
 
 ---
 
@@ -144,11 +145,23 @@ AdminAction   id, adminId?(→User onDelete:SetNull), action, targetType, target
 - Session-Cookie: `auth_session` (Lucia-Standard)
 - Passwort-Hashing: Argon2id (`@node-rs/argon2`)
 - Session-Validation: `validateSession()` in `src/lib/session.ts` — immer auch `refreshSessionCookie()` aufrufen
-- `getUserAttributes` liefert: `username`, `email`, `role`, `suspended`
+- `getUserAttributes` liefert: `username`, `email`, `role`, `suspended`, `emailVerified`
 - Login akzeptiert Email oder Username (`loginSchema.login` Feld, `@`-Check für Lookup)
 - Gesperrte User (`suspended=true`) können sich nicht einloggen (403)
 - Admin-Guard: `requireAdmin()` in `src/lib/admin.ts` — prüft `role === 'ADMIN'`
+- Email-Verification-Guard: `requireVerifiedUser()` in `src/lib/session.ts` — prüft `emailVerified`
 - Zod-Fehler: `.issues[0].message` (nicht `.errors` — das ist Zod v4)
+
+### Anti-Spam (4 Schichten, seit 2026-03-29)
+
+- **Cloudflare Turnstile** — unsichtbares CAPTCHA auf Registration (`@marsidev/react-turnstile`)
+  - Env: `NEXT_PUBLIC_TURNSTILE_SITE_KEY` + `TURNSTILE_SECRET_KEY`
+  - Dev: Cloudflare Test-Keys (always pass) in `.env.dev.example`
+  - Server: `src/lib/turnstile.ts`, wird übersprungen wenn Keys nicht gesetzt
+- **Honeypot** — hidden `company_url` Feld (nicht `website` — das ist ein User-Model-Feld!)
+- **Disposable-Email-Blocker** — `disposable-email-domains` (121K Domains), `src/lib/disposableEmails.ts`
+- **Email-Verification Enforcement** — `requireVerifiedUser()` auf Upload/Publish/Rate/Edit
+  - Nicht auf: GET (list), DELETE, Download, Share/Revoke
 
 ---
 
@@ -378,3 +391,5 @@ Das GP-200 ist USB-MIDI class-compliant. Kommunikation per proprietärem MIDI Sy
 - `DELETE /api/v1/messages` in Mailhog-Tests — killt parallele Test-Emails; stattdessen `/api/v2/search?kind=to&query=EMAIL`
 - `writeTempPreset()` mit 512 Bytes — API erwartet 1224 Bytes mit TSRP-Magic; korrektes Format: `TSRP` at 0x00, `2-PG` at 0x10, name at 0x44
 - `validateSession()` mit Argumenten aufrufen — es liest cookies intern (keine Parameter)
+- CSP-Header im Caddyfile für `preset-forge.com` setzen — CSP wird ausschließlich von Next.js verwaltet (`next.config.mjs`); Caddy + Next.js erzeugen Doppel-Header → Browser nimmt restriktivsten
+- Honeypot-Feld `website` nennen — kollidiert mit `User.website` im Prisma-Schema; aktueller Name: `company_url`
