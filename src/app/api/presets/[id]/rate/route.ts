@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireVerifiedUser } from '@/lib/session';
+import { requireVerifiedUser, refreshSessionCookie } from '@/lib/session';
 import { verifyCsrf } from '@/lib/csrf';
 import { prisma } from '@/lib/prisma';
 import { ratePresetSchema } from '@/lib/validators';
@@ -11,7 +11,8 @@ export async function POST(
   if (!verifyCsrf(request)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   const result = await requireVerifiedUser();
   if (result.error) return result.error;
-  const { user } = result;
+  const { user, session } = result;
+  await refreshSessionCookie(session);
 
   const { id } = await params;
   const body = await request.json();

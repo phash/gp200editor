@@ -41,7 +41,7 @@ export default function RegisterPage() {
           password,
           turnstileToken,
           // Honeypot — bots fill this, humans don't see it
-          website: formData.get('website') || undefined,
+          company_url: formData.get('company_url') || undefined,
         }),
       });
       if (res.ok) {
@@ -166,11 +166,11 @@ export default function RegisterPage() {
           </div>
           {/* Honeypot — invisible to humans, bots auto-fill it */}
           <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px' }}>
-            <label htmlFor="website">Website</label>
+            <label htmlFor="company_url">Website</label>
             <input
               type="text"
-              id="website"
-              name="website"
+              id="company_url"
+              name="company_url"
               tabIndex={-1}
               autoComplete="off"
             />

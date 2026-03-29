@@ -26,9 +26,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Honeypot: if the hidden "website" field is filled, it's a bot.
+  // Honeypot: if the hidden "company_url" field is filled, it's a bot.
   // Return 201 silently to not reveal the trap.
-  if (body?.website) {
+  if (body?.company_url) {
     return NextResponse.json(
       { message: 'Account created. Please check your email to verify your account.' },
       { status: 201 },

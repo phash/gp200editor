@@ -24,13 +24,8 @@ export async function validateSession(): Promise<SessionResult> {
 }
 
 /**
- * Call from Route Handlers after validateSession() to extend a near-expiry session.
- * Lucia sets session.fresh = true when it has extended the expiry.
- * Server Components cannot set cookies, so skip this call there.
- */
-/**
  * Validates session and requires emailVerified === true.
- * Returns the user/session or a 403 NextResponse.
+ * Returns the user/session or an error NextResponse.
  */
 export async function requireVerifiedUser(): Promise<
   | { user: User; session: Session; error?: undefined }
@@ -46,6 +41,11 @@ export async function requireVerifiedUser(): Promise<
   return { user, session };
 }
 
+/**
+ * Call from Route Handlers after validateSession() to extend a near-expiry session.
+ * Lucia sets session.fresh = true when it has extended the expiry.
+ * Server Components cannot set cookies, so skip this call there.
+ */
 export async function refreshSessionCookie(session: Session): Promise<void> {
   if (!session.fresh) return;
   const cookieStore = await cookies();
