@@ -76,7 +76,7 @@ type Props = {
 
 export default async function LocaleLayout({ children, params }: Props) {
   const { locale } = await params;
-  if (!routing.locales.includes(locale as 'de' | 'en')) notFound();
+  if (!routing.locales.includes(locale as 'de' | 'en' | 'fr')) notFound();
   const messages = await getMessages();
   const jsonLdString = JSON.stringify(jsonLd);
   return (

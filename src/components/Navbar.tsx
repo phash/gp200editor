@@ -1,8 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link, useRouter, usePathname } from '@/i18n/routing';
+
+const LOCALES = [
+  { code: 'de', flag: '🇩🇪', label: 'DE' },
+  { code: 'en', flag: '🇬🇧', label: 'EN' },
+  { code: 'fr', flag: '🇫🇷', label: 'FR' },
+] as const;
+
+type LocaleCode = (typeof LOCALES)[number]['code'];
 
 export function Navbar() {
   const t = useTranslations('nav');
@@ -14,8 +22,25 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [role, setRole] = useState<string | null>(null);
   const [errorCount, setErrorCount] = useState(0);
+  const [localeOpen, setLocaleOpen] = useState(false);
+  const localeRef = useRef<HTMLDivElement>(null);
 
-  const otherLocale = locale === 'de' ? 'en' : 'de';
+  const currentLocale = LOCALES.find((l) => l.code === locale) ?? LOCALES[0];
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (localeRef.current && !localeRef.current.contains(e.target as Node)) {
+        setLocaleOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  function switchLocale(code: LocaleCode) {
+    router.replace(pathname, { locale: code });
+    setLocaleOpen(false);
+  }
 
   useEffect(() => {
     fetch('/api/profile')
@@ -32,10 +57,6 @@ export function Navbar() {
       })
       .catch(() => { setUsername(null); setRole(null); });
   }, [pathname]);
-
-  function switchLocale() {
-    router.replace(pathname, { locale: otherLocale });
-  }
 
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -169,26 +190,49 @@ export function Navbar() {
         >
           ☕
         </a>
-        <button
-          onClick={switchLocale}
-          aria-label={t('switchLocale')}
-          data-testid="nav-locale-switcher"
-          className="font-mono-display text-xs px-2.5 py-1 rounded transition-all"
-          style={{
-            border: '1px solid var(--border-active)',
-            color: 'var(--text-secondary)',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = 'var(--accent-amber)';
-            e.currentTarget.style.color = 'var(--accent-amber)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = 'var(--border-active)';
-            e.currentTarget.style.color = 'var(--text-secondary)';
-          }}
-        >
-          {otherLocale.toUpperCase()}
-        </button>
+        <div ref={localeRef} className="relative" suppressHydrationWarning>
+          <button
+            onClick={() => setLocaleOpen((o) => !o)}
+            aria-label={t('switchLocale')}
+            data-testid="nav-locale-switcher"
+            className="font-mono-display text-xs px-2.5 py-1 rounded transition-all flex items-center gap-1.5"
+            style={{
+              border: `1px solid ${localeOpen ? 'var(--accent-amber)' : 'var(--border-active)'}`,
+              color: localeOpen ? 'var(--accent-amber)' : 'var(--text-secondary)',
+            }}
+          >
+            <span>{currentLocale.flag}</span>
+            <span>{currentLocale.label}</span>
+            <span style={{ fontSize: '8px', opacity: 0.7 }}>▼</span>
+          </button>
+          {localeOpen && (
+            <div
+              className="absolute right-0 top-full mt-1 rounded overflow-hidden z-50 flex flex-col"
+              style={{
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border-active)',
+                minWidth: '80px',
+              }}
+            >
+              {LOCALES.map((l) => (
+                <button
+                  key={l.code}
+                  onClick={() => switchLocale(l.code)}
+                  className="font-mono-display text-xs px-3 py-1.5 flex items-center gap-2 transition-colors text-left"
+                  style={{
+                    color: l.code === locale ? 'var(--accent-amber)' : 'var(--text-secondary)',
+                    background: l.code === locale ? 'rgba(245,158,11,0.1)' : 'transparent',
+                  }}
+                  onMouseEnter={(e) => { if (l.code !== locale) e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+                  onMouseLeave={(e) => { if (l.code !== locale) e.currentTarget.style.background = 'transparent'; }}
+                >
+                  <span>{l.flag}</span>
+                  <span>{l.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         {role === 'ADMIN' && (
           <Link href="/admin" className="font-mono-display text-xs px-2.5 py-1 rounded transition-all relative"
             style={{
@@ -263,15 +307,21 @@ export function Navbar() {
               {tAuth('login')}
             </Link>
           )}
-          <div className="flex gap-3 items-center pt-2" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-            <button
-              onClick={switchLocale}
-              aria-label={t('switchLocale')}
-              className="font-mono-display text-xs px-2.5 py-1 rounded"
-              style={{ border: '1px solid var(--border-active)', color: 'var(--text-secondary)' }}
-            >
-              {otherLocale.toUpperCase()}
-            </button>
+          <div className="flex gap-2 items-center pt-2" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+            {LOCALES.map((l) => (
+              <button
+                key={l.code}
+                onClick={() => { switchLocale(l.code); setMobileOpen(false); }}
+                className="font-mono-display text-xs px-2.5 py-1 rounded flex items-center gap-1.5 transition-colors"
+                style={{
+                  border: `1px solid ${l.code === locale ? 'var(--accent-amber)' : 'var(--border-active)'}`,
+                  color: l.code === locale ? 'var(--accent-amber)' : 'var(--text-secondary)',
+                }}
+              >
+                <span>{l.flag}</span>
+                <span>{l.label}</span>
+              </button>
+            ))}
           </div>
         </div>
       )}

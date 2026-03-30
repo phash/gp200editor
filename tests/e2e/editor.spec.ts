@@ -17,7 +17,37 @@ test.describe('Home Page', () => {
     await page.goto('/de');
     await page.getByTestId('nav-locale-switcher').click();
     await expect(page).toHaveURL(/\/en/);
+  });
+
+  test('locale switcher cycle DE→EN→FR→DE', async ({ page }) => {
+    await page.goto('/de');
+    // DE → EN
+    await page.getByTestId('nav-locale-switcher').click();
+    await page.getByRole('button', { name: 'EN' }).click();
+    await expect(page).toHaveURL(/\/en/);
+    // EN → FR
+    await page.getByTestId('nav-locale-switcher').click();
+    await page.getByRole('button', { name: 'FR' }).click();
+    await expect(page).toHaveURL(/\/fr/);
+    await expect(page.getByTestId('file-upload-zone')).toBeVisible();
+    // FR → DE
+    await page.getByTestId('nav-locale-switcher').click();
+    await page.getByRole('button', { name: 'DE' }).click();
+    await expect(page).toHaveURL(/\/de/);
+  });
+
+  test('page FR charge correctement', async ({ page }) => {
+    await page.goto('/fr');
+    await expect(page.getByTestId('file-upload-zone')).toBeVisible();
     await expect(page.locator('h1')).toContainText('Preset');
+  });
+
+  test('Accept-Language fr redirige vers /fr', async ({ browser }) => {
+    const context = await browser.newContext({ locale: 'fr-FR' });
+    const page = await context.newPage();
+    await page.goto('/');
+    await expect(page).toHaveURL(/\/fr/);
+    await context.close();
   });
 });
 
