@@ -499,7 +499,7 @@ export const SysExCodec = {
     decoded[0] = 0x03;
     decoded[1] = 0x20;
     decoded[2] = 0x14;
-    decoded[4] = slot % 4;  // sub-slot index within bank (A=0, B=1, C=2, D=3)
+    decoded[4] = slot;  // full absolute slot number (0-255), nibble-encoded by caller
     // [8:24] = preset name (16 bytes, null-terminated — same as .prst format)
     for (let i = 0; i < 16 && i < presetName.length; i++) {
       decoded[8 + i] = presetName.charCodeAt(i);
