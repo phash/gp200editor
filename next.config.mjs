@@ -5,9 +5,7 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
-  experimental: {
-    serverComponentsExternalPackages: ['@node-rs/argon2'],
-  },
+  serverExternalPackages: ['@node-rs/argon2'],
   async headers() {
     return [
     // Prevent browser from caching page/JS responses in dev — forces fresh loads after rebuilds
