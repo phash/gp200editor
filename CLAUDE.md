@@ -9,8 +9,8 @@ Live USB-MIDI Editing, Preset-Galerie, Community-Sharing.
 - **Domain:** https://preset-forge.com
 - **Zweck:** `.prst` Preset-Dateien im Browser laden, bearbeiten, speichern, teilen, live per USB-MIDI ans Gerät senden
 - **GitHub:** https://github.com/phash/gp200editor
-- **Stack:** Next.js 14 App Router · TypeScript strict · Tailwind CSS · Prisma 5 · PostgreSQL 16 · Lucia v3 · Garage S3 · next-intl 4 (DE/EN)
-- **Tests:** Vitest (Unit) · Playwright + @axe-core/playwright (E2E + A11y)
+- **Stack:** Next.js 15 App Router · React 19 · TypeScript strict · Tailwind CSS · Prisma 5 · PostgreSQL 16 · Lucia v3 · Garage S3 · next-intl 4 (DE/EN)
+- **Tests:** Vitest (346 Unit-Tests, 76% Coverage) · Playwright + @axe-core/playwright (E2E + A11y)
 - **Ziel:** WCAG 2.1 AA
 - **UI:** Dark pedalboard theme (JetBrains Mono + DM Sans, Amber-Akzente, LED-Style Buttons)
 
@@ -21,7 +21,7 @@ Live USB-MIDI Editing, Preset-Galerie, Community-Sharing.
 ```bash
 npm install --legacy-peer-deps   # IMMER --legacy-peer-deps (npm 11.x vs Docker npm 10.x)
 npm run dev                      # http://localhost:3000
-npm run test                     # Vitest Unit-Tests (312 Tests)
+npm run test                     # Vitest Unit-Tests (346 Tests)
 npm run test:e2e                 # Playwright E2E (App muss laufen + Garage + DB)
 npm run lint                     # ESLint
 npm run build                    # Production Build
@@ -127,6 +127,9 @@ Preset        id, userId, presetKey, name(VarChar32), description, tags(String[]
               ratingAverage(Float), ratingCount(Int), modules(String[]), effects(String[]),
               createdAt, updatedAt
               @@index([userId])
+              @@index([public, createdAt])
+              @@index([public, downloadCount])
+              @@index([public, ratingAverage])
 PresetRating  id, presetId, userId, score(Int 1-5), createdAt, updatedAt
               @@unique([presetId, userId])
               @@index([presetId])
@@ -157,7 +160,7 @@ AdminAction   id, adminId?(→User onDelete:SetNull), action, targetType, target
 - **Cloudflare Turnstile** — unsichtbares CAPTCHA auf Registration (`@marsidev/react-turnstile`)
   - Env: `NEXT_PUBLIC_TURNSTILE_SITE_KEY` + `TURNSTILE_SECRET_KEY`
   - Dev: Cloudflare Test-Keys (always pass) in `.env.dev.example`
-  - Server: `src/lib/turnstile.ts`, wird übersprungen wenn Keys nicht gesetzt
+  - Server: `src/lib/turnstile.ts`, blockiert Registration in Prod wenn Keys fehlen (returns false)
 - **Honeypot** — hidden `company_url` Feld (nicht `website` — das ist ein User-Model-Feld!)
 - **Disposable-Email-Blocker** — `disposable-email-domains` (121K Domains), `src/lib/disposableEmails.ts`
 - **Email-Verification Enforcement** — `requireVerifiedUser()` auf Upload/Publish/Rate/Edit
@@ -298,22 +301,23 @@ Alle Routen unter `/api/admin/` — jede beginnt mit `requireAdmin()`.
 
 ### Checksum (letzte 2 Bytes, 0x4C6)
 
-LE uint16 → **Algorithmus gelöst (2026-03-18):** `sum(bytes[0:0x4C6]) & 0xFFFF`, gespeichert als BE16.
+**Algorithmus gelöst (2026-03-18):** `sum(bytes[0:0x4C6]) & 0xFFFF`, gespeichert als BE16.
+Decoder liest `readUint16BE`, Encoder schreibt High-Byte zuerst.
 
 ---
 
 ## Tests
 
 ```bash
-npm run test              # 312 Unit-Tests (Vitest)
-npm run test:coverage     # Coverage-Report
+npm run test              # 346 Unit-Tests (Vitest)
+npm run test:coverage     # Coverage-Report (76% Statements)
 npm run test:e2e          # Playwright E2E (App + Garage + DB erforderlich)
 ```
 
 Unit-Tests in `tests/unit/`:
 - `BinaryParser.test.ts`, `BufferGenerator.test.ts`, `types.test.ts`
-- `PRSTDecoder.test.ts`, `PRSTEncoder.test.ts` — inkl. Tests gegen echte .prst-Dateien
-- `SysExCodec.test.ts` — Toggle, ParamChange, Reorder, Handshake, EXP Assignment (64 Tests)
+- `PRSTDecoder.test.ts`, `PRSTEncoder.test.ts` — inkl. Tests gegen echte .prst-Dateien + Dateigröße + Checksum-Roundtrip
+- `SysExCodec.test.ts` — Toggle, ParamChange, Reorder, Handshake, EXP, EffectChange, PatchSetting (88 Tests)
 - `effectNames.test.ts` — Effekt-ID→Name Auflösung
 - `effectParams.test.ts` — Parameter-Definitionen
 - `useMidiDevice.test.ts` — MIDI Hook Tests
@@ -392,4 +396,5 @@ Das GP-200 ist USB-MIDI class-compliant. Kommunikation per proprietärem MIDI Sy
 - `writeTempPreset()` mit 512 Bytes — API erwartet 1224 Bytes mit TSRP-Magic; korrektes Format: `TSRP` at 0x00, `2-PG` at 0x10, name at 0x44
 - `validateSession()` mit Argumenten aufrufen — es liest cookies intern (keine Parameter)
 - CSP-Header im Caddyfile für `preset-forge.com` setzen — CSP wird ausschließlich von Next.js verwaltet (`next.config.mjs`); Caddy + Next.js erzeugen Doppel-Header → Browser nimmt restriktivsten
+- Shared `security_headers` Snippet für Preset Forge verwenden — Headers sind inline im Caddyfile (X-Frame-Options=DENY, Permissions-Policy ohne geolocation); Snippet setzt schwächere Defaults (SAMEORIGIN, geolocation=(self))
 - Honeypot-Feld `website` nennen — kollidiert mit `User.website` im Prisma-Schema; aktueller Name: `company_url`

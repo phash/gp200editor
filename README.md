@@ -40,19 +40,19 @@ For USB MIDI on Linux: install Chrome or Chromium, connect the GP-200 via USB, a
 
 ## Stack
 
-- **Next.js 14** App Router + TypeScript strict
+- **Next.js 15** App Router + React 19 + TypeScript strict
 - **Tailwind CSS** (Dark theme, JetBrains Mono + DM Sans)
 - **Prisma 5** + PostgreSQL 16
 - **Lucia v3** (Session-Auth, Argon2id)
 - **Garage** (S3-kompatibler Object Store) für Avatare und Presets
 - **next-intl 4** (DE/EN)
-- **Vitest** (288 Unit-Tests) + **Playwright** (E2E + A11y)
+- **Vitest** (346 Unit-Tests, 76% Coverage) + **Playwright** (E2E + A11y)
 
 ## Entwicklung
 
 ### Voraussetzungen
 
-- Node.js 23+
+- Node.js 22+ (LTS)
 - Docker (für PostgreSQL, Garage, Mailhog)
 
 ### Setup
@@ -83,8 +83,8 @@ npm run dev       # http://localhost:3000
 ### Tests
 
 ```bash
-npm run test          # 288 Unit-Tests (Vitest)
-npm run test:coverage # Coverage-Report
+npm run test          # 346 Unit-Tests (Vitest)
+npm run test:coverage # Coverage-Report (76% Statements)
 npm run test:e2e      # Playwright E2E (App + Garage + DB erforderlich)
 ```
 
