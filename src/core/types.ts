@@ -13,7 +13,7 @@ export const GP200PresetSchema = z.object({
   patchName: z.string().max(16), // .prst offset 0x44, 16 bytes null-terminated
   author: z.string().max(16).optional(), // .prst offset 0x54, 16 bytes null-terminated
   effects: z.array(EffectSlotSchema).length(11), // GP-200 always has exactly 11 slots
-  checksum: z.number().int().min(0).max(65535), // LE uint16 at end of file
+  checksum: z.number().int().min(0).max(65535), // BE uint16 at end of file
 });
 
 export type EffectSlot = z.infer<typeof EffectSlotSchema>;

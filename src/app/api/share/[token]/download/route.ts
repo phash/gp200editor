@@ -1,11 +1,17 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPresetStream } from '@/lib/storage';
+import { rateLimit } from '@/lib/rateLimit';
 
 type RouteContext = { params: Promise<{ token: string }> };
 
-export async function GET(_request: Request, context: RouteContext) {
+export async function GET(request: NextRequest, context: RouteContext) {
+  const ip = request.headers.get('x-real-ip') || 'unknown';
   const { token } = await context.params;
+  const { allowed } = rateLimit(`share-dl:${ip}:${token}`, 20, 15 * 60 * 1000);
+  if (!allowed) {
+    return NextResponse.json({ error: 'Too many downloads. Please try again later.' }, { status: 429 });
+  }
 
   const preset = await prisma.preset.findUnique({
     where: { shareToken: token },

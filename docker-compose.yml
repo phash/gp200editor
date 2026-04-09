@@ -29,14 +29,14 @@ services:
   mailhog:
     image: mailhog/mailhog:latest
     ports:
-      - "1025:1025"   # SMTP
-      - "8025:8025"   # Web UI
+      - "127.0.0.1:1025:1025"   # SMTP
+      - "127.0.0.1:8025:8025"   # Web UI
 
   garage:
     image: dxflrs/garage:v1.3.1
     ports:
-      - "3900:3900"   # S3 API
-      - "3902:3902"   # Admin API
+      - "127.0.0.1:3900:3900"   # S3 API
+      - "127.0.0.1:3902:3902"   # Admin API
     volumes:
       - garage_data:/var/lib/garage/data
       - garage_meta:/var/lib/garage/meta

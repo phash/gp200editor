@@ -193,7 +193,7 @@
     "push": "Speichern",
     "pullFrom": "Laden von {slot}",
     "pushTo": "Speichern nach {slot}",
-    "selectSlots": "Slots auswählen",
+    "selectSlots": "{count, plural, =0 {Slots auswählen} other {{count} Slots ausgewählt}}",
     "loadingNames": "Lade Preset-Namen…",
     "browserTitle": "Preset auswählen",
     "search": "Preset suchen…",

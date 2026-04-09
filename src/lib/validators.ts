@@ -1,30 +1,30 @@
 import { z } from 'zod';
 
 export const registerSchema = z.object({
-  email: z.string().email(),
+  email: z.string().email().max(320),
   username: z
     .string()
     .min(3, 'Username must be at least 3 characters')
     .max(30, 'Username must be at most 30 characters')
     .regex(/^[a-zA-Z0-9_]+$/, 'Only letters, numbers, and underscores'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  password: z.string().min(8, 'Password must be at least 8 characters').max(256),
 });
 
 export const loginSchema = z.object({
   // Accepts email or username
-  login: z.string().min(1),
+  login: z.string().min(1).max(320),
   // min(1) not min(8): don't reject a login attempt just because the password
   // is shorter than our current minimum — the user might have an old account
-  password: z.string().min(1),
+  password: z.string().min(1).max(256),
 });
 
 export const forgotPasswordSchema = z.object({
-  email: z.string().email(),
+  email: z.string().email().max(320),
 });
 
 export const resetPasswordSchema = z.object({
   token: z.string().min(1),
-  newPassword: z.string().min(8, 'Password must be at least 8 characters'),
+  newPassword: z.string().min(8, 'Password must be at least 8 characters').max(256),
 });
 
 export const patchProfileSchema = z.object({
