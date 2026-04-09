@@ -1,5 +1,5 @@
 'use client';
-import { getEffectParams } from '@/core/effectParams';
+import { getEffectParams, type EffectParam } from '@/core/effectParams';
 import { getEffectName } from '@/core/effectNames';
 import { EFFECT_DESCRIPTIONS } from '@/core/effectDescriptions';
 import type { GP200Preset } from '@/core/types';
@@ -7,6 +7,47 @@ import type { GP200Preset } from '@/core/types';
 interface AmpHeadPanelProps {
   preset: GP200Preset;
   onParamChange: (slotIndex: number, paramIndex: number, value: number) => void;
+}
+
+function AmpSlider({ def, value, onValueChange }: {
+  def: Extract<EffectParam, { type: 'knob' }>;
+  value: number;
+  onValueChange: (value: number) => void;
+}) {
+  const pct = def.max > def.min
+    ? ((value - def.min) / (def.max - def.min)) * 100
+    : 0;
+
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center justify-between">
+        <label className="text-[10px] font-medium uppercase tracking-wider"
+          style={{ color: 'rgba(224,128,64,0.6)' }}>
+          {def.name}
+        </label>
+        <span className="font-mono-display text-[11px] tabular-nums"
+          style={{ color: '#e08040' }}>
+          {Math.round(value)}
+        </span>
+      </div>
+      <div className="relative">
+        <div className="absolute top-[12px] left-0 right-0 h-[4px] rounded-full"
+          style={{ background: 'rgba(224,128,64,0.1)' }}>
+          <div className="h-full rounded-full transition-all duration-75"
+            style={{ width: `${pct}%`, background: 'linear-gradient(90deg, rgba(224,128,64,0.4), #e08040)' }} />
+        </div>
+        <input
+          type="range"
+          min={def.min}
+          max={def.max}
+          step={def.step}
+          value={value}
+          onChange={(e) => onValueChange(parseFloat(e.target.value))}
+          className="relative w-full z-10"
+        />
+      </div>
+    </div>
+  );
 }
 
 export function AmpHeadPanel({ preset, onParamChange }: AmpHeadPanelProps) {
@@ -19,47 +60,6 @@ export function AmpHeadPanel({ preset, onParamChange }: AmpHeadPanelProps) {
 
   const paramDefs = getEffectParams(ampEffect.effectId);
   const ampName = getEffectName(ampEffect.effectId) ?? 'AMP';
-
-  // Build slider for a param by index
-  function Slider({ paramIdx }: { paramIdx: number }) {
-    const def = paramDefs[paramIdx];
-    if (!def || def.type !== 'knob') return null;
-    const value = ampEffect!.params[paramIdx] ?? 0;
-    const pct = def.max > def.min
-      ? ((value - def.min) / (def.max - def.min)) * 100
-      : 0;
-
-    return (
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center justify-between">
-          <label className="text-[10px] font-medium uppercase tracking-wider"
-            style={{ color: 'rgba(224,128,64,0.6)' }}>
-            {def.name}
-          </label>
-          <span className="font-mono-display text-[11px] tabular-nums"
-            style={{ color: '#e08040' }}>
-            {Math.round(value)}
-          </span>
-        </div>
-        <div className="relative">
-          <div className="absolute top-[12px] left-0 right-0 h-[4px] rounded-full"
-            style={{ background: 'rgba(224,128,64,0.1)' }}>
-            <div className="h-full rounded-full transition-all duration-75"
-              style={{ width: `${pct}%`, background: 'linear-gradient(90deg, rgba(224,128,64,0.4), #e08040)' }} />
-          </div>
-          <input
-            type="range"
-            min={def.min}
-            max={def.max}
-            step={def.step}
-            value={value}
-            onChange={(e) => onParamChange(ampEffect!.slotIndex, paramIdx, parseFloat(e.target.value))}
-            className="relative w-full z-10"
-          />
-        </div>
-      </div>
-    );
-  }
 
   // Drawing layout: Left = params 2(Vol), 0(Gain), 1(Pres) — Right = params 3(Bass), 4(Mid), 5(Treb)
   // But param order varies by AMP model, so use actual param defs (first 6 knobs)
@@ -92,10 +92,24 @@ export function AmpHeadPanel({ preset, onParamChange }: AmpHeadPanelProps) {
       </div>
       <div className="grid grid-cols-2 gap-4 p-4">
         <div className="flex flex-col gap-2">
-          {leftParams.map(p => <Slider key={p.idx} paramIdx={p.idx} />)}
+          {leftParams.map(p => (
+            <AmpSlider
+              key={p.idx}
+              def={p}
+              value={ampEffect.params[p.idx] ?? 0}
+              onValueChange={(v) => onParamChange(ampEffect.slotIndex, p.idx, v)}
+            />
+          ))}
         </div>
         <div className="flex flex-col gap-2">
-          {rightParams.map(p => <Slider key={p.idx} paramIdx={p.idx} />)}
+          {rightParams.map(p => (
+            <AmpSlider
+              key={p.idx}
+              def={p}
+              value={ampEffect.params[p.idx] ?? 0}
+              onValueChange={(v) => onParamChange(ampEffect.slotIndex, p.idx, v)}
+            />
+          ))}
         </div>
       </div>
     </div>

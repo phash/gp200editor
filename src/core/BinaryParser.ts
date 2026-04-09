@@ -23,6 +23,11 @@ export class BinaryParser {
     return this.view.getUint16(offset, true);
   }
 
+  readUint16BE(offset: number): number {
+    this.assertBounds(offset, 2);
+    return this.view.getUint16(offset, false);
+  }
+
   readUint32LE(offset: number): number {
     this.assertBounds(offset, 4);
     return this.view.getUint32(offset, true);

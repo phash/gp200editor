@@ -807,6 +807,88 @@ describe('SysExCodec: buildNote', () => {
   });
 });
 
+describe('SysExCodec: buildEffectChange', () => {
+  it('produces 54-byte raw SysEx with correct envelope', () => {
+    const msg = SysExCodec.buildEffectChange(0, 0x00000001); // COMP4
+    expect(msg.length).toBe(54);
+    expect(msg[0]).toBe(0xF0);
+    expect(msg[8]).toBe(0x12); // CMD=SET
+    expect(msg[9]).toBe(0x14); // sub=EFFECT_CHANGE
+    expect(msg[53]).toBe(0xF7);
+  });
+
+  it('encodes block index at byte[38]', () => {
+    const msg = SysExCodec.buildEffectChange(5, 0x0A000010); // CAB block
+    expect(msg[38]).toBe(5);
+  });
+
+  it('encodes module type at byte[52]', () => {
+    // DST module (0x03)
+    expect(SysExCodec.buildEffectChange(0, 0x03000001)[52]).toBe(0x03);
+    // AMP module (0x07)
+    expect(SysExCodec.buildEffectChange(3, 0x07000055)[52]).toBe(0x07);
+    // CAB module (0x0A)
+    expect(SysExCodec.buildEffectChange(5, 0x0A000010)[52]).toBe(0x0A);
+    // SnapTone (0x0F)
+    expect(SysExCodec.buildEffectChange(3, 0x0F000000)[52]).toBe(0x0F);
+  });
+
+  it('encodes variant as nibble pair at bytes[45:46]', () => {
+    // COMP4 = variant 1 → [45]=0x00, [46]=0x01
+    const msg1 = SysExCodec.buildEffectChange(0, 0x00000001);
+    expect(msg1[45]).toBe(0x00);
+    expect(msg1[46]).toBe(0x01);
+
+    // AC Boost = variant 0x0A → [45]=0x00, [46]=0x0A
+    const msg2 = SysExCodec.buildEffectChange(0, 0x0000000A);
+    expect(msg2[45]).toBe(0x00);
+    expect(msg2[46]).toBe(0x0A);
+
+    // Variant 0x7C (max known CAB) → [45]=0x07, [46]=0x0C
+    const msg3 = SysExCodec.buildEffectChange(5, 0x0A00007C);
+    expect(msg3[45]).toBe(0x07);
+    expect(msg3[46]).toBe(0x0C);
+  });
+
+  it('uses bottom 8 bits of effectId as variant', () => {
+    // Ensure consistent with response parsing: effectId = (module<<24) | variant
+    const msg = SysExCodec.buildEffectChange(2, 0x04000003); // MOD Chorus
+    const variant = (msg[45] << 4) | msg[46];
+    expect(variant).toBe(3);
+    expect(msg[52]).toBe(0x04); // MOD module
+  });
+});
+
+describe('SysExCodec: buildPatchSetting', () => {
+  it('produces 46-byte raw SysEx for volume', () => {
+    const msg = SysExCodec.buildPatchSetting(0x00, 50); // VOL=50
+    expect(msg.length).toBe(46);
+    expect(msg[0]).toBe(0xF0);
+    expect(msg[8]).toBe(0x12);
+    expect(msg[9]).toBe(0x10);
+    expect(msg[38]).toBe(0x00); // target=VOL
+    expect(msg[45]).toBe(0xF7);
+  });
+
+  it('encodes value as nibble pair at bytes[41:42]', () => {
+    const msg = SysExCodec.buildPatchSetting(0x00, 0x32); // VOL=50
+    expect(msg[41]).toBe(0x03); // high nibble
+    expect(msg[42]).toBe(0x02); // low nibble
+  });
+
+  it('sets PAN-left markers for value > 127', () => {
+    const msg = SysExCodec.buildPatchSetting(0x06, 200); // PAN=200 (left)
+    expect(msg[43]).toBe(0x0F);
+    expect(msg[44]).toBe(0x0F);
+  });
+
+  it('handles tempo > 255', () => {
+    const msg = SysExCodec.buildPatchSetting(0x01, 300); // Tempo=300 BPM
+    const value = (msg[43] << 12) | (msg[44] << 8) | (msg[41] << 4) | msg[42];
+    expect(value).toBe(300);
+  });
+});
+
 describe('SysExCodec: author in read/write chunks', () => {
   it('parsePresetFromDecoded reads author from decoded[44:60]', () => {
     // Build a minimal decoded payload (912+ bytes)

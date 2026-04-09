@@ -57,6 +57,9 @@ model Preset {
   ratings       PresetRating[]
 
   @@index([userId])
+  @@index([public, createdAt])
+  @@index([public, downloadCount])
+  @@index([public, ratingAverage])
 }
 
 model Session {

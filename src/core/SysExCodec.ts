@@ -379,8 +379,10 @@ export const SysExCodec = {
     // CMD=0x12, sub=0x14, 54 bytes — raw SysEx (not nibble-encoded)
     // Confirmed: captures 134828 (COMP→COMP4→AC Boost) + 143107 (AMP→SnapTone)
     // raw[38]=block, raw[45:47]=variant nibble-encoded, raw[52]=module type
+    // NOTE: Sub-category byte (bits 16-23, e.g. 0x10 for User IR) encoding position
+    // is unknown — only regular effects (sub-category=0x00) are confirmed via captures.
     const moduleType = (effectId >> 24) & 0xFF;
-    const variant = effectId & 0xFFFF;
+    const variant = effectId & 0xFF;
     return new Uint8Array([
       0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, // [0-7]   header
       0x12, 0x14,                                        // [8-9]   CMD=SET, sub=EFFECT_CHANGE

@@ -33,6 +33,11 @@ export async function GET(request: NextRequest) {
     }),
   ]);
 
+  // Block auto-login for suspended users
+  if (verifyToken.user.suspended) {
+    return NextResponse.json({ error: 'Account suspended' }, { status: 403 });
+  }
+
   // Auto-login after verification
   const session = await lucia.createSession(verifyToken.userId, {});
   const sessionCookie = lucia.createSessionCookie(session.id);

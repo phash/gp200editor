@@ -64,8 +64,8 @@ export function DeviceSlotBrowser({
   }, [search, presetNames]);
   const confirmLabel = isMulti
     ? multiSelected.size > 0
-      ? `${multiSelected.size} Slots auswählen`
-      : 'Slots auswählen'
+      ? t('selectSlots', { count: multiSelected.size })
+      : t('selectSlots', { count: 0 })
     : selected !== null
       ? mode === 'pull'
         ? t('pullFrom', { slot: SysExCodec.slotToLabel(selected) })

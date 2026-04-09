@@ -34,6 +34,8 @@ const nextConfig = {
             "font-src 'self'",
             "connect-src 'self' https://musikersuche.org https://challenges.cloudflare.com",
             "frame-src https://challenges.cloudflare.com",
+            "object-src 'none'",
+            "worker-src 'self'",
             "frame-ancestors 'none'",
             "base-uri 'self'",
             "form-action 'self'",

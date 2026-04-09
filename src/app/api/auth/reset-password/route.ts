@@ -48,6 +48,15 @@ export async function POST(request: NextRequest) {
     }),
   ]);
 
+  // Check suspension before auto-login
+  const targetUser = await prisma.user.findUnique({
+    where: { id: resetToken.userId },
+    select: { suspended: true },
+  });
+  if (targetUser?.suspended) {
+    return NextResponse.json({ error: 'Account suspended' }, { status: 403 });
+  }
+
   // Invalidate all existing sessions, then auto-login with a fresh session
   await lucia.invalidateUserSessions(resetToken.userId);
   const session = await lucia.createSession(resetToken.userId, {});

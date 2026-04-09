@@ -4,7 +4,8 @@ export async function verifyTurnstile(token: string, ip: string): Promise<boolea
   const secret = process.env.TURNSTILE_SECRET_KEY;
   if (!secret) {
     if (process.env.NODE_ENV === 'production') {
-      console.warn('[SECURITY] TURNSTILE_SECRET_KEY not set — Turnstile verification disabled in production!');
+      console.error('[SECURITY] TURNSTILE_SECRET_KEY not set — registration blocked in production!');
+      return false;
     }
     return true;
   }

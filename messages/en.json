@@ -193,6 +193,7 @@
     "push": "Save",
     "pullFrom": "Load from {slot}",
     "pushTo": "Save to {slot}",
+    "selectSlots": "Select slots",
     "loadingNames": "Loading preset names…",
     "browserTitle": "Select Preset",
     "search": "Search presets…",

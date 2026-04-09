@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 
 interface ConfirmDialogProps {
@@ -12,11 +13,22 @@ interface ConfirmDialogProps {
 
 export function ConfirmDialog({ open, message, onConfirm, onCancel, loading }: ConfirmDialogProps) {
   const t = useTranslations('admin.confirm');
+  const cancelRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    cancelRef.current?.focus();
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCancel();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [open, onCancel]);
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onCancel}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onCancel} role="dialog" aria-modal="true">
       <div
         className="rounded-xl p-6 max-w-sm w-full mx-4"
         style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}
@@ -25,6 +37,7 @@ export function ConfirmDialog({ open, message, onConfirm, onCancel, loading }: C
         <p className="text-sm mb-6" style={{ color: 'var(--text-primary)' }}>{message}</p>
         <div className="flex gap-3 justify-end">
           <button
+            ref={cancelRef}
             onClick={onCancel}
             className="px-4 py-2 rounded-lg text-sm transition-colors"
             style={{ border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}

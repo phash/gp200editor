@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { validateSession, requireVerifiedUser, refreshSessionCookie } from '@/lib/session';
-import { uploadPreset } from '@/lib/storage';
+import { uploadPreset, deletePreset } from '@/lib/storage';
 import { uploadPresetSchema } from '@/lib/validators';
 import { PRSTDecoder } from '@/core/PRSTDecoder';
 import type { GP200Preset } from '@/core/types';
@@ -88,6 +88,7 @@ export async function POST(request: Request) {
         tags: parsed.data.tags ?? [],
         author: parsed.data.author ?? null,
         style: parsed.data.style ?? null,
+        shareToken: crypto.randomUUID().replace(/-/g, ''),
         public: parsed.data.publish ?? false,
         modules: extractModules(decoded),
         effects: extractEffects(decoded),
@@ -103,6 +104,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json(preset, { status: 201 });
   } catch (err) {
+    // Clean up orphaned S3 file
+    await deletePreset(key).catch(() => {});
     logError({
       message: `Failed to create preset: ${err instanceof Error ? err.message : String(err)}`,
       stack: err instanceof Error ? err.stack : undefined,

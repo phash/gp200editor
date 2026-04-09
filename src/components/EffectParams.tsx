@@ -8,12 +8,14 @@ interface EffectParamsProps {
   onParamChange: (idx: number, value: number) => void;
   maxColumns?: number;
   layout?: 'default' | 'eq';
+  slotIndex?: number;
 }
 
-function KnobControl({ param, value, onChange }: {
+function KnobControl({ param, value, onChange, idPrefix }: {
   param: Extract<EffectParam, { type: 'knob' }>;
   value: number;
   onChange: (value: number) => void;
+  idPrefix: string;
 }) {
   const pct = param.max > param.min
     ? ((value - param.min) / (param.max - param.min)) * 100
@@ -24,7 +26,7 @@ function KnobControl({ param, value, onChange }: {
       <div className="flex items-center justify-between">
         <label className="text-[11px] font-medium uppercase tracking-wider"
           style={{ color: 'var(--text-muted)' }}
-          htmlFor={`param-${param.idx}`}>
+          htmlFor={`${idPrefix}-${param.idx}`}>
           {param.name}
         </label>
         <span className="font-mono-display text-xs tabular-nums"
@@ -39,7 +41,7 @@ function KnobControl({ param, value, onChange }: {
             style={{ width: `${pct}%`, background: `linear-gradient(90deg, var(--accent-amber-dim), var(--accent-amber))` }} />
         </div>
         <input
-          id={`param-${param.idx}`}
+          id={`${idPrefix}-${param.idx}`}
           type="range"
           min={param.min}
           max={param.max}
@@ -86,20 +88,21 @@ function SwitchControl({ param, value, onChange }: {
   );
 }
 
-function ComboxControl({ param, value, onChange }: {
+function ComboxControl({ param, value, onChange, idPrefix }: {
   param: Extract<EffectParam, { type: 'combox' }>;
   value: number;
   onChange: (value: number) => void;
+  idPrefix: string;
 }) {
   return (
     <div className="flex flex-col gap-1.5 px-1">
       <label className="text-[11px] font-medium uppercase tracking-wider"
         style={{ color: 'var(--text-muted)' }}
-        htmlFor={`param-${param.idx}`}>
+        htmlFor={`${idPrefix}-${param.idx}`}>
         {param.name}
       </label>
       <select
-        id={`param-${param.idx}`}
+        id={`${idPrefix}-${param.idx}`}
         value={value}
         onChange={(e) => onChange(parseInt(e.target.value, 10))}
         className="h-8 text-sm rounded px-2 border cursor-pointer transition-colors focus:outline-none"
@@ -120,10 +123,11 @@ function ComboxControl({ param, value, onChange }: {
   );
 }
 
-function VerticalFader({ param, value, onChange }: {
+function VerticalFader({ param, value, onChange, idPrefix }: {
   param: Extract<EffectParam, { type: 'knob' }>;
   value: number;
   onChange: (value: number) => void;
+  idPrefix: string;
 }) {
   const pct = param.max > param.min
     ? ((value - param.min) / (param.max - param.min)) * 100
@@ -135,7 +139,7 @@ function VerticalFader({ param, value, onChange }: {
       <label
         className="text-[8px] font-bold uppercase tracking-wider whitespace-nowrap font-mono-display"
         style={{ color: 'var(--text-muted)' }}
-        htmlFor={`eq-${param.idx}`}
+        htmlFor={`${idPrefix}-eq-${param.idx}`}
       >
         {param.name}
       </label>
@@ -188,7 +192,7 @@ function VerticalFader({ param, value, onChange }: {
         )}
         {/* Input — rotated vertical */}
         <input
-          id={`eq-${param.idx}`}
+          id={`${idPrefix}-eq-${param.idx}`}
           type="range"
           min={param.min}
           max={param.max}
@@ -231,9 +235,10 @@ function VerticalFader({ param, value, onChange }: {
   );
 }
 
-export function EffectParams({ effectId, params, onParamChange, maxColumns, layout }: EffectParamsProps) {
+export function EffectParams({ effectId, params, onParamChange, maxColumns, layout, slotIndex }: EffectParamsProps) {
   const t = useTranslations('editor');
   const paramDefs = getEffectParams(effectId);
+  const idPrefix = `slot${slotIndex ?? 0}-param`;
 
   if (paramDefs.length === 0) {
     return (
@@ -253,14 +258,14 @@ export function EffectParams({ effectId, params, onParamChange, maxColumns, layo
           const value = params[param.idx] ?? param.default;
           const handleChange = (v: number) => onParamChange(param.idx, v);
           if (param.type === 'knob') {
-            return <VerticalFader key={param.idx} param={param} value={value} onChange={handleChange} />;
+            return <VerticalFader key={param.idx} param={param} value={value} onChange={handleChange} idPrefix={idPrefix} />;
           }
           // Fallback for non-knob params in EQ
           if (param.type === 'switch') {
             return <SwitchControl key={param.idx} param={param} value={value} onChange={handleChange} />;
           }
           if (param.type === 'combox') {
-            return <ComboxControl key={param.idx} param={param} value={value} onChange={handleChange} />;
+            return <ComboxControl key={param.idx} param={param} value={value} onChange={handleChange} idPrefix={idPrefix} />;
           }
         })}
       </div>
@@ -279,11 +284,11 @@ export function EffectParams({ effectId, params, onParamChange, maxColumns, layo
 
         switch (param.type) {
           case 'knob':
-            return <KnobControl key={param.idx} param={param} value={value} onChange={handleChange} />;
+            return <KnobControl key={param.idx} param={param} value={value} onChange={handleChange} idPrefix={idPrefix} />;
           case 'switch':
             return <SwitchControl key={param.idx} param={param} value={value} onChange={handleChange} />;
           case 'combox':
-            return <ComboxControl key={param.idx} param={param} value={value} onChange={handleChange} />;
+            return <ComboxControl key={param.idx} param={param} value={value} onChange={handleChange} idPrefix={idPrefix} />;
         }
       })}
     </div>

@@ -30,8 +30,14 @@ info "Pulling latest code..."
 git pull
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Step 2: Rebuild and restart app (migrations run via docker-entrypoint.sh)
+# Step 2: Tag previous image for rollback, then rebuild
 # ══════════════════════════════════════════════════════════════════════════════
+PREV_IMAGE=$(docker compose $COMPOSE_FILES images app -q 2>/dev/null | head -1 || true)
+if [ -n "$PREV_IMAGE" ]; then
+  info "Tagging previous image for rollback: $PREV_IMAGE"
+  docker tag "$PREV_IMAGE" gp200editor-app:previous 2>/dev/null || true
+fi
+
 info "Rebuilding app container..."
 docker compose $COMPOSE_FILES --env-file .env.prod build app
 
@@ -52,8 +58,17 @@ done
 if docker exec "$APP_CONTAINER" node -e "require('http').get('http://localhost:3000/',r=>{process.exit(r.statusCode<400?0:1)}).on('error',()=>process.exit(1))" 2>/dev/null; then
   info "App is running."
 else
-  error "App not responding after 60s! Check logs:"
-  echo "  docker compose $COMPOSE_FILES logs --tail 50 app"
+  error "App not responding after 60s!"
+  if docker image inspect gp200editor-app:previous >/dev/null 2>&1; then
+    warn "Rolling back to previous image..."
+    docker compose $COMPOSE_FILES --env-file .env.prod stop app
+    docker tag gp200editor-app:previous gp200editor-app:latest 2>/dev/null || true
+    docker compose $COMPOSE_FILES --env-file .env.prod up -d app
+    warn "Rolled back. Check logs: docker compose $COMPOSE_FILES logs --tail 50 app"
+  else
+    echo "  No previous image available. Check logs:"
+    echo "  docker compose $COMPOSE_FILES logs --tail 50 app"
+  fi
   exit 1
 fi
 

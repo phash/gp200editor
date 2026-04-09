@@ -5,14 +5,14 @@ export const EffectSlotSchema = z.object({
   effectId: z.number().int().min(0).max(0xFFFFFFFF), // LE uint32 effect code
   enabled: z.boolean(),
   /** Effect parameters: 15 x float32 LE values per slot */
-  params: z.array(z.number()),
+  params: z.array(z.number()).length(15),
 });
 
 export const GP200PresetSchema = z.object({
   version: z.string(),
-  patchName: z.string().max(32), // longest known name: "Stone in Love" = 13 chars
+  patchName: z.string().max(16), // .prst offset 0x44, 16 bytes null-terminated
   author: z.string().max(16).optional(), // .prst offset 0x54, 16 bytes null-terminated
-  effects: z.array(EffectSlotSchema),
+  effects: z.array(EffectSlotSchema).length(11), // GP-200 always has exactly 11 slots
   checksum: z.number().int().min(0).max(65535), // LE uint16 at end of file
 });
 

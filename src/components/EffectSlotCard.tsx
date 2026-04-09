@@ -139,6 +139,7 @@ export function EffectSlotCard({ slot, index, onToggle, onChangeEffect, onParamC
             onParamChange={(paramIdx, value) => onParamChange(slot.slotIndex, paramIdx, value)}
             maxColumns={isEQ ? undefined : 2}
             layout={isEQ ? 'eq' : 'default'}
+            slotIndex={slot.slotIndex}
           />
         </div>
 

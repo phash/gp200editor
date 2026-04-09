@@ -3,17 +3,15 @@
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
-import { useSearchParams } from 'next/navigation';
 
 export default function VerifyEmailPage() {
   const t = useTranslations('auth');
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
   const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
-    const token = searchParams.get('token');
+    const token = new URLSearchParams(window.location.search).get('token');
     if (!token) {
       setStatus('error');
       setErrorMsg(t('verifyInvalidToken'));

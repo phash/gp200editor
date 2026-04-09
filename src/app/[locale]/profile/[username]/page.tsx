@@ -106,14 +106,7 @@ export default async function UserProfilePage({ params }: Props) {
             href={profileUser.website}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm transition-colors"
-            style={{ color: 'var(--accent-amber)' }}
-            onMouseEnter={(e: React.MouseEvent<HTMLAnchorElement>) =>
-              (e.currentTarget.style.color = 'var(--text-primary)')
-            }
-            onMouseLeave={(e: React.MouseEvent<HTMLAnchorElement>) =>
-              (e.currentTarget.style.color = 'var(--accent-amber)')
-            }
+            className="text-sm transition-colors text-[var(--accent-amber)] hover:!text-[var(--text-primary)]"
           >
             {profileUser.website}
           </a>

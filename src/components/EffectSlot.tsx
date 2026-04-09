@@ -138,6 +138,7 @@ export function EffectSlot({ slot, index, onToggle, onChangeEffect, onParamChang
             effectId={slot.effectId}
             params={slot.params}
             onParamChange={(paramIdx, value) => onParamChange(slot.slotIndex, paramIdx, value)}
+            slotIndex={slot.slotIndex}
           />
         </div>
       )}

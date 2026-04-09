@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 
 interface WarnDialogProps {
@@ -16,12 +16,29 @@ export function WarnDialog({ open, username, onSend, onCancel, loading }: WarnDi
   const [reason, setReason] = useState('inappropriate');
   const [message, setMessage] = useState('');
 
+  // Reset state when dialog opens
+  useEffect(() => {
+    if (open) {
+      setReason('inappropriate');
+      setMessage('');
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCancel();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [open, onCancel]);
+
   if (!open) return null;
 
   const reasons = ['inappropriate', 'spam', 'copyright', 'other'] as const;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onCancel}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onCancel} role="dialog" aria-modal="true">
       <div
         className="rounded-xl p-6 max-w-md w-full mx-4"
         style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}

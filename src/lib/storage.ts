@@ -6,16 +6,20 @@ import {
 } from '@aws-sdk/client-s3';
 import type { Readable } from 'stream';
 
+let _client: S3Client | null = null;
 function getClient() {
-  return new S3Client({
-    endpoint: process.env.GARAGE_ENDPOINT!,
-    region: 'garage',
-    credentials: {
-      accessKeyId: process.env.GARAGE_ACCESS_KEY_ID!,
-      secretAccessKey: process.env.GARAGE_SECRET_ACCESS_KEY!,
-    },
-    forcePathStyle: true, // required for Garage and other S3-compatible stores
-  });
+  if (!_client) {
+    _client = new S3Client({
+      endpoint: process.env.GARAGE_ENDPOINT!,
+      region: 'garage',
+      credentials: {
+        accessKeyId: process.env.GARAGE_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.GARAGE_SECRET_ACCESS_KEY!,
+      },
+      forcePathStyle: true, // required for Garage and other S3-compatible stores
+    });
+  }
+  return _client;
 }
 
 function bucket() {

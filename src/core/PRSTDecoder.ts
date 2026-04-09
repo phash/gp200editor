@@ -9,7 +9,7 @@ const OFFSET_PATCH_NAME  = 0x44;  // null-terminated, max 16 bytes (not 32 — a
 const PATCH_NAME_MAX     = 16;
 const OFFSET_AUTHOR      = 0x54;  // null-terminated, max 16 bytes
 const AUTHOR_MAX         = 16;
-const OFFSET_CHECKSUM    = 0x4C6; // LE uint16 (last 2 bytes of 1224-byte file)
+const OFFSET_CHECKSUM    = 0x4C6; // BE uint16 (last 2 bytes of 1224-byte file)
 
 const EFFECT_BLOCK_COUNT  = 11;    // GP-200 has 11 effect slots
 const EFFECT_BLOCK_START  = 0xa0;  // first block offset
@@ -33,6 +33,10 @@ export class PRSTDecoder {
   }
 
   decode(): GP200Preset {
+    const len = this.parser.byteLength;
+    if (len !== 1224 && len !== 1176) {
+      throw new Error(`Invalid .prst file: expected 1224 or 1176 bytes, got ${len}`);
+    }
     if (!this.hasMagic()) {
       throw new Error('Invalid .prst file: magic header not found');
     }
@@ -54,7 +58,7 @@ export class PRSTDecoder {
       effects.push({ slotIndex, enabled, effectId, params });
     }
 
-    const checksum = this.parser.readUint16LE(OFFSET_CHECKSUM);
+    const checksum = this.parser.readUint16BE(OFFSET_CHECKSUM);
 
     return GP200PresetSchema.parse({ version, patchName, author: author || undefined, effects, checksum });
   }

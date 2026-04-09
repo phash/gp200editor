@@ -122,20 +122,29 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   // 2. Update DB
-  const updated = await prisma.preset.update({
-    where: { id },
-    data: updateData,
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      tags: true,
-      shareToken: true,
-      downloadCount: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
+  let updated;
+  try {
+    updated = await prisma.preset.update({
+      where: { id },
+      data: updateData,
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        tags: true,
+        shareToken: true,
+        downloadCount: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  } catch {
+    // Rollback: delete newly uploaded S3 file if DB update failed
+    if (updateData.presetKey) {
+      await deletePreset(updateData.presetKey).catch(() => {});
+    }
+    return NextResponse.json({ error: 'Failed to update preset' }, { status: 500 });
+  }
 
   // 3. Best-effort delete old Garage object
   if (oldKey) {

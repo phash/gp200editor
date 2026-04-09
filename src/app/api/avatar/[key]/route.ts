@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAvatarStream } from '@/lib/storage';
+import type { Readable } from 'stream';
 
 export async function GET(
   _: NextRequest,
@@ -16,17 +17,17 @@ export async function GET(
   try {
     const stream = await getAvatarStream(key);
 
-    const webStream = new ReadableStream({
-      start(controller) {
-        stream.on('data', (chunk: Buffer) => controller.enqueue(chunk));
-        stream.on('end', () => controller.close());
-        stream.on('error', (err) => controller.error(err));
-      },
-    });
+    // Buffer the stream first — direct streaming hangs in standalone builds
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream as Readable) {
+      chunks.push(Buffer.from(chunk));
+    }
+    const buffer = Buffer.concat(chunks);
 
-    return new Response(webStream, {
+    return new Response(buffer, {
       headers: {
         'Content-Type': 'image/webp',
+        'Content-Length': String(buffer.length),
         'Cache-Control': 'public, max-age=31536000, immutable',
       },
     });

@@ -1,12 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import { GP200PresetSchema, EffectSlotSchema } from '@/core/types';
 
+const FULL_PARAMS = Array(15).fill(0);
+const FULL_EFFECTS = Array.from({ length: 11 }, (_, i) => ({
+  slotIndex: i, effectId: 0, enabled: false, params: FULL_PARAMS,
+}));
+
 describe('GP200PresetSchema', () => {
-  it('validates a valid preset', () => {
+  it('validates a valid preset with 11 effects', () => {
     const result = GP200PresetSchema.safeParse({
-      version: '1',   // Consistent with decoder output: String(readUint8())
+      version: '1',
       patchName: 'TestPatch',
-      effects: [],
+      effects: FULL_EFFECTS,
       checksum: 0xab,
     });
     expect(result.success).toBe(true);
@@ -16,16 +21,26 @@ describe('GP200PresetSchema', () => {
     const result = GP200PresetSchema.safeParse({
       version: '1',
       patchName: 'Stone in Love',
-      effects: [],
+      effects: FULL_EFFECTS,
       checksum: 0,
     });
     expect(result.success).toBe(true);
   });
 
-  it('rejects patchName longer than 32 chars', () => {
+  it('rejects patchName longer than 16 chars', () => {
     const result = GP200PresetSchema.safeParse({
       version: '1',
-      patchName: 'A'.repeat(33),
+      patchName: 'A'.repeat(17),
+      effects: FULL_EFFECTS,
+      checksum: 0,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects effects array with wrong count', () => {
+    const result = GP200PresetSchema.safeParse({
+      version: '1',
+      patchName: 'Test',
       effects: [],
       checksum: 0,
     });
@@ -34,12 +49,12 @@ describe('GP200PresetSchema', () => {
 });
 
 describe('EffectSlotSchema', () => {
-  it('validates a valid effect slot with float32 params', () => {
+  it('validates a valid effect slot with 15 float32 params', () => {
     const result = EffectSlotSchema.safeParse({
       slotIndex: 0,
       effectId: 5,
       enabled: true,
-      params: [50.0, 30.5, 0.0],
+      params: [50.0, 30.5, 0.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     });
     expect(result.success).toBe(true);
   });
@@ -49,7 +64,7 @@ describe('EffectSlotSchema', () => {
       slotIndex: 10,
       effectId: 0,
       enabled: false,
-      params: [],
+      params: FULL_PARAMS,
     });
     expect(result.success).toBe(true);
   });
@@ -59,7 +74,7 @@ describe('EffectSlotSchema', () => {
       slotIndex: 11,
       effectId: 0,
       enabled: false,
-      params: [],
+      params: FULL_PARAMS,
     });
     expect(result.success).toBe(false);
   });
@@ -69,9 +84,19 @@ describe('EffectSlotSchema', () => {
       slotIndex: 0,
       effectId: 0,
       enabled: true,
-      params: [256, -12.5, 0.1, 10000],
+      params: [256, -12.5, 0.1, 10000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     });
     expect(result.success).toBe(true);
+  });
+
+  it('rejects params with wrong count', () => {
+    const result = EffectSlotSchema.safeParse({
+      slotIndex: 0,
+      effectId: 0,
+      enabled: true,
+      params: [1, 2, 3],
+    });
+    expect(result.success).toBe(false);
   });
 
   it('accepts 15 float32 params (full slot)', () => {

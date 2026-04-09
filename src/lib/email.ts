@@ -20,7 +20,7 @@ function getTransporter() {
     port,
     secure: port === 465,
     auth: user ? { user, pass } : undefined,
-    tls: { rejectUnauthorized: false },
+    tls: { rejectUnauthorized: process.env.NODE_ENV === 'production' },
   });
 }
 
@@ -38,7 +38,7 @@ export async function sendPasswordResetEmail(
     subject: 'Reset your password — Preset Forge',
     html: `
       <p>Click the link below to reset your password. It expires in 1&nbsp;hour.</p>
-      <p><a href="${resetUrl}">${resetUrl}</a></p>
+      <p><a href="${escapeHtml(resetUrl)}">${escapeHtml(resetUrl)}</a></p>
       <p>If you did not request this, you can safely ignore this email.</p>
     `,
   });
@@ -54,7 +54,7 @@ export async function sendVerificationEmail(
     subject: 'Verify your email — Preset Forge',
     html: `
       <p>Welcome to Preset Forge! Please verify your email address by clicking the link below.</p>
-      <p><a href="${verifyUrl}">${verifyUrl}</a></p>
+      <p><a href="${escapeHtml(verifyUrl)}">${escapeHtml(verifyUrl)}</a></p>
       <p>This link expires in 24 hours.</p>
       <p>If you did not create an account, you can safely ignore this email.</p>
     `,
