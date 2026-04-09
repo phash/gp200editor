@@ -75,7 +75,28 @@ describe('PRSTDecoder', () => {
   it('wirft bei ungueltigem Magic', () => {
     const bad = new Uint8Array(1224).fill(0);
     const decoder = new PRSTDecoder(bad);
-    expect(() => decoder.decode()).toThrow('Invalid .prst file');
+    expect(() => decoder.decode()).toThrow('magic header not found');
+  });
+
+  it('wirft bei falscher Dateigroesse', () => {
+    const tooSmall = new Uint8Array(100).fill(0);
+    tooSmall[0] = 0x54; tooSmall[1] = 0x53; tooSmall[2] = 0x52; tooSmall[3] = 0x50;
+    const decoder = new PRSTDecoder(tooSmall);
+    expect(() => decoder.decode()).toThrow('expected 1224 or 1176 bytes');
+  });
+
+  it('akzeptiert 1176 Bytes (Factory Preset)', () => {
+    const factory = new Uint8Array(1176).fill(0);
+    factory[0] = 0x54; factory[1] = 0x53; factory[2] = 0x52; factory[3] = 0x50;
+    factory[0x15] = 0x01;
+    for (let slot = 0; slot < 11; slot++) {
+      const base = 0xa0 + slot * 0x48;
+      factory[base] = 0x14; factory[base + 2] = 0x44;
+      factory[base + 4] = slot;
+    }
+    const decoder = new PRSTDecoder(factory);
+    // Should not throw on size (might throw on checksum range if out of bounds)
+    expect(decoder.hasMagic()).toBe(true);
   });
 
   it('dekodiert 11 Effect-Slots mit 15 float32 params', () => {

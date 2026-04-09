@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { EFFECT_MAP, getEffectName, getModuleName } from '@/core/effectNames';
+import { EFFECT_MAP, getEffectName, getModuleName, getEffectsByModule, MODULE_COLORS } from '@/core/effectNames';
 
 describe('EFFECT_MAP', () => {
   it('contains 305 unique effect codes', () => {
@@ -95,5 +95,55 @@ describe('getModuleName', () => {
   it('returns "Unknown" for unmapped codes', () => {
     expect(getModuleName(0x99999999)).toBe('Unknown');
     expect(getModuleName(0xFFFFFFFF)).toBe('Unknown');
+  });
+});
+
+describe('getEffectsByModule', () => {
+  it('returns DST effects sorted by name', () => {
+    const dstEffects = getEffectsByModule('DST');
+    expect(dstEffects.length).toBeGreaterThan(5);
+    expect(dstEffects.find(e => e.name === 'Green OD')).toBeDefined();
+    // Check sorted
+    for (let i = 1; i < dstEffects.length; i++) {
+      expect(dstEffects[i].name.localeCompare(dstEffects[i - 1].name)).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it('returns AMP effects', () => {
+    const ampEffects = getEffectsByModule('AMP');
+    expect(ampEffects.length).toBeGreaterThan(10);
+    expect(ampEffects.find(e => e.name === 'UK 800')).toBeDefined();
+  });
+
+  it('returns empty array for unknown module', () => {
+    expect(getEffectsByModule('NONEXISTENT')).toEqual([]);
+  });
+
+  it('each effect has effectId and name', () => {
+    const cabEffects = getEffectsByModule('CAB');
+    for (const e of cabEffects) {
+      expect(typeof e.effectId).toBe('number');
+      expect(typeof e.name).toBe('string');
+      expect(e.name.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe('MODULE_COLORS', () => {
+  const expectedModules = ['PRE', 'WAH', 'DST', 'AMP', 'NR', 'CAB', 'EQ', 'MOD', 'DLY', 'RVB', 'VOL'];
+
+  it('has colors for all 11 module types', () => {
+    for (const mod of expectedModules) {
+      expect(MODULE_COLORS[mod]).toBeDefined();
+    }
+  });
+
+  it('each module color has accent, accentDim, glow', () => {
+    for (const mod of expectedModules) {
+      const colors = MODULE_COLORS[mod];
+      expect(colors.accent).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(colors.accentDim).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(colors.glow).toMatch(/^rgba\(/);
+    }
   });
 });

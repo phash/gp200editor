@@ -35,4 +35,37 @@ describe('BinaryParser', () => {
     const p = new BinaryParser(buf); // length 6
     expect(() => p.readAscii(4, 10)).toThrow(RangeError);
   });
+
+  it('reads a uint16 big-endian', () => {
+    // bytes [0x47, 0x50] → 0x4750
+    const p = new BinaryParser(buf);
+    expect(p.readUint16BE(0)).toBe(0x4750);
+  });
+
+  it('readUint16BE throws on out-of-bounds', () => {
+    const p = new BinaryParser(buf);
+    expect(() => p.readUint16BE(5)).toThrow(RangeError);
+  });
+
+  it('reads raw bytes as number array', () => {
+    const p = new BinaryParser(buf);
+    expect(p.readBytes(0, 3)).toEqual([0x47, 0x50, 0x00]);
+    expect(p.readBytes(4, 2)).toEqual([0x41, 0x42]);
+  });
+
+  it('readBytes throws on out-of-bounds', () => {
+    const p = new BinaryParser(buf);
+    expect(() => p.readBytes(4, 10)).toThrow(RangeError);
+  });
+
+  it('reports byteLength correctly', () => {
+    const p = new BinaryParser(buf);
+    expect(p.byteLength).toBe(6);
+  });
+
+  it('readAscii stops at null terminator', () => {
+    // buf = [0x47, 0x50, 0x00, 0x0a, ...] — null at index 2
+    const p = new BinaryParser(buf);
+    expect(p.readAscii(0, 4)).toBe('GP'); // stops at 0x00
+  });
 });
