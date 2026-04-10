@@ -21,10 +21,18 @@ export default async function sitemap(): Promise<SitemapEntry[]> {
     { url: `${BASE_URL}/de/help`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.6 },
   ];
 
+  // Sitemap.xml has a hard limit of 50 000 URLs. Each preset generates two
+  // entries (de + en), so cap the query well below that to avoid OOM / slow
+  // builds once the gallery grows. Order by updatedAt so the newest presets
+  // are always indexed first.
+  const SITEMAP_PRESET_LIMIT = 10000;
+
   let presetPages: SitemapEntry[] = [];
   try {
     const publicPresets = await prisma.preset.findMany({
       where: { public: true },
+      orderBy: { updatedAt: 'desc' },
+      take: SITEMAP_PRESET_LIMIT,
       select: { shareToken: true, updatedAt: true },
     });
 

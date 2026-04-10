@@ -3,6 +3,8 @@
 import { useState, useCallback, useMemo } from 'react';
 import type { Playlist } from '@/lib/playlistDb';
 
+export type { Playlist } from '@/lib/playlistDb';
+
 export function usePlaylistPlayer(playlist: Playlist | null) {
   const [currentSongIndex, setCurrentSongIndex] = useState(0);
   const [currentPresetIndex, setCurrentPresetIndex] = useState(0);

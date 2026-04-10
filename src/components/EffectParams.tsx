@@ -1,4 +1,5 @@
 'use client';
+import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { getEffectParams, type EffectParam } from '@/core/effectParams';
 
@@ -237,7 +238,9 @@ function VerticalFader({ param, value, onChange, idPrefix }: {
 
 export function EffectParams({ effectId, params, onParamChange, maxColumns, layout, slotIndex }: EffectParamsProps) {
   const t = useTranslations('editor');
-  const paramDefs = getEffectParams(effectId);
+  // getEffectParams is a static lookup by id. Caching here prevents redoing
+  // the object lookup on every parent re-render (slider dragging / live edits).
+  const paramDefs = useMemo(() => getEffectParams(effectId), [effectId]);
   const idPrefix = `slot${slotIndex ?? 0}-param`;
 
   if (paramDefs.length === 0) {

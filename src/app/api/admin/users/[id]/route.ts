@@ -97,6 +97,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     where: { id },
     select: {
       id: true,
+      role: true,
       avatarKey: true,
       presets: { select: { presetKey: true } },
     },
@@ -104,6 +105,18 @@ export async function DELETE(request: Request, { params }: RouteParams) {
 
   if (!target) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
+  }
+
+  // Defensive check: refuse to delete other admins. Forces the deleting admin
+  // to first demote the target via PATCH, which is an auditable action. Without
+  // this, an admin can silently delete other admins and leave the site with
+  // only one admin (their own account, which can't self-delete) — a fragile
+  // state that complicates recovery.
+  if (target.role === 'ADMIN') {
+    return NextResponse.json(
+      { error: 'Cannot delete an admin. Demote to USER first.' },
+      { status: 400 },
+    );
   }
 
   // Delete all preset files from S3

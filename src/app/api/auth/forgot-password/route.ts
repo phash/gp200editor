@@ -15,9 +15,24 @@ export async function POST(request: NextRequest) {
   const { email } = parsed.data;
   const locale = (body?.locale === 'de' ? 'de' : 'en') as string;
 
-  const { allowed } = rateLimit(`forgot:${email}`, 3, 60 * 60 * 1000);
-  if (!allowed) {
-    return NextResponse.json({ error: 'Too many attempts. Please try again later.' }, { status: 429 });
+  // Defense in depth: per-email limit prevents spamming one user; per-IP
+  // limit prevents enumeration of the user database by spraying many
+  // different emails from the same client. Without the IP guard, an attacker
+  // could walk a large email list looking for 200-with-email-sent side-channel
+  // differences (throughput, error shape, etc.).
+  const ip =
+    request.headers.get('cf-connecting-ip') ??
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+    request.headers.get('x-real-ip') ??
+    'unknown';
+
+  const emailLimit = rateLimit(`forgot:email:${email}`, 3, 60 * 60 * 1000);
+  const ipLimit = rateLimit(`forgot:ip:${ip}`, 10, 15 * 60 * 1000);
+  if (!emailLimit.allowed || !ipLimit.allowed) {
+    return NextResponse.json(
+      { error: 'Too many attempts. Please try again later.' },
+      { status: 429 },
+    );
   }
   const user = await prisma.user.findUnique({ where: { email } });
 

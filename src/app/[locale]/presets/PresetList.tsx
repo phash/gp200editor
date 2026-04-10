@@ -75,11 +75,31 @@ export function PresetList({ initialPresets }: Props) {
       return;
     }
 
-    // Refresh preset list
-    const listRes = await fetch('/api/presets');
-    if (listRes.ok) {
-      const updated: Preset[] = await listRes.json();
-      setPresets(updated);
+    // Use the created preset from the POST response instead of re-fetching the
+    // whole list — saves a round-trip and is O(1) on a long list.
+    try {
+      const created = await res.json();
+      const optimistic: Preset = {
+        id: created.id,
+        name: created.name,
+        description: null,
+        tags: [],
+        modules: created.modules ?? [],
+        public: created.public ?? false,
+        shareToken: created.shareToken,
+        downloadCount: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      setPresets((prev) => [optimistic, ...prev]);
+    } catch {
+      // If the response wasn't JSON for some reason, fall back to a refetch.
+      const listRes = await fetch('/api/presets');
+      if (listRes.ok) {
+        const payload = await listRes.json();
+        const updated: Preset[] = Array.isArray(payload) ? payload : payload.presets ?? [];
+        setPresets(updated);
+      }
     }
 
     setUploading(false);

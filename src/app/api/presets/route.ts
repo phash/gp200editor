@@ -116,31 +116,59 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
+// Pagination guard: prevent a single user with many presets from returning
+// an unbounded list (memory bloat + slow response). The frontend only ever
+// renders a fixed page, so a generous upper bound is fine.
+const USER_PRESETS_DEFAULT_LIMIT = 100;
+const USER_PRESETS_MAX_LIMIT = 500;
+
+function parsePositiveInt(value: string | null, fallback: number, max: number): number {
+  if (!value) return fallback;
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed < 1) return fallback;
+  return Math.min(parsed, max);
+}
+
+export async function GET(request: Request) {
   const { user, session } = await validateSession();
   if (!user || !session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   await refreshSessionCookie(session);
 
-  const presets = await prisma.preset.findMany({
-    where: { userId: user.id },
-    orderBy: { createdAt: 'desc' },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      tags: true,
-      modules: true,
-      author: true,
-      style: true,
-      public: true,
-      shareToken: true,
-      downloadCount: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
+  const url = new URL(request.url);
+  const limit = parsePositiveInt(
+    url.searchParams.get('limit'),
+    USER_PRESETS_DEFAULT_LIMIT,
+    USER_PRESETS_MAX_LIMIT,
+  );
+  const page = parsePositiveInt(url.searchParams.get('page'), 1, Number.MAX_SAFE_INTEGER);
 
-  return NextResponse.json(presets);
+  const where = { userId: user.id } as const;
+
+  const [presets, total] = await Promise.all([
+    prisma.preset.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        tags: true,
+        modules: true,
+        author: true,
+        style: true,
+        public: true,
+        shareToken: true,
+        downloadCount: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    }),
+    prisma.preset.count({ where }),
+  ]);
+
+  return NextResponse.json({ presets, total, page, limit });
 }

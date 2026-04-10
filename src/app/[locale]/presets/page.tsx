@@ -13,9 +13,15 @@ export default async function PresetsPage() {
 
   const t = await getTranslations('presets');
 
+  // Cap initial SSR payload so a user with thousands of presets cannot
+  // blow up memory / TTFB on this page. Client-side pagination can load more
+  // via /api/presets?page=N if we ever expose it in the UI.
+  const INITIAL_PRESET_LIMIT = 100;
+
   const presets = await prisma.preset.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: 'desc' },
+    take: INITIAL_PRESET_LIMIT,
     select: {
       id: true,
       name: true,
