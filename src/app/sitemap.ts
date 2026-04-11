@@ -61,8 +61,14 @@ export default async function sitemap(): Promise<SitemapEntry[]> {
         priority: 0.3,
       },
     ]);
-  } catch {
-    // Database unavailable during build — skip dynamic pages
+  } catch (err) {
+    // Database unavailable during build — skip dynamic pages. Log so ops
+    // can see if this is happening in production (was previously silent
+    // which hid the post-deploy ISR regression).
+    console.error(
+      '[sitemap] failed to load public presets:',
+      err instanceof Error ? `${err.name}: ${err.message}` : err,
+    );
   }
 
   return [...staticPages, ...presetPages];
