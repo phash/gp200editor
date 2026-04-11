@@ -53,7 +53,13 @@ export class PRSTDecoder {
       const effectId  = this.parser.readUint32LE(base + MODEL_OFFSET);
       const params: number[] = [];
       for (let p = 0; p < PARAMS_COUNT; p++) {
-        params.push(this.parser.readFloat32LE(base + PARAMS_OFFSET + p * 4));
+        // Substitute 0 for NaN/Infinity — real .prst files in the wild
+        // (e.g. guitarpatches.com uploads) sometimes store NaN bytes for
+        // unused slots. Zod rejects NaN, so the whole decode would fail.
+        // Clamping to 0 is lossless for downloads (we always serve the
+        // original S3 bytes) and only affects the derived JSON view.
+        const raw = this.parser.readFloat32LE(base + PARAMS_OFFSET + p * 4);
+        params.push(Number.isFinite(raw) ? raw : 0);
       }
       effects.push({ slotIndex, enabled, effectId, params });
     }
