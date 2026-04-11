@@ -65,7 +65,7 @@ export function Navbar() {
       <button
         className="md:hidden flex flex-col gap-1 p-1"
         onClick={() => setMobileOpen(!mobileOpen)}
-        aria-label="Menu"
+        aria-label={t('menuAria')}
         style={{ color: 'var(--text-secondary)' }}
       >
         <span className="block w-5 h-0.5" style={{ background: 'currentColor' }} />
@@ -131,7 +131,7 @@ export function Navbar() {
           href="https://discord.gg/8V4bVtXw"
           target="_blank"
           rel="noopener noreferrer"
-          title="Feedback & Community"
+          title={t('discordTitle')}
           className="font-mono-display text-xs px-2.5 py-1 rounded transition-all flex items-center gap-1"
           style={{
             border: '1px solid rgba(88,101,242,0.3)',

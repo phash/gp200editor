@@ -274,7 +274,7 @@ function CuePointRow({
         onClick={() => onDelete(cuePoint.id)}
         className="flex h-6 w-6 items-center justify-center rounded text-xs transition-colors hover:opacity-80"
         style={{ color: 'var(--text-muted)' }}
-        aria-label="Delete"
+        aria-label={t('deleteCue')}
       >
         &times;
       </button>

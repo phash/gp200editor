@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 type Props = {
   value: number;          // 0–5, supports decimals for display (avg)
@@ -9,6 +10,7 @@ type Props = {
 };
 
 export function GuitarRating({ value, count, onRate, size = 'md' }: Props) {
+  const t = useTranslations('gallery');
   const [hover, setHover] = useState(0);
   const fontSize = size === 'sm' ? '0.7rem' : '1.1rem';
   const display = hover || Math.round(value);
@@ -27,7 +29,7 @@ export function GuitarRating({ value, count, onRate, size = 'md' }: Props) {
               onMouseEnter={() => setHover(n)}
               onMouseLeave={() => setHover(0)}
               style={{ fontSize, opacity, lineHeight: 1, background: 'none', border: 'none', cursor: 'pointer', padding: '0 1px' }}
-              aria-label={filled ? 'filled guitar' : 'empty guitar'}
+              aria-label={filled ? t('ratingStarFilled') : t('ratingStarEmpty')}
             >
               <span role="img" aria-hidden="true">🎸</span>
             </button>
@@ -38,7 +40,7 @@ export function GuitarRating({ value, count, onRate, size = 'md' }: Props) {
           <span
             key={n}
             style={{ fontSize, opacity, lineHeight: 1, padding: '0 1px' }}
-            aria-label={filled ? 'filled guitar' : 'empty guitar'}
+            aria-label={filled ? t('ratingStarFilled') : t('ratingStarEmpty')}
             role="img"
           >
             🎸
