@@ -9,6 +9,7 @@ import { Footer } from '@/components/Footer';
 import { Navbar } from '@/components/Navbar';
 import { ClientProviders } from './ClientProviders';
 import { buildAlternates, BASE_URL, type Locale } from '@/lib/hreflang';
+import { serializeJsonLd } from '@/lib/jsonLd';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -74,9 +75,9 @@ type Props = {
 
 export default async function LocaleLayout({ children, params }: Props) {
   const { locale } = await params;
-  if (!routing.locales.includes(locale as 'de' | 'en')) notFound();
+  if (!(routing.locales as readonly string[]).includes(locale)) notFound();
   const messages = await getMessages();
-  const jsonLdString = JSON.stringify(jsonLd);
+  const jsonLdString = serializeJsonLd(jsonLd);
   return (
     <html lang={locale}>
       <head>

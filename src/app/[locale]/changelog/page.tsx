@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
 import { Link } from '@/i18n/routing';
 import { getChangelog } from '@/lib/changelog';
+import { buildAlternates, BASE_URL } from '@/lib/hreflang';
 
 export const revalidate = 3600;
-
-import { buildAlternates, BASE_URL } from '@/lib/hreflang';
 
 type Props = {
   params: Promise<{ locale: 'de' | 'en' | 'es' | 'fr' | 'it' | 'pt' }>;

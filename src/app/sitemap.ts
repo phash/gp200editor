@@ -52,6 +52,11 @@ export default async function sitemap(): Promise<SitemapEntry[]> {
   // Public preset share pages — 6 locale variants + 1 JSON endpoint per preset.
   // Sitemap.xml has a hard limit of 50 000 URLs. With 6 locales + 1 JSON per
   // preset we get 7 entries per preset, so cap well below that.
+  // Each preset emits 6 locale variants + 1 JSON endpoint = 7 entries. At
+  // 5000 presets that's 35k URLs, leaving ~14k headroom under Google's 50k
+  // sitemap cap for the static + amp-category entries. If we hit this limit
+  // on a production build, we've silently started dropping presets from the
+  // index — that's ops-visible via console.warn + needs a sitemap-index split.
   const SITEMAP_PRESET_LIMIT = 5000;
   let presetPages: SitemapEntry[] = [];
   try {
@@ -61,6 +66,14 @@ export default async function sitemap(): Promise<SitemapEntry[]> {
       take: SITEMAP_PRESET_LIMIT,
       select: { shareToken: true, updatedAt: true },
     });
+
+    if (publicPresets.length === SITEMAP_PRESET_LIMIT) {
+      console.warn(
+        `[sitemap] hit SITEMAP_PRESET_LIMIT (${SITEMAP_PRESET_LIMIT}) — ` +
+          `older public presets are being excluded from the sitemap. ` +
+          `Plan a sitemap-index split before the library grows further.`,
+      );
+    }
 
     presetPages = publicPresets.flatMap((preset) => {
       const entries: SitemapEntry[] = LOCALES.map((locale) => ({

@@ -10,10 +10,10 @@ import { encodeToJson } from '@/core/PRSTJsonCodec';
 import { SignalChainSection } from './SignalChainSection';
 import { slugifyAmpName } from '@/core/ampCategories';
 import { Link } from '@/i18n/routing';
+import { buildAlternates, BASE_URL } from '@/lib/hreflang';
+import { serializeJsonLd } from '@/lib/jsonLd';
 
 export const revalidate = 3600;
-
-import { buildAlternates, BASE_URL } from '@/lib/hreflang';
 
 type Props = {
   params: Promise<{ token: string; locale: 'de' | 'en' | 'es' | 'fr' | 'it' | 'pt' }>;
@@ -189,10 +189,11 @@ export default async function SharePage({ params }: Props) {
       worstRating: '1',
     };
   }
-  // Escape < to \u003c so a malicious preset name can't inject a </script>
-  // tag and break out of the JSON-LD block. JSON.stringify doesn't do this
-  // by itself, so we do it in one step after serialization.
-  const productJsonLdString = JSON.stringify(productJsonLd).replace(/</g, '\\u003c');
+  // Use the shared serializer — escapes `<` (stops `</script>` injection)
+  // AND U+2028/U+2029 (line/paragraph separators, valid JSON but break
+  // older JS parsers). Inline `.replace(/</g, ...)` alone would miss the
+  // LS/PS case.
+  const productJsonLdString = serializeJsonLd(productJsonLd);
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-8">

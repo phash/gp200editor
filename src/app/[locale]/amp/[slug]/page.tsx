@@ -6,10 +6,10 @@ import {
   findAmpCategoryBySlug,
   listAmpCategories,
 } from '@/core/ampCategories';
+import { buildAlternates, BASE_URL } from '@/lib/hreflang';
+import { serializeJsonLd } from '@/lib/jsonLd';
 
 export const dynamic = 'force-dynamic';
-
-import { buildAlternates, BASE_URL } from '@/lib/hreflang';
 
 type Props = {
   params: Promise<{ slug: string; locale: 'de' | 'en' | 'es' | 'fr' | 'it' | 'pt' }>;
@@ -81,7 +81,7 @@ function buildCollectionJsonLd(opts: {
       })),
     },
   };
-  return JSON.stringify(data).replace(/</g, '\\u003c');
+  return serializeJsonLd(data);
 }
 
 export default async function AmpCategoryPage({ params }: Props) {
