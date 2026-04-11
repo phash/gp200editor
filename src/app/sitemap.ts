@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { listAmpCategories } from '@/core/ampCategories';
 
 // Force dynamic generation — the default sitemap.ts output is baked at build
 // time when the DB is unreachable, which means library presets imported after
@@ -74,5 +75,23 @@ export default async function sitemap(): Promise<SitemapEntry[]> {
     );
   }
 
-  return [...staticPages, ...presetPages];
+  // Amp category landing pages — one per (amp, locale) combo. These are
+  // indexed separately from individual presets and target long-tail amp
+  // queries like "Marshall JCM800 Valeton GP-200 preset".
+  const ampPages: SitemapEntry[] = listAmpCategories().flatMap((cat) => [
+    {
+      url: `${BASE_URL}/en/amp/${cat.slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    },
+    {
+      url: `${BASE_URL}/de/amp/${cat.slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    },
+  ]);
+
+  return [...staticPages, ...ampPages, ...presetPages];
 }

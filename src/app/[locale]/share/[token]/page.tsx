@@ -8,6 +8,8 @@ import { downloadPresetBuffer } from '@/lib/storage';
 import { PRSTDecoder } from '@/core/PRSTDecoder';
 import { encodeToJson } from '@/core/PRSTJsonCodec';
 import { SignalChainSection } from './SignalChainSection';
+import { slugifyAmpName } from '@/core/ampCategories';
+import { Link } from '@/i18n/routing';
 
 export const revalidate = 3600;
 
@@ -270,6 +272,22 @@ export default async function SharePage({ params }: Props) {
         </dl>
 
         {json && <SignalChainSection json={json} />}
+
+        {/* Internal link to the amp category landing page — gives Google a
+            clear content cluster signal ("presets grouped by amp") and lets
+            users discover more presets for the same amp in one click. */}
+        {json?.highlights.amp?.realName && (
+          <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
+            →{' '}
+            <Link
+              href={`/amp/${slugifyAmpName(json.highlights.amp.realName)}`}
+              className="hover:underline"
+              style={{ color: 'var(--accent-amber)' }}
+            >
+              More {json.highlights.amp.realName} presets
+            </Link>
+          </p>
+        )}
 
         <RatingWidget
           presetId={preset.id}

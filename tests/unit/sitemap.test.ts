@@ -37,8 +37,23 @@ describe('sitemap', () => {
     );
 
     const entries = await sitemap();
-    const presetEntries = entries.filter((e) => e.url.includes('/share/') || e.url.includes('/api/share/'));
+    const presetEntries = entries.filter(
+      (e) =>
+        (e.url.includes('/share/') || e.url.includes('/api/share/')) &&
+        !e.url.includes('/amp/'),
+    );
     expect(presetEntries).toHaveLength(30);
+  });
+
+  it('emits amp category URLs for both locales', async () => {
+    (prisma.preset.findMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce([]);
+
+    const entries = await sitemap();
+    const ampEn = entries.filter((e) => e.url.match(/\/en\/amp\/[a-z0-9-]+$/));
+    const ampDe = entries.filter((e) => e.url.match(/\/de\/amp\/[a-z0-9-]+$/));
+
+    expect(ampEn.length).toBeGreaterThan(10);
+    expect(ampDe.length).toBe(ampEn.length);
   });
 
   it('survives when prisma throws (DB unavailable at build time)', async () => {
