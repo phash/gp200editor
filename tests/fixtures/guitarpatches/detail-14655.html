@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9487629281287234"
+     crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="assets/css/bulma.min.css" />
+    <link rel="stylesheet" href="assets/css/base_25.css" />
+    <link rel="stylesheet" href="assets/css/all.min.css" />
+    <title>.: Guitar effect patches for Zoom, Digitech, Korg, TC-Electronic, Boss, Nux, Mooer</title>
+  </head>
+
+  <body class="has-background-black-ter">
+
+	
+    <nav class="navbar is-dark has-shadow" id="top-nav" role="navigation" aria-label="main navigation">
+        <div class="container is-max-widescreen">
+        <div class="navbar-brand">
+            <a class="navbar-item" href="index.php">
+                <img  class="logo" src="assets/img/newlogo2.png">
+            </a>
+
+            <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarHeader">
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+            </a>
+
+        </div>
+
+        <div id="navbarHeader" class="navbar-menu">
+            <div class="navbar-start">
+                <a class="navbar-item mt-4" href="units.php">
+                    <span class="icon">
+                        <i class="fas fa-guitar"></i>
+                    </span>
+                    All effect units
+                </a>
+                <a class="navbar-item mt-4" href="phpbb3/index.php">
+                    <span class="icon">
+                        <i class="fab fa-wpforms"></i>
+                    </span>
+                    Forums
+                </a>
+                <a class="navbar-item mt-4" href="info.php">
+                    <span class="icon">
+                        <i class="fas fa-envelope"></i>
+                    </span>
+                    Contact
+                </a>
+            </div>
+
+            
+            <div class="navbar-end">
+                <div class="navbar-item">
+                    <form method="post" name="search" action="search.php?unit=GP200">
+        				<!-- <input id="sstring" name="sstring" class="searchinput" type="text" placeholder="Search"/> -->
+                        <div class="field has-addons">
+                            <div class="control">
+                                <input class="input" id="sstring" name="sstring" type="text" placeholder="Search">
+                            </div>
+                            <div class="control">
+                                <button class="button is-link" name="search-button" type="submit" id="search-button">
+                                <!-- <a class="button is-link"> -->
+                                    <span class="icon">
+                                        <i class="fas fa-search"></i>
+                                    </span>
+                                <!-- </a> -->
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="navbar-item">
+                    <div class="field">
+                                                    <a class="button is-link js-modal-trigger" data-target="modal-js-example">
+                                Log in
+                            </a>
+                                            </div>
+                </div>
+            </div>
+        </div>
+        </div>
+    </nav>
+
+    <br><br>
+    
+    <div class="container is-max-desktop">
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9487629281287234"
+        crossorigin="anonymous"></script>
+        <!-- Guitarpatches 2025 -->
+        <ins class="adsbygoogle"
+            style="display:block"
+            data-ad-client="ca-pub-9487629281287234"
+            data-ad-slot="9109845390"
+            data-ad-format="auto"
+            data-full-width-responsive="true"></ins>
+        <script>
+            (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
+            if ($navbarBurgers.length > 0) {
+                $navbarBurgers.forEach( el => {
+                    el.addEventListener('click', () => {
+                        const target = el.dataset.target;
+                        const $target = document.getElementById(target);
+                        el.classList.toggle('is-active');
+                        $target.classList.toggle('is-active');
+                    });
+                });
+            }
+        });
+
+        const avatar = document.getElementById('avatarDropdown');
+        const dropdown = avatar.closest('.dropdown');
+
+        avatar.addEventListener('click', function(event) {
+            dropdown.classList.toggle('is-active');
+            event.stopPropagation(); // Förhindra att klicket bubblar upp
+        });
+
+        document.addEventListener('click', function() {
+            dropdown.classList.remove('is-active');
+        });
+    </script>
+
+    <!-- Login model -->
+    <div class="modal" id="modal-js-example">
+        <div class="modal-background"></div>
+        <div class="modal-card">
+        <header class="modal-card-head has-background-primary">
+          <h1 class="modal-card-title">Login</h1>
+          <button class="delete" aria-label="close"></button>
+        </header>
+
+        <section class="modal-card-body">
+			<form method="POST" action="login.php">
+                <div class="field">
+                    <label class="label">Username:</label>
+                    <input class="input" type="text" placeholder="Username" name="username">
+                </div>
+
+                <div class="field">
+                    <label class="label">Password:</label>
+                    <input class="input" type="password" name="password" placeholder="Password">
+                </div>
+
+                <div class="field">
+                    <div class="control">
+                        <label class="checkbox">
+                        <input type="checkbox" name="autologin">
+                        Remember Me
+                        </label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="control">
+                        <button class="button is-link" name="login" type="submit" id="login">Login</button>
+                        <input type="hidden" name="redirect" value="/index.php">
+                    </div>
+                </div>
+
+                <!-- <input type="hidden" name="redirect" value="../index.php"> -->
+			</form>
+        </section>
+
+        <footer class="modal-card-foot">
+            <div class="field is-grouped">
+			<a href="phpbb3/ucp.php?mode=register">Create an account</a>
+			<a href="phpbb3/ucp.php?mode=sendpassword">Forgot your password?</a>
+			<a href="phpbb3/ucp.php?mode=resend_act">Resend activation e-mail</a>
+            </div>
+        </footer>
+        </div>
+    </div>
+
+    <script src="assets/js/js_2025.js"></script>
+        
+
+
+  
+
+    <section class="hero">
+        <div class="hero-body pb-0">
+            <div class="container is-max-desktop">
+				<h2 class="title is-3 mb-0">Guitar effect patches for the Valeton GP-200</h2>
+				<p class="mb-2">This is a file library, use Valeton software to handle the patches.</p>
+				<!-- <div class="clear"></div> -->
+			
+	        </div>
+        </div>
+    </section>
+      
+    <section class="section">
+        <div class="container is-max-widescreen">
+				            <nav class="navbar is-dark has-text-centered is-spaced has-shadow mb-4 mt-0" style="border-radius: 8px;" id="unit-nav" role="navigation" aria-label="unit navigation">
+                <div class="container is-max-widescreen">
+                    <div class="navbar-brand">
+                        <div class="navbar-item">
+                            <!-- <span class="tag is-black is-large">Unit menu</span> -->
+                                <img class="navbar-image" src="./imgs/units/GP200.jpg" alt="GP200">
+                        </div>
+                        
+                        <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarUnit">
+                            <span aria-hidden="true"></span>
+                            <span aria-hidden="true"></span>
+                            <span aria-hidden="true"></span>
+                            <span aria-hidden="true"></span>
+                        </a>
+                        
+                    </div>
+                    
+                    <div id="navbarUnit" class="navbar-menu">
+                        <div class="navbar-start">
+                            <div class="navbar-item" style="width: 100px;">
+                                &nbsp;
+                            </div>
+                            <a class="navbar-item" href="patches.php?unit=GP200">
+                                <span class="icon">
+                                    <i class="fas fa-eye"></i>
+                                </span>
+                                View Patches
+                            </a>
+                            
+                            <a class="navbar-item" href="patchupload.php?mode=submit&unit=GP200">
+                                <span class="icon">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                </span>
+                                Upload Patch
+                            </a>
+
+                            <a class="navbar-item" href="patchreq.php?mode=request&unit=GP200">
+                                <span class="icon">
+                                    <i class="fas fa-question-circle"></i>
+                                </span>
+                                Request Patch
+                            </a>
+
+                            <a class="navbar-item" href="videos.php?unit=GP200">
+                                <span class="icon">
+                                    <i class="fab fa-youtube"></i>
+                                </span>
+                                View Video Links
+                            </a>
+
+                            <a class="navbar-item" href="videos.php?mode=submit&unit=GP200">
+                                <span class="icon">
+                                    <i class="far fa-plus-square"></i>
+                                </span>
+                                Add Video Link
+                            </a>
+                        </div>
+                        
+                    </div>
+                </div>
+            </nav>
+
+
+					    </div>
+    			</section>
+
+    			<section class="section pt-0">
+        			<div class="container is-max-desktop">
+						<p class="title is-3">Woke Up With Wood - ZZ Top</h4>
+						<p class="subtitle is-5">I created just one patch for the Valeton GP-200 that I use to play the song by ZZ Top called "Woke Up With Wood" from their Afterburner album that came out in 1985.  When playing the intro riff, solo or outro solo, I have the delay and boost engaged.  I have CTRL 4 configured to disable/enable the delay and boost, which you can move to wherever appropriate.  It is such a fun song to play, I high recommend learning it.</p>
+						<div class="columns mb-0">
+							<div class="column is-half">
+							
+								<label class="label mb-0">Contributor</label>
+								<h3 class="title is-6 mt-0">cdbento</h3>
+								<label class="label mb-0">Date uploaded</label>
+								<h3 class="title is-6 mt-0">2026-01-03</h3>
+							
+
+								<div class="columns mb-0  is-align-items-stretch">
+									<div class="column is-half">
+										<div class="box">
+											<p class="title is-5 has-text-centered mb-0">Rating</p>
+											<h6 class='title is-4 has-text-centered'>&nbsp;<p class='is-size-7'>No ratings yet</p></h6>										</div>
+									</div>
+
+									<div class="column is-half">
+										<div class="box has-text-centered">
+											<p class="title is-5 has-text-centered mb-5">Rate this patch</p>
+											<div class="is-flex is-justify-content-center">
+												<ul class="star-rating has-text-centered">
+													<li><a href="patchrate.php?unit=GP200&pID=14655&rating=1" title="Rate this 1 star out of 5" class="one-star">1</a></li>
+													<li><a href="patchrate.php?unit=GP200&pID=14655&rating=2" title="Rate this 2 stars out of 5" class="two-stars">2</a></li>
+													<li><a href="patchrate.php?unit=GP200&pID=14655&rating=3" title="Rate this 3 stars out of 5" class="three-stars">3</a></li>
+													<li><a href="patchrate.php?unit=GP200&pID=14655&rating=4" title="Rate this 4 stars out of 5" class="four-stars">4</a></li>
+													<li><a href="patchrate.php?unit=GP200&pID=14655&rating=5" title="Rate this 5 stars out of 5" class="five-stars">5</a></li>
+												</ul>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div class="columns mb-0">
+									<div class="column is-full is-centered">
+										<div class="box has-text-centered">
+
+																									<p class="title is-5 has-text-centered">Soundsample</p>
+													<audio controls>
+  														<source src="audio/20260103_01-OpeningLeadRiff-Silhouette-StockBridgeHum.mp3" type="audio/mpeg">
+														Your browser does not support the audio element.
+													</audio> 
+																								<!-- </div> -->
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<div class="column is-half">
+								<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9487629281287234"
+									crossorigin="anonymous"></script>
+								<!-- Guitarpatches 2025 -->
+								<ins class="adsbygoogle"
+									style="display:block"
+									data-ad-client="ca-pub-9487629281287234"
+									data-ad-slot="9109845390"
+									data-ad-format="auto"
+									data-full-width-responsive="true"></ins>
+								<script>
+									(adsbygoogle = window.adsbygoogle || []).push({});
+								</script>
+
+								&nbsp;							</div>
+						</div>
+
+
+
+														<a href="download.php?unit=GP200&mode=download&ID=14655" class='button is-link is-large'>Download patch</a>
+
+							<!--
+			<br>
+			<div class="report">
+				<h4 style="margin: 8px;">Is this patch a fake or spam, please press "Report" and let us know.</h4>
+				<a href="report.php?unit=GP200&ID=14655&type=patch&lib=manual" class='button white medium'>Report</a>
+			</div>
+			<div class="clear"></div>
+			-->
+		</div>
+	</section>
+      
+    <section class="section">
+        <div class="container is-max-desktop">
+			<h3 class="title is-4 mb-0">Comments</h3>
+				<div class="box mt-0">
+					<div class='paramheader'><h6>There are no comments for this patch yet.</h6></div>
+
+
+			
+					<form method="post" name="commsgform">
+						<div class="field">
+							<label class="label mt-5">Write a new comment</label>
+							<div class="control">
+								<input type="hidden" name="ID" value="14655">
+								<textarea class="textarea" rows="2" name="tacomments" id="tacomments"></textarea>
+							</div>
+						</div>
+
+						<div class="field">
+							<div class="control">
+								<button class="button is-link" name="comsend" type="submit" id="comsend" value="Send" onClick="return checkForm();">Send</button>
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+
+
+
+	
+            </div>
+        </div>
+    </section>
+
+        <footer class="footer m-10">
+        <div class="container">
+            <div class="columns">
+                <div class="column">
+                        <a class="level-item is-link" href="info.php?mode=about">About</a>
+                        <a class="level-item is-link" href="info.php?mode=contact">Contact</a>
+                        <a class="level-item is-link" href="info.php?mode=privacy">Privacy policy</a>
+                        <a class="level-item is-link" href="info.php?mode=faq">Help/FAQ</a>
+                </div>
+                <div class="column">
+                <p class="is-size-7 has-text-grey-light">
+                    GuitarPatches.com is not affiliated with or endorsed by any guitar manufacturer, amplifier manufacturer, or effects pedal manufacturer. All trademarks, product names, and company names or logos cited herein are the property of their respective owners.
+                </p>
+
+                </div>
+                <div class="column has-text-right">
+                    <h2 class="subtitle is-6">&copy; 2026 guitarpatches.com</h2>
+                </div>
+            </div>
+            <div>
+        </div>
+    </footer>	
+  </body>
+</html>

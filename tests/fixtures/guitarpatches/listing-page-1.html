@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9487629281287234"
+     crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="assets/css/bulma.min.css" />
+    <link rel="stylesheet" href="assets/css/base_25.css" />
+    <link rel="stylesheet" href="assets/css/all.min.css" />
+    <title>.: Guitar effect patches for Zoom, Digitech, Korg, TC-Electronic, Boss, Nux, Mooer</title>
+  </head>
+
+  <body class="has-background-black-ter">
+
+	
+    <nav class="navbar is-dark has-shadow" id="top-nav" role="navigation" aria-label="main navigation">
+        <div class="container is-max-widescreen">
+        <div class="navbar-brand">
+            <a class="navbar-item" href="index.php">
+                <img  class="logo" src="assets/img/newlogo2.png">
+            </a>
+
+            <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarHeader">
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+            </a>
+
+        </div>
+
+        <div id="navbarHeader" class="navbar-menu">
+            <div class="navbar-start">
+                <a class="navbar-item mt-4" href="units.php">
+                    <span class="icon">
+                        <i class="fas fa-guitar"></i>
+                    </span>
+                    All effect units
+                </a>
+                <a class="navbar-item mt-4" href="phpbb3/index.php">
+                    <span class="icon">
+                        <i class="fab fa-wpforms"></i>
+                    </span>
+                    Forums
+                </a>
+                <a class="navbar-item mt-4" href="info.php">
+                    <span class="icon">
+                        <i class="fas fa-envelope"></i>
+                    </span>
+                    Contact
+                </a>
+            </div>
+
+            
+            <div class="navbar-end">
+                <div class="navbar-item">
+                    <form method="post" name="search" action="search.php?unit=GP200">
+        				<!-- <input id="sstring" name="sstring" class="searchinput" type="text" placeholder="Search"/> -->
+                        <div class="field has-addons">
+                            <div class="control">
+                                <input class="input" id="sstring" name="sstring" type="text" placeholder="Search">
+                            </div>
+                            <div class="control">
+                                <button class="button is-link" name="search-button" type="submit" id="search-button">
+                                <!-- <a class="button is-link"> -->
+                                    <span class="icon">
+                                        <i class="fas fa-search"></i>
+                                    </span>
+                                <!-- </a> -->
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="navbar-item">
+                    <div class="field">
+                                                    <a class="button is-link js-modal-trigger" data-target="modal-js-example">
+                                Log in
+                            </a>
+                                            </div>
+                </div>
+            </div>
+        </div>
+        </div>
+    </nav>
+
+    <br><br>
+    
+    <div class="container is-max-desktop">
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9487629281287234"
+        crossorigin="anonymous"></script>
+        <!-- Guitarpatches 2025 -->
+        <ins class="adsbygoogle"
+            style="display:block"
+            data-ad-client="ca-pub-9487629281287234"
+            data-ad-slot="9109845390"
+            data-ad-format="auto"
+            data-full-width-responsive="true"></ins>
+        <script>
+            (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
+            if ($navbarBurgers.length > 0) {
+                $navbarBurgers.forEach( el => {
+                    el.addEventListener('click', () => {
+                        const target = el.dataset.target;
+                        const $target = document.getElementById(target);
+                        el.classList.toggle('is-active');
+                        $target.classList.toggle('is-active');
+                    });
+                });
+            }
+        });
+
+        const avatar = document.getElementById('avatarDropdown');
+        const dropdown = avatar.closest('.dropdown');
+
+        avatar.addEventListener('click', function(event) {
+            dropdown.classList.toggle('is-active');
+            event.stopPropagation(); // Förhindra att klicket bubblar upp
+        });
+
+        document.addEventListener('click', function() {
+            dropdown.classList.remove('is-active');
+        });
+    </script>
+
+    <!-- Login model -->
+    <div class="modal" id="modal-js-example">
+        <div class="modal-background"></div>
+        <div class="modal-card">
+        <header class="modal-card-head has-background-primary">
+          <h1 class="modal-card-title">Login</h1>
+          <button class="delete" aria-label="close"></button>
+        </header>
+
+        <section class="modal-card-body">
+			<form method="POST" action="login.php">
+                <div class="field">
+                    <label class="label">Username:</label>
+                    <input class="input" type="text" placeholder="Username" name="username">
+                </div>
+
+                <div class="field">
+                    <label class="label">Password:</label>
+                    <input class="input" type="password" name="password" placeholder="Password">
+                </div>
+
+                <div class="field">
+                    <div class="control">
+                        <label class="checkbox">
+                        <input type="checkbox" name="autologin">
+                        Remember Me
+                        </label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="control">
+                        <button class="button is-link" name="login" type="submit" id="login">Login</button>
+                        <input type="hidden" name="redirect" value="/index.php">
+                    </div>
+                </div>
+
+                <!-- <input type="hidden" name="redirect" value="../index.php"> -->
+			</form>
+        </section>
+
+        <footer class="modal-card-foot">
+            <div class="field is-grouped">
+			<a href="phpbb3/ucp.php?mode=register">Create an account</a>
+			<a href="phpbb3/ucp.php?mode=sendpassword">Forgot your password?</a>
+			<a href="phpbb3/ucp.php?mode=resend_act">Resend activation e-mail</a>
+            </div>
+        </footer>
+        </div>
+    </div>
+
+    <script src="assets/js/js_2025.js"></script>
+        
+
+
+  
+
+    <section class="hero">
+        <div class="hero-body pb-0">
+            <div class="container is-max-desktop">
+				<h2 class="title is-3 mb-0">Guitar effect patches for the Valeton GP-200</h2>
+				<p class="mb-2">This is a file library, use Valeton software to handle the patches.</p>
+				<!-- <div class="clear"></div> -->
+			
+	        </div>
+        </div>
+    </section>
+      
+    <section class="section">
+        <div class="container is-max-widescreen">
+				            <nav class="navbar is-dark has-text-centered is-spaced has-shadow mb-4 mt-0" style="border-radius: 8px;" id="unit-nav" role="navigation" aria-label="unit navigation">
+                <div class="container is-max-widescreen">
+                    <div class="navbar-brand">
+                        <div class="navbar-item">
+                            <!-- <span class="tag is-black is-large">Unit menu</span> -->
+                                <img class="navbar-image" src="./imgs/units/GP200.jpg" alt="GP200">
+                        </div>
+                        
+                        <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarUnit">
+                            <span aria-hidden="true"></span>
+                            <span aria-hidden="true"></span>
+                            <span aria-hidden="true"></span>
+                            <span aria-hidden="true"></span>
+                        </a>
+                        
+                    </div>
+                    
+                    <div id="navbarUnit" class="navbar-menu">
+                        <div class="navbar-start">
+                            <div class="navbar-item" style="width: 100px;">
+                                &nbsp;
+                            </div>
+                            <a class="navbar-item" href="patches.php?unit=GP200">
+                                <span class="icon">
+                                    <i class="fas fa-eye"></i>
+                                </span>
+                                View Patches
+                            </a>
+                            
+                            <a class="navbar-item" href="patchupload.php?mode=submit&unit=GP200">
+                                <span class="icon">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                </span>
+                                Upload Patch
+                            </a>
+
+                            <a class="navbar-item" href="patchreq.php?mode=request&unit=GP200">
+                                <span class="icon">
+                                    <i class="fas fa-question-circle"></i>
+                                </span>
+                                Request Patch
+                            </a>
+
+                            <a class="navbar-item" href="videos.php?unit=GP200">
+                                <span class="icon">
+                                    <i class="fab fa-youtube"></i>
+                                </span>
+                                View Video Links
+                            </a>
+
+                            <a class="navbar-item" href="videos.php?mode=submit&unit=GP200">
+                                <span class="icon">
+                                    <i class="far fa-plus-square"></i>
+                                </span>
+                                Add Video Link
+                            </a>
+                        </div>
+                        
+                    </div>
+                </div>
+            </nav>
+
+
+				<div class="columns mb-0">
+				<div class="column pb-0">
+						<h3 class="title is-4">Patches</h3>
+				</div>
+				<div class="column pb-1">
+						<div class="dropdown is-pulled-right">
+							<div class="dropdown-trigger">
+								<button class="button" aria-haspopup="true" aria-controls="dropdown-menu">
+									<span>Sorting</span>
+									<span class="icon is-small">
+										<i class="fas fa-angle-down" aria-hidden="true"></i>
+									</span>
+								</button>
+				  			</div>
+							<div class="dropdown-menu" id="dropdown-menu" role="menu">
+    							<div class="dropdown-content">
+									<a class="dropdown-item" href="patches.php?&unit=GP200&sort=name">Name</a>
+									<a class="dropdown-item" href="patches.php?unit=GP200&sort=artist">Artist</a>
+									<a class="dropdown-item" href="patches.php?unit=GP200&sort=rating">Rating</a>
+									<a class="dropdown-item" href="patches.php?unit=GP200&sort=date">Date</a>
+									<!-- <a class="dropdown-item" href="patches.php?unit=GP200&sort=cont">Uploader</a> -->
+								</div>
+							</div>
+						</div>
+				</div>
+			</div>
+
+						<script>
+							document.addEventListener('DOMContentLoaded', () => {
+							document.querySelectorAll('.dropdown').forEach(dropdown => {
+								dropdown.addEventListener('click', (e) => {
+								e.stopPropagation();
+								dropdown.classList.toggle('is-active');
+								});
+							});
+
+							document.addEventListener('click', () => {
+								document.querySelectorAll('.dropdown.is-active')
+								.forEach(d => d.classList.remove('is-active'));
+							});
+							});
+						</script>
+
+
+        <div class="grid is-col-min-13">
+
+			
+                <div class="cell">
+                    <div class="card is-light p-4 min-height has-background-light is-clickable" onclick="href=window.location='patches.php?mode=show&unit=GP200&ID=14762';">
+                        <h1 class="title is-5 do-ellipsis has-text-primary-dark mb-1">CHUGG</h1>
+                        <img src="./imgs/units/GP200.jpg" alt="G11" class="thumb-image">
+						<h2 class="subtitle is-6 has-text-info-dark mb-2">Preset</h2>
+                        						<p class="is-size-7">2026-03-14</p>
+						<!-- 247 -->
+												<!-- Ash1703&nbsp; -->
+                    </div>
+                </div>             
+
+						
+                <div class="cell">
+                    <div class="card is-light p-4 min-height has-background-light is-clickable" onclick="href=window.location='patches.php?mode=show&unit=GP200&ID=14754';">
+                        <h1 class="title is-5 do-ellipsis has-text-primary-dark mb-1">Nu metal/rapcore on Mesa4x12</h1>
+                        <img src="./imgs/units/GP200.jpg" alt="G11" class="thumb-image">
+						<h2 class="subtitle is-6 has-text-info-dark mb-2">Wes borland etc.</h2>
+                        						<p class="is-size-7">2026-02-23</p>
+						<!-- 440 -->
+												<!-- Plumbus&nbsp; -->
+                    </div>
+                </div>             
+
+						
+                <div class="cell">
+                    <div class="card is-light p-4 min-height has-background-light is-clickable" onclick="href=window.location='patches.php?mode=show&unit=GP200&ID=14679';">
+                        <h1 class="title is-5 do-ellipsis has-text-primary-dark mb-1">Stone in Love</h1>
+                        <img src="./imgs/units/GP200.jpg" alt="G11" class="thumb-image">
+						<h2 class="subtitle is-6 has-text-info-dark mb-2">Journey</h2>
+                        						<p class="is-size-7">2026-01-13</p>
+						<!-- 363 -->
+												<!-- LS Hunter&nbsp; -->
+                    </div>
+                </div>             
+
+						
+                <div class="cell">
+                    <div class="card is-light p-4 min-height has-background-light is-clickable" onclick="href=window.location='patches.php?mode=show&unit=GP200&ID=14680';">
+                        <h1 class="title is-5 do-ellipsis has-text-primary-dark mb-1">Sonne</h1>
+                        <img src="./imgs/units/GP200.jpg" alt="G11" class="thumb-image">
+						<h2 class="subtitle is-6 has-text-info-dark mb-2">Rammstein</h2>
+                        						<p class="is-size-7">2026-01-13</p>
+						<!-- 557 -->
+												<!-- LS Hunter&nbsp; -->
+                    </div>
+                </div>             
+
+						
+                <div class="cell">
+                    <div class="card is-light p-4 min-height has-background-light is-clickable" onclick="href=window.location='patches.php?mode=show&unit=GP200&ID=14681';">
+                        <h1 class="title is-5 do-ellipsis has-text-primary-dark mb-1">Layla</h1>
+                        <img src="./imgs/units/GP200.jpg" alt="G11" class="thumb-image">
+						<h2 class="subtitle is-6 has-text-info-dark mb-2">Eric Clapton</h2>
+                        						<p class="is-size-7">2026-01-13</p>
+						<!-- 679 -->
+												<!-- LS Hunter&nbsp; -->
+                    </div>
+                </div>             
+
+						
+                <div class="cell">
+                    <div class="card is-light p-4 min-height has-background-light is-clickable" onclick="href=window.location='patches.php?mode=show&unit=GP200&ID=14682';">
+                        <h1 class="title is-5 do-ellipsis has-text-primary-dark mb-1">Smooth</h1>
+                        <img src="./imgs/units/GP200.jpg" alt="G11" class="thumb-image">
+						<h2 class="subtitle is-6 has-text-info-dark mb-2">Carlos Santana</h2>
+                        						<p class="is-size-7">2026-01-13</p>
+						<!-- 744 -->
+												<!-- LS Hunter&nbsp; -->
+                    </div>
+                </div>             
+
+						
+                <div class="cell">
+                    <div class="card is-light p-4 min-height has-background-light is-clickable" onclick="href=window.location='patches.php?mode=show&unit=GP200&ID=14657';">
+                        <h1 class="title is-5 do-ellipsis has-text-primary-dark mb-1">La Sirena Varada</h1>
+                        <img src="./imgs/units/GP200.jpg" alt="G11" class="thumb-image">
+						<h2 class="subtitle is-6 has-text-info-dark mb-2">Héroes Del Silencio</h2>
+                        								<span class="tag is-primary is-pulled-right mr-1">Rating:5</span>
+														<p class="is-size-7">2026-01-05</p>
+						<!-- 356 -->
+												<!-- Oneluiz&nbsp; -->
+                    </div>
+                </div>             
+
+						
+                <div class="cell">
+                    <div class="card is-light p-4 min-height has-background-light is-clickable" onclick="href=window.location='patches.php?mode=show&unit=GP200&ID=14655';">
+                        <h1 class="title is-5 do-ellipsis has-text-primary-dark mb-1">Woke Up With Wood</h1>
+                        <img src="./imgs/units/GP200.jpg" alt="G11" class="thumb-image">
+						<h2 class="subtitle is-6 has-text-info-dark mb-2">ZZ Top</h2>
+                        <span class="tag is-warning is-pulled-right mr-1">Sound sample</span>						<p class="is-size-7">2026-01-03</p>
+						<!-- 491 -->
+												<!-- cdbento&nbsp; -->
+                    </div>
+                </div>             
+
+						
+                <div class="cell">
+                    <div class="card is-light p-4 min-height has-background-light is-clickable" onclick="href=window.location='patches.php?mode=show&unit=GP200&ID=14647';">
+                        <h1 class="title is-5 do-ellipsis has-text-primary-dark mb-1">Invincible</h1>
+                        <img src="./imgs/units/GP200.jpg" alt="G11" class="thumb-image">
+						<h2 class="subtitle is-6 has-text-info-dark mb-2">Skillet</h2>
+                        						<p class="is-size-7">2026-01-01</p>
+						<!-- 256 -->
+												<!-- LS Hunter&nbsp; -->
+                    </div>
+                </div>             
+
+						
+                <div class="cell">
+                    <div class="card is-light p-4 min-height has-background-light is-clickable" onclick="href=window.location='patches.php?mode=show&unit=GP200&ID=14648';">
+                        <h1 class="title is-5 do-ellipsis has-text-primary-dark mb-1">Steelheart</h1>
+                        <img src="./imgs/units/GP200.jpg" alt="G11" class="thumb-image">
+						<h2 class="subtitle is-6 has-text-info-dark mb-2">Steelheart</h2>
+                        						<p class="is-size-7">2026-01-01</p>
+						<!-- 339 -->
+												<!-- LS Hunter&nbsp; -->
+                    </div>
+                </div>             
+
+						
+                <div class="cell">
+                    <div class="card is-light p-4 min-height has-background-light is-clickable" onclick="href=window.location='patches.php?mode=show&unit=GP200&ID=14649';">
+                        <h1 class="title is-5 do-ellipsis has-text-primary-dark mb-1">Sultans of Swing</h1>
+                        <img src="./imgs/units/GP200.jpg" alt="G11" class="thumb-image">
+						<h2 class="subtitle is-6 has-text-info-dark mb-2">Dire Straits</h2>
+                        <span class="tag is-warning is-pulled-right mr-1">Sound sample</span>						<p class="is-size-7">2026-01-01</p>
+						<!-- 748 -->
+												<!-- LS Hunter&nbsp; -->
+                    </div>
+                </div>             
+
+						
+                <div class="cell">
+                    <div class="card is-light p-4 min-height has-background-light is-clickable" onclick="href=window.location='patches.php?mode=show&unit=GP200&ID=14650';">
+                        <h1 class="title is-5 do-ellipsis has-text-primary-dark mb-1">Every Six Seconds</h1>
+                        <img src="./imgs/units/GP200.jpg" alt="G11" class="thumb-image">
+						<h2 class="subtitle is-6 has-text-info-dark mb-2">Saliva</h2>
+                        						<p class="is-size-7">2026-01-01</p>
+						<!-- 154 -->
+												<!-- LS Hunter&nbsp; -->
+                    </div>
+                </div>             
+
+						
+                <div class="cell">
+                    <div class="card is-light p-4 min-height has-background-light is-clickable" onclick="href=window.location='patches.php?mode=show&unit=GP200&ID=14651';">
+                        <h1 class="title is-5 do-ellipsis has-text-primary-dark mb-1">Still Got The Blues</h1>
+                        <img src="./imgs/units/GP200.jpg" alt="G11" class="thumb-image">
+						<h2 class="subtitle is-6 has-text-info-dark mb-2">Gary Moore</h2>
+                        						<p class="is-size-7">2026-01-01</p>
+						<!-- 891 -->
+												<!-- LS Hunter&nbsp; -->
+                    </div>
+                </div>             
+
+						
+                <div class="cell">
+                    <div class="card is-light p-4 min-height has-background-light is-clickable" onclick="href=window.location='patches.php?mode=show&unit=GP200&ID=14652';">
+                        <h1 class="title is-5 do-ellipsis has-text-primary-dark mb-1">Significant Other</h1>
+                        <img src="./imgs/units/GP200.jpg" alt="G11" class="thumb-image">
+						<h2 class="subtitle is-6 has-text-info-dark mb-2">Limp Bizkit</h2>
+                        						<p class="is-size-7">2026-01-01</p>
+						<!-- 326 -->
+												<!-- LS Hunter&nbsp; -->
+                    </div>
+                </div>             
+
+						
+                <div class="cell">
+                    <div class="card is-light p-4 min-height has-background-light is-clickable" onclick="href=window.location='patches.php?mode=show&unit=GP200&ID=14644';">
+                        <h1 class="title is-5 do-ellipsis has-text-primary-dark mb-1">Ride The Lightning</h1>
+                        <img src="./imgs/units/GP200.jpg" alt="G11" class="thumb-image">
+						<h2 class="subtitle is-6 has-text-info-dark mb-2">Metallica</h2>
+                        						<p class="is-size-7">2025-12-31</p>
+						<!-- 747 -->
+												<!-- LS Hunter&nbsp; -->
+                    </div>
+                </div>             
+
+						
+                <div class="cell">
+                    <div class="card is-light p-4 min-height has-background-light is-clickable" onclick="href=window.location='patches.php?mode=show&unit=GP200&ID=14645';">
+                        <h1 class="title is-5 do-ellipsis has-text-primary-dark mb-1">72 Seasons</h1>
+                        <img src="./imgs/units/GP200.jpg" alt="G11" class="thumb-image">
+						<h2 class="subtitle is-6 has-text-info-dark mb-2">Metallica</h2>
+                        						<p class="is-size-7">2025-12-31</p>
+						<!-- 441 -->
+												<!-- LS Hunter&nbsp; -->
+                    </div>
+                </div>             
+
+						
+                <div class="cell">
+                    <div class="card is-light p-4 min-height has-background-light is-clickable" onclick="href=window.location='patches.php?mode=show&unit=GP200&ID=14646';">
+                        <h1 class="title is-5 do-ellipsis has-text-primary-dark mb-1">Rock You Like A Hurricane</h1>
+                        <img src="./imgs/units/GP200.jpg" alt="G11" class="thumb-image">
+						<h2 class="subtitle is-6 has-text-info-dark mb-2">Scorpions</h2>
+                        						<p class="is-size-7">2025-12-31</p>
+						<!-- 681 -->
+												<!-- LS Hunter&nbsp; -->
+                    </div>
+                </div>             
+
+						
+                <div class="cell">
+                    <div class="card is-light p-4 min-height has-background-light is-clickable" onclick="href=window.location='patches.php?mode=show&unit=GP200&ID=14634';">
+                        <h1 class="title is-5 do-ellipsis has-text-primary-dark mb-1">Ok Computer - Spacey Tone</h1>
+                        <img src="./imgs/units/GP200.jpg" alt="G11" class="thumb-image">
+						<h2 class="subtitle is-6 has-text-info-dark mb-2">Radiohead</h2>
+                        						<p class="is-size-7">2025-12-30</p>
+						<!-- 426 -->
+												<!-- Lily is EVIL&nbsp; -->
+                    </div>
+                </div>             
+
+								</div>
+
+
+						<tfoot><tr><td colspan="8"><nav class='pagination is-small is-centered' role='navigation' aria-label='pagination'><span class='pagination-previous' disabled>previous</span><a class='pagination-next' href='patches.php?unit=GP200&sort=date&page=2'>next</a><ul class='pagination-list'><span class='pagination-link is-current'>1</span><a class='pagination-link' href='patches.php?unit=GP200&sort=date&page=2'>2</a><a class='pagination-link' href='patches.php?unit=GP200&sort=date&page=3'>3</a><a class='pagination-link' href='patches.php?unit=GP200&sort=date&page=4'>4</a><a class='pagination-link' href='patches.php?unit=GP200&sort=date&page=5'>5</a><a class='pagination-link' href='patches.php?unit=GP200&sort=date&page=6'>6</a><a class='pagination-link' href='patches.php?unit=GP200&sort=date&page=7'>7</a><span class='pagination-ellipsis'>&hellip;</span><a class='pagination-link' href='patches.php?unit=GP200&sort=date&page=10'>10</a></ul></nav>
+	        </div>
+        </div>
+    </section>
+      
+    <section class="section">
+        <div class="container is-max-widescreen">
+			<h3 class="title is-4 mb-0">Requested patches</h3>
+
+			<table class="table is-fullwidth">
+			<thead>
+			<tr>
+				<th>Artist</th>
+				<th>Comments</th>
+				<th>Submitted by</th>
+			</tr>
+			</thead>
+			<tbody>
+
+									<tr>
+							<td><p>Pop Punk</p></TD>
+							<td><p>Sound like The offspring, Blick 182, Simple plan, Sum 41 etc...</p></TD>
+							<td><p>GuitarFever</p></TD>
+						</tr>
+									<tr>
+							<td><p>bocchi the rock</p></TD>
+							<td><p>Is there anyone can make bocchi the rock tone setting?</p></TD>
+							<td><p>stevensilayan</p></TD>
+						</tr>
+									<tr>
+							<td><p>TheWarning</p></TD>
+							<td><p>Any preset from Daniela</p></TD>
+							<td><p>Marcoco</p></TD>
+						</tr>
+									<tr>
+							<td><p>ACE FREHLEY / KISS</p></TD>
+							<td><p>distortion of Ace Frehley KISS guitarist</p></TD>
+							<td><p>gustanley</p></TD>
+						</tr>
+									<tr>
+							<td><p>Jhon Petruci</p></TD>
+							<td><p>The best of time</p></TD>
+							<td><p>yokiJuliandi</p></TD>
+						</tr>
+									<tr>
+							<td><p>Boston</p></TD>
+							<td><p>Solopart</p></TD>
+							<td><p>Ginner</p></TD>
+						</tr>
+									<tr>
+							<td><p>Boston</p></TD>
+							<td><p>Solopart</p></TD>
+							<td><p>Ginner</p></TD>
+						</tr>
+									<tr>
+							<td><p>Boston</p></TD>
+							<td><p>Solopart</p></TD>
+							<td><p>Ginner</p></TD>
+						</tr>
+									<tr>
+							<td><p>Children Of Bodom</p></TD>
+							<td><p>Alex Laiho preset plsss</p></TD>
+							<td><p>GuitarFever</p></TD>
+						</tr>
+									<tr>
+							<td><p>Children Of Bodom</p></TD>
+							<td><p>Alex Laiho preset plsss</p></TD>
+							<td><p>GuitarFever</p></TD>
+						</tr>
+									<tr>
+							<td><p>Children Of Bodom</p></TD>
+							<td><p>Alex Laiho preset plsss</p></TD>
+							<td><p>GuitarFever</p></TD>
+						</tr>
+									<tr>
+							<td><p>Children Of Bodom</p></TD>
+							<td><p>Alex Laiho preset plsss</p></TD>
+							<td><p>GuitarFever</p></TD>
+						</tr>
+									<tr>
+							<td><p>Fire on the Mountain</p></TD>
+							<td><p>Grateful Dead</p></TD>
+							<td><p>mathisvb1911</p></TD>
+						</tr>
+									<tr>
+							<td><p>Fire on the Mountain</p></TD>
+							<td><p>Grateful Dead</p></TD>
+							<td><p>mathisvb1911</p></TD>
+						</tr>
+									<tr>
+							<td><p>Fire on the Mountain</p></TD>
+							<td><p>Grateful Dead</p></TD>
+							<td><p>mathisvb1911</p></TD>
+						</tr>
+									<tr>
+							<td><p>Fire on the Mountain</p></TD>
+							<td><p>Grateful Dead</p></TD>
+							<td><p>mathisvb1911</p></TD>
+						</tr>
+									<tr>
+							<td><p>Molchat Doma</p></TD>
+							<td><p>Can someone make their clean tone for guitar, or any similar post punk clean tone. Tnx</p></TD>
+							<td><p>Manonthemoon</p></TD>
+						</tr>
+									<tr>
+							<td><p>tono briam may</p></TD>
+							<td><p>tono briam may, de reina</p></TD>
+							<td><p>Pepe Viyuela</p></TD>
+						</tr>
+									<tr>
+							<td><p>tono briam may</p></TD>
+							<td><p>solicito oarche, gracias</p></TD>
+							<td><p>Pepe Viyuela</p></TD>
+						</tr>
+									<tr>
+							<td><p>GreenDay 21Guns</p></TD>
+							<td><p>If it is possible can you create a patch to play "21 guns" by Green day.
+thanks</p></TD>
+							<td><p>fabmars13</p></TD>
+						</tr>
+						</tbody>
+			</table>
+
+		</div>
+	</section>
+	
+            </div>
+        </div>
+    </section>
+
+        <footer class="footer m-10">
+        <div class="container">
+            <div class="columns">
+                <div class="column">
+                        <a class="level-item is-link" href="info.php?mode=about">About</a>
+                        <a class="level-item is-link" href="info.php?mode=contact">Contact</a>
+                        <a class="level-item is-link" href="info.php?mode=privacy">Privacy policy</a>
+                        <a class="level-item is-link" href="info.php?mode=faq">Help/FAQ</a>
+                </div>
+                <div class="column">
+                <p class="is-size-7 has-text-grey-light">
+                    GuitarPatches.com is not affiliated with or endorsed by any guitar manufacturer, amplifier manufacturer, or effects pedal manufacturer. All trademarks, product names, and company names or logos cited herein are the property of their respective owners.
+                </p>
+
+                </div>
+                <div class="column has-text-right">
+                    <h2 class="subtitle is-6">&copy; 2026 guitarpatches.com</h2>
+                </div>
+            </div>
+            <div>
+        </div>
+    </footer>	
+  </body>
+</html>
