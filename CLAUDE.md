@@ -237,8 +237,10 @@ Alle Routen unter `/api/admin/` — jede beginnt mit `requireAdmin()`.
 - `routing.ts` exportiert typisierte Navigation: `import { Link, useRouter, usePathname } from '@/i18n/routing'`
 - Nie `next/link` oder `next/navigation` direkt importieren (Ausnahme: `redirect()` in Server Components — next-intl's redirect benötigt `{ href: string }`)
 - Alle UI-Strings über `useTranslations()` / `getTranslations()` (kein Hardcoding)
-- Translations in `messages/de.json` und `messages/en.json`
-- Namespaces: `nav`, `home`, `editor`, `auth`, `profile`, `presets`, `gallery`, `admin`
+- Translations in `messages/{de,en,es,fr,it,pt}.json` — 6 Locales, Key-Parität per Unit-Test (`tests/unit/messages-parity.test.ts`) erzwungen
+- Namespaces: `nav`, `home`, `editor`, `auth`, `profile`, `presets`, `gallery`, `admin`, `device`, `help`, `legal`, `playlists`, `footer`, `changelog`
+- Locale-Switcher: `src/components/LocaleSwitcher.tsx` (Dropdown mit Flaggen + Kürzel, beta-label für es/fr/it/pt via `BETA_LOCALES` Set)
+- Hreflang: `src/lib/hreflang.ts` mit `buildAlternates(path, locale)` — nie `languages: { de: ..., en: ... }` inline schreiben, immer den Helper benutzen
 
 ---
 
@@ -421,3 +423,9 @@ Das GP-200 ist USB-MIDI class-compliant. Kommunikation per proprietärem MIDI Sy
 - CSP `'unsafe-eval'` in prod weglassen — Matomo + Next 15 runtime brauchen es, sonst bricht Interaktivität; dev + prod müssen beide `unsafe-eval` haben
 - Neue Spalten in `/api/gallery` response weglassen — die Frontend-Caller (GalleryPickerDialog, etc.) erwarten `shareToken`, sonst wird `/api/share/undefined/download` angefragt
 - Ingest-Pipeline Rejects ignorieren — Factory-size (1176-byte) Presets und NaN-Params in real-world Dateien; Decoder hardened dagegen aber nach jedem ingest den counter checken
+- `page.goto()` in E2E ohne `waitUntil: 'domcontentloaded'` — der default `'load'` event hängt auf Matomo/analytics die im dev nicht laden; alle Playwright tests müssen `{ waitUntil: 'domcontentloaded' }` setzen
+- Playwright-Tests mit vollem `/tmp` starten — Chromium segfaulted mit SIGBUS wenn `/tmp` < 64M frei hat; ausweichen mit `TMPDIR=/home/manuel/.tmp-playwright npx playwright test`
+- Inline locale type literals `'de' \| 'en'` in page Props hardcoden — IMMER alle 6 Locales oder `Locale` aus `@/lib/hreflang` importieren, sonst lügt TS bei Runtime
+- `'de' \| 'en'` hardcoded als Cast in `routing.locales.includes()` — stattdessen `(typeof routing.locales)[number]` type alias; die Liste ist die source of truth
+- `otherLocale = locale === 'de' ? 'en' : 'de'` Toggle-Pattern — bei 6 Locales kaputt; `<LocaleSwitcher />` Komponente aus `@/components/LocaleSwitcher` verwenden
+- `next-intl` `requireVerifiedUser` ohne `refreshSessionCookie` Call — seit PR1 ist der refresh intern in `requireVerifiedUser`/`requireAdmin` drin, call-sites müssen ihn NICHT mehr zusätzlich aufrufen
