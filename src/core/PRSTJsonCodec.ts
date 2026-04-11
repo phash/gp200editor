@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import type { GP200Preset } from '@/core/types';
+import { EFFECT_MAP } from '@/core/effectNames';
+import { EFFECT_DESCRIPTIONS } from '@/core/effectDescriptions';
 
 export const PRESET_JSON_SCHEMA_VERSION = 1;
 
@@ -68,7 +70,89 @@ export type EncodeOpts = {
   description: string | null;
 };
 
-// Function stubs — implemented in Task 4/5/6.
+const MODULE_CATEGORIES: Record<string, string> = {
+  PRE: 'Compressor / Boost',
+  NR:  'Noise Gate',
+  EQ:  'Equalizer',
+  WAH: 'Wah',
+  DST: 'Overdrive / Distortion',
+  MOD: 'Modulation',
+  AMP: 'Amp head',
+  CAB: 'Cabinet',
+  DLY: 'Delay',
+  RVB: 'Reverb',
+  VOL: 'Volume',
+  UNKNOWN: 'Unknown',
+};
+
+export function buildSignalChain(preset: GP200Preset): SignalChainEntry[] {
+  return preset.effects
+    .slice()
+    .sort((a, b) => a.slotIndex - b.slotIndex)
+    .map((slot) => {
+      const info = EFFECT_MAP[slot.effectId];
+      const valetonName = info ? info.name : `Unknown #${slot.effectId}`;
+      const module = info ? info.module : 'UNKNOWN';
+      const realName = info ? (EFFECT_DESCRIPTIONS[info.name] ?? null) : null;
+      const category = MODULE_CATEGORIES[module] ?? 'Unknown';
+      return {
+        slot: slot.slotIndex,
+        module,
+        active: slot.enabled,
+        valetonName,
+        realName,
+        category,
+      };
+    });
+}
+
+export function pickHighlights(chain: SignalChainEntry[]): PresetJson['highlights'] {
+  const firstActive = (module: string): NameRef | null => {
+    const entry = chain.find((c) => c.active && c.module === module);
+    return entry ? { valetonName: entry.valetonName, realName: entry.realName } : null;
+  };
+  return {
+    amp:   firstActive('AMP'),
+    cab:   firstActive('CAB'),
+    drive: firstActive('DST'),
+  };
+}
+
+/**
+ * Generates a short English prose description of the preset.
+ * Deterministic — same inputs produce the same output.
+ * Used both in PresetJson.summary and in the share-page sr-only block.
+ */
+export function generateSummary(chain: SignalChainEntry[], presetName: string): string {
+  const firstReal = (module: string): string | null => {
+    const entry = chain.find((c) => c.active && c.module === module);
+    if (!entry) return null;
+    return entry.realName ?? entry.valetonName;
+  };
+  const amp = firstReal('AMP');
+  const cab = firstReal('CAB');
+  const dst = firstReal('DST');
+  const mod = firstReal('MOD');
+  const dly = firstReal('DLY');
+  const rvb = firstReal('RVB');
+
+  if (!amp && !cab && !dst) {
+    return `Valeton GP-200 preset "${presetName}".`;
+  }
+
+  const parts: string[] = [];
+  if (dst && amp) parts.push(`${dst} into a ${amp} amp`);
+  else if (amp)   parts.push(`${amp} amp`);
+  else if (dst)   parts.push(`${dst} drive`);
+  if (cab) parts.push(`routed to a ${cab} cabinet`);
+  if (mod) parts.push(`modulated with ${mod}`);
+  if (dly) parts.push(`with ${dly} delay`);
+  if (rvb) parts.push(`and ${rvb} reverb`);
+
+  return `Valeton GP-200 preset "${presetName}": ${parts.join(', ')}.`;
+}
+
+// Function stubs — implemented in Task 5/6.
 export function encodeToJson(_preset: GP200Preset, _opts: EncodeOpts): PresetJson {
   throw new Error('encodeToJson not implemented');
 }
