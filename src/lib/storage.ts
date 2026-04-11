@@ -77,3 +77,17 @@ export async function getPresetStream(key: string): Promise<Readable> {
   );
   return response.Body as Readable;
 }
+
+/**
+ * Convenience wrapper over getPresetStream that reads the entire object
+ * into a Buffer. Only safe for small files (preset files are 1224 bytes);
+ * do not use for avatars or anything user-sized.
+ */
+export async function downloadPresetBuffer(key: string): Promise<Buffer> {
+  const stream = await getPresetStream(key);
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks);
+}

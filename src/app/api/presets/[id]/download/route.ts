@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { validateSession, refreshSessionCookie } from '@/lib/session';
-import { getPresetStream } from '@/lib/storage';
+import { downloadPresetBuffer } from '@/lib/storage';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -22,16 +22,12 @@ export async function GET(_request: Request, context: RouteContext) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  const stream = await getPresetStream(preset.presetKey);
-  const chunks: Buffer[] = [];
-  for await (const chunk of stream) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-  }
-  const buffer = Buffer.concat(chunks);
+  const buffer = await downloadPresetBuffer(preset.presetKey);
 
   const safeFilename = preset.name.replace(/[\\\"\/\x00\r\n]/g, '_').slice(0, 64);
 
-  return new NextResponse(buffer, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return new NextResponse(buffer as any, {
     headers: {
       'Content-Type': 'application/octet-stream',
       'Content-Disposition': `attachment; filename="${safeFilename}.prst"`,

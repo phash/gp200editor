@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getPresetStream } from '@/lib/storage';
+import { downloadPresetBuffer } from '@/lib/storage';
 import { rateLimit } from '@/lib/rateLimit';
 
 type RouteContext = { params: Promise<{ token: string }> };
@@ -22,12 +22,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
   }
 
   // Read entire file into buffer (preset files are small, max 1224 bytes)
-  const stream = await getPresetStream(preset.presetKey);
-  const chunks: Buffer[] = [];
-  for await (const chunk of stream) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-  }
-  const buffer = Buffer.concat(chunks);
+  const buffer = await downloadPresetBuffer(preset.presetKey);
 
   // Atomically increment download count
   await prisma.preset.update({
@@ -37,7 +32,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
   const safeFilename = preset.name.replace(/[\\\"\/\x00\r\n]/g, '_').slice(0, 64);
 
-  return new NextResponse(buffer, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return new NextResponse(buffer as any, {
     headers: {
       'Content-Type': 'application/octet-stream',
       'Content-Disposition': `attachment; filename="${safeFilename}.prst"`,
