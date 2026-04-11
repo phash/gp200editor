@@ -60,6 +60,14 @@ export type SignalChainEntry = z.infer<typeof signalChainEntrySchema>;
 export type NameRef = z.infer<typeof nameRefSchema>;
 export type RawPresetData = z.infer<typeof rawPresetDataSchema>;
 
+export type EncodeOpts = {
+  shareToken: string;
+  locale: 'de' | 'en';
+  sourceUrl: string | null;
+  sourceLabel: string | null;
+  description: string | null;
+};
+
 // Function stubs — implemented in Task 4/5/6.
 export function encodeToJson(_preset: GP200Preset, _opts: EncodeOpts): PresetJson {
   throw new Error('encodeToJson not implemented');
@@ -68,11 +76,3 @@ export function encodeToJson(_preset: GP200Preset, _opts: EncodeOpts): PresetJso
 export function decodeFromJson(_json: PresetJson): GP200Preset {
   throw new Error('decodeFromJson not implemented');
 }
-
-export type EncodeOpts = {
-  shareToken: string;
-  locale: 'de' | 'en';
-  sourceUrl: string | null;
-  sourceLabel: string | null;
-  description: string | null;
-};
