@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link, useRouter, usePathname } from '@/i18n/routing';
+import { LocaleSwitcher } from './LocaleSwitcher';
 
 export function Navbar() {
   const t = useTranslations('nav');
@@ -14,8 +15,6 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [role, setRole] = useState<string | null>(null);
   const [errorCount, setErrorCount] = useState(0);
-
-  const otherLocale = locale === 'de' ? 'en' : 'de';
 
   useEffect(() => {
     fetch('/api/profile')
@@ -32,10 +31,6 @@ export function Navbar() {
       })
       .catch(() => { setUsername(null); setRole(null); });
   }, [pathname]);
-
-  function switchLocale() {
-    router.replace(pathname, { locale: otherLocale });
-  }
 
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -174,26 +169,7 @@ export function Navbar() {
         >
           ☕
         </a>
-        <button
-          onClick={switchLocale}
-          aria-label={t('switchLocale')}
-          data-testid="nav-locale-switcher"
-          className="font-mono-display text-xs px-2.5 py-1 rounded transition-all"
-          style={{
-            border: '1px solid var(--border-active)',
-            color: 'var(--text-secondary)',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = 'var(--accent-amber)';
-            e.currentTarget.style.color = 'var(--accent-amber)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = 'var(--border-active)';
-            e.currentTarget.style.color = 'var(--text-secondary)';
-          }}
-        >
-          {otherLocale.toUpperCase()}
-        </button>
+        <LocaleSwitcher />
         {role === 'ADMIN' && (
           <Link href="/admin" className="font-mono-display text-xs px-2.5 py-1 rounded transition-all relative"
             style={{
@@ -272,15 +248,32 @@ export function Navbar() {
               {tAuth('login')}
             </Link>
           )}
-          <div className="flex gap-3 items-center pt-2" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-            <button
-              onClick={switchLocale}
-              aria-label={t('switchLocale')}
-              className="font-mono-display text-xs px-2.5 py-1 rounded"
-              style={{ border: '1px solid var(--border-active)', color: 'var(--text-secondary)' }}
-            >
-              {otherLocale.toUpperCase()}
-            </button>
+          <div
+            className="flex gap-2 items-center pt-3 flex-wrap"
+            style={{ borderTop: '1px solid var(--border-subtle)' }}
+          >
+            {(['de','en','es','fr','it','pt'] as const).map((l) => {
+              const flag = l === 'de' ? '🇩🇪' : l === 'en' ? '🇬🇧' : l === 'es' ? '🇪🇸'
+                : l === 'fr' ? '🇫🇷' : l === 'it' ? '🇮🇹' : '🇵🇹';
+              return (
+                <button
+                  key={l}
+                  onClick={() => {
+                    setMobileOpen(false);
+                    router.replace(pathname, { locale: l });
+                  }}
+                  aria-label={l.toUpperCase()}
+                  className="font-mono-display text-xs px-2 py-1 rounded flex items-center gap-1"
+                  style={{
+                    border: locale === l ? '1px solid var(--accent-amber)' : '1px solid var(--border-subtle)',
+                    color: locale === l ? 'var(--accent-amber)' : 'var(--text-secondary)',
+                  }}
+                >
+                  <span aria-hidden="true">{flag}</span>
+                  <span>{l.toUpperCase()}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
