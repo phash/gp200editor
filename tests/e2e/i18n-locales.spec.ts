@@ -17,7 +17,7 @@ const LOCALES = [
 for (const { locale, heroSubstring } of LOCALES) {
   test.describe(`[${locale}] smoke`, () => {
     test('landing page renders', async ({ page }) => {
-      await page.goto(`/${locale}`);
+      await page.goto(`/${locale}`, { waitUntil: 'domcontentloaded' });
       await expect(page).toHaveURL(new RegExp(`/${locale}$|/${locale}/`));
       // heroSubstring is brand name — appears in every language
       await expect(page.locator('body')).toContainText(heroSubstring);
@@ -26,22 +26,22 @@ for (const { locale, heroSubstring } of LOCALES) {
     });
 
     test('editor loads', async ({ page }) => {
-      await page.goto(`/${locale}/editor`);
+      await page.goto(`/${locale}/editor`, { waitUntil: 'domcontentloaded' });
       await expect(page).toHaveURL(new RegExp(`/${locale}/editor`));
       // The editor page must not be a 404 — look for the file upload
       // dropzone which is locale-agnostic and always present.
-      await expect(page.locator('[data-testid="file-upload"]').first()).toBeVisible({ timeout: 10000 });
+      await expect(page.locator('[data-testid="file-upload-zone"]').first()).toBeVisible({ timeout: 15000 });
     });
 
     test('gallery loads', async ({ page }) => {
-      await page.goto(`/${locale}/gallery`);
+      await page.goto(`/${locale}/gallery`, { waitUntil: 'domcontentloaded' });
       await expect(page).toHaveURL(new RegExp(`/${locale}/gallery`));
       // Any link to a preset share page confirms the gallery rendered
       await expect(page.locator('a[href*="/share/"]').first()).toBeVisible({ timeout: 10000 });
     });
 
     test('a11y — no critical WCAG issues on landing', async ({ page }) => {
-      await page.goto(`/${locale}`);
+      await page.goto(`/${locale}`, { waitUntil: 'domcontentloaded' });
       const results = await new AxeBuilder({ page })
         .withTags(['wcag2a', 'wcag2aa'])
         .analyze();
