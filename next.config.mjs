@@ -27,7 +27,13 @@ const nextConfig = {
           key: 'Content-Security-Policy',
           value: [
             "default-src 'self'",
-            `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''} https://musikersuche.org https://challenges.cloudflare.com`,
+            // 'unsafe-eval' is needed for Matomo analytics (loaded from
+            // musikersuche.org) and the Next.js 15 / React 19 client runtime
+            // under certain chunk-loading paths. Keeping it off caused a
+            // silent regression where the Matomo tracker blocked the first
+            // interactive render. 'unsafe-inline' is already required for
+            // Next.js hydration so the marginal security cost is small.
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://musikersuche.org https://challenges.cloudflare.com",
             "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data: blob:",
             "font-src 'self'",

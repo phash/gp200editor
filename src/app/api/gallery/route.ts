@@ -54,6 +54,7 @@ export async function GET(request: NextRequest) {
         effects: true,
         author: true,
         style: true,
+        shareToken: true,
         downloadCount: true,
         ratingAverage: true,
         ratingCount: true,
