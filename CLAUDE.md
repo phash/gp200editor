@@ -10,7 +10,7 @@ Live USB-MIDI Editing, Preset-Galerie, Community-Sharing.
 - **Zweck:** `.prst` Preset-Dateien im Browser laden, bearbeiten, speichern, teilen, live per USB-MIDI ans Gerät senden
 - **GitHub:** https://github.com/phash/gp200editor
 - **Stack:** Next.js 15 App Router · React 19 · TypeScript strict · Tailwind CSS · Prisma 5 · PostgreSQL 16 · Lucia v3 · Garage S3 · next-intl 4 (DE/EN)
-- **Tests:** Vitest (346 Unit-Tests, 76% Coverage) · Playwright + @axe-core/playwright (E2E + A11y)
+- **Tests:** Vitest (413 Unit-Tests) · Playwright + @axe-core/playwright (E2E + A11y)
 - **Ziel:** WCAG 2.1 AA
 - **UI:** Dark pedalboard theme (JetBrains Mono + DM Sans, Amber-Akzente, LED-Style Buttons)
 
@@ -21,14 +21,19 @@ Live USB-MIDI Editing, Preset-Galerie, Community-Sharing.
 ```bash
 npm install --legacy-peer-deps   # IMMER --legacy-peer-deps (npm 11.x vs Docker npm 10.x)
 npm run dev                      # http://localhost:3000
-npm run test                     # Vitest Unit-Tests (346 Tests)
+npm run test                     # Vitest Unit-Tests (413 Tests)
 npm run test:e2e                 # Playwright E2E (App muss laufen + Garage + DB)
 npm run lint                     # ESLint
 npm run build                    # Production Build
+npm run ci                       # Lokale CI: lint + typecheck + test + build (ersetzt GH Actions)
+bash scripts/local-ci.sh lint typecheck   # Einzelne Stages
 ```
 
 Docker-Setup, Env-Vars, VPS-Deployment, Hardware-Testing: **`docs/deployment.md`**
 Reverse Proxy (Caddy): **`/opt/caddyserver`** auf VPS, Container `caddy-proxy`, Reload: `docker restart caddy-proxy`
+
+**Prod-Deploy:** `ssh musikersuche@82.165.40.140` → `cd /opt/gp200editor && bash scripts/deploy-update.sh` (auto git pull + rebuild + migrate + restart)
+**Prod-SQL:** `source .env.prod && docker compose -f docker-compose.prod.yml -f docker-compose.caddy.yml exec -T postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"`
 
 ---
 
@@ -345,6 +350,17 @@ E2E-Tests in `tests/e2e/`:
 
 ---
 
+## PRST Library (Factory User + Ingest)
+
+- **System-User:** `factory-library` (owned by seed script `scripts/seed-factory-library-user.ts`, unusable password)
+- **145+ ingested presets** von guitarpatches.com (auf Prod), alle mit `sourceLabel`, `sourceUrl`, `contentHash`, `ingestedAt` Spalten
+- **Ingest-CLI:** `tsx scripts/ingest-presets.ts <source>` — sources: `guitarpatches` (10s crawl-delay, 2.5h), `github` (needs `GITHUB_TOKEN`), `valeton-factory --path <folder>`, `manual --file <json>`, `all`
+- **Description regen:** `tsx scripts/regen-library-descriptions.ts` nach jedem Description-Generator-Change
+- **Amp-Category-Pages:** `/[locale]/amp/[slug]` — 64 real-world Amps × 2 locales via `generateStaticParams` (`src/core/ampCategories.ts`)
+- **JSON-API:** `GET /api/share/[token]/json` liefert round-trip `PresetJson` mit signalChain, highlights, raw (siehe `src/core/PRSTJsonCodec.ts`)
+
+---
+
 ## USB-Gerätekommunikation (Issue #5 + #6)
 
 Das GP-200 ist USB-MIDI class-compliant. Kommunikation per proprietärem MIDI SysEx.
@@ -398,3 +414,10 @@ Das GP-200 ist USB-MIDI class-compliant. Kommunikation per proprietärem MIDI Sy
 - CSP-Header im Caddyfile für `preset-forge.com` setzen — CSP wird ausschließlich von Next.js verwaltet (`next.config.mjs`); Caddy + Next.js erzeugen Doppel-Header → Browser nimmt restriktivsten
 - Shared `security_headers` Snippet für Preset Forge verwenden — Headers sind inline im Caddyfile (X-Frame-Options=DENY, Permissions-Policy ohne geolocation); Snippet setzt schwächere Defaults (SAMEORIGIN, geolocation=(self))
 - Honeypot-Feld `website` nennen — kollidiert mit `User.website` im Prisma-Schema; aktueller Name: `company_url`
+- `sitemap.ts` mit `revalidate` alleine dynamisch machen — Next.js 15 cached es trotzdem build-time; immer `export const dynamic = 'force-dynamic'` setzen
+- Vergessen `metadataBase` im root layout zu setzen — sonst serialisiert Next.js dynamische `og:image` URLs als `http://localhost:3000/...`
+- `new NextResponse(buffer, {...})` ohne cast — unter Next 15 strict tsc wirft das; `new NextResponse(buffer as BodyInit, {...})` ist der minimale fix (nicht `as any`)
+- JSON-LD inline via React dangerous-html prop ohne script-tag escape — immer `JSON.stringify(obj).replace(/</g, '\\u003c')` damit ein `</script>` im string nicht ausbricht
+- CSP `'unsafe-eval'` in prod weglassen — Matomo + Next 15 runtime brauchen es, sonst bricht Interaktivität; dev + prod müssen beide `unsafe-eval` haben
+- Neue Spalten in `/api/gallery` response weglassen — die Frontend-Caller (GalleryPickerDialog, etc.) erwarten `shareToken`, sonst wird `/api/share/undefined/download` angefragt
+- Ingest-Pipeline Rejects ignorieren — Factory-size (1176-byte) Presets und NaN-Params in real-world Dateien; Decoder hardened dagegen aber nach jedem ingest den counter checken
