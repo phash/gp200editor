@@ -95,12 +95,31 @@ const NAMED_ENTITIES: Record<string, string> = {
   ntilde: '\u00F1', ccedil: '\u00E7',
 };
 
+// Reject code points that have no business landing in user-facing preset
+// metadata even if the source page legitimately contains them. Ranges:
+//   0x00–0x1F minus TAB/LF  — C0 control chars, BEL, backspace, etc.
+//   0x7F–0x9F               — DEL + C1 control chars
+//   0x202A–0x202E, 0x2066–0x2069 — bidi override / isolate (spoofing)
+//   0xD800–0xDFFF           — UTF-16 surrogates (malformed input)
+//   0xFDD0–0xFDEF, 0xFFFE–0xFFFF — Unicode noncharacters
+function isSafeCodePoint(code: number): boolean {
+  if (code < 0x20) return code === 0x09 || code === 0x0a;
+  if (code >= 0x7f && code <= 0x9f) return false;
+  if (code >= 0x202a && code <= 0x202e) return false;
+  if (code >= 0x2066 && code <= 0x2069) return false;
+  if (code >= 0xd800 && code <= 0xdfff) return false;
+  if (code >= 0xfdd0 && code <= 0xfdef) return false;
+  if (code === 0xfffe || code === 0xffff) return false;
+  return true;
+}
+
 export function decodeHtmlEntities(s: string): string {
   return s.replace(/&(#[xX][0-9a-fA-F]+|#[0-9]+|[a-zA-Z]+);/g, (full, body: string) => {
     if (body[0] === '#') {
       const isHex = body[1] === 'x' || body[1] === 'X';
       const code = parseInt(body.slice(isHex ? 2 : 1), isHex ? 16 : 10);
       if (!Number.isFinite(code) || code < 0 || code > 0x10ffff) return full;
+      if (!isSafeCodePoint(code)) return full;
       try {
         return String.fromCodePoint(code);
       } catch {

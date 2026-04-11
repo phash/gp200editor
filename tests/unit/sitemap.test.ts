@@ -24,14 +24,14 @@ describe('sitemap', () => {
     const entries = await sitemap();
     const urls = entries.map((e) => e.url);
     // All 6 locale variants
-    expect(urls).toContain('https://preset-forge.com/de/share/abc');
-    expect(urls).toContain('https://preset-forge.com/en/share/abc');
-    expect(urls).toContain('https://preset-forge.com/es/share/abc');
-    expect(urls).toContain('https://preset-forge.com/fr/share/abc');
-    expect(urls).toContain('https://preset-forge.com/it/share/abc');
-    expect(urls).toContain('https://preset-forge.com/pt/share/abc');
+    expect(urls).toContain('https://www.preset-forge.com/de/share/abc');
+    expect(urls).toContain('https://www.preset-forge.com/en/share/abc');
+    expect(urls).toContain('https://www.preset-forge.com/es/share/abc');
+    expect(urls).toContain('https://www.preset-forge.com/fr/share/abc');
+    expect(urls).toContain('https://www.preset-forge.com/it/share/abc');
+    expect(urls).toContain('https://www.preset-forge.com/pt/share/abc');
     // Plus the JSON endpoint
-    expect(urls).toContain('https://preset-forge.com/api/share/abc/json');
+    expect(urls).toContain('https://www.preset-forge.com/api/share/abc/json');
   });
 
   it('emits seven entries per preset (6 locale HTML + 1 JSON)', async () => {
@@ -51,15 +51,19 @@ describe('sitemap', () => {
     expect(presetEntries).toHaveLength(70);
   });
 
-  it('emits amp category URLs for both locales', async () => {
+  it('emits amp category URLs for all 6 locales', async () => {
     (prisma.preset.findMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce([]);
 
     const entries = await sitemap();
-    const ampEn = entries.filter((e) => e.url.match(/\/en\/amp\/[a-z0-9-]+$/));
-    const ampDe = entries.filter((e) => e.url.match(/\/de\/amp\/[a-z0-9-]+$/));
+    const perLocale = ['de', 'en', 'es', 'fr', 'it', 'pt'].map((l) =>
+      entries.filter((e) => e.url.match(new RegExp(`/${l}/amp/[a-z0-9-]+$`))),
+    );
 
-    expect(ampEn.length).toBeGreaterThan(10);
-    expect(ampDe.length).toBe(ampEn.length);
+    // At least a dozen amp categories exist; every locale should have the same count
+    expect(perLocale[0].length).toBeGreaterThan(10);
+    for (const locale of perLocale.slice(1)) {
+      expect(locale.length).toBe(perLocale[0].length);
+    }
   });
 
   it('survives when prisma throws (DB unavailable at build time)', async () => {

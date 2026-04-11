@@ -44,8 +44,15 @@ export async function runIngest(
   return counters;
 }
 
-/** Allow only http(s) sourceUrls — no javascript:/data:/file: etc. */
+const MAX_SOURCE_URL_LENGTH = 2048;
+
+/** Allow only http(s) sourceUrls — no javascript:/data:/file:/blob:/ws: etc.
+ *  Length-gate BEFORE constructing the URL so a pathological multi-megabyte
+ *  input can't burn parser CPU before we reject it. */
 function isSafeSourceUrl(raw: string): boolean {
+  if (typeof raw !== 'string' || raw.length === 0 || raw.length > MAX_SOURCE_URL_LENGTH) {
+    return false;
+  }
   try {
     const u = new URL(raw);
     return u.protocol === 'http:' || u.protocol === 'https:';
@@ -60,15 +67,12 @@ async function ingestOne(
   upload: (key: string, buffer: Buffer) => Promise<void>,
   log: NonNullable<PipelineDeps['log']>,
 ): Promise<'accepted' | 'rejected' | 'duplicates'> {
-  // 0. sourceUrl safety — must be http(s) and absolute. Reject candidates
-  // with javascript:/data:/file: URLs so they never land in the DB and
-  // leak into the public /api/share/[token]/json response or share pages.
+  // 0. sourceUrl safety — must be http(s) and absolute, ≤ 2048 chars. The
+  // length check lives inside isSafeSourceUrl so URL parsing never runs on
+  // pathological input. Rejects javascript:/data:/file:/blob:/ws: so they
+  // never land in the DB or the public /api/share/[token]/json response.
   if (!isSafeSourceUrl(candidate.sourceUrl)) {
-    log('warn', `${candidate.sourceUrl}: unsafe or invalid sourceUrl, skip`);
-    return 'rejected';
-  }
-  if (candidate.sourceUrl.length > 2048) {
-    log('warn', `${candidate.sourceUrl.slice(0, 80)}…: sourceUrl too long, skip`);
+    log('warn', `${candidate.sourceUrl.slice(0, 80)}: unsafe or invalid sourceUrl, skip`);
     return 'rejected';
   }
   if (candidate.sourceLabel.length > 100) {

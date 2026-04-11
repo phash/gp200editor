@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link, useRouter, usePathname } from '@/i18n/routing';
+import { LOCALES, LOCALE_META } from '@/lib/hreflang';
 import { LocaleSwitcher } from './LocaleSwitcher';
 
 export function Navbar() {
@@ -252,9 +253,8 @@ export function Navbar() {
             className="flex gap-2 items-center pt-3 flex-wrap"
             style={{ borderTop: '1px solid var(--border-subtle)' }}
           >
-            {(['de','en','es','fr','it','pt'] as const).map((l) => {
-              const flag = l === 'de' ? '🇩🇪' : l === 'en' ? '🇬🇧' : l === 'es' ? '🇪🇸'
-                : l === 'fr' ? '🇫🇷' : l === 'it' ? '🇮🇹' : '🇵🇹';
+            {LOCALES.map((l) => {
+              const meta = LOCALE_META[l];
               return (
                 <button
                   key={l}
@@ -262,15 +262,15 @@ export function Navbar() {
                     setMobileOpen(false);
                     router.replace(pathname, { locale: l });
                   }}
-                  aria-label={l.toUpperCase()}
+                  aria-label={meta.code}
                   className="font-mono-display text-xs px-2 py-1 rounded flex items-center gap-1"
                   style={{
                     border: locale === l ? '1px solid var(--accent-amber)' : '1px solid var(--border-subtle)',
                     color: locale === l ? 'var(--accent-amber)' : 'var(--text-secondary)',
                   }}
                 >
-                  <span aria-hidden="true">{flag}</span>
-                  <span>{l.toUpperCase()}</span>
+                  <span aria-hidden="true">{meta.flag}</span>
+                  <span>{meta.code}</span>
                 </button>
               );
             })}

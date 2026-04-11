@@ -3,22 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter, usePathname } from '@/i18n/routing';
-
-type Locale = 'de' | 'en' | 'es' | 'fr' | 'it' | 'pt';
-
-// Flag emoji + ISO code. Remove a locale from BETA_LOCALES to drop its
-// "beta" badge — that's the entire rollout mechanism, no config flag.
-const LOCALE_META: Record<Locale, { flag: string; code: string }> = {
-  de: { flag: '🇩🇪', code: 'DE' },
-  en: { flag: '🇬🇧', code: 'EN' },
-  es: { flag: '🇪🇸', code: 'ES' },
-  fr: { flag: '🇫🇷', code: 'FR' },
-  it: { flag: '🇮🇹', code: 'IT' },
-  pt: { flag: '🇵🇹', code: 'PT' },
-};
-
-const LOCALE_ORDER: Locale[] = ['de', 'en', 'es', 'fr', 'it', 'pt'];
-const BETA_LOCALES = new Set<Locale>(['es', 'fr', 'it', 'pt']);
+import { LOCALES, LOCALE_META, BETA_LOCALES, type Locale } from '@/lib/hreflang';
 
 export function LocaleSwitcher() {
   const t = useTranslations('nav');
@@ -81,7 +66,7 @@ export function LocaleSwitcher() {
             boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
           }}
         >
-          {LOCALE_ORDER.map((l) => {
+          {LOCALES.map((l) => {
             const meta = LOCALE_META[l];
             const isActive = l === locale;
             return (
