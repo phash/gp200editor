@@ -4,7 +4,7 @@ import { getChangelog } from '@/lib/changelog';
 
 export const revalidate = 3600;
 
-const BASE_URL = 'https://preset-forge.com';
+import { buildAlternates, BASE_URL } from '@/lib/hreflang';
 
 type Props = {
   params: Promise<{ locale: 'de' | 'en' }>;
@@ -19,14 +19,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title,
     description,
-    alternates: {
-      canonical,
-      languages: {
-        de: `${BASE_URL}/de/changelog`,
-        en: `${BASE_URL}/en/changelog`,
-        'x-default': `${BASE_URL}/en/changelog`,
-      },
-    },
+    alternates: buildAlternates('/changelog', locale),
     openGraph: { title, description, url: canonical, type: 'website', siteName: 'Preset Forge' },
     twitter: { card: 'summary', title, description },
   };

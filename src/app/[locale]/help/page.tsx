@@ -1,17 +1,13 @@
 import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
-
-const BASE_URL = 'https://preset-forge.com';
+import { buildAlternates, BASE_URL, type Locale } from '@/lib/hreflang';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   return {
     title: 'Help & FAQ — GP-200 Editor, Linux Support, USB MIDI | Preset Forge',
     description: 'How to use Preset Forge: load and edit GP-200 presets, connect via USB MIDI, import HX Stomp presets, build live setlists. Works on Linux (tested on Linux Mint), Windows, and macOS.',
-    alternates: {
-      canonical: `${BASE_URL}/${locale}/help`,
-      languages: { de: `${BASE_URL}/de/help`, en: `${BASE_URL}/en/help` },
-    },
+    alternates: buildAlternates('/help', locale as Locale),
     openGraph: {
       title: 'Help & FAQ — GP-200 Preset Editor | Preset Forge',
       description: 'Complete guide to Preset Forge: GP-200 preset editing, Linux support (Linux Mint tested), USB MIDI live editing, HX Stomp import, live setlists with cue points.',

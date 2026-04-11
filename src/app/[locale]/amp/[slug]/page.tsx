@@ -9,7 +9,7 @@ import {
 
 export const dynamic = 'force-dynamic';
 
-const BASE_URL = 'https://preset-forge.com';
+import { buildAlternates, BASE_URL } from '@/lib/hreflang';
 
 type Props = {
   params: Promise<{ slug: string; locale: 'de' | 'en' }>;
@@ -37,14 +37,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title,
     description,
-    alternates: {
-      canonical,
-      languages: {
-        de: `${BASE_URL}/de/amp/${slug}`,
-        en: `${BASE_URL}/en/amp/${slug}`,
-        'x-default': `${BASE_URL}/en/amp/${slug}`,
-      },
-    },
+    alternates: buildAlternates(`/amp/${slug}`, locale),
     openGraph: {
       title,
       description,

@@ -8,8 +8,7 @@ import '../globals.css'; // globals.css stays in src/app/, so relative path goes
 import { Footer } from '@/components/Footer';
 import { Navbar } from '@/components/Navbar';
 import { ClientProviders } from './ClientProviders';
-
-const BASE_URL = 'https://preset-forge.com';
+import { buildAlternates, BASE_URL, type Locale } from '@/lib/hreflang';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -33,14 +32,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       'guitar preset gallery', 'effect filter', 'pedalboard view', 'PWA offline', 'MIDI auto-reconnect',
     ],
     manifest: '/manifest.json',
-    alternates: {
-      canonical: `${BASE_URL}/${locale}`,
-      languages: {
-        de: `${BASE_URL}/de`,
-        en: `${BASE_URL}/en`,
-        'x-default': `${BASE_URL}/de`,
-      },
-    },
+    alternates: buildAlternates('/', locale as Locale),
     openGraph: {
       title: 'Preset Forge — GP-200 Preset Editor | Linux & Windows | HX Stomp Import',
       description: 'The only GP-200 editor that runs on Linux (tested on Linux Mint). Import HX Stomp .hlx presets, build timed setlists with cue points for live gigs, browse 305 effects in the gallery. USB MIDI, offline PWA.',

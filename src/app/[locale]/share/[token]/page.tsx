@@ -13,7 +13,7 @@ import { Link } from '@/i18n/routing';
 
 export const revalidate = 3600;
 
-const BASE_URL = 'https://preset-forge.com';
+import { buildAlternates, BASE_URL } from '@/lib/hreflang';
 
 type Props = {
   params: Promise<{ token: string; locale: 'de' | 'en' }>;
@@ -73,23 +73,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       .filter(Boolean)
       .join(' · ') + ' — Free Valeton GP-200 preset, open in browser editor.';
 
-  // hreflang alternates — tells Google the same content exists in two languages
-  // and treats them as siblings rather than duplicates. x-default points at the
-  // English version since most amp names are English regardless of locale.
   const canonical = `${BASE_URL}/${locale}/share/${token}`;
-  const alternates = {
-    canonical,
-    languages: {
-      de: `${BASE_URL}/de/share/${token}`,
-      en: `${BASE_URL}/en/share/${token}`,
-      'x-default': `${BASE_URL}/en/share/${token}`,
-    },
-  };
 
   return {
     title,
     description,
-    alternates,
+    alternates: buildAlternates(`/share/${token}`, locale),
     openGraph: {
       title,
       description,
