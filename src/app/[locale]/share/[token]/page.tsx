@@ -11,12 +11,23 @@ import { SignalChainSection } from './SignalChainSection';
 
 export const revalidate = 3600;
 
+const BASE_URL = 'https://preset-forge.com';
+
 type Props = {
-  params: Promise<{ token: string }>;
+  params: Promise<{ token: string; locale: 'de' | 'en' }>;
 };
 
+/** Guess the amp brand from a real name like "Marshall® JCM800".
+ *  Used for schema.org/Product "brand" field. Falls back to "Valeton"
+ *  (since every preset is ultimately a Valeton GP-200 file). */
+function guessBrand(realName: string | null): string {
+  if (!realName) return 'Valeton';
+  const match = realName.match(/^([A-Za-z][A-Za-z0-9/]*(?:[ /][A-Za-z][A-Za-z0-9]*)*)®?/);
+  return match?.[1]?.trim() || 'Valeton';
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { token } = await params;
+  const { token, locale } = await params;
   const preset = await prisma.preset.findUnique({
     where: { shareToken: token },
     select: {
@@ -60,11 +71,41 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       .filter(Boolean)
       .join(' · ') + ' — Free Valeton GP-200 preset, open in browser editor.';
 
-  return { title, description, openGraph: { title, description } };
+  // hreflang alternates — tells Google the same content exists in two languages
+  // and treats them as siblings rather than duplicates. x-default points at the
+  // English version since most amp names are English regardless of locale.
+  const canonical = `${BASE_URL}/${locale}/share/${token}`;
+  const alternates = {
+    canonical,
+    languages: {
+      de: `${BASE_URL}/de/share/${token}`,
+      en: `${BASE_URL}/en/share/${token}`,
+      'x-default': `${BASE_URL}/en/share/${token}`,
+    },
+  };
+
+  return {
+    title,
+    description,
+    alternates,
+    openGraph: {
+      title,
+      description,
+      url: canonical,
+      type: 'website',
+      siteName: 'Preset Forge',
+      locale: locale === 'de' ? 'de_DE' : 'en_US',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+    },
+  };
 }
 
 export default async function SharePage({ params }: Props) {
-  const { token } = await params;
+  const { token, locale } = await params;
   const t = await getTranslations('presets');
 
   const preset = await prisma.preset.findUnique({
@@ -128,8 +169,47 @@ export default async function SharePage({ params }: Props) {
     }
   }
 
+  // schema.org/Product markup — Google renders this as a rich result with
+  // the preset name, brand (the amp manufacturer), and "free" price. Key
+  // for long-tail amp-based queries like "Marshall JCM800 GP-200 preset".
+  const brand = guessBrand(json?.highlights.amp?.realName ?? null);
+  const productJsonLd: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: preset.name,
+    description: preset.description ?? `Valeton GP-200 preset by @${preset.user.username}`,
+    brand: { '@type': 'Brand', name: brand },
+    category: 'Guitar effect preset',
+    url: `${BASE_URL}/${locale}/share/${token}`,
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+      availability: 'https://schema.org/InStock',
+      url: `${BASE_URL}/${locale}/share/${token}`,
+    },
+  };
+  if (preset.ratingCount > 0 && preset.ratingAverage > 0) {
+    productJsonLd.aggregateRating = {
+      '@type': 'AggregateRating',
+      ratingValue: preset.ratingAverage.toFixed(1),
+      ratingCount: preset.ratingCount,
+      bestRating: '5',
+      worstRating: '1',
+    };
+  }
+  // Escape < to \u003c so a malicious preset name can't inject a </script>
+  // tag and break out of the JSON-LD block. JSON.stringify doesn't do this
+  // by itself, so we do it in one step after serialization.
+  const productJsonLdString = JSON.stringify(productJsonLd).replace(/</g, '\\u003c');
+
   return (
     <main className="max-w-2xl mx-auto px-4 py-8">
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: productJsonLdString }}
+      />
       <div
         className="rounded-lg p-6"
         style={{
