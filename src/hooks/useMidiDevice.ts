@@ -2,6 +2,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { SysExCodec } from '@/core/SysExCodec';
 import type { GP200Preset } from '@/core/types';
+import { useMidiSend } from './useMidiSend';
 
 const READ_TIMEOUT_MS = 3000;
 
@@ -149,21 +150,31 @@ export function useMidiDevice(): UseMidiDeviceReturn {
   const namesLoadAbortRef  = useRef<boolean>(false);
   const namesLoadRunningRef = useRef<boolean>(false);
 
-  // Callback for device-initiated changes (slot switch → full re-pull)
-  const onDeviceChangeRef = useRef<((slot: number | null) => void) | null>(null);
-  // Callback for device-initiated effect toggles (direct state update, no pull needed)
-  const onDeviceToggleRef = useRef<((blockIndex: number, enabled: boolean) => void) | null>(null);
-  // Callback for device-initiated effect type changes (e.g. Green OD → Penesas)
-  const onDeviceEffectChangeRef = useRef<((blockIndex: number, effectId: number) => void) | null>(null);
-  // Callback for device-initiated param changes (hardware knob turns)
-  const onDeviceParamChangeRef = useRef<((blockIndex: number, paramIndex: number, value: number) => void) | null>(null);
-  // Suppress FX state toggles when we're actively sending commands (responses
-  // are echoes, not hardware changes). Use a counter, not a boolean + single
-  // timer: rapid overlapping sends (e.g. 500 ms effect-change while a 200 ms
-  // patch-volume suppression is in flight) would otherwise clear each other's
-  // timers and end suppression too early. Each call increments the counter
-  // and schedules its own decrement — the ref is "suppressed" while > 0.
-  const suppressFxCountRef = useRef(0);
+  // Delegate all send operations, device-initiated callback registration,
+  // and FX-state echo suppression to useMidiSend. The parent hook keeps
+  // connection state + preset ops; useMidiSend owns everything else we
+  // send to or receive from the pedal.
+  //
+  // onSlotChange keeps the local currentSlot state in sync whenever the
+  // user triggers a slot change via sendSlotChange — previously that was
+  // done inline at the end of the send callback.
+  const send = useMidiSend({
+    outputRef,
+    onSlotChange: (slot) => {
+      setCurrentSlot(slot);
+      currentSlotRef.current = slot;
+    },
+  });
+  const {
+    deviceCallbacks: {
+      onDeviceChangeRef,
+      onDeviceToggleRef,
+      onDeviceEffectChangeRef,
+      onDeviceParamChangeRef,
+    },
+    suppressFxCountRef,
+    suppressFxFor,
+  } = send;
 
   const onMidiMessage = useCallback((event: { data: unknown }) => {
     const data = getBytes(event.data);
@@ -573,133 +584,9 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     namesLoadRunningRef.current = false;
   }, [onMidiMessage]);
 
-  const sendEffectChange = useCallback((blockIndex: number, effectId: number) => {
-    if (!outputRef.current) return;
-    suppressFxBriefly();
-    const msg = SysExCodec.buildEffectChange(blockIndex, effectId);
-    console.log(`[GP-200] effect change: block=${blockIndex} effectId=0x${effectId.toString(16).padStart(8, '0')}`);
-    outputRef.current.send(msg);
-  }, []);
-
-  const sendToggle = useCallback((blockIndex: number, enabled: boolean) => {
-    if (!outputRef.current) return;
-    suppressFxBriefly();
-    const msg = SysExCodec.buildToggleEffect(blockIndex, enabled);
-    console.log(`[GP-200] toggle: block=${blockIndex} enabled=${enabled}`);
-    outputRef.current.send(msg);
-  }, []);
-
-  const sendParamChange = useCallback((blockIndex: number, paramIndex: number, effectId: number, value: number) => {
-    if (!outputRef.current) return;
-    suppressFxBriefly();
-    const msg = SysExCodec.buildParamChange(blockIndex, paramIndex, effectId, value);
-    outputRef.current.send(msg);
-  }, []);
-
-  const sendReorder = useCallback((order: number[]) => {
-    if (!outputRef.current) return;
-    const msg = SysExCodec.buildReorderEffects(order);
-    console.log('[GP-200] reorder:', order);
-    outputRef.current.send(msg);
-  }, []);
-
-  const sendSlotChange = useCallback((slot: number) => {
-    if (!outputRef.current) return;
-    // sub=0x08 with slot at byte[26] — confirmed via capture 222343
-    const msg = SysExCodec.buildPresetChange(slot);
-    console.log(`[GP-200] slot change: ${slot} (${SysExCodec.slotToLabel(slot)})`);
-    outputRef.current.send(msg);
-    setCurrentSlot(slot); currentSlotRef.current = slot;
-  }, []);
-
-  const sendAuthor = useCallback((author: string) => {
-    if (!outputRef.current) return;
-    const msg = SysExCodec.buildAuthorName(author);
-    console.log(`[GP-200] author: "${author}"`);
-    outputRef.current.send(msg);
-  }, []);
-
-  const sendStyleName = useCallback((styleName: string) => {
-    if (!outputRef.current) return;
-    const msg = SysExCodec.buildStyleName(styleName);
-    console.log(`[GP-200] style: "${styleName}"`);
-    outputRef.current.send(msg);
-  }, []);
-
-  const sendNote = useCallback((note: string) => {
-    if (!outputRef.current) return;
-    const msg = SysExCodec.buildNote(note);
-    console.log(`[GP-200] note: "${note}"`);
-    outputRef.current.send(msg);
-  }, []);
-
-  // Suppress FX state echoes for `ms` milliseconds after sending commands.
-  // Each call is independent and uses its own timer — multiple overlapping
-  // calls stack (counter > 0 means suppressed). See suppressFxCountRef
-  // declaration for why a counter beats a boolean + single timer here.
-  function suppressFxFor(ms: number) {
-    suppressFxCountRef.current += 1;
-    setTimeout(() => {
-      suppressFxCountRef.current = Math.max(0, suppressFxCountRef.current - 1);
-    }, ms);
-  }
-
-  function suppressFxBriefly() {
-    suppressFxFor(200);
-  }
-
-  const sendPatchVolume = useCallback((value: number) => {
-    if (!outputRef.current) return;
-    suppressFxBriefly();
-    outputRef.current.send(SysExCodec.buildPatchSetting(0x00, value));
-  }, []);
-
-  const sendPatchPan = useCallback((deviceValue: number) => {
-    if (!outputRef.current) return;
-    suppressFxBriefly();
-    outputRef.current.send(SysExCodec.buildPatchSetting(0x06, deviceValue));
-  }, []);
-
-  const sendPatchTempo = useCallback((bpm: number) => {
-    if (!outputRef.current) return;
-    suppressFxBriefly();
-    outputRef.current.send(SysExCodec.buildPatchSetting(0x01, bpm));
-  }, []);
-
-  const sendExpParamSelect = useCallback((page: number, item: number, blockIndex: number, paramIdx: number) => {
-    if (!outputRef.current) return;
-    suppressFxBriefly();
-    // Only navigation — confirmed: capture 204352 sends ONLY sub=0x18 for param change
-    // decoded[12]=item<<4 selects Para slot (0/1/2), confirmed: capture 200517
-    const msg = SysExCodec.buildExpNavigation(page, item, blockIndex, paramIdx);
-    console.log(`[GP-200] EXP nav: page=${page} item=${item} block=${blockIndex} param=${paramIdx}`);
-    outputRef.current.send(msg);
-  }, []);
-
-  const sendExpMinMax = useCallback((page: number, item: number, min: number, max: number) => {
-    if (!outputRef.current) return;
-    suppressFxBriefly();
-    const out = outputRef.current;
-    // Min (section=0) + Max (section=1) — confirmed: capture 203838
-    out.send(SysExCodec.buildExpAssignment(0, page, item, min));
-    out.send(SysExCodec.buildExpAssignment(1, page, item, max));
-  }, []);
-
-  const sendRawChunks = useCallback(async (
-    chunks: Uint8Array[], delayMs: number,
-    onProgress?: (i: number, total: number) => void,
-  ): Promise<void> => {
-    if (!outputRef.current) throw new Error('Not connected');
-    suppressFxBriefly();
-    for (let i = 0; i < chunks.length; i++) {
-      outputRef.current.send(chunks[i]);
-      onProgress?.(i + 1, chunks.length);
-      if (i < chunks.length - 1) {
-        await new Promise(r => setTimeout(r, delayMs));
-      }
-    }
-    console.log(`[GP-200] sendRawChunks: ${chunks.length} chunks sent with ${delayMs}ms delay`);
-  }, []);
+  // All send* helpers + device-callback setters come from useMidiSend (see
+  // the top of the hook where `send` is instantiated). The return value at
+  // the bottom spreads them onto the public API.
 
   // Track connection state for auto-reconnect
   useEffect(() => {
@@ -727,11 +614,24 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     status, handshakeStep, errorMessage, deviceName, currentSlot, presetNames, namesLoadProgress,
     deviceInfo, currentPreset, cabIrNames,
     connect, disconnect, loadPresetNames, pullPreset, pushPreset, writePresetToSlot, saveToSlot,
-    sendEffectChange, sendToggle, sendParamChange, sendReorder, sendSlotChange,
-    sendAuthor, sendStyleName, sendNote, sendPatchVolume, sendPatchPan, sendPatchTempo, sendExpParamSelect, sendExpMinMax, sendRawChunks,
-    setOnDeviceChange: (cb: ((slot: number | null) => void) | null) => { onDeviceChangeRef.current = cb; },
-    setOnDeviceToggle: (cb: ((blockIndex: number, enabled: boolean) => void) | null) => { onDeviceToggleRef.current = cb; },
-    setOnDeviceEffectChange: (cb: ((blockIndex: number, effectId: number) => void) | null) => { onDeviceEffectChangeRef.current = cb; },
-    setOnDeviceParamChange: (cb: ((blockIndex: number, paramIndex: number, value: number) => void) | null) => { onDeviceParamChangeRef.current = cb; },
+    // Send operations + device-callback registration are owned by useMidiSend.
+    sendEffectChange: send.sendEffectChange,
+    sendToggle: send.sendToggle,
+    sendParamChange: send.sendParamChange,
+    sendReorder: send.sendReorder,
+    sendSlotChange: send.sendSlotChange,
+    sendAuthor: send.sendAuthor,
+    sendStyleName: send.sendStyleName,
+    sendNote: send.sendNote,
+    sendPatchVolume: send.sendPatchVolume,
+    sendPatchPan: send.sendPatchPan,
+    sendPatchTempo: send.sendPatchTempo,
+    sendExpParamSelect: send.sendExpParamSelect,
+    sendExpMinMax: send.sendExpMinMax,
+    sendRawChunks: send.sendRawChunks,
+    setOnDeviceChange: send.setOnDeviceChange,
+    setOnDeviceToggle: send.setOnDeviceToggle,
+    setOnDeviceEffectChange: send.setOnDeviceEffectChange,
+    setOnDeviceParamChange: send.setOnDeviceParamChange,
   };
 }
