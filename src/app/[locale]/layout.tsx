@@ -14,6 +14,12 @@ const BASE_URL = 'https://preset-forge.com';
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   return {
+    // metadataBase makes every relative image/URL in downstream metadata
+    // resolve to the production origin. Without it, dynamic opengraph-image
+    // routes end up tagged as http://localhost:3000 because that's the
+    // Next.js default when rendered inside a prod container that doesn't
+    // know its own external host.
+    metadataBase: new URL(BASE_URL),
     title: 'Preset Forge — GP-200 Preset Editor | Linux & Windows | HX Stomp Import',
     description: 'Free browser-based editor for Valeton GP-200 guitar presets — the only GP-200 editor that runs on Linux (tested on Linux Mint). Import Line6 HX Stomp .hlx files, live USB MIDI editing, timed preset switching for gigs, 305 effects with per-effect gallery filtering, community sharing. No install needed — works offline as PWA.',
     keywords: [
