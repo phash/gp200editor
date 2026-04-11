@@ -49,6 +49,12 @@ export default async function sitemap(): Promise<SitemapEntry[]> {
         changeFrequency: 'weekly' as const,
         priority: 0.6,
       },
+      {
+        url: `${BASE_URL}/api/share/${preset.shareToken}/json`,
+        lastModified: preset.updatedAt,
+        changeFrequency: 'yearly' as const,
+        priority: 0.3,
+      },
     ]);
   } catch {
     // Database unavailable during build — skip dynamic pages
