@@ -26,8 +26,7 @@ export async function GET(_request: Request, context: RouteContext) {
 
   const safeFilename = preset.name.replace(/[\\\"\/\x00\r\n]/g, '_').slice(0, 64);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return new NextResponse(buffer as any, {
+  return new NextResponse(buffer as BodyInit, {
     headers: {
       'Content-Type': 'application/octet-stream',
       'Content-Disposition': `attachment; filename="${safeFilename}.prst"`,
