@@ -61,6 +61,7 @@ model Preset {
   ratings       PresetRating[]
 
   @@index([userId])
+  @@index([sourceUrl])
   @@index([sourceLabel])
   @@index([contentHash])
   @@index([public, createdAt])
