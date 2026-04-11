@@ -25,7 +25,7 @@ export async function runIngest(
   source: IngestSource,
   deps: PipelineDeps,
 ): Promise<IngestCounters> {
-  const log = deps.log ?? defaultLog;
+  const log = (deps.log ?? defaultLog) as NonNullable<PipelineDeps['log']>;
   const upload = deps.uploadFn ?? uploadPreset;
   const counters: IngestCounters = { accepted: 0, rejected: 0, duplicates: 0 };
 
