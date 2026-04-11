@@ -64,7 +64,13 @@ export class PRSTDecoder {
       effects.push({ slotIndex, enabled, effectId, params });
     }
 
-    const checksum = this.parser.readUint16BE(OFFSET_CHECKSUM);
+    // User presets (1224 bytes) carry a BE16 checksum at 0x4C6. Factory
+    // presets (1176 bytes) don't have room for that footer — the checksum
+    // offset (1222) is past the end of the buffer. Skip the read and use 0
+    // as a placeholder for factory files; downloads still serve the exact
+    // original S3 bytes, and the hardware regenerates its own checksum
+    // whenever it re-saves a preset anyway.
+    const checksum = len === 1224 ? this.parser.readUint16BE(OFFSET_CHECKSUM) : 0;
 
     return GP200PresetSchema.parse({ version, patchName, author: author || undefined, effects, checksum });
   }
