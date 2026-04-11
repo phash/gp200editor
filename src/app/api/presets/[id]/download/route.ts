@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { validateSession, refreshSessionCookie } from '@/lib/session';
 import { downloadPresetBuffer } from '@/lib/storage';
+import { logError } from '@/lib/errorLog';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -22,7 +23,19 @@ export async function GET(_request: Request, context: RouteContext) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  const buffer = await downloadPresetBuffer(preset.presetKey);
+  let buffer: Buffer;
+  try {
+    buffer = await downloadPresetBuffer(preset.presetKey);
+  } catch (err) {
+    await logError({
+      level: 'error',
+      message: 'owner download failed to read preset from S3',
+      stack: err instanceof Error ? err.stack : undefined,
+      userId: user.id,
+      metadata: { presetId: id, presetKey: preset.presetKey },
+    }).catch(() => {});
+    return NextResponse.json({ error: 'Storage temporarily unavailable' }, { status: 503 });
+  }
 
   const safeFilename = preset.name.replace(/[\\\"\/\x00\r\n]/g, '_').slice(0, 64);
 

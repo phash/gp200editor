@@ -82,12 +82,24 @@ export async function getPresetStream(key: string): Promise<Readable> {
  * Convenience wrapper over getPresetStream that reads the entire object
  * into a Buffer. Only safe for small files (preset files are 1224 bytes);
  * do not use for avatars or anything user-sized.
+ *
+ * Wraps the stream iteration in a try/catch so a mid-stream S3 error is
+ * surfaced to the caller as a proper Error with context (key + cause) and
+ * can be logged. Without the wrap, a Garage hiccup would reject the
+ * for-await with an opaque stream error and callers saw a generic 500.
  */
 export async function downloadPresetBuffer(key: string): Promise<Buffer> {
   const stream = await getPresetStream(key);
   const chunks: Buffer[] = [];
-  for await (const chunk of stream) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  try {
+    for await (const chunk of stream) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    }
+  } catch (err) {
+    throw new Error(
+      `Failed to read preset stream for key "${key}": ${err instanceof Error ? err.message : String(err)}`,
+      { cause: err },
+    );
   }
   return Buffer.concat(chunks);
 }

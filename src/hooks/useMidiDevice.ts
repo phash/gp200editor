@@ -157,9 +157,13 @@ export function useMidiDevice(): UseMidiDeviceReturn {
   const onDeviceEffectChangeRef = useRef<((blockIndex: number, effectId: number) => void) | null>(null);
   // Callback for device-initiated param changes (hardware knob turns)
   const onDeviceParamChangeRef = useRef<((blockIndex: number, paramIndex: number, value: number) => void) | null>(null);
-  // Suppress FX state toggles when we're actively sending commands (responses are echoes, not hardware changes)
-  const suppressFxStateRef = useRef(false);
-  const suppressFxStateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Suppress FX state toggles when we're actively sending commands (responses
+  // are echoes, not hardware changes). Use a counter, not a boolean + single
+  // timer: rapid overlapping sends (e.g. 500 ms effect-change while a 200 ms
+  // patch-volume suppression is in flight) would otherwise clear each other's
+  // timers and end suppression too early. Each call increments the counter
+  // and schedules its own decrement — the ref is "suppressed" while > 0.
+  const suppressFxCountRef = useRef(0);
 
   const onMidiMessage = useCallback((event: { data: unknown }) => {
     const data = getBytes(event.data);
@@ -174,7 +178,7 @@ export function useMidiDevice(): UseMidiDeviceReturn {
           setCurrentSlot(slot); currentSlotRef.current = slot;
           onDeviceChangeRef.current?.(slot);
         }
-      } else if (!suppressFxStateRef.current) {
+      } else if (suppressFxCountRef.current === 0) {
         // FX state response — device reports effect toggle from hardware
         // data[22]=block_id (0=PRE..10=VOL), data[24]=state (0=OFF, non-zero=ON)
         // Suppressed during our own sends (responses are echoes, not hardware changes)
@@ -198,9 +202,7 @@ export function useMidiDevice(): UseMidiDeviceReturn {
       console.log(`[GP-200] device effect change: block=${blockIndex} effectId=0x${effectId.toString(16).padStart(8,'0')}`);
       onDeviceEffectChangeRef.current?.(blockIndex, effectId);
       // Suppress FX state responses that follow (they report stale toggle states)
-      suppressFxStateRef.current = true;
-      if (suppressFxStateTimer.current) clearTimeout(suppressFxStateTimer.current);
-      suppressFxStateTimer.current = setTimeout(() => { suppressFxStateRef.current = false; }, 500);
+      suppressFxFor(500);
     }
     // sub=0x10 D→H: toggle OR knob notification (46 bytes)
     // Discriminator: bytes[29:37] all zeros = knob notification, otherwise = toggle
@@ -631,11 +633,19 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     outputRef.current.send(msg);
   }, []);
 
-  // Helper: suppress FX state echoes after sending commands (not a hook, just a function using refs)
+  // Suppress FX state echoes for `ms` milliseconds after sending commands.
+  // Each call is independent and uses its own timer — multiple overlapping
+  // calls stack (counter > 0 means suppressed). See suppressFxCountRef
+  // declaration for why a counter beats a boolean + single timer here.
+  function suppressFxFor(ms: number) {
+    suppressFxCountRef.current += 1;
+    setTimeout(() => {
+      suppressFxCountRef.current = Math.max(0, suppressFxCountRef.current - 1);
+    }, ms);
+  }
+
   function suppressFxBriefly() {
-    suppressFxStateRef.current = true;
-    if (suppressFxStateTimer.current) clearTimeout(suppressFxStateTimer.current);
-    suppressFxStateTimer.current = setTimeout(() => { suppressFxStateRef.current = false; }, 200);
+    suppressFxFor(200);
   }
 
   const sendPatchVolume = useCallback((value: number) => {

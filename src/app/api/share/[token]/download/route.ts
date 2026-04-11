@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { downloadPresetBuffer } from '@/lib/storage';
 import { rateLimit } from '@/lib/rateLimit';
+import { logError } from '@/lib/errorLog';
 
 type RouteContext = { params: Promise<{ token: string }> };
 
@@ -22,7 +23,18 @@ export async function GET(request: NextRequest, context: RouteContext) {
   }
 
   // Read entire file into buffer (preset files are small, max 1224 bytes)
-  const buffer = await downloadPresetBuffer(preset.presetKey);
+  let buffer: Buffer;
+  try {
+    buffer = await downloadPresetBuffer(preset.presetKey);
+  } catch (err) {
+    await logError({
+      level: 'error',
+      message: 'share download failed to read preset from S3',
+      stack: err instanceof Error ? err.stack : undefined,
+      metadata: { token, presetKey: preset.presetKey },
+    }).catch(() => {});
+    return NextResponse.json({ error: 'Storage temporarily unavailable' }, { status: 503 });
+  }
 
   // Atomically increment download count
   await prisma.preset.update({

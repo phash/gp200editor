@@ -4,6 +4,7 @@ import { requireAdmin, AdminForbiddenError, logAdminAction } from '@/lib/admin';
 import { adminPatchPresetSchema } from '@/lib/validators.admin';
 import { verifyCsrf } from '@/lib/csrf';
 import { deletePreset } from '@/lib/storage';
+import { logError } from '@/lib/errorLog';
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -51,12 +52,24 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   if (parsed.data.public === false) action = 'unpublish_preset';
   if (parsed.data.public === true) action = 'publish_preset';
 
-  logAdminAction({
-    adminId: admin.id,
-    action,
-    targetType: 'preset',
-    targetId: id,
-  }).catch(() => {});
+  // Audit trail must be reliable — await and log failures. We still return
+  // the update success to the client because the preset was in fact patched,
+  // but a missing audit entry is a logged operational error.
+  try {
+    await logAdminAction({
+      adminId: admin.id,
+      action,
+      targetType: 'preset',
+      targetId: id,
+    });
+  } catch (err) {
+    await logError({
+      level: 'error',
+      message: 'logAdminAction failed (patch_preset)',
+      stack: err instanceof Error ? err.stack : undefined,
+      metadata: { adminId: admin.id, targetId: id, action },
+    }).catch(() => {});
+  }
 
   return NextResponse.json({
     id: updated.id,
@@ -90,13 +103,22 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   deletePreset(target.presetKey).catch(() => {});
   await prisma.preset.delete({ where: { id } });
 
-  logAdminAction({
-    adminId: admin.id,
-    action: 'delete_preset',
-    targetType: 'preset',
-    targetId: id,
-    metadata: { name: target.name, owner: target.userId },
-  }).catch(() => {});
+  try {
+    await logAdminAction({
+      adminId: admin.id,
+      action: 'delete_preset',
+      targetType: 'preset',
+      targetId: id,
+      metadata: { name: target.name, owner: target.userId },
+    });
+  } catch (err) {
+    await logError({
+      level: 'error',
+      message: 'logAdminAction failed (delete_preset)',
+      stack: err instanceof Error ? err.stack : undefined,
+      metadata: { adminId: admin.id, targetId: id, name: target.name },
+    }).catch(() => {});
+  }
 
   return NextResponse.json({ success: true });
 }

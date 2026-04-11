@@ -908,6 +908,58 @@ describe('SysExCodec: author in read/write chunks', () => {
     expect(preset.author).toBe('TestAuthor');
   });
 
+  // Bounds-check regression tests. parsePresetFromDecoded must never throw on
+  // truncated or empty device responses — it returns a valid preset with empty
+  // fields and 11 disabled effect slots. These tests lock the behavior in so a
+  // future refactor can't remove the length guards without failing CI.
+  it('parsePresetFromDecoded handles empty buffer without throwing', () => {
+    const preset = SysExCodec.parsePresetFromDecoded(new Uint8Array(0), 'Fallback');
+    expect(preset.patchName).toBe('Fallback');
+    expect(preset.author).toBeUndefined();
+    expect(preset.effects).toHaveLength(11);
+    expect(preset.effects.every((e) => e.enabled === false && e.effectId === 0)).toBe(true);
+  });
+
+  it('parsePresetFromDecoded handles buffer too short for name', () => {
+    // 20 bytes — not enough for the name read at decoded[28..43]
+    const preset = SysExCodec.parsePresetFromDecoded(new Uint8Array(20));
+    expect(preset.patchName).toBe('');
+    expect(preset.effects).toHaveLength(11);
+  });
+
+  it('parsePresetFromDecoded handles buffer with name but no author', () => {
+    // 44 bytes — enough for name, not for author
+    const decoded = new Uint8Array(44);
+    'Nm'.split('').forEach((c, i) => { decoded[28 + i] = c.charCodeAt(0); });
+    const preset = SysExCodec.parsePresetFromDecoded(decoded);
+    expect(preset.patchName).toBe('Nm');
+    expect(preset.author).toBeUndefined();
+    expect(preset.effects.every((e) => e.effectId === 0)).toBe(true);
+  });
+
+  it('parsePresetFromDecoded handles partial effect blocks', () => {
+    // 200 bytes — enough for name+author, but only ~1 partial effect block
+    // Loop must not read DataView past the end
+    const decoded = new Uint8Array(200);
+    const preset = SysExCodec.parsePresetFromDecoded(decoded);
+    expect(preset.effects).toHaveLength(11);
+    // All effects should be safe defaults because base+72 > length for every b
+    expect(preset.effects.every((e) => e.effectId === 0 && !e.enabled)).toBe(true);
+  });
+
+  it('parsePresetFromDecoded reads exactly 912 bytes (minimum full payload)', () => {
+    // 912 bytes is the minimum for all 11 blocks: 120 + 11*72 = 912
+    const decoded = new Uint8Array(912);
+    for (let b = 0; b < 11; b++) {
+      const base = 120 + b * 72;
+      decoded[base + 4] = b;
+      decoded[base + 5] = 1; // enabled
+    }
+    const preset = SysExCodec.parsePresetFromDecoded(decoded);
+    expect(preset.effects).toHaveLength(11);
+    expect(preset.effects.every((e) => e.enabled)).toBe(true);
+  });
+
   it('buildWriteChunks includes author in payload at offset 52', () => {
     const preset = {
       version: '1', patchName: 'Test', author: 'Author1', checksum: 0,

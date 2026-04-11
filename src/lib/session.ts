@@ -24,8 +24,9 @@ export async function validateSession(): Promise<SessionResult> {
 }
 
 /**
- * Validates session and requires emailVerified === true.
- * Returns the user/session or an error NextResponse.
+ * Validates session and requires emailVerified === true. Also refreshes
+ * the session cookie if near expiry, so callers don't need to call
+ * refreshSessionCookie() themselves (same contract as requireAdmin).
  */
 export async function requireVerifiedUser(): Promise<
   | { user: User; session: Session; error?: undefined }
@@ -38,6 +39,7 @@ export async function requireVerifiedUser(): Promise<
   if (!user.emailVerified) {
     return { error: NextResponse.json({ error: 'Email not verified' }, { status: 403 }) };
   }
+  await refreshSessionCookie(session);
   return { user, session };
 }
 

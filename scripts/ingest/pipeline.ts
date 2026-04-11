@@ -44,12 +44,38 @@ export async function runIngest(
   return counters;
 }
 
+/** Allow only http(s) sourceUrls — no javascript:/data:/file: etc. */
+function isSafeSourceUrl(raw: string): boolean {
+  try {
+    const u = new URL(raw);
+    return u.protocol === 'http:' || u.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 async function ingestOne(
   candidate: PresetCandidate,
   deps: PipelineDeps,
   upload: (key: string, buffer: Buffer) => Promise<void>,
   log: NonNullable<PipelineDeps['log']>,
 ): Promise<'accepted' | 'rejected' | 'duplicates'> {
+  // 0. sourceUrl safety — must be http(s) and absolute. Reject candidates
+  // with javascript:/data:/file: URLs so they never land in the DB and
+  // leak into the public /api/share/[token]/json response or share pages.
+  if (!isSafeSourceUrl(candidate.sourceUrl)) {
+    log('warn', `${candidate.sourceUrl}: unsafe or invalid sourceUrl, skip`);
+    return 'rejected';
+  }
+  if (candidate.sourceUrl.length > 2048) {
+    log('warn', `${candidate.sourceUrl.slice(0, 80)}…: sourceUrl too long, skip`);
+    return 'rejected';
+  }
+  if (candidate.sourceLabel.length > 100) {
+    log('warn', `${candidate.sourceUrl}: sourceLabel too long, skip`);
+    return 'rejected';
+  }
+
   // 1. Size check
   if (candidate.buffer.length !== 1224 && candidate.buffer.length !== 1176) {
     log('warn', `${candidate.sourceUrl}: wrong size ${candidate.buffer.length}`);

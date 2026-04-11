@@ -15,8 +15,7 @@ export async function POST(request: Request) {
   }
   const result = await requireVerifiedUser();
   if (result.error) return result.error;
-  const { user, session } = result;
-  await refreshSessionCookie(session);
+  const { user } = result;
 
   const formData = await request.formData().catch(() => null);
   if (!formData) {

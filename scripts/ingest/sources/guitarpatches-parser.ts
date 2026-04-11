@@ -68,12 +68,46 @@ export function parseDetailPage(html: string, id: string): DetailInfo {
   return { id, name, artist, description, uploader, date };
 }
 
-function decodeHtmlEntities(s: string): string {
-  return s
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&nbsp;/g, ' ');
+// Minimal-but-robust HTML entity decoder. The previous implementation only
+// handled 5 named entities, which meant anything else (&#8217; curly quote,
+// &copy;, &eacute;, etc.) leaked through literally into ingested preset names
+// and descriptions. We don't want to pull in a full HTML parser for scraping,
+// but we do need to handle:
+//   1. numeric decimal   — &#NNNN;
+//   2. numeric hex       — &#xHHHH; / &#XHHHH;
+//   3. ~30 common named entities real-world content uses (curly quotes,
+//      copyright, accented vowels for French/German band names, etc.)
+// Unknown entities are passed through unchanged so a bad lookup never
+// produces garbage.
+const NAMED_ENTITIES: Record<string, string> = {
+  amp: '&', lt: '<', gt: '>', quot: '"', apos: "'",
+  nbsp: ' ', copy: '\u00A9', reg: '\u00AE', trade: '\u2122',
+  hellip: '\u2026', mdash: '\u2014', ndash: '\u2013',
+  lsquo: '\u2018', rsquo: '\u2019', ldquo: '\u201C', rdquo: '\u201D',
+  laquo: '\u00AB', raquo: '\u00BB', deg: '\u00B0',
+  auml: '\u00E4', ouml: '\u00F6', uuml: '\u00FC', szlig: '\u00DF',
+  Auml: '\u00C4', Ouml: '\u00D6', Uuml: '\u00DC',
+  eacute: '\u00E9', egrave: '\u00E8', ecirc: '\u00EA',
+  aacute: '\u00E1', agrave: '\u00E0', acirc: '\u00E2',
+  iacute: '\u00ED', igrave: '\u00EC', icirc: '\u00EE',
+  oacute: '\u00F3', ograve: '\u00F2', ocirc: '\u00F4',
+  uacute: '\u00FA', ugrave: '\u00F9', ucirc: '\u00FB',
+  ntilde: '\u00F1', ccedil: '\u00E7',
+};
+
+export function decodeHtmlEntities(s: string): string {
+  return s.replace(/&(#[xX][0-9a-fA-F]+|#[0-9]+|[a-zA-Z]+);/g, (full, body: string) => {
+    if (body[0] === '#') {
+      const isHex = body[1] === 'x' || body[1] === 'X';
+      const code = parseInt(body.slice(isHex ? 2 : 1), isHex ? 16 : 10);
+      if (!Number.isFinite(code) || code < 0 || code > 0x10ffff) return full;
+      try {
+        return String.fromCodePoint(code);
+      } catch {
+        return full;
+      }
+    }
+    const mapped = NAMED_ENTITIES[body];
+    return mapped ?? full;
+  });
 }

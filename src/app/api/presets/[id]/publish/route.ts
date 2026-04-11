@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireVerifiedUser, refreshSessionCookie } from '@/lib/session';
+import { requireVerifiedUser } from '@/lib/session';
 import { verifyCsrf } from '@/lib/csrf';
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -11,8 +11,7 @@ export async function POST(_request: Request, context: RouteContext) {
   }
   const result = await requireVerifiedUser();
   if (result.error) return result.error;
-  const { user, session } = result;
-  await refreshSessionCookie(session);
+  const { user } = result;
 
   const { id } = await context.params;
 

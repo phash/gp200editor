@@ -16,8 +16,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
   const result = await requireVerifiedUser();
   if (result.error) return result.error;
-  const { user, session } = result;
-  await refreshSessionCookie(session);
+  const { user } = result;
 
   const { id } = await context.params;
 

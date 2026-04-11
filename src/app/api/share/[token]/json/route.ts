@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { downloadPresetBuffer } from '@/lib/storage';
 import { PRSTDecoder } from '@/core/PRSTDecoder';
 import { encodeToJson } from '@/core/PRSTJsonCodec';
+import { logError } from '@/lib/errorLog';
 
 type RouteParams = { params: Promise<{ token: string }> };
 
@@ -24,16 +25,26 @@ export async function GET(_: Request, { params }: RouteParams): Promise<Response
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  const buffer = await downloadPresetBuffer(preset.presetKey);
-  const decoded = new PRSTDecoder(buffer).decode();
-
-  const json = encodeToJson(decoded, {
-    shareToken: token,
-    locale: 'en',
-    sourceUrl: preset.sourceUrl,
-    sourceLabel: preset.sourceLabel,
-    description: preset.description,
-  });
+  let json;
+  try {
+    const buffer = await downloadPresetBuffer(preset.presetKey);
+    const decoded = new PRSTDecoder(buffer).decode();
+    json = encodeToJson(decoded, {
+      shareToken: token,
+      locale: 'en',
+      sourceUrl: preset.sourceUrl,
+      sourceLabel: preset.sourceLabel,
+      description: preset.description,
+    });
+  } catch (err) {
+    await logError({
+      level: 'error',
+      message: 'share JSON endpoint failed to decode preset',
+      stack: err instanceof Error ? err.stack : undefined,
+      metadata: { token, presetKey: preset.presetKey },
+    }).catch(() => {});
+    return NextResponse.json({ error: 'Storage temporarily unavailable' }, { status: 503 });
+  }
 
   return NextResponse.json(json, {
     headers: {

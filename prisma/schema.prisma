@@ -110,6 +110,7 @@ model PresetRating {
 
   @@unique([presetId, userId])
   @@index([presetId])
+  @@index([userId])
 }
 
 model ErrorLog {
