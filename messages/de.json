@@ -12,7 +12,10 @@
     "help": "Hilfe",
     "switchLocale": "Sprache wechseln",
     "admin": "Admin",
-    "changelog": "Changelog"
+    "changelog": "Changelog",
+    "menuAria": "Menü",
+    "discordTitle": "Feedback & Community",
+    "helpAria": "Hilfe"
   },
   "home": {
     "hero": {
@@ -240,7 +243,9 @@
     "loadMore": "Mehr laden",
     "download": "Herunterladen",
     "openInEditor": "Im Editor öffnen",
-    "loading": "Laden…"
+    "loading": "Laden…",
+    "ratingStarFilled": "Bewertungsstern ausgefüllt",
+    "ratingStarEmpty": "Bewertungsstern leer"
   },
   "device": {
     "connect": "GP-200 verbinden",
@@ -429,7 +434,8 @@
     "timelineStop": "Stop",
     "on": "AN",
     "off": "AUS",
-    "elapsed": "Vergangen"
+    "elapsed": "Vergangen",
+    "deleteCue": "Cue-Punkt löschen"
   },
   "admin": {
     "title": "Admin",
