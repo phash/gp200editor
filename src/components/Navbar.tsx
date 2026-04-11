@@ -100,6 +100,11 @@ export function Navbar() {
           data-testid="nav-link-help">
           {t('help')}
         </Link>
+        <Link href="/changelog" className="transition-colors hover:text-[var(--accent-amber)]"
+          style={{ color: pathname === '/changelog' ? 'var(--accent-amber)' : 'var(--text-secondary)' }}
+          data-testid="nav-link-changelog">
+          {t('changelog')}
+        </Link>
         {username ? (
           <>
             <Link href="/profile" className="transition-colors hover:text-[var(--accent-amber)]"
@@ -230,6 +235,10 @@ export function Navbar() {
           <Link href="/help" onClick={() => setMobileOpen(false)} className="transition-colors hover:text-[var(--accent-amber)]"
             style={{ color: pathname === '/help' ? 'var(--accent-amber)' : 'var(--text-secondary)' }}>
             {t('help')}
+          </Link>
+          <Link href="/changelog" onClick={() => setMobileOpen(false)} className="transition-colors hover:text-[var(--accent-amber)]"
+            style={{ color: pathname === '/changelog' ? 'var(--accent-amber)' : 'var(--text-secondary)' }}>
+            {t('changelog')}
           </Link>
           {role === 'ADMIN' && (
             <Link href="/admin" onClick={() => setMobileOpen(false)}

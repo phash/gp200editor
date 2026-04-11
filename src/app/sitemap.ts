@@ -28,6 +28,8 @@ export default async function sitemap(): Promise<SitemapEntry[]> {
     { url: `${BASE_URL}/de/gallery`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.8 },
     { url: `${BASE_URL}/en/help`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.6 },
     { url: `${BASE_URL}/de/help`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.6 },
+    { url: `${BASE_URL}/en/changelog`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.5 },
+    { url: `${BASE_URL}/de/changelog`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.5 },
   ];
 
   // Sitemap.xml has a hard limit of 50 000 URLs. Each preset generates two

@@ -11,12 +11,72 @@
     "playlists": "Playlists",
     "help": "Hilfe",
     "switchLocale": "Sprache wechseln",
-    "admin": "Admin"
+    "admin": "Admin",
+    "changelog": "Changelog"
   },
   "home": {
-    "headline": "Preset Forge",
-    "subtitle": "Valeton GP-200 Presets bearbeiten, teilen und live per USB-MIDI senden. HX Stomp Import. Setlists mit Cue Points f\u00fcr Gigs.",
-    "uploadCta": "Preset laden"
+    "hero": {
+      "tagline": "Der kostenlose, werbefreie Browser-Editor für das Valeton GP-200",
+      "headline": "GP-200 Presets im Browser bearbeiten, teilen und live synchronisieren",
+      "subtitle": "Läuft auf Linux, Windows und macOS — keine Installation, keine Anmeldung, keine Werbung. Open Source, community-driven, 100% kostenlos.",
+      "ctaEditor": "Editor öffnen",
+      "ctaGallery": "145+ Community-Presets durchstöbern",
+      "badges": {
+        "free": "Kostenlos",
+        "adFree": "Werbefrei",
+        "openSource": "Open Source",
+        "linux": "Linux / Windows / macOS"
+      }
+    },
+    "features": {
+      "heading": "Was du hier alles machen kannst",
+      "editor": {
+        "title": "Preset-Editor im Browser",
+        "body": "Alle 11 Effekt-Slots per Drag & Drop bearbeiten. 305 Effekte und Amp-Modelle. Live-Sync per USB MIDI mit dem Gerät. Keine Installation nötig.",
+        "cta": "Zum Editor →"
+      },
+      "library": {
+        "title": "145+ kostenlose Presets",
+        "body": "Community-Presets von guitarpatches.com durchstöbern, nach Amp, Style oder Effekt filtern. Jedes Preset mit einem Klick runterladen und im Editor öffnen.",
+        "cta": "Galerie öffnen →"
+      },
+      "amps": {
+        "title": "Nach echtem Amp suchen",
+        "body": "Du willst einen Marshall JCM800 Sound? Einen Fender Twin Reverb? Einen Mesa Rectifier? 64 Amp-Kategorieseiten — jedes Preset gruppiert nach dem Original, das es nachbildet.",
+        "cta": "Amps entdecken →"
+      },
+      "hlx": {
+        "title": "Line6 HX Stomp .hlx importieren",
+        "body": "Konvertierung passiert direkt im Browser — kein Server-Roundtrip. .hlx-Datei reinziehen und du bekommst eine funktionierende .prst. Der erste und einzige Web-Konverter für HX Stomp → GP-200."
+      },
+      "playlists": {
+        "title": "Timing-basierte Live-Setlists",
+        "body": "Song-für-Song-Playlists mit Cue Points, die während eines Songs automatisch umschalten. 3-2-1 Einzähler. Sync mit YouTube-Backing-Tracks. Das macht nichts anderes für das GP-200."
+      },
+      "midi": {
+        "title": "Live USB MIDI",
+        "body": "Aktuelles Preset vom Gerät ziehen, im Browser bearbeiten, zurück in denselben Slot schreiben. Live-Knob-Updates wenn du Gain, Volume oder EQ am Gerät drehst."
+      }
+    },
+    "whatsNew": {
+      "heading": "Was gibt's Neues",
+      "readMore": "Zum vollständigen Changelog →",
+      "latest": "Letztes Release"
+    },
+    "support": {
+      "heading": "Kostenlos · Werbefrei · Open Source",
+      "body": "Preset Forge kostet dich nichts und wird auch nie etwas kosten. Keine Werbung, kein Tracking abgesehen von einem einzelnen datenschutzfreundlichen Analytics-Ping, keine bezahlte Version. Es existiert weil eine Person es gebraucht hat und dachte, du vielleicht auch.",
+      "bmacTitle": "Projekt unterstützen",
+      "bmacBody": "Wenn's dir Zeit oder Nerven gespart hat — ein Kaffee hilft viel. Spenden finanzieren Server, Domain und die Zeit zum Weiterbauen.",
+      "bmacCta": "☕ Spendier mir einen Kaffee",
+      "discordTitle": "Community beitreten",
+      "discordBody": "Fragen, Feature-Wünsche, Bug-Reports, Preset-Austausch — auf Discord passiert alles.",
+      "discordCta": "Discord beitreten"
+    },
+    "empty": {
+      "headline": "Preset Forge",
+      "subtitle": "GP-200 Presets im Browser bearbeiten, teilen und live syncen."
+    }
   },
   "footer": {
     "disclaimer": "Preset Forge — Inoffizielles Tool. Nicht von Valeton.",
