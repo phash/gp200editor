@@ -1,17 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireAdmin, AdminForbiddenError } from '@/lib/admin';
+import { withAdminAuth } from '@/lib/withAdminAuth';
 import { adminActionsQuerySchema } from '@/lib/validators.admin';
 
-export async function GET(request: NextRequest) {
-  try {
-    await requireAdmin();
-  } catch (e) {
-    if (e instanceof AdminForbiddenError)
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    throw e;
-  }
-
+export const GET = withAdminAuth(async (request) => {
   const params = Object.fromEntries(request.nextUrl.searchParams);
   const parsed = adminActionsQuerySchema.safeParse(params);
   if (!parsed.success) {
@@ -45,4 +37,4 @@ export async function GET(request: NextRequest) {
     page,
     limit,
   });
-}
+}, { csrf: false });

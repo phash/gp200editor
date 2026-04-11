@@ -1,27 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireAdmin, AdminForbiddenError, logAdminAction } from '@/lib/admin';
+import { logAdminAction } from '@/lib/admin';
+import { withAdminAuth } from '@/lib/withAdminAuth';
 import { adminPatchPresetSchema } from '@/lib/validators.admin';
-import { verifyCsrf } from '@/lib/csrf';
 import { deletePreset } from '@/lib/storage';
 import { logError } from '@/lib/errorLog';
 
-type RouteParams = { params: Promise<{ id: string }> };
-
-export async function PATCH(request: NextRequest, { params }: RouteParams) {
-  if (!verifyCsrf(request)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
-  let admin;
-  try {
-    ({ user: admin } = await requireAdmin());
-  } catch (e) {
-    if (e instanceof AdminForbiddenError)
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    throw e;
-  }
-
+export const PATCH = withAdminAuth<{ id: string }>(async (request, { admin, params }) => {
   const { id } = await params;
 
   const body = await request.json().catch(() => null);
@@ -77,22 +62,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     public: updated.public,
     flagged: updated.flagged,
   });
-}
+});
 
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  if (!verifyCsrf(request)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
-  let admin;
-  try {
-    ({ user: admin } = await requireAdmin());
-  } catch (e) {
-    if (e instanceof AdminForbiddenError)
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    throw e;
-  }
-
+export const DELETE = withAdminAuth<{ id: string }>(async (_request, { admin, params }) => {
   const { id } = await params;
 
   const target = await prisma.preset.findUnique({ where: { id } });
@@ -121,4 +93,4 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   }
 
   return NextResponse.json({ success: true });
-}
+});

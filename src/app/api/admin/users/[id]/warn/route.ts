@@ -1,27 +1,12 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireAdmin, AdminForbiddenError, logAdminAction } from '@/lib/admin';
+import { logAdminAction } from '@/lib/admin';
+import { withAdminAuth } from '@/lib/withAdminAuth';
 import { adminWarnUserSchema } from '@/lib/validators.admin';
 import { sendWarningEmail } from '@/lib/email';
-import { verifyCsrf } from '@/lib/csrf';
 import { logError } from '@/lib/errorLog';
 
-type RouteParams = { params: Promise<{ id: string }> };
-
-export async function POST(request: Request, { params }: RouteParams) {
-  if (!verifyCsrf(request)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
-  let admin;
-  try {
-    ({ user: admin } = await requireAdmin());
-  } catch (e) {
-    if (e instanceof AdminForbiddenError)
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    throw e;
-  }
-
+export const POST = withAdminAuth<{ id: string }>(async (request, { admin, params }) => {
   const { id } = await params;
 
   const body = await request.json().catch(() => null);
@@ -64,4 +49,4 @@ export async function POST(request: Request, { params }: RouteParams) {
   }
 
   return NextResponse.json({ success: true });
-}
+});

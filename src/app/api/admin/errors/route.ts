@@ -1,18 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireAdmin, AdminForbiddenError } from '@/lib/admin';
+import { withAdminAuth } from '@/lib/withAdminAuth';
 import { adminErrorsQuerySchema } from '@/lib/validators.admin';
-import { verifyCsrf } from '@/lib/csrf';
 
-export async function GET(request: NextRequest) {
-  try {
-    await requireAdmin();
-  } catch (e) {
-    if (e instanceof AdminForbiddenError)
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    throw e;
-  }
-
+export const GET = withAdminAuth(async (request) => {
   const params = Object.fromEntries(request.nextUrl.searchParams);
   const parsed = adminErrorsQuerySchema.safeParse(params);
   if (!parsed.success) {
@@ -50,21 +41,9 @@ export async function GET(request: NextRequest) {
     page,
     limit,
   });
-}
+}, { csrf: false });
 
-export async function DELETE(request: NextRequest) {
-  if (!verifyCsrf(request)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
-  try {
-    await requireAdmin();
-  } catch (e) {
-    if (e instanceof AdminForbiddenError)
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    throw e;
-  }
-
+export const DELETE = withAdminAuth(async () => {
   await prisma.errorLog.deleteMany();
   return NextResponse.json({ success: true });
-}
+});

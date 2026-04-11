@@ -1,28 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireAdmin, AdminForbiddenError, logAdminAction } from '@/lib/admin';
+import { logAdminAction } from '@/lib/admin';
+import { withAdminAuth } from '@/lib/withAdminAuth';
 import { adminPatchUserSchema } from '@/lib/validators.admin';
 import { deletePreset, deleteAvatar } from '@/lib/storage';
 import { lucia } from '@/lib/auth';
-import { verifyCsrf } from '@/lib/csrf';
 import { logError } from '@/lib/errorLog';
 
-type RouteParams = { params: Promise<{ id: string }> };
-
-export async function PATCH(request: Request, { params }: RouteParams) {
-  if (!verifyCsrf(request)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
-  let admin;
-  try {
-    ({ user: admin } = await requireAdmin());
-  } catch (e) {
-    if (e instanceof AdminForbiddenError)
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    throw e;
-  }
-
+export const PATCH = withAdminAuth<{ id: string }>(async (request, { admin, params }) => {
   const { id } = await params;
 
   if (id === admin.id) {
@@ -84,22 +69,9 @@ export async function PATCH(request: Request, { params }: RouteParams) {
   }
 
   return NextResponse.json(updated);
-}
+});
 
-export async function DELETE(request: Request, { params }: RouteParams) {
-  if (!verifyCsrf(request)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
-  let admin;
-  try {
-    ({ user: admin } = await requireAdmin());
-  } catch (e) {
-    if (e instanceof AdminForbiddenError)
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    throw e;
-  }
-
+export const DELETE = withAdminAuth<{ id: string }>(async (_request, { admin, params }) => {
   const { id } = await params;
 
   if (id === admin.id) {
@@ -162,4 +134,4 @@ export async function DELETE(request: Request, { params }: RouteParams) {
   }
 
   return NextResponse.json({ success: true });
-}
+});
