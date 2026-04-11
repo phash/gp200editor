@@ -92,12 +92,12 @@ export function buildSignalChain(preset: GP200Preset): SignalChainEntry[] {
     .map((slot) => {
       const info = EFFECT_MAP[slot.effectId];
       const valetonName = info ? info.name : `Unknown #${slot.effectId}`;
-      const module = info ? info.module : 'UNKNOWN';
+      const moduleCode = info ? info.module : 'UNKNOWN';
       const realName = info ? (EFFECT_DESCRIPTIONS[info.name] ?? null) : null;
-      const category = MODULE_CATEGORIES[module] ?? 'Unknown';
+      const category = MODULE_CATEGORIES[moduleCode] ?? 'Unknown';
       return {
         slot: slot.slotIndex,
-        module,
+        module: moduleCode,
         active: slot.enabled,
         valetonName,
         realName,
@@ -192,6 +192,23 @@ export function encodeToJson(preset: GP200Preset, opts: EncodeOpts): PresetJson 
   };
 }
 
-export function decodeFromJson(_json: PresetJson): GP200Preset {
-  throw new Error('decodeFromJson not implemented');
+export function decodeFromJson(json: PresetJson): GP200Preset {
+  // Rebuild the internal GP200Preset structure from the raw block only.
+  // All enriched fields (signalChain, highlights, summary) are derived.
+  const checksum = Number.parseInt(json.raw.checksum.replace(/^0x/, ''), 16);
+
+  const effects = json.raw.effects.map((e) => ({
+    slotIndex: e.slotIndex,
+    enabled: e.active,
+    effectId: e.effectId,
+    params: e.params,
+  }));
+
+  return {
+    version: '1',
+    patchName: json.raw.patchName,
+    author: json.raw.author ?? undefined,
+    effects,
+    checksum,
+  } as GP200Preset;
 }

@@ -7,7 +7,11 @@ import {
   pickHighlights,
   generateSummary,
   encodeToJson,
+  decodeFromJson,
 } from '@/core/PRSTJsonCodec';
+import { PRSTDecoder } from '@/core/PRSTDecoder';
+import fs from 'node:fs';
+import path from 'node:path';
 
 function makeEmptyPreset(): GP200Preset {
   return {
@@ -177,4 +181,38 @@ describe('encodeToJson', () => {
     expect(json.raw.effects[2].active).toBe(true);
     expect(json.raw.effects[0].active).toBe(false);
   });
+});
+
+describe('decodeFromJson round-trip', () => {
+  const fixtures = [
+    "63-B American Idiot.prst",
+    "63-C claude1.prst",
+    "63-D It's GP-200.prst",
+  ];
+
+  for (const file of fixtures) {
+    it(`round-trips ${file}`, () => {
+      const bytes = fs.readFileSync(path.join(process.cwd(), 'prst', file));
+      const original = new PRSTDecoder(bytes).decode();
+      const json = encodeToJson(original, {
+        shareToken: 'tok',
+        locale: 'en',
+        sourceUrl: null,
+        sourceLabel: null,
+        description: null,
+      });
+      const restored = decodeFromJson(json);
+
+      expect(restored.patchName).toBe(original.patchName);
+      expect(restored.author).toBe(original.author);
+      expect(restored.effects).toHaveLength(11);
+      for (let i = 0; i < 11; i++) {
+        expect(restored.effects[i].slotIndex).toBe(original.effects[i].slotIndex);
+        expect(restored.effects[i].enabled).toBe(original.effects[i].enabled);
+        expect(restored.effects[i].effectId).toBe(original.effects[i].effectId);
+        expect(restored.effects[i].params).toEqual(original.effects[i].params);
+      }
+      expect(restored.checksum).toBe(original.checksum);
+    });
+  }
 });
