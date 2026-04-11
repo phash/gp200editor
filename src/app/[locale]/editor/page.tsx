@@ -5,8 +5,9 @@ import { EffectSlot } from '@/components/EffectSlot';
 import { EffectSlotCard } from '@/components/EffectSlotCard';
 import { PatchCableOverlay } from '@/components/PatchCableOverlay';
 import { usePreset } from '@/hooks/usePreset';
+import { useAuthStatus } from '@/hooks/useAuthStatus';
 import { PRSTDecoder } from '@/core/PRSTDecoder';
-import { PRSTEncoder } from '@/core/PRSTEncoder';
+import { encodePreset as encodePresetBuffer, downloadPresetFile } from '@/lib/presetDownload';
 import { useCallback, useState, useEffect, useRef } from 'react';
 import { useRouter, Link } from '@/i18n/routing';
 import { useMidiDeviceContext } from '@/contexts/MidiDeviceContext';
@@ -49,8 +50,7 @@ export default function EditorPage() {
   // Track which bank slots have been reordered but not yet saved to device
   const [bankDirtySlots, setBankDirtySlots] = useState<Set<number>>(new Set());
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
-  const [username, setUsername] = useState('');
+  const { isLoggedIn, username } = useAuthStatus();
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showPlaylistDialog, setShowPlaylistDialog] = useState(false);
   const [firmwareWarningDismissed, setFirmwareWarningDismissed] = useState(false);
@@ -70,19 +70,6 @@ export default function EditorPage() {
   const [patchVolume, setPatchVolume] = useState(50);
   const [patchPan, setPatchPan] = useState(0);
   const [patchTempo, setPatchTempo] = useState(120);
-
-  useEffect(() => {
-    fetch('/api/profile')
-      .then((r) => {
-        setIsLoggedIn(r.ok);
-        if (r.ok) return r.json();
-        return null;
-      })
-      .then((data: { username?: string } | null) => {
-        if (data?.username) setUsername(data.username);
-      })
-      .catch(() => setIsLoggedIn(false));
-  }, []);
 
   // Load preset from gallery share link (?share=TOKEN)
   useEffect(() => {
@@ -251,22 +238,15 @@ export default function EditorPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadPreset, t]);
 
+  // Local thin wrappers over the pure helpers in src/lib/presetDownload —
+  // the editor page already has a preset in scope so callers don't need
+  // to pass it explicitly. Returns null when no preset is loaded so the
+  // existing guard pattern at call sites keeps working.
   function encodePreset(): ArrayBuffer | null {
-    if (!preset) return null;
-    const encoder = new PRSTEncoder();
-    return encoder.encode(preset);
+    return preset ? encodePresetBuffer(preset) : null;
   }
-
   function handleDownload() {
-    const ab = encodePreset();
-    if (!ab || !preset) return;
-    const blob = new Blob([ab], { type: 'application/octet-stream' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${preset.patchName}.prst`;
-    a.click();
-    URL.revokeObjectURL(url);
+    if (preset) downloadPresetFile(preset);
   }
 
   async function handleSaveToPresets(data: { author: string; style: string; note: string; publish: boolean }) {
