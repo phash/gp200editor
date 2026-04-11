@@ -1,5 +1,10 @@
 import { prisma } from '@/lib/prisma';
 
+// Revalidate the sitemap every hour so new library presets become indexable
+// without redeploying. Default Next.js behaviour caches sitemap.ts output at
+// build time, which means any DB change post-deploy is invisible to Google.
+export const revalidate = 3600;
+
 const BASE_URL = 'https://preset-forge.com';
 
 type SitemapEntry = {
