@@ -12,17 +12,15 @@ export const dynamic = 'force-dynamic';
 import { buildAlternates, BASE_URL } from '@/lib/hreflang';
 
 type Props = {
-  params: Promise<{ slug: string; locale: 'de' | 'en' }>;
+  params: Promise<{ slug: string; locale: 'de' | 'en' | 'es' | 'fr' | 'it' | 'pt' }>;
 };
 
-/** Pre-render every known amp slug for both locales. Each becomes a
+/** Pre-render every known amp slug for every locale. Each becomes a
  *  standalone indexable landing page targeting long-tail amp queries. */
 export async function generateStaticParams() {
   const cats = listAmpCategories();
-  return cats.flatMap((cat) => [
-    { slug: cat.slug, locale: 'en' },
-    { slug: cat.slug, locale: 'de' },
-  ]);
+  const locales = ['de', 'en', 'es', 'fr', 'it', 'pt'] as const;
+  return cats.flatMap((cat) => locales.map((locale) => ({ slug: cat.slug, locale })));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -62,7 +60,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
  *  the script block early even before the JSON parser sees it. */
 function buildCollectionJsonLd(opts: {
   realName: string;
-  locale: 'de' | 'en';
+  locale: 'de' | 'en' | 'es' | 'fr' | 'it' | 'pt';
   slug: string;
   presets: Array<{ name: string; shareToken: string }>;
 }) {

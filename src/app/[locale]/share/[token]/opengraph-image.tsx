@@ -14,7 +14,7 @@ export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
 type Props = {
-  params: { token: string; locale: 'de' | 'en' };
+  params: { token: string; locale: 'de' | 'en' | 'es' | 'fr' | 'it' | 'pt' };
 };
 
 export default async function OgImage({ params }: Props) {

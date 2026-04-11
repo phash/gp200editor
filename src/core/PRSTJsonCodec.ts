@@ -64,7 +64,7 @@ export type RawPresetData = z.infer<typeof rawPresetDataSchema>;
 
 export type EncodeOpts = {
   shareToken: string;
-  locale: 'de' | 'en';
+  locale: 'de' | 'en' | 'es' | 'fr' | 'it' | 'pt';
   sourceUrl: string | null;
   sourceLabel: string | null;
   description: string | null;

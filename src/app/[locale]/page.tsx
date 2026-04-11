@@ -9,7 +9,7 @@ import { getChangelog } from '@/lib/changelog';
 export const revalidate = 3600;
 
 type Props = {
-  params: Promise<{ locale: 'de' | 'en' }>;
+  params: Promise<{ locale: 'de' | 'en' | 'es' | 'fr' | 'it' | 'pt' }>;
 };
 
 export default async function HomePage({ params }: Props) {

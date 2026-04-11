@@ -7,7 +7,7 @@ export const revalidate = 3600;
 import { buildAlternates, BASE_URL } from '@/lib/hreflang';
 
 type Props = {
-  params: Promise<{ locale: 'de' | 'en' }>;
+  params: Promise<{ locale: 'de' | 'en' | 'es' | 'fr' | 'it' | 'pt' }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

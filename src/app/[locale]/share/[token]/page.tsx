@@ -16,7 +16,7 @@ export const revalidate = 3600;
 import { buildAlternates, BASE_URL } from '@/lib/hreflang';
 
 type Props = {
-  params: Promise<{ token: string; locale: 'de' | 'en' }>;
+  params: Promise<{ token: string; locale: 'de' | 'en' | 'es' | 'fr' | 'it' | 'pt' }>;
 };
 
 /** Guess the amp brand from a real name like "Marshall® JCM800".
