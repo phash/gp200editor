@@ -1,9 +1,12 @@
 import { prisma } from '@/lib/prisma';
 
-// Revalidate the sitemap every hour so new library presets become indexable
-// without redeploying. Default Next.js behaviour caches sitemap.ts output at
-// build time, which means any DB change post-deploy is invisible to Google.
-export const revalidate = 3600;
+// Force dynamic generation — the default sitemap.ts output is baked at build
+// time when the DB is unreachable, which means library presets imported after
+// deploy never show up in the xml. revalidate alone doesn't trigger regen for
+// metadata routes reliably, so we mark the whole thing dynamic. The actual
+// Cache-Control header is still set by Next.js to `max-age=0, must-revalidate`,
+// so Caddy/Google still cache the rendered output briefly via their own rules.
+export const dynamic = 'force-dynamic';
 
 const BASE_URL = 'https://preset-forge.com';
 
