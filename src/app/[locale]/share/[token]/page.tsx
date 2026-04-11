@@ -4,6 +4,12 @@ import type { Metadata } from 'next';
 import { prisma } from '@/lib/prisma';
 import { validateSession } from '@/lib/session';
 import { RatingWidget } from './RatingWidget';
+import { downloadPresetBuffer } from '@/lib/storage';
+import { PRSTDecoder } from '@/core/PRSTDecoder';
+import { encodeToJson } from '@/core/PRSTJsonCodec';
+import { SignalChainSection } from './SignalChainSection';
+
+export const revalidate = 3600;
 
 type Props = {
   params: Promise<{ token: string }>;
@@ -13,18 +19,48 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { token } = await params;
   const preset = await prisma.preset.findUnique({
     where: { shareToken: token },
-    select: { name: true, description: true, user: { select: { username: true } } },
+    select: {
+      name: true,
+      description: true,
+      presetKey: true,
+      public: true,
+      user: { select: { username: true } },
+    },
   });
-  if (!preset) return {};
-  const title = `${preset.name} — GP-200 Preset by @${preset.user.username} | Preset Forge`;
-  const description = preset.description
-    ? `${preset.description} — Download this free Valeton GP-200 preset and edit it in the browser.`
-    : `Free Valeton GP-200 preset "${preset.name}" by @${preset.user.username}. Open in the browser editor — works on Linux, Windows, macOS.`;
-  return {
-    title,
-    description,
-    openGraph: { title, description },
-  };
+  if (!preset || !preset.public) return {};
+
+  let amp: string | null = null;
+  let cab: string | null = null;
+  let drive: string | null = null;
+  try {
+    const buffer = await downloadPresetBuffer(preset.presetKey);
+    const decoded = new PRSTDecoder(buffer).decode();
+    const json = encodeToJson(decoded, {
+      shareToken: token,
+      locale: 'en',
+      sourceUrl: null,
+      sourceLabel: null,
+      description: null,
+    });
+    amp = json.highlights.amp?.realName ?? json.highlights.amp?.valetonName ?? null;
+    cab = json.highlights.cab?.realName ?? json.highlights.cab?.valetonName ?? null;
+    drive = json.highlights.drive?.realName ?? json.highlights.drive?.valetonName ?? null;
+  } catch {
+    // On S3 / decode error, fall back to plain metadata.
+  }
+
+  const title = `${preset.name}${amp ? ` — ${amp} preset` : ''} by @${preset.user.username} | Preset Forge`;
+  const description =
+    [
+      preset.description,
+      amp,
+      cab && `through ${cab}`,
+      drive && `with ${drive}`,
+    ]
+      .filter(Boolean)
+      .join(' · ') + ' — Free Valeton GP-200 preset, open in browser editor.';
+
+  return { title, description, openGraph: { title, description } };
 }
 
 export default async function SharePage({ params }: Props) {
@@ -39,6 +75,9 @@ export default async function SharePage({ params }: Props) {
       name: true,
       description: true,
       tags: true,
+      presetKey: true,
+      sourceUrl: true,
+      sourceLabel: true,
       downloadCount: true,
       ratingAverage: true,
       ratingCount: true,
@@ -48,6 +87,24 @@ export default async function SharePage({ params }: Props) {
   });
 
   if (!preset) notFound();
+
+  // Load + decode the .prst binary so we can render the SEO-friendly signal chain.
+  // Cache budget is the page-level revalidate below — this S3 GET happens at
+  // most once per hour per preset.
+  let json: Awaited<ReturnType<typeof encodeToJson>> | null = null;
+  try {
+    const buffer = await downloadPresetBuffer(preset.presetKey);
+    const decoded = new PRSTDecoder(buffer).decode();
+    json = encodeToJson(decoded, {
+      shareToken: token,
+      locale: 'en',
+      sourceUrl: preset.sourceUrl,
+      sourceLabel: preset.sourceLabel,
+      description: preset.description,
+    });
+  } catch {
+    // S3 or decode error: render the share page without the signal chain.
+  }
 
   // Check session and existing rating for interactive widget
   let existingRating = 0;
@@ -132,6 +189,8 @@ export default async function SharePage({ params }: Props) {
           </div>
         </dl>
 
+        {json && <SignalChainSection json={json} />}
+
         <RatingWidget
           presetId={preset.id}
           initialAverage={preset.ratingAverage}
@@ -147,6 +206,19 @@ export default async function SharePage({ params }: Props) {
         >
           {t('download')}
         </a>
+
+        {preset.sourceLabel && (
+          <p className="text-xs mt-6" style={{ color: 'var(--text-muted)' }}>
+            Source:{' '}
+            {preset.sourceUrl ? (
+              <a href={preset.sourceUrl} rel="nofollow noopener" target="_blank">
+                {preset.sourceLabel}
+              </a>
+            ) : (
+              preset.sourceLabel
+            )}
+          </p>
+        )}
       </div>
     </main>
   );
