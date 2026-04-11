@@ -51,12 +51,18 @@ model Preset {
   flagged       Boolean  @default(false)
   ratingAverage Float    @default(0)
   ratingCount   Int      @default(0)
+  sourceUrl     String?
+  sourceLabel   String?
+  contentHash   String?
+  ingestedAt    DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   ratings       PresetRating[]
 
   @@index([userId])
+  @@index([sourceLabel])
+  @@index([contentHash])
   @@index([public, createdAt])
   @@index([public, downloadCount])
   @@index([public, ratingAverage])
