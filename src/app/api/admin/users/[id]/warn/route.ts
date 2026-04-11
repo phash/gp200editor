@@ -4,6 +4,7 @@ import { requireAdmin, AdminForbiddenError, logAdminAction } from '@/lib/admin';
 import { adminWarnUserSchema } from '@/lib/validators.admin';
 import { sendWarningEmail } from '@/lib/email';
 import { verifyCsrf } from '@/lib/csrf';
+import { logError } from '@/lib/errorLog';
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -44,14 +45,23 @@ export async function POST(request: Request, { params }: RouteParams) {
 
   await sendWarningEmail(target.email, parsed.data.reason, parsed.data.message);
 
-  await logAdminAction({
-    adminId: admin.id,
-    action: 'WARN_USER',
-    targetType: 'user',
-    targetId: id,
-    reason: parsed.data.reason,
-    metadata: parsed.data.message ? { message: parsed.data.message } : undefined,
-  });
+  try {
+    await logAdminAction({
+      adminId: admin.id,
+      action: 'WARN_USER',
+      targetType: 'user',
+      targetId: id,
+      reason: parsed.data.reason,
+      metadata: parsed.data.message ? { message: parsed.data.message } : undefined,
+    });
+  } catch (err) {
+    await logError({
+      level: 'error',
+      message: 'logAdminAction failed (WARN_USER)',
+      stack: err instanceof Error ? err.stack : undefined,
+      metadata: { adminId: admin.id, targetId: id, reason: parsed.data.reason },
+    }).catch(() => {});
+  }
 
   return NextResponse.json({ success: true });
 }

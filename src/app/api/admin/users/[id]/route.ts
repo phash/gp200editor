@@ -5,6 +5,7 @@ import { adminPatchUserSchema } from '@/lib/validators.admin';
 import { deletePreset, deleteAvatar } from '@/lib/storage';
 import { lucia } from '@/lib/auth';
 import { verifyCsrf } from '@/lib/csrf';
+import { logError } from '@/lib/errorLog';
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -62,13 +63,25 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     await lucia.invalidateUserSessions(id);
   }
 
-  await logAdminAction({
-    adminId: admin.id,
-    action: 'PATCH_USER',
-    targetType: 'user',
-    targetId: id,
-    metadata: parsed.data as Record<string, unknown>,
-  });
+  // Audit trail must survive DB hiccups — the PATCH has already committed,
+  // so we log-and-continue rather than throwing 500 to the client (matches
+  // the preset-routes pattern from PR1).
+  try {
+    await logAdminAction({
+      adminId: admin.id,
+      action: 'PATCH_USER',
+      targetType: 'user',
+      targetId: id,
+      metadata: parsed.data as Record<string, unknown>,
+    });
+  } catch (err) {
+    await logError({
+      level: 'error',
+      message: 'logAdminAction failed (PATCH_USER)',
+      stack: err instanceof Error ? err.stack : undefined,
+      metadata: { adminId: admin.id, targetId: id },
+    }).catch(() => {});
+  }
 
   return NextResponse.json(updated);
 }
@@ -132,12 +145,21 @@ export async function DELETE(request: Request, { params }: RouteParams) {
   // Delete user (cascades sessions, presets, ratings, tokens)
   await prisma.user.delete({ where: { id } });
 
-  await logAdminAction({
-    adminId: admin.id,
-    action: 'DELETE_USER',
-    targetType: 'user',
-    targetId: id,
-  });
+  try {
+    await logAdminAction({
+      adminId: admin.id,
+      action: 'DELETE_USER',
+      targetType: 'user',
+      targetId: id,
+    });
+  } catch (err) {
+    await logError({
+      level: 'error',
+      message: 'logAdminAction failed (DELETE_USER)',
+      stack: err instanceof Error ? err.stack : undefined,
+      metadata: { adminId: admin.id, targetId: id },
+    }).catch(() => {});
+  }
 
   return NextResponse.json({ success: true });
 }
