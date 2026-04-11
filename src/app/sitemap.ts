@@ -1,15 +1,12 @@
 import { prisma } from '@/lib/prisma';
 import { listAmpCategories } from '@/core/ampCategories';
+import { LOCALES, BASE_URL } from '@/lib/hreflang';
 
 // Force dynamic generation — the default sitemap.ts output is baked at build
 // time when the DB is unreachable, which means library presets imported after
 // deploy never show up in the xml. revalidate alone doesn't trigger regen for
-// metadata routes reliably, so we mark the whole thing dynamic. The actual
-// Cache-Control header is still set by Next.js to `max-age=0, must-revalidate`,
-// so Caddy/Google still cache the rendered output briefly via their own rules.
+// metadata routes reliably, so we mark the whole thing dynamic.
 export const dynamic = 'force-dynamic';
-
-const BASE_URL = 'https://preset-forge.com';
 
 type SitemapEntry = {
   url: string;
@@ -18,26 +15,44 @@ type SitemapEntry = {
   priority: number;
 };
 
+const STATIC_PAGES: Array<{
+  path: string;
+  changeFrequency: SitemapEntry['changeFrequency'];
+  priority: number;
+}> = [
+  { path: '',            changeFrequency: 'weekly',  priority: 1.0 },
+  { path: '/editor',     changeFrequency: 'weekly',  priority: 1.0 },
+  { path: '/gallery',    changeFrequency: 'daily',   priority: 0.8 },
+  { path: '/help',       changeFrequency: 'monthly', priority: 0.6 },
+  { path: '/changelog',  changeFrequency: 'weekly',  priority: 0.5 },
+];
+
 export default async function sitemap(): Promise<SitemapEntry[]> {
-  const staticPages: SitemapEntry[] = [
-    { url: `${BASE_URL}/en`, lastModified: new Date(), changeFrequency: 'weekly', priority: 1.0 },
-    { url: `${BASE_URL}/de`, lastModified: new Date(), changeFrequency: 'weekly', priority: 1.0 },
-    { url: `${BASE_URL}/en/editor`, lastModified: new Date(), changeFrequency: 'weekly', priority: 1.0 },
-    { url: `${BASE_URL}/de/editor`, lastModified: new Date(), changeFrequency: 'weekly', priority: 1.0 },
-    { url: `${BASE_URL}/en/gallery`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.8 },
-    { url: `${BASE_URL}/de/gallery`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.8 },
-    { url: `${BASE_URL}/en/help`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.6 },
-    { url: `${BASE_URL}/de/help`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.6 },
-    { url: `${BASE_URL}/en/changelog`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.5 },
-    { url: `${BASE_URL}/de/changelog`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.5 },
-  ];
+  const now = new Date();
 
-  // Sitemap.xml has a hard limit of 50 000 URLs. Each preset generates two
-  // entries (de + en), so cap the query well below that to avoid OOM / slow
-  // builds once the gallery grows. Order by updatedAt so the newest presets
-  // are always indexed first.
-  const SITEMAP_PRESET_LIMIT = 10000;
+  const staticPages: SitemapEntry[] = STATIC_PAGES.flatMap((page) =>
+    LOCALES.map((locale) => ({
+      url: `${BASE_URL}/${locale}${page.path}`,
+      lastModified: now,
+      changeFrequency: page.changeFrequency,
+      priority: page.priority,
+    })),
+  );
 
+  // Amp category landing pages — one per (amp, locale) combo.
+  const ampPages: SitemapEntry[] = listAmpCategories().flatMap((cat) =>
+    LOCALES.map((locale) => ({
+      url: `${BASE_URL}/${locale}/amp/${cat.slug}`,
+      lastModified: now,
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    })),
+  );
+
+  // Public preset share pages — 6 locale variants + 1 JSON endpoint per preset.
+  // Sitemap.xml has a hard limit of 50 000 URLs. With 6 locales + 1 JSON per
+  // preset we get 7 entries per preset, so cap well below that.
+  const SITEMAP_PRESET_LIMIT = 5000;
   let presetPages: SitemapEntry[] = [];
   try {
     const publicPresets = await prisma.preset.findMany({
@@ -47,26 +62,22 @@ export default async function sitemap(): Promise<SitemapEntry[]> {
       select: { shareToken: true, updatedAt: true },
     });
 
-    presetPages = publicPresets.flatMap((preset) => [
-      {
-        url: `${BASE_URL}/de/share/${preset.shareToken}`,
+    presetPages = publicPresets.flatMap((preset) => {
+      const entries: SitemapEntry[] = LOCALES.map((locale) => ({
+        url: `${BASE_URL}/${locale}/share/${preset.shareToken}`,
         lastModified: preset.updatedAt,
         changeFrequency: 'weekly' as const,
         priority: 0.6,
-      },
-      {
-        url: `${BASE_URL}/en/share/${preset.shareToken}`,
-        lastModified: preset.updatedAt,
-        changeFrequency: 'weekly' as const,
-        priority: 0.6,
-      },
-      {
+      }));
+      // One locale-less JSON endpoint per preset (API route, not locale-scoped)
+      entries.push({
         url: `${BASE_URL}/api/share/${preset.shareToken}/json`,
         lastModified: preset.updatedAt,
         changeFrequency: 'yearly' as const,
         priority: 0.3,
-      },
-    ]);
+      });
+      return entries;
+    });
   } catch (err) {
     // Database unavailable during build — skip dynamic pages. Log so ops
     // can see if this is happening in production (was previously silent
@@ -76,24 +87,6 @@ export default async function sitemap(): Promise<SitemapEntry[]> {
       err instanceof Error ? `${err.name}: ${err.message}` : err,
     );
   }
-
-  // Amp category landing pages — one per (amp, locale) combo. These are
-  // indexed separately from individual presets and target long-tail amp
-  // queries like "Marshall JCM800 Valeton GP-200 preset".
-  const ampPages: SitemapEntry[] = listAmpCategories().flatMap((cat) => [
-    {
-      url: `${BASE_URL}/en/amp/${cat.slug}`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 0.7,
-    },
-    {
-      url: `${BASE_URL}/de/amp/${cat.slug}`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 0.7,
-    },
-  ]);
 
   return [...staticPages, ...ampPages, ...presetPages];
 }

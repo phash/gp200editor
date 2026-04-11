@@ -23,12 +23,18 @@ describe('sitemap', () => {
 
     const entries = await sitemap();
     const urls = entries.map((e) => e.url);
+    // All 6 locale variants
     expect(urls).toContain('https://preset-forge.com/de/share/abc');
     expect(urls).toContain('https://preset-forge.com/en/share/abc');
+    expect(urls).toContain('https://preset-forge.com/es/share/abc');
+    expect(urls).toContain('https://preset-forge.com/fr/share/abc');
+    expect(urls).toContain('https://preset-forge.com/it/share/abc');
+    expect(urls).toContain('https://preset-forge.com/pt/share/abc');
+    // Plus the JSON endpoint
     expect(urls).toContain('https://preset-forge.com/api/share/abc/json');
   });
 
-  it('emits three entries per preset', async () => {
+  it('emits seven entries per preset (6 locale HTML + 1 JSON)', async () => {
     (prisma.preset.findMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
       Array.from({ length: 10 }, (_, i) => ({
         shareToken: `tok${i}`,
@@ -42,7 +48,7 @@ describe('sitemap', () => {
         (e.url.includes('/share/') || e.url.includes('/api/share/')) &&
         !e.url.includes('/amp/'),
     );
-    expect(presetEntries).toHaveLength(30);
+    expect(presetEntries).toHaveLength(70);
   });
 
   it('emits amp category URLs for both locales', async () => {
