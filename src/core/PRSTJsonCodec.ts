@@ -153,8 +153,43 @@ export function generateSummary(chain: SignalChainEntry[], presetName: string): 
 }
 
 // Function stubs — implemented in Task 5/6.
-export function encodeToJson(_preset: GP200Preset, _opts: EncodeOpts): PresetJson {
-  throw new Error('encodeToJson not implemented');
+export function encodeToJson(preset: GP200Preset, opts: EncodeOpts): PresetJson {
+  const chain = buildSignalChain(preset);
+  const highlights = pickHighlights(chain);
+  const summary = generateSummary(chain, preset.patchName);
+
+  // User presets are 1224 bytes; factory presets are 1176. We persist only user
+  // presets. Checksum is already a uint16 on GP200Preset.
+  const checksumHex = `0x${preset.checksum.toString(16).padStart(4, '0')}`;
+
+  return {
+    schemaVersion: 1,
+    name: preset.patchName,
+    author: preset.author ?? null,
+    description: opts.description,
+    sourceUrl: opts.sourceUrl,
+    sourceLabel: opts.sourceLabel,
+    summary,
+    signalChain: chain,
+    highlights,
+    raw: {
+      patchName: preset.patchName,
+      author: preset.author ?? null,
+      effects: preset.effects.map((e) => ({
+        slotIndex: e.slotIndex,
+        active: e.enabled,
+        effectId: e.effectId,
+        params: e.params,
+      })),
+      fileSize: 1224,
+      checksum: checksumHex,
+    },
+    urls: {
+      download: `/api/share/${opts.shareToken}/download`,
+      openInEditor: `/${opts.locale}/editor?share=${opts.shareToken}`,
+      html: `/${opts.locale}/share/${opts.shareToken}`,
+    },
+  };
 }
 
 export function decodeFromJson(_json: PresetJson): GP200Preset {

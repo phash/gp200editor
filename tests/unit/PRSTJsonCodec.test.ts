@@ -6,6 +6,7 @@ import {
   buildSignalChain,
   pickHighlights,
   generateSummary,
+  encodeToJson,
 } from '@/core/PRSTJsonCodec';
 
 function makeEmptyPreset(): GP200Preset {
@@ -119,5 +120,61 @@ describe('generateSummary', () => {
     const chain = buildSignalChain(makeEmptyPreset());
     expect(generateSummary(chain, 'Test')).toContain('Valeton GP-200 preset');
     expect(generateSummary(chain, 'Test')).toContain('Test');
+  });
+});
+
+describe('encodeToJson', () => {
+  const preset = makeEmptyPreset();
+  preset.patchName = 'Brit Crunch';
+  preset.author = 'Galtone';
+  // Pick any known AMP effect id from EFFECT_MAP; adjust if needed.
+  preset.effects[2] = { slotIndex: 2, enabled: true, effectId: 1028, params: Array(15).fill(0.5) };
+  preset.checksum = 0x7a3f;
+
+  const json = encodeToJson(preset, {
+    shareToken: 'abc123',
+    locale: 'en',
+    sourceUrl: 'https://example.com/foo.prst',
+    sourceLabel: 'example.com',
+    description: 'Classic British crunch.',
+  });
+
+  it('sets schema version', () => {
+    expect(json.schemaVersion).toBe(1);
+  });
+
+  it('copies metadata verbatim', () => {
+    expect(json.name).toBe('Brit Crunch');
+    expect(json.author).toBe('Galtone');
+    expect(json.description).toBe('Classic British crunch.');
+    expect(json.sourceUrl).toBe('https://example.com/foo.prst');
+    expect(json.sourceLabel).toBe('example.com');
+  });
+
+  it('builds signalChain with 11 entries', () => {
+    expect(json.signalChain).toHaveLength(11);
+  });
+
+  it('formats checksum as hex string', () => {
+    expect(json.raw.checksum).toBe('0x7a3f');
+  });
+
+  it('fileSize defaults to 1224 (user preset size)', () => {
+    expect(json.raw.fileSize).toBe(1224);
+  });
+
+  it('builds urls with the configured locale', () => {
+    expect(json.urls.download).toBe('/api/share/abc123/download');
+    expect(json.urls.openInEditor).toBe('/en/editor?share=abc123');
+    expect(json.urls.html).toBe('/en/share/abc123');
+  });
+
+  it('passes Zod validation end to end', () => {
+    expect(PresetJsonSchema.safeParse(json).success).toBe(true);
+  });
+
+  it('translates enabled to active in raw.effects', () => {
+    expect(json.raw.effects[2].active).toBe(true);
+    expect(json.raw.effects[0].active).toBe(false);
   });
 });
