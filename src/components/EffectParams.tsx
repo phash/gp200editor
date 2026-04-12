@@ -258,7 +258,8 @@ export function EffectParams({ effectId, params, onParamChange, maxColumns, layo
         data-testid="effect-params"
       >
         {paramDefs.map((param) => {
-          const value = params[param.idx] ?? param.default;
+          const raw = params[param.idx] ?? param.default;
+        const value = (param.type === 'knob' && raw < param.min) ? param.default : raw;
           const handleChange = (v: number) => onParamChange(param.idx, v);
           if (param.type === 'knob') {
             return <VerticalFader key={param.idx} param={param} value={value} onChange={handleChange} idPrefix={idPrefix} />;
@@ -282,7 +283,8 @@ export function EffectParams({ effectId, params, onParamChange, maxColumns, layo
       data-testid="effect-params"
     >
       {paramDefs.map((param) => {
-        const value = params[param.idx] ?? param.default;
+        const raw = params[param.idx] ?? param.default;
+        const value = (param.type === 'knob' && raw < param.min) ? param.default : raw;
         const handleChange = (v: number) => onParamChange(param.idx, v);
 
         switch (param.type) {
