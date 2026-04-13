@@ -6,12 +6,13 @@ import type { GP200Preset } from '@/core/types';
 
 interface AmpHeadPanelProps {
   preset: GP200Preset;
-  onParamChange: (slotIndex: number, paramIndex: number, value: number) => void;
+  onParamChange: (blockIndex: number, paramIndex: number, value: number) => void;
 }
 
-function AmpSlider({ def, value, onValueChange }: {
+function AmpSlider({ def, value, blockIndex, onValueChange }: {
   def: Extract<EffectParam, { type: 'knob' }>;
   value: number;
+  blockIndex: number;
   onValueChange: (value: number) => void;
 }) {
   const pct = def.max > def.min
@@ -51,12 +52,13 @@ function AmpSlider({ def, value, onValueChange }: {
 }
 
 export function AmpHeadPanel({ preset, onParamChange }: AmpHeadPanelProps) {
-  // Find the AMP effect (module high byte 0x07 or 0x08)
-  const ampEffect = preset.effects.find(e => {
+  // Find the AMP effect (module high byte 0x07 or 0x08) and its block index
+  const ampBlockIndex = preset.effects.findIndex(e => {
     const mod = (e.effectId >>> 24) & 0xFF;
     return mod === 0x07 || mod === 0x08;
   });
-  if (!ampEffect) return null;
+  if (ampBlockIndex === -1) return null;
+  const ampEffect = preset.effects[ampBlockIndex];
 
   const paramDefs = getEffectParams(ampEffect.effectId);
   const ampName = getEffectName(ampEffect.effectId) ?? 'AMP';
@@ -97,7 +99,8 @@ export function AmpHeadPanel({ preset, onParamChange }: AmpHeadPanelProps) {
               key={p.idx}
               def={p}
               value={ampEffect.params[p.idx] ?? 0}
-              onValueChange={(v) => onParamChange(ampEffect.slotIndex, p.idx, v)}
+              blockIndex={ampBlockIndex}
+              onValueChange={(v) => onParamChange(ampBlockIndex, p.idx, v)}
             />
           ))}
         </div>
@@ -107,7 +110,8 @@ export function AmpHeadPanel({ preset, onParamChange }: AmpHeadPanelProps) {
               key={p.idx}
               def={p}
               value={ampEffect.params[p.idx] ?? 0}
-              onValueChange={(v) => onParamChange(ampEffect.slotIndex, p.idx, v)}
+              blockIndex={ampBlockIndex}
+              onValueChange={(v) => onParamChange(ampBlockIndex, p.idx, v)}
             />
           ))}
         </div>
