@@ -102,7 +102,11 @@ export class PRSTEncoder {
         gen.writeUint8(base + 7, 0x0F);
         gen.writeUint32LE(base + 8, slot.effectId);
         for (let p = 0; p < PARAMS_COUNT && p < slot.params.length; p++) {
-          gen.writeFloat32LE(base + PARAMS_OFFSET + p * 4, slot.params[p]);
+          // Clamp NaN/Infinity to 0 — mirrors PRSTDecoder behavior.
+          // Real .prst files sometimes contain NaN bytes for unused params;
+          // writing them back could cause issues on the device.
+          const val = slot.params[p];
+          gen.writeFloat32LE(base + PARAMS_OFFSET + p * 4, Number.isFinite(val) ? val : 0);
         }
       } else {
         gen.writeUint8(base + 4, i);

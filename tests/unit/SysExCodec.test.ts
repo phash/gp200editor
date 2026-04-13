@@ -228,9 +228,9 @@ describe('SysExCodec: buildWriteChunks', () => {
     })),
   };
 
-  it('returns exactly 4 chunks', () => {
+  it('returns exactly 5 chunks (extended to include blocks 8, 9 complete + block 10 partial)', () => {
     const chunks = SysExCodec.buildWriteChunks(samplePreset, 5);
-    expect(chunks).toHaveLength(4);
+    expect(chunks).toHaveLength(5);
   });
 
   it('each chunk starts with SysEx header CMD=0x12 sub=0x20', () => {
@@ -251,26 +251,28 @@ describe('SysExCodec: buildWriteChunks', () => {
     for (const chunk of chunks) expect(chunk[10]).toBe(7);
   });
 
-  it('chunks decode to 732 bytes total', () => {
+  it('chunks decode to 876 bytes total', () => {
     const chunks = SysExCodec.buildWriteChunks(samplePreset, 0);
     // Each chunk: [10-byte header][slot:1][offLo:1][offHi:1][nibbleData...][F7:1]
     const nibbles = chunks.flatMap(c => Array.from(c.slice(13, c.length - 1)));
     const decoded = SysExCodec.nibbleDecode(new Uint8Array(nibbles));
-    expect(decoded.length).toBe(732);
+    expect(decoded.length).toBe(876);
   });
 
-  it('each chunk has 366 nibble bytes', () => {
+  it('first 4 chunks have 366 nibble bytes, last chunk has 288', () => {
     const chunks = SysExCodec.buildWriteChunks(samplePreset, 0);
-    for (const chunk of chunks) {
+    for (let i = 0; i < 4; i++) {
       // chunk = header(10) + slot(1) + offsetLo(1) + offsetHi(1) + nibbles(366) + F7(1) = 380
-      expect(chunk.length).toBe(380);
+      expect(chunks[i].length).toBe(380);
     }
+    // Last chunk: 10+1+1+1+288+1 = 302
+    expect(chunks[4].length).toBe(302);
   });
 
-  it('chunk offsets match captured protocol: 0, 311, 622, 1061', () => {
+  it('chunk offsets match captured protocol: 0, 311, 622, 1061, 1420', () => {
     const chunks = SysExCodec.buildWriteChunks(samplePreset, 0);
     const offsets = chunks.map(c => c[11] | (c[12] << 8));
-    expect(offsets).toEqual([0, 311, 622, 1061]);
+    expect(offsets).toEqual([0, 311, 622, 1061, 1420]);
   });
 
   it('write header contains static 0x27 markers at key positions', () => {
@@ -311,26 +313,43 @@ describe('SysExCodec: buildWriteChunks', () => {
     expect(view.getUint32(632 + 8, true)).toBe(0x03000001 + 7);
   });
 
-  it('effect block 8 partial at write offset 704 (28 bytes: header+4 params)', () => {
+  it('effect block 8 complete at write offset 704 (72 bytes)', () => {
     const chunks = SysExCodec.buildWriteChunks(samplePreset, 0);
     const nibbles = chunks.flatMap(c => Array.from(c.slice(13, c.length - 1)));
     const decoded = SysExCodec.nibbleDecode(new Uint8Array(nibbles));
     const view = new DataView(decoded.buffer);
-    // Block 8 partial at offset 704
+    // Block 8 complete at offset 704
     expect(decoded[704]).toBe(0x14);
     expect(decoded[706]).toBe(0x44);
     expect(view.getUint32(704 + 8, true)).toBe(0x03000001 + 8);
-    // Only 4 params fit (offset 704 + 12 + 4*4 = 732 = end of payload)
-    expect(view.getFloat32(704 + 12, true)).toBeCloseTo(0);       // param 0
-    expect(view.getFloat32(704 + 12 + 4, true)).toBeCloseTo(1.5); // param 1
+    // All 15 params present
+    expect(view.getFloat32(704 + 12, true)).toBeCloseTo(0);
+    expect(view.getFloat32(704 + 12 + 56, true)).toBeCloseTo(14 * 1.5); // param 14
   });
 
-  it('blocks 9-10 are NOT included in write payload', () => {
+  it('effect block 9 (RVB) complete at write offset 776 (72 bytes)', () => {
     const chunks = SysExCodec.buildWriteChunks(samplePreset, 0);
     const nibbles = chunks.flatMap(c => Array.from(c.slice(13, c.length - 1)));
     const decoded = SysExCodec.nibbleDecode(new Uint8Array(nibbles));
-    // Payload ends at 732, block 9 would be at 128 + 9*72 = 776 > 732
-    expect(decoded.length).toBe(732);
+    const view = new DataView(decoded.buffer);
+    // Block 9 at offset 776
+    expect(decoded[776]).toBe(0x14);
+    expect(decoded[778]).toBe(0x44);
+    expect(view.getUint32(776 + 8, true)).toBe(0x03000001 + 9);
+    expect(view.getFloat32(776 + 12, true)).toBeCloseTo(0);
+  });
+
+  it('effect block 10 (VOL) partial at write offset 848 (28 bytes: header+4 params)', () => {
+    const chunks = SysExCodec.buildWriteChunks(samplePreset, 0);
+    const nibbles = chunks.flatMap(c => Array.from(c.slice(13, c.length - 1)));
+    const decoded = SysExCodec.nibbleDecode(new Uint8Array(nibbles));
+    const view = new DataView(decoded.buffer);
+    // Block 10 partial at offset 848
+    expect(decoded[848]).toBe(0x14);
+    expect(decoded[850]).toBe(0x44);
+    expect(view.getUint32(848 + 8, true)).toBe(0x03000001 + 10);
+    expect(view.getFloat32(848 + 12, true)).toBeCloseTo(0);       // param 0
+    expect(view.getFloat32(848 + 12 + 4, true)).toBeCloseTo(1.5); // param 1
   });
 });
 
