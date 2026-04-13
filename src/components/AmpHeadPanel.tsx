@@ -9,10 +9,9 @@ interface AmpHeadPanelProps {
   onParamChange: (blockIndex: number, paramIndex: number, value: number) => void;
 }
 
-function AmpSlider({ def, value, blockIndex, onValueChange }: {
+function AmpSlider({ def, value, onValueChange }: {
   def: Extract<EffectParam, { type: 'knob' }>;
   value: number;
-  blockIndex: number;
   onValueChange: (value: number) => void;
 }) {
   const pct = def.max > def.min
@@ -99,7 +98,6 @@ export function AmpHeadPanel({ preset, onParamChange }: AmpHeadPanelProps) {
               key={p.idx}
               def={p}
               value={ampEffect.params[p.idx] ?? 0}
-              blockIndex={ampBlockIndex}
               onValueChange={(v) => onParamChange(ampBlockIndex, p.idx, v)}
             />
           ))}
@@ -110,7 +108,6 @@ export function AmpHeadPanel({ preset, onParamChange }: AmpHeadPanelProps) {
               key={p.idx}
               def={p}
               value={ampEffect.params[p.idx] ?? 0}
-              blockIndex={ampBlockIndex}
               onValueChange={(v) => onParamChange(ampBlockIndex, p.idx, v)}
             />
           ))}

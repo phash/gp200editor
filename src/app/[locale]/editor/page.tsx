@@ -935,17 +935,17 @@ export default function EditorPage() {
                 midiDevice.sendToggle(index, !eff.enabled);
               }
             },
-            onChangeEffect: (slotIndex: number, effectId: number) => {
-              changeEffect(slotIndex, effectId);
+            onChangeEffect: (blockIndex: number, effectId: number) => {
+              changeEffect(blockIndex, effectId);
               if (midiDevice.status === 'connected') {
-                midiDevice.sendEffectChange(slotIndex, effectId);
+                midiDevice.sendEffectChange(blockIndex, effectId);
               }
             },
-            onParamChange: (slotIndex: number, paramIndex: number, value: number) => {
-              setParam(slotIndex, paramIndex, value);
+            onParamChange: (blockIndex: number, paramIndex: number, value: number) => {
+              setParam(blockIndex, paramIndex, value);
               if (midiDevice.status === 'connected' && preset) {
-                const eff = preset.effects.find(e => e.slotIndex === slotIndex);
-                if (eff) midiDevice.sendParamChange(slotIndex, paramIndex, eff.effectId, value);
+                const eff = preset.effects[blockIndex];
+                if (eff) midiDevice.sendParamChange(blockIndex, paramIndex, eff.effectId, value);
               }
             },
             onDragStart: handleDragStart,

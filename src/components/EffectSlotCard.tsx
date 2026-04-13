@@ -9,8 +9,8 @@ interface EffectSlotCardProps {
   slot: EffectSlotType;
   index: number;
   onToggle: (index: number) => void;
-  onChangeEffect: (slotIndex: number, effectId: number) => void;
-  onParamChange: (slotIndex: number, paramIdx: number, value: number) => void;
+  onChangeEffect: (blockIndex: number, effectId: number) => void;
+  onParamChange: (blockIndex: number, paramIdx: number, value: number) => void;
   onDragStart: (index: number) => void;
   onDragOver: (e: React.DragEvent, index: number) => void;
   onDrop: (index: number) => void;
@@ -108,8 +108,8 @@ export function EffectSlotCard({ slot, index, onToggle, onChangeEffect, onParamC
         <div className="px-4 pt-1 pb-2 text-center">
           <select
             value={slot.effectId}
-            onChange={(e) => onChangeEffect(slot.slotIndex, Number(e.target.value))}
-            data-testid={`effect-select-${slot.slotIndex}`}
+            onChange={(e) => onChangeEffect(index, Number(e.target.value))}
+            data-testid={`effect-select-${index}`}
             className="w-full text-center text-base font-bold bg-transparent border-none cursor-pointer truncate focus:outline-none font-mono-display"
             style={{ color: 'var(--text-primary)' }}
           >
@@ -136,10 +136,10 @@ export function EffectSlotCard({ slot, index, onToggle, onChangeEffect, onParamC
           <EffectParams
             effectId={slot.effectId}
             params={slot.params}
-            onParamChange={(paramIdx, value) => onParamChange(slot.slotIndex, paramIdx, value)}
+            onParamChange={(paramIdx, value) => onParamChange(index, paramIdx, value)}
             maxColumns={isEQ ? undefined : 2}
             layout={isEQ ? 'eq' : 'default'}
-            slotIndex={slot.slotIndex}
+            slotIndex={index}
           />
         </div>
 

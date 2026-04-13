@@ -10,8 +10,8 @@ interface EffectSlotProps {
   slot: EffectSlotType;
   index: number;
   onToggle: (index: number) => void;
-  onChangeEffect: (slotIndex: number, effectId: number) => void;
-  onParamChange: (slotIndex: number, paramIdx: number, value: number) => void;
+  onChangeEffect: (blockIndex: number, effectId: number) => void;
+  onParamChange: (blockIndex: number, paramIdx: number, value: number) => void;
   onDragStart: (index: number) => void;
   onDragOver: (e: React.DragEvent, index: number) => void;
   onDrop: (index: number) => void;
@@ -77,9 +77,9 @@ export function EffectSlot({ slot, index, onToggle, onChangeEffect, onParamChang
           {/* Effect selector */}
           <select
             value={slot.effectId}
-            onChange={(e) => onChangeEffect(slot.slotIndex, Number(e.target.value))}
+            onChange={(e) => onChangeEffect(index, Number(e.target.value))}
             onClick={(e) => e.stopPropagation()}
-            data-testid={`effect-select-${slot.slotIndex}`}
+            data-testid={`effect-select-${index}`}
             className="text-sm font-medium bg-transparent border-none cursor-pointer truncate min-w-0 focus:outline-none rounded"
             style={{ color: 'var(--text-primary)' }}
           >
@@ -137,8 +137,8 @@ export function EffectSlot({ slot, index, onToggle, onChangeEffect, onParamChang
           <EffectParams
             effectId={slot.effectId}
             params={slot.params}
-            onParamChange={(paramIdx, value) => onParamChange(slot.slotIndex, paramIdx, value)}
-            slotIndex={slot.slotIndex}
+            onParamChange={(paramIdx, value) => onParamChange(index, paramIdx, value)}
+            slotIndex={index}
           />
         </div>
       )}
