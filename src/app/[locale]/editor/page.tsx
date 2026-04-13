@@ -201,13 +201,15 @@ export default function EditorPage() {
   }, [midiDevice.status]);
 
   // Send all effect data to device for live preview (no save)
+  // IMPORTANT: Use array index i (block index 0-10), NOT eff.slotIndex (routing position).
   const sendPresetToDevice = useCallback((decoded: GP200Preset) => {
     if (midiDevice.status !== 'connected') return;
-    for (const eff of decoded.effects) {
-      midiDevice.sendToggle(eff.slotIndex, eff.enabled);
+    for (let i = 0; i < decoded.effects.length; i++) {
+      const eff = decoded.effects[i];
+      midiDevice.sendToggle(i, eff.enabled);
       for (let p = 0; p < eff.params.length; p++) {
         if (eff.params[p] !== undefined) {
-          midiDevice.sendParamChange(eff.slotIndex, p, eff.effectId, eff.params[p]);
+          midiDevice.sendParamChange(i, p, eff.effectId, eff.params[p]);
         }
       }
     }
@@ -639,11 +641,11 @@ export default function EditorPage() {
       {showAmpHead && (
         <AmpHeadPanel
           preset={preset}
-          onParamChange={(slotIndex, paramIndex, value) => {
-            setParam(slotIndex, paramIndex, value);
+          onParamChange={(blockIndex, paramIndex, value) => {
+            setParam(blockIndex, paramIndex, value);
             if (midiDevice.status === 'connected') {
-              const eff = preset.effects.find(e => e.slotIndex === slotIndex);
-              if (eff) midiDevice.sendParamChange(slotIndex, paramIndex, eff.effectId, value);
+              const eff = preset.effects[blockIndex];
+              if (eff) midiDevice.sendParamChange(blockIndex, paramIndex, eff.effectId, value);
             }
           }}
         />
@@ -930,20 +932,20 @@ export default function EditorPage() {
               toggleEffect(index);
               if (midiDevice.status === 'connected' && preset) {
                 const eff = preset.effects[index];
-                midiDevice.sendToggle(eff.slotIndex, !eff.enabled);
+                midiDevice.sendToggle(index, !eff.enabled);
               }
             },
-            onChangeEffect: (slotIndex: number, effectId: number) => {
-              changeEffect(slotIndex, effectId);
+            onChangeEffect: (blockIndex: number, effectId: number) => {
+              changeEffect(blockIndex, effectId);
               if (midiDevice.status === 'connected') {
-                midiDevice.sendEffectChange(slotIndex, effectId);
+                midiDevice.sendEffectChange(blockIndex, effectId);
               }
             },
-            onParamChange: (slotIndex: number, paramIndex: number, value: number) => {
-              setParam(slotIndex, paramIndex, value);
+            onParamChange: (blockIndex: number, paramIndex: number, value: number) => {
+              setParam(blockIndex, paramIndex, value);
               if (midiDevice.status === 'connected' && preset) {
-                const eff = preset.effects.find(e => e.slotIndex === slotIndex);
-                if (eff) midiDevice.sendParamChange(slotIndex, paramIndex, eff.effectId, value);
+                const eff = preset.effects[blockIndex];
+                if (eff) midiDevice.sendParamChange(blockIndex, paramIndex, eff.effectId, value);
               }
             },
             onDragStart: handleDragStart,

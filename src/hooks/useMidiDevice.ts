@@ -506,12 +506,14 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     // Step 2: Send all effects via live editing (toggle + params for each slot)
     // Note: this can modify params and toggle state but NOT change effect IDs.
     // Effect IDs require buildEffectChange (sub=0x14) which is not yet implemented.
-    for (const eff of preset.effects) {
-      output.send(SysExCodec.buildToggleEffect(eff.slotIndex, eff.enabled));
+    // IMPORTANT: Use array index i (block index 0-10), NOT eff.slotIndex (routing position).
+    for (let i = 0; i < preset.effects.length; i++) {
+      const eff = preset.effects[i];
+      output.send(SysExCodec.buildToggleEffect(i, eff.enabled));
       await new Promise(r => setTimeout(r, 15));
       for (let p = 0; p < eff.params.length; p++) {
         if (eff.params[p] !== undefined) {
-          output.send(SysExCodec.buildParamChange(eff.slotIndex, p, eff.effectId, eff.params[p]));
+          output.send(SysExCodec.buildParamChange(i, p, eff.effectId, eff.params[p]));
           await new Promise(r => setTimeout(r, 8));
         }
       }
