@@ -147,12 +147,12 @@ export const SysExCodec = {
     // Build 876-byte decoded write payload — extended from 732 to include
     // all 11 effect blocks (previously blocks 9=RVB and 10=VOL were omitted,
     // causing silent data loss when those effects were modified).
-    // 5 chunks × 366 nibble bytes = 1830 → 915 decoded capacity (876 used).
+    // 876 bytes nibble-encoded = 1752 nibble bytes, split into 5 chunks (4×366 + 1×288).
     // Layout: [0:36] write header, [36:68] name+author,
     //         [68:128] middle section with routing, [128:704] 8×72B effect blocks 0-7,
     //         [704:776] effect block 8 complete (72B),
     //         [776:848] effect block 9 (RVB, 72B),
-    //         [848:912] would be block 10, but we cap at 876 → block 10 partial (28B)
+    //         [848:876] effect block 10 (VOL) partial (28B of 72B)
     // NOTE: Block 10 (VOL) is only partially sent (first 28 of 72 bytes).
     // Full block 10 support requires verifying 5-chunk writes via USB capture.
     const PAYLOAD_SIZE = 876;
@@ -194,6 +194,9 @@ export const SysExCodec = {
     }
     // [127] = 0x00 terminator (already zero)
 
+    // Clamp NaN/Infinity to 0 — mirrors PRSTDecoder/PRSTEncoder behavior.
+    const safeParam = (v: number | undefined) => (v !== undefined && Number.isFinite(v)) ? v : 0;
+
     // [128:704] Effect blocks 0-7 complete (8 × 72 = 576 bytes)
     for (let b = 0; b < 8; b++) {
       const base = 128 + b * 72;
@@ -206,7 +209,7 @@ export const SysExCodec = {
       payload[base + 6] = 0x00; payload[base + 7] = 0x0F;
       view.setUint32(base + 8, eff.effectId, true);
       for (let p = 0; p < 15; p++) {
-        view.setFloat32(base + 12 + p * 4, eff.params[p] ?? 0, true);
+        view.setFloat32(base + 12 + p * 4, safeParam(eff.params[p]), true);
       }
     }
 
@@ -221,7 +224,7 @@ export const SysExCodec = {
       payload[base + 6] = 0x00; payload[base + 7] = 0x0F;
       view.setUint32(base + 8, eff.effectId, true);
       for (let p = 0; p < 15; p++) {
-        view.setFloat32(base + 12 + p * 4, eff.params[p] ?? 0, true);
+        view.setFloat32(base + 12 + p * 4, safeParam(eff.params[p]), true);
       }
     }
 
@@ -236,7 +239,7 @@ export const SysExCodec = {
       payload[base + 6] = 0x00; payload[base + 7] = 0x0F;
       view.setUint32(base + 8, eff.effectId, true);
       for (let p = 0; p < 15; p++) {
-        view.setFloat32(base + 12 + p * 4, eff.params[p] ?? 0, true);
+        view.setFloat32(base + 12 + p * 4, safeParam(eff.params[p]), true);
       }
     }
 
@@ -252,17 +255,17 @@ export const SysExCodec = {
       payload[base + 6] = 0x00; payload[base + 7] = 0x0F;
       view.setUint32(base + 8, eff.effectId, true);
       for (let p = 0; p < 4; p++) {
-        view.setFloat32(base + 12 + p * 4, eff.params[p] ?? 0, true);
+        view.setFloat32(base + 12 + p * 4, safeParam(eff.params[p]), true);
       }
     }
 
-    // Nibble-encode → 1752 nibble bytes, split into 5 chunks of 366 each
-    // Offsets are used by assembleChunks for sorting (not positional placement);
-    // values from USB capture extended with 5th chunk offset > 1061.
+    // Nibble-encode → 1752 nibble bytes, split into 5 chunks (4×366 + 1×288)
+    // Offsets from USB capture 7-chunk write format: 0, 311, 622, 1061, 1372, 1811, 2122
+    // Pattern: +311, +311, +439, +311, +439, +311 (alternating 311/439)
     const nibble = this.nibbleEncode(payload);
     const CHUNK_SIZE = 366;
     const numChunks = Math.ceil(nibble.length / CHUNK_SIZE);
-    const CHUNK_OFFSETS = [0, 311, 622, 1061, 1420];
+    const CHUNK_OFFSETS = [0, 311, 622, 1061, 1372];
 
     const chunks: Uint8Array[] = [];
     for (let i = 0; i < numChunks; i++) {
@@ -357,13 +360,12 @@ export const SysExCodec = {
   },
 
   parseVersionResponse(msg: Uint8Array): { accepted: boolean } {
-    // Validate basic SysEx structure: F0 header + sub=0x0A (version response)
-    // CMD can be 0x11 (host query echo) or 0x12 (device response).
+    // Validate basic SysEx structure: F0 header + CMD=0x12 (device→host) + sub=0x0A
     // The original strict check (bytes 21-32 all zero) rejected FW 1.8.0,
     // so we only verify the message envelope is a valid version response.
     if (msg.length < 34) return { accepted: false };
     if (msg[0] !== 0xF0) return { accepted: false };
-    if (msg[8] !== 0x11 && msg[8] !== 0x12) return { accepted: false };
+    if (msg[8] !== 0x12) return { accepted: false };
     if (msg[9] !== 0x0A) return { accepted: false };
     return { accepted: true };
   },

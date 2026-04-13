@@ -37,7 +37,7 @@ export function EffectSlotCard({ slot, index, onToggle, onChangeEffect, onParamC
         opacity: isDragOver ? 0.7 : 1,
         zIndex: 1,
       }}
-      data-testid={`effect-slot-${slot.slotIndex}`}
+      data-testid={`effect-slot-${index}`}
     >
       {/* Jack indicators — IN (left) / OUT (right) */}
       <div
@@ -146,10 +146,10 @@ export function EffectSlotCard({ slot, index, onToggle, onChangeEffect, onParamC
         {/* Footswitch — stomp button at bottom, below all sliders */}
         <div className="px-4 pb-4 pt-2 mt-auto">
           <button
-            onClick={(e) => { e.stopPropagation(); onToggle(slot.slotIndex); }}
+            onClick={(e) => { e.stopPropagation(); onToggle(index); }}
             aria-pressed={slot.enabled}
             aria-label={`${effectName} ${slot.enabled ? t('effectEnabled') : t('effectDisabled')}`}
-            data-testid={`effect-slot-toggle-${slot.slotIndex}`}
+            data-testid={`effect-slot-toggle-${index}`}
             className="relative w-full py-3.5 rounded-lg font-mono-display text-sm font-bold tracking-[0.15em] uppercase transition-all duration-150 cursor-pointer select-none"
             style={{
               background: slot.enabled

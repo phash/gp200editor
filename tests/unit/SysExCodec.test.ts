@@ -269,10 +269,10 @@ describe('SysExCodec: buildWriteChunks', () => {
     expect(chunks[4].length).toBe(302);
   });
 
-  it('chunk offsets match captured protocol: 0, 311, 622, 1061, 1420', () => {
+  it('chunk offsets match captured protocol: 0, 311, 622, 1061, 1372', () => {
     const chunks = SysExCodec.buildWriteChunks(samplePreset, 0);
     const offsets = chunks.map(c => c[11] | (c[12] << 8));
-    expect(offsets).toEqual([0, 311, 622, 1061, 1420]);
+    expect(offsets).toEqual([0, 311, 622, 1061, 1372]);
   });
 
   it('write header contains static 0x27 markers at key positions', () => {

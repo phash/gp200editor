@@ -42,7 +42,7 @@ export function EffectSlot({ slot, index, onToggle, onChangeEffect, onParamChang
           : 'inset 0 1px 0 rgba(255,255,255,0.02)',
         opacity: isDragOver ? 0.7 : 1,
       }}
-      data-testid={`effect-slot-${slot.slotIndex}`}
+      data-testid={`effect-slot-${index}`}
     >
       {/* Header row */}
       <div
@@ -53,7 +53,7 @@ export function EffectSlot({ slot, index, onToggle, onChangeEffect, onParamChang
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(!expanded); } }}
         aria-expanded={expanded}
         aria-label={`${effectName} ${t('parameters')}`}
-        data-testid={`effect-slot-header-${slot.slotIndex}`}
+        data-testid={`effect-slot-header-${index}`}
       >
         <div className="flex items-center gap-3 min-w-0">
           {/* Drag handle */}
@@ -115,10 +115,10 @@ export function EffectSlot({ slot, index, onToggle, onChangeEffect, onParamChang
 
         {/* LED-style ON/OFF toggle */}
         <button
-          onClick={(e) => { e.stopPropagation(); onToggle(slot.slotIndex); }}
+          onClick={(e) => { e.stopPropagation(); onToggle(index); }}
           aria-pressed={slot.enabled}
           aria-label={`${effectName} ${slot.enabled ? t('effectEnabled') : t('effectDisabled')}`}
-          data-testid={`effect-slot-toggle-${slot.slotIndex}`}
+          data-testid={`effect-slot-toggle-${index}`}
           className="font-mono-display text-[10px] font-bold tracking-wider px-3 py-1.5 rounded transition-all duration-150 flex-shrink-0 uppercase"
           style={{
             background: slot.enabled ? colors.glow : 'var(--bg-primary)',
