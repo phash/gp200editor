@@ -141,6 +141,13 @@ export const SysExCodec = {
     return this.parsePresetFromDecoded(decoded);
   },
 
+  /**
+   * @deprecated Chunk offsets overlap (0/311/622/1061/1372 with chunk size
+   * 366) and block 10 (VOL) is only partially populated — hardware testing
+   * confirmed this pathway is unreliable. Prefer the writePresetToSlot flow
+   * (buildToggle + buildParam + buildSaveCommit) which the device handles
+   * correctly. Kept only for USB-capture replay during protocol research.
+   */
   buildWriteChunks(preset: GP200Preset, slot: number): Uint8Array[] {
     const SYSEX_HEADER = [0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x20];
 

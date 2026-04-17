@@ -6,6 +6,13 @@ import { useMidiSend } from './useMidiSend';
 
 const READ_TIMEOUT_MS = 3000;
 
+// Gate the chunk-based full-preset push behind a dev-only flag. Hardware
+// testing showed the payload layout is unreliable (overlapping chunk
+// offsets, only partial block-10 support); the writePresetToSlot flow
+// (toggle + params + save-commit) is the supported path. Remove this flag
+// once the USB capture is re-analyzed and buildWriteChunks is reliable.
+const ENABLE_PUSH_PRESET = process.env.NODE_ENV !== 'production';
+
 function isSysEx(data: Uint8Array, cmd: number, sub: number): boolean {
   return (
     data.length > 10 &&
@@ -449,6 +456,10 @@ export function useMidiDevice(): UseMidiDeviceReturn {
   }, [onMidiMessage, pauseNameLoading]);
 
   const pushPreset = useCallback(async (preset: GP200Preset, slot: number): Promise<void> => {
+    if (!ENABLE_PUSH_PRESET) {
+      console.warn('[GP-200] pushPreset is disabled in production — use writePresetToSlot');
+      return;
+    }
     await pauseNameLoading();
     if (!outputRef.current) throw new Error('Not connected');
     console.log(`[GP-200] push: slot=${slot} (${SysExCodec.slotToLabel(slot)}) name="${preset.patchName}"`);
