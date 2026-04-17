@@ -50,13 +50,12 @@ export function usePreset(): PresetActions {
         ...prev,
         effects: prev.effects.map((slot) => {
           if (slot.slotIndex !== slotIndex) return slot;
-          // Apply default param values from effectParams definitions
-          const paramDefs = getEffectParams(effectId);
-          const params = [...slot.params];
-          for (const def of paramDefs) {
-            if (def.idx >= 0 && def.idx < params.length) {
-              params[def.idx] = def.default;
-            }
+          // Fresh 15-float params array — don't leak values from the previous
+          // effect (different effects have different param counts; stale
+          // floats in unused slots confuse the device).
+          const params = Array<number>(15).fill(0);
+          for (const def of getEffectParams(effectId)) {
+            if (def.idx >= 0 && def.idx < 15) params[def.idx] = def.default;
           }
           return { ...slot, effectId, params };
         }),
@@ -70,13 +69,15 @@ export function usePreset(): PresetActions {
       const effects = [...prev.effects];
       const [moved] = effects.splice(fromIndex, 1);
       effects.splice(toIndex, 0, moved);
-      // Re-assign slotIndex to match new positions
-      const updated = effects.map((slot, i) => ({ ...slot, slotIndex: i }));
-      return { ...prev, effects: updated };
+      // slotIndex is the PRST block identity (0..10 = PRE..VOL) and MUST stay
+      // constant per slot. Only array order changes — the encoder reads
+      // slotIndex to place each block at its canonical byte offset.
+      return { ...prev, effects };
     });
   }, []);
 
   const setParam = useCallback((slotIndex: number, paramIdx: number, value: number) => {
+    if (paramIdx < 0 || paramIdx >= 15) return;
     setPreset((prev) => {
       if (!prev) return null;
       return {
@@ -84,8 +85,6 @@ export function usePreset(): PresetActions {
         effects: prev.effects.map((slot) => {
           if (slot.slotIndex !== slotIndex) return slot;
           const params = [...slot.params];
-          // Ensure params array is big enough (15 float32 values)
-          while (params.length <= paramIdx) params.push(0);
           params[paramIdx] = value;
           return { ...slot, params };
         }),

@@ -112,7 +112,7 @@ describe('usePreset', () => {
     expect(result.current.preset).toBeNull();
   });
 
-  it('reorderEffects moves effect and reassigns slotIndex', () => {
+  it('reorderEffects moves effect but preserves slotIndex (block identity)', () => {
     const { result } = renderHook(() => usePreset());
     act(() => { result.current.loadPreset(samplePreset); });
 
@@ -120,11 +120,11 @@ describe('usePreset', () => {
     act(() => { result.current.reorderEffects(0, 2); });
 
     const effects = result.current.preset!.effects;
-    // After reorder, slotIndex should be reassigned to match positions
-    effects.forEach((e, i) => {
-      expect(e.slotIndex).toBe(i);
-    });
-    // Original first slot should now be at position 2
+    // slotIndex is the PRST block type and stays constant — only array order changes
+    const slotIndices = effects.map((e) => e.slotIndex).sort((a, b) => a - b);
+    expect(slotIndices).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    // The slot that used to be at position 0 (slotIndex=0) is now at position 2
+    expect(effects[2].slotIndex).toBe(0);
     expect(effects).toHaveLength(11);
   });
 
