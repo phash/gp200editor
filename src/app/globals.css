@@ -7,7 +7,11 @@
 :root {
   --bg-primary: #0f0f0f;
   --bg-surface: #1a1a1a;
+  --bg-surface-raised: #202020;
   --bg-elevated: #242424;
+  --bg-card: #1a1a1a;
+  --bg-input: #242424;
+  --bg-deep: #0a0a0a;
   --bg-hover: #2e2e2e;
   --text-primary: #e8e4df;
   --text-secondary: #8a8580;
@@ -131,4 +135,15 @@ select option {
   .font-mono-display {
     font-family: 'JetBrains Mono', monospace;
   }
+}
+
+/* ── Global keyboard focus ring (WCAG 2.1 AA) ─────────────────────────── */
+/* Amber outline + glow for keyboard navigation. focus-visible only — mouse
+   clicks don't trigger it, keeping the UI calm. Components that need a
+   custom ring can opt out per-case with focus-visible:outline-none. */
+:focus-visible {
+  outline: 2px solid var(--accent-amber);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--glow-amber);
+  border-radius: 4px;
 }

@@ -255,19 +255,7 @@ export function PresetList({ initialPresets }: Props) {
                   <Link
                     href={`/presets/${preset.id}/edit`}
                     data-testid="preset-edit-link"
-                    className={actionBtnClass}
-                    style={{
-                      border: '1px solid var(--border-active)',
-                      color: 'var(--text-secondary)',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--accent-amber)';
-                      e.currentTarget.style.color = 'var(--accent-amber)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--border-active)';
-                      e.currentTarget.style.color = 'var(--text-secondary)';
-                    }}
+                    className={`${actionBtnClass} border border-[var(--border-active)] text-[var(--text-secondary)] hover:border-[var(--accent-amber)] hover:text-[var(--accent-amber)] transition-colors`}
                   >
                     {t('editPreset')}
                   </Link>
