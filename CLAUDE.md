@@ -27,6 +27,7 @@ npm run lint                     # ESLint
 npm run build                    # Production Build
 npm run ci                       # Lokale CI: lint + typecheck + test + build (ersetzt GH Actions)
 bash scripts/local-ci.sh lint typecheck   # Einzelne Stages
+npx vitest run path/test.ts -t "pattern"  # Single-File + Test-Name-Grep (schnelles TDD-Iterate)
 ```
 
 **Prod-Deploy:** `ssh musikersuche@82.165.40.140` → `cd /opt/gp200editor && bash scripts/deploy-update.sh`
@@ -93,6 +94,7 @@ src/
 
 | Thema | Datei |
 |-------|-------|
+| Test-Fixtures (.prst) | `planung/*.prst` (1224B Beispiele), `prst/*.prst` (Ingest-Testset) |
 | Datenbankschema (Prisma) | [`docs/database-schema.md`](docs/database-schema.md) |
 | Auth (Lucia v3) + Anti-Spam | [`docs/auth.md`](docs/auth.md) |
 | API-Referenz (Preset + Admin + Storage) | [`docs/api-reference.md`](docs/api-reference.md) |
@@ -136,3 +138,5 @@ src/
 - Inline locale type literals `'de' | 'en'` hardcoden — IMMER alle 6 Locales oder `Locale` aus `@/lib/hreflang`
 - `otherLocale = locale === 'de' ? 'en' : 'de'` Toggle-Pattern — `<LocaleSwitcher />` verwenden
 - `next-intl` `requireVerifiedUser` ohne `refreshSessionCookie` — ist intern schon drin
+- `z.instanceof(Uint8Array)` mit einem Node `Buffer` füttern — `fs.readFileSync()` gibt `Buffer` zurück, Zod v4 lehnt das ab. Immer `new Uint8Array(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength))`
+- `slotIndex` in Reorder-Operationen überschreiben — `slotIndex` ist die PRST-Block-Identität (0=PRE, …10=VOL), unveränderlich. Drag&Drop ändert nur Array-Order, nie `slotIndex`
