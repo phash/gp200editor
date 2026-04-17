@@ -14,6 +14,15 @@ export const GP200PresetSchema = z.object({
   author: z.string().max(16).optional(), // .prst offset 0x54, 16 bytes null-terminated
   effects: z.array(EffectSlotSchema).length(11), // GP-200 always has exactly 11 slots
   checksum: z.number().int().min(0).max(65535), // BE uint16 at end of file
+  /**
+   * Original raw file bytes (1224 or 1176). When present, the encoder uses
+   * this as the starting buffer and overwrites only the fields the editor
+   * models (name, author, effect blocks, routing, checksum). Everything else
+   * — controller/EXP assignments, pre-name metadata, routing header extras
+   * — round-trips byte-exact. Absent for synthetically-built presets (HLX
+   * import, tests); the encoder then builds a buffer from scratch.
+   */
+  rawSource: z.instanceof(Uint8Array).optional(),
 });
 
 export type EffectSlot = z.infer<typeof EffectSlotSchema>;

@@ -43,6 +43,11 @@ export class BufferGenerator {
     }
   }
 
+  writeBytes(offset: number, bytes: Uint8Array): void {
+    this.assertBounds(offset, bytes.byteLength);
+    this.uint8.set(bytes, offset);
+  }
+
   toUint8Array(): Uint8Array {
     return new Uint8Array(this.uint8);
   }

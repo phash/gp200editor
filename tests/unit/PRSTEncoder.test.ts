@@ -1,7 +1,14 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync, existsSync } from 'fs';
+import { join } from 'path';
 import { PRSTEncoder } from '@/core/PRSTEncoder';
 import { PRSTDecoder, PRST_MAGIC } from '@/core/PRSTDecoder';
 import type { GP200Preset } from '@/core/types';
+
+function loadRealFixture(name: string): Uint8Array | null {
+  const p = join(process.cwd(), 'planung', name);
+  return existsSync(p) ? new Uint8Array(readFileSync(p)) : null;
+}
 
 /** A preset with 11 effect slots — the real GP-200 format always has exactly 11 */
 const EMPTY_PARAMS = Array(15).fill(0);
@@ -70,6 +77,40 @@ describe('PRSTEncoder', () => {
     expect(buf[0x54]).toBe('M'.charCodeAt(0));
     expect(buf[0x55]).toBe('e'.charCodeAt(0));
     expect(buf[0x56]).toBe(0); // null terminated
+  });
+
+  it('round-trips a real 1224-byte .prst (decode → encode → byte-compare)', () => {
+    const original = loadRealFixture('57-A Stone in Love.prst');
+    if (!original) return; // fixture not checked out on this host
+    expect(original.byteLength).toBe(1224);
+    const preset = new PRSTDecoder(original).decode();
+    const encoded = new Uint8Array(new PRSTEncoder().encode(preset));
+
+    // Routing + effect blocks + controller assignments must survive
+    // round-trip. The trailing 2 bytes (checksum) are recomputed, so we
+    // stop one byte short of OFFSET_CHECKSUM (0x4C6).
+    for (let i = 0x8C; i < 0x4C6; i++) {
+      if (encoded[i] !== original[i]) {
+        throw new Error(
+          `byte diff at 0x${i.toString(16)}: original=${original[i]} encoded=${encoded[i]}`,
+        );
+      }
+    }
+  });
+
+  it('round-trips the firmware version byte (0x15)', () => {
+    const buf = new Uint8Array(1224);
+    buf[0x00] = 0x54; buf[0x01] = 0x53; buf[0x02] = 0x52; buf[0x03] = 0x50;
+    buf[0x15] = 0x05;
+    for (let slot = 0; slot < 11; slot++) {
+      const base = 0xa0 + slot * 0x48;
+      buf[base] = 0x14; buf[base + 2] = 0x44;
+      buf[base + 4] = slot;
+    }
+    const preset = new PRSTDecoder(buf).decode();
+    expect(preset.version).toBe('5');
+    const encoded = new Uint8Array(new PRSTEncoder().encode(preset));
+    expect(encoded[0x15]).toBe(0x05);
   });
 
   it('round-trips float32 param values', () => {
