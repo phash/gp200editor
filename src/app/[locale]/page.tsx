@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/routing';
 import { getChangelog } from '@/lib/changelog';
+import type { Locale } from '@/i18n/locales';
 
 // Landing page — renders a marketing-style overview of what Preset Forge
 // is and does. Was previously just a redirect to /editor. Server Component
@@ -9,7 +10,7 @@ import { getChangelog } from '@/lib/changelog';
 export const revalidate = 3600;
 
 type Props = {
-  params: Promise<{ locale: 'de' | 'en' | 'es' | 'fr' | 'it' | 'pt' }>;
+  params: Promise<{ locale: Locale }>;
 };
 
 export default async function HomePage({ params }: Props) {

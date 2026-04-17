@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { GP200Preset } from '@/core/types';
 import { EFFECT_MAP } from '@/core/effectNames';
 import { EFFECT_DESCRIPTIONS } from '@/core/effectDescriptions';
+import type { Locale } from '@/i18n/locales';
 
 export const PRESET_JSON_SCHEMA_VERSION = 1;
 
@@ -64,7 +65,7 @@ export type RawPresetData = z.infer<typeof rawPresetDataSchema>;
 
 export type EncodeOpts = {
   shareToken: string;
-  locale: 'de' | 'en' | 'es' | 'fr' | 'it' | 'pt';
+  locale: Locale;
   sourceUrl: string | null;
   sourceLabel: string | null;
   description: string | null;

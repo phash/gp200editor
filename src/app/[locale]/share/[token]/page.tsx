@@ -12,11 +12,12 @@ import { slugifyAmpName } from '@/core/ampCategories';
 import { Link } from '@/i18n/routing';
 import { buildAlternates, BASE_URL } from '@/lib/hreflang';
 import { serializeJsonLd } from '@/lib/jsonLd';
+import type { Locale } from '@/i18n/locales';
 
 export const revalidate = 3600;
 
 type Props = {
-  params: Promise<{ token: string; locale: 'de' | 'en' | 'es' | 'fr' | 'it' | 'pt' }>;
+  params: Promise<{ token: string; locale: Locale }>;
 };
 
 /** Guess the amp brand from a real name like "Marshall® JCM800".

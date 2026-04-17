@@ -2,11 +2,12 @@ import type { Metadata } from 'next';
 import { Link } from '@/i18n/routing';
 import { getChangelog } from '@/lib/changelog';
 import { buildAlternates, BASE_URL } from '@/lib/hreflang';
+import type { Locale } from '@/i18n/locales';
 
 export const revalidate = 3600;
 
 type Props = {
-  params: Promise<{ locale: 'de' | 'en' | 'es' | 'fr' | 'it' | 'pt' }>;
+  params: Promise<{ locale: Locale }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

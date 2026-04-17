@@ -1,15 +1,20 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { useSearchParams } from 'next/navigation';
 import { useRouter } from '@/i18n/routing';
 
 function ResetPasswordForm() {
   const t = useTranslations('auth');
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const token = searchParams.get('token') ?? '';
+  const [token, setToken] = useState('');
+
+  // useSearchParams from next/navigation breaks in the production build
+  // (per CLAUDE.md); read the query string from window after hydration.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setToken(params.get('token') ?? '');
+  }, []);
 
   const [newPassword, setNewPassword] = useState('');
   const [error, setError] = useState('');
@@ -133,9 +138,7 @@ export default function ResetPasswordPage() {
         >
           {t('resetPasswordTitle')}
         </h1>
-        <Suspense fallback={<p style={{ color: 'var(--text-muted)' }}>…</p>}>
-          <ResetPasswordForm />
-        </Suspense>
+        <ResetPasswordForm />
       </div>
     </div>
   );

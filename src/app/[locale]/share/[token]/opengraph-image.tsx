@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { downloadPresetBuffer } from '@/lib/storage';
 import { PRSTDecoder } from '@/core/PRSTDecoder';
 import { encodeToJson } from '@/core/PRSTJsonCodec';
+import type { Locale } from '@/i18n/locales';
 
 // Next.js discovers this file by convention and wires it to `og:image`
 // for the share page. Image is generated once per (locale, token) pair
@@ -14,7 +15,7 @@ export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
 type Props = {
-  params: { token: string; locale: 'de' | 'en' | 'es' | 'fr' | 'it' | 'pt' };
+  params: { token: string; locale: Locale };
 };
 
 export default async function OgImage({ params }: Props) {

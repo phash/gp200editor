@@ -8,19 +8,19 @@ import {
 } from '@/core/ampCategories';
 import { buildAlternates, BASE_URL } from '@/lib/hreflang';
 import { serializeJsonLd } from '@/lib/jsonLd';
+import { LOCALES, type Locale } from '@/i18n/locales';
 
 export const dynamic = 'force-dynamic';
 
 type Props = {
-  params: Promise<{ slug: string; locale: 'de' | 'en' | 'es' | 'fr' | 'it' | 'pt' }>;
+  params: Promise<{ slug: string; locale: Locale }>;
 };
 
 /** Pre-render every known amp slug for every locale. Each becomes a
  *  standalone indexable landing page targeting long-tail amp queries. */
 export async function generateStaticParams() {
   const cats = listAmpCategories();
-  const locales = ['de', 'en', 'es', 'fr', 'it', 'pt'] as const;
-  return cats.flatMap((cat) => locales.map((locale) => ({ slug: cat.slug, locale })));
+  return cats.flatMap((cat) => LOCALES.map((locale) => ({ slug: cat.slug, locale })));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -60,7 +60,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
  *  the script block early even before the JSON parser sees it. */
 function buildCollectionJsonLd(opts: {
   realName: string;
-  locale: 'de' | 'en' | 'es' | 'fr' | 'it' | 'pt';
+  locale: Locale;
   slug: string;
   presets: Array<{ name: string; shareToken: string }>;
 }) {
