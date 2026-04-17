@@ -224,37 +224,13 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
       <div className="mb-4 flex gap-2">
         <button
           onClick={() => onNavigate({ type: 'overview' })}
-          className="font-mono-display text-xs font-medium uppercase tracking-wider px-3 py-1.5 rounded transition-all duration-150"
-          style={{
-            border: '1px solid var(--border-subtle)',
-            color: 'var(--text-secondary)',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = 'var(--accent-amber)';
-            e.currentTarget.style.color = 'var(--accent-amber)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = 'var(--border-subtle)';
-            e.currentTarget.style.color = 'var(--text-secondary)';
-          }}
+          className="font-mono-display text-xs font-medium uppercase tracking-wider px-3 py-1.5 rounded transition-all duration-150 border border-border-subtle text-text-secondary hover:border-accent-amber hover:text-accent-amber"
         >
           ← {t('back')}
         </button>
         <button
           onClick={() => onNavigate({ type: 'edit', id: playlistId })}
-          className="font-mono-display text-xs font-medium uppercase tracking-wider px-3 py-1.5 rounded transition-all duration-150"
-          style={{
-            border: '1px solid var(--border-subtle)',
-            color: 'var(--text-secondary)',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = 'var(--accent-amber)';
-            e.currentTarget.style.color = 'var(--accent-amber)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = 'var(--border-subtle)';
-            e.currentTarget.style.color = 'var(--text-secondary)';
-          }}
+          className="font-mono-display text-xs font-medium uppercase tracking-wider px-3 py-1.5 rounded transition-all duration-150 border border-border-subtle text-text-secondary hover:border-accent-amber hover:text-accent-amber"
         >
           {t('edit')}
         </button>
@@ -480,23 +456,13 @@ export function PlaylistPlayer({ playlistId, onNavigate }: PlaylistPlayerProps) 
                   role="option"
                   aria-selected={isActive}
                   onClick={() => player.goToSong(idx)}
-                  className="px-3 py-2 rounded cursor-pointer transition-all duration-150"
+                  className="px-3 py-2 rounded cursor-pointer transition-all duration-150 hover:bg-bg-surface"
                   style={{
                     background: isActive ? 'var(--bg-surface)' : 'transparent',
                     borderLeft: isActive
                       ? '3px solid var(--accent-amber)'
                       : '3px solid transparent',
                     color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActive) {
-                      (e.currentTarget as HTMLElement).style.background = 'var(--bg-surface)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) {
-                      (e.currentTarget as HTMLElement).style.background = 'transparent';
-                    }
                   }}
                 >
                   <span className="font-mono-display text-sm font-medium">

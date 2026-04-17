@@ -61,21 +61,7 @@ export function PlaylistOverview({ onNavigate }: PlaylistOverviewProps) {
         {!showCreateInput && (
           <button
             onClick={() => setShowCreateInput(true)}
-            className="font-mono-display text-sm font-bold tracking-wider uppercase px-5 py-2 rounded transition-all duration-150"
-            style={{
-              background: 'var(--glow-amber)',
-              border: '1px solid var(--accent-amber)',
-              color: 'var(--accent-amber)',
-              boxShadow: '0 0 12px var(--glow-amber)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--accent-amber)';
-              e.currentTarget.style.color = 'var(--bg-deep, #0a0a0a)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'var(--glow-amber)';
-              e.currentTarget.style.color = 'var(--accent-amber)';
-            }}
+            className="font-mono-display text-sm font-bold tracking-wider uppercase px-5 py-2 rounded transition-all duration-150 bg-[var(--glow-amber)] border border-accent-amber text-accent-amber shadow-glow-amber hover:bg-accent-amber hover:text-bg-deep"
           >
             {t('create')}
           </button>
@@ -201,43 +187,20 @@ export function PlaylistOverview({ onNavigate }: PlaylistOverviewProps) {
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={() => onNavigate({ type: 'play', id: playlist.id })}
-                  className={btnClass}
-                  style={{
-                    background: 'var(--glow-amber)',
-                    border: '1px solid var(--accent-amber)',
-                    color: 'var(--accent-amber)',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(212,162,78,0.25)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'var(--glow-amber)';
-                  }}
+                  className={`${btnClass} bg-[var(--glow-amber)] border border-accent-amber text-accent-amber hover:bg-[rgba(212,162,78,0.25)]`}
                 >
                   ▶ {t('player')}
                 </button>
                 <button
                   onClick={() => onNavigate({ type: 'edit', id: playlist.id })}
-                  className={btnClass}
-                  style={{
-                    border: '1px solid var(--border-active)',
-                    color: 'var(--text-secondary)',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--accent-amber)';
-                    e.currentTarget.style.color = 'var(--accent-amber)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--border-active)';
-                    e.currentTarget.style.color = 'var(--text-secondary)';
-                  }}
+                  className={`${btnClass} border border-border-active text-text-secondary hover:border-accent-amber hover:text-accent-amber`}
                 >
                   {t('edit')}
                 </button>
 
                 <button
                   onClick={() => handleDeleteClick(playlist.id)}
-                  className={btnClass}
+                  className={`${btnClass} hover:bg-[var(--glow-red)]`}
                   title={confirmDeleteId === playlist.id ? t('deleteConfirm', { name: playlist.name }) : undefined}
                   style={{
                     border:
@@ -247,16 +210,6 @@ export function PlaylistOverview({ onNavigate }: PlaylistOverviewProps) {
                     color: 'var(--accent-red)',
                     background:
                       confirmDeleteId === playlist.id ? 'var(--glow-red)' : 'transparent',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (confirmDeleteId !== playlist.id) {
-                      e.currentTarget.style.background = 'var(--glow-red)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (confirmDeleteId !== playlist.id) {
-                      e.currentTarget.style.background = 'transparent';
-                    }
                   }}
                 >
                   {confirmDeleteId === playlist.id ? '✓ ?' : t('delete')}

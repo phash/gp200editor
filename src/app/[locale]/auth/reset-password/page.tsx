@@ -94,25 +94,7 @@ function ResetPasswordForm() {
       <button
         type="submit"
         disabled={loading || !token}
-        className="w-full font-mono-display text-sm font-bold tracking-wider uppercase rounded py-2.5 transition-all duration-150 disabled:opacity-50"
-        style={{
-          background: 'var(--glow-amber)',
-          border: '1px solid var(--accent-amber)',
-          color: 'var(--accent-amber)',
-          boxShadow: '0 0 12px var(--glow-amber)',
-        }}
-        onMouseEnter={(e) => {
-          if (!loading && token) {
-            e.currentTarget.style.background = 'var(--accent-amber)';
-            e.currentTarget.style.color = 'var(--bg-primary)';
-            e.currentTarget.style.boxShadow = '0 0 20px var(--glow-amber)';
-          }
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'var(--glow-amber)';
-          e.currentTarget.style.color = 'var(--accent-amber)';
-          e.currentTarget.style.boxShadow = '0 0 12px var(--glow-amber)';
-        }}
+        className="w-full font-mono-display text-sm font-bold tracking-wider uppercase rounded py-2.5 transition-all duration-150 disabled:opacity-50 bg-[var(--glow-amber)] border border-accent-amber text-accent-amber shadow-glow-amber hover:bg-accent-amber hover:text-bg-primary hover:shadow-[0_0_20px_var(--glow-amber)] disabled:hover:bg-[var(--glow-amber)] disabled:hover:text-accent-amber disabled:hover:shadow-glow-amber"
       >
         {loading ? t('loading') : t('resetButton')}
       </button>

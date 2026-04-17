@@ -128,20 +128,11 @@ export function Navbar() {
           target="_blank"
           rel="noopener noreferrer"
           title={t('discordTitle')}
-          className="font-mono-display text-xs px-2.5 py-1 rounded transition-all flex items-center gap-1"
+          className="font-mono-display text-xs px-2.5 py-1 rounded transition-all flex items-center gap-1 bg-[rgba(88,101,242,0.08)] hover:bg-[rgba(88,101,242,0.2)] hover:shadow-[0_0_8px_rgba(88,101,242,0.3)]"
           style={{
             border: '1px solid rgba(88,101,242,0.3)',
             color: '#5865F2',
-            background: 'rgba(88,101,242,0.08)',
             textDecoration: 'none',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(88,101,242,0.2)';
-            e.currentTarget.style.boxShadow = '0 0 8px rgba(88,101,242,0.3)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'rgba(88,101,242,0.08)';
-            e.currentTarget.style.boxShadow = 'none';
           }}
         >
           <svg width="16" height="12" viewBox="0 0 127.14 96.36" fill="currentColor">
@@ -152,20 +143,11 @@ export function Navbar() {
           href="https://buymeacoffee.com/phash"
           target="_blank"
           rel="noopener noreferrer"
-          className="font-mono-display text-xs px-2.5 py-1 rounded transition-all"
+          className="font-mono-display text-xs px-2.5 py-1 rounded transition-all bg-[rgba(255,221,51,0.08)] hover:bg-[rgba(255,221,51,0.2)] hover:shadow-[0_0_8px_rgba(255,221,51,0.3)]"
           style={{
             border: '1px solid rgba(255,221,51,0.3)',
             color: '#ffdd33',
-            background: 'rgba(255,221,51,0.08)',
             textDecoration: 'none',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(255,221,51,0.2)';
-            e.currentTarget.style.boxShadow = '0 0 8px rgba(255,221,51,0.3)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'rgba(255,221,51,0.08)';
-            e.currentTarget.style.boxShadow = 'none';
           }}
         >
           ☕

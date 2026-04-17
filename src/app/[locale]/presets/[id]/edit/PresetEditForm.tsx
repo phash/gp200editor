@@ -180,10 +180,7 @@ export function PresetEditForm({ preset }: Props) {
                 <button
                   type="button"
                   onClick={() => removeTag(tag)}
-                  className="ml-0.5 transition-colors"
-                  style={{ color: 'var(--accent-amber-dim)' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent-amber)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--accent-amber-dim)')}
+                  className="ml-0.5 transition-colors text-accent-amber-dim hover:text-accent-amber"
                   aria-label={`Remove tag ${tag}`}
                 >
                   &times;
@@ -273,33 +270,14 @@ export function PresetEditForm({ preset }: Props) {
             type="submit"
             data-testid="preset-save-button"
             disabled={status === 'saving'}
-            className="font-mono-display text-sm font-bold tracking-wider uppercase rounded px-5 py-2.5 transition-all duration-150 disabled:opacity-50"
-            style={{
-              background: 'var(--glow-amber)',
-              border: '1px solid var(--accent-amber)',
-              color: 'var(--accent-amber)',
-              boxShadow: '0 0 12px var(--glow-amber)',
-            }}
-            onMouseEnter={(e) => {
-              if (status !== 'saving') {
-                e.currentTarget.style.background = 'var(--accent-amber)';
-                e.currentTarget.style.color = 'var(--bg-primary)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'var(--glow-amber)';
-              e.currentTarget.style.color = 'var(--accent-amber)';
-            }}
+            className="font-mono-display text-sm font-bold tracking-wider uppercase rounded px-5 py-2.5 transition-all duration-150 disabled:opacity-50 bg-[var(--glow-amber)] border border-accent-amber text-accent-amber shadow-glow-amber hover:bg-accent-amber hover:text-bg-primary disabled:hover:bg-[var(--glow-amber)] disabled:hover:text-accent-amber"
           >
             {status === 'saving' ? t('saving') : t('save')}
           </button>
 
           <Link
             href="/presets"
-            className="text-sm transition-colors"
-            style={{ color: 'var(--text-muted)' }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent-amber)')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+            className="text-sm transition-colors text-text-muted hover:text-accent-amber"
           >
             {t('backToPresets')}
           </Link>

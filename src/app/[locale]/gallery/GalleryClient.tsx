@@ -383,19 +383,7 @@ export function GalleryClient() {
           <button
             onClick={handleLoadMore}
             disabled={loading}
-            className="font-mono-display text-sm font-medium tracking-wider uppercase px-6 py-2 rounded transition-all duration-150 disabled:opacity-50"
-            style={{
-              border: '1px solid var(--border-active)',
-              color: 'var(--text-secondary)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = 'var(--accent-amber)';
-              e.currentTarget.style.color = 'var(--accent-amber)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'var(--border-active)';
-              e.currentTarget.style.color = 'var(--text-secondary)';
-            }}
+            className="font-mono-display text-sm font-medium tracking-wider uppercase px-6 py-2 rounded transition-all duration-150 disabled:opacity-50 border border-border-active text-text-secondary hover:border-accent-amber hover:text-accent-amber"
           >
             {t('loadMore')}
           </button>

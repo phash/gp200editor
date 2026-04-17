@@ -168,21 +168,7 @@ export function PresetList({ initialPresets }: Props) {
         />
         <label
           htmlFor="preset-file-input"
-          className="cursor-pointer inline-block font-mono-display text-sm font-bold tracking-wider uppercase px-6 py-2.5 rounded transition-all duration-150"
-          style={{
-            background: 'var(--glow-amber)',
-            border: '1px solid var(--accent-amber)',
-            color: 'var(--accent-amber)',
-            boxShadow: '0 0 12px var(--glow-amber)',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'var(--accent-amber)';
-            e.currentTarget.style.color = 'var(--bg-primary)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'var(--glow-amber)';
-            e.currentTarget.style.color = 'var(--accent-amber)';
-          }}
+          className="cursor-pointer inline-block font-mono-display text-sm font-bold tracking-wider uppercase px-6 py-2.5 rounded transition-all duration-150 bg-[var(--glow-amber)] border border-accent-amber text-accent-amber shadow-glow-amber hover:bg-accent-amber hover:text-bg-primary"
         >
           {uploading ? t('saving') : t('upload')}
         </label>
@@ -262,19 +248,7 @@ export function PresetList({ initialPresets }: Props) {
                   <button
                     onClick={() => handleDownload(preset)}
                     data-testid="preset-download-button"
-                    className={actionBtnClass}
-                    style={{
-                      border: '1px solid var(--border-active)',
-                      color: 'var(--text-secondary)',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--accent-amber)';
-                      e.currentTarget.style.color = 'var(--accent-amber)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--border-active)';
-                      e.currentTarget.style.color = 'var(--text-secondary)';
-                    }}
+                    className={`${actionBtnClass} border border-border-active text-text-secondary hover:border-accent-amber hover:text-accent-amber`}
                   >
                     {t('download')}
                   </button>
@@ -282,22 +256,10 @@ export function PresetList({ initialPresets }: Props) {
                     onClick={() => handleCopyLink(preset)}
                     data-testid="preset-copy-link"
                     data-share-token={preset.shareToken}
-                    className={actionBtnClass}
+                    className={`${actionBtnClass} hover:border-accent-amber hover:text-accent-amber`}
                     style={{
                       border: copiedId === preset.id ? '1px solid var(--accent-green)' : '1px solid var(--border-active)',
                       color: copiedId === preset.id ? 'var(--accent-green)' : 'var(--text-secondary)',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (copiedId !== preset.id) {
-                        e.currentTarget.style.borderColor = 'var(--accent-amber)';
-                        e.currentTarget.style.color = 'var(--accent-amber)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (copiedId !== preset.id) {
-                        e.currentTarget.style.borderColor = 'var(--border-active)';
-                        e.currentTarget.style.color = 'var(--text-secondary)';
-                      }
                     }}
                   >
                     {copiedId === preset.id ? (
@@ -309,19 +271,7 @@ export function PresetList({ initialPresets }: Props) {
                   <button
                     onClick={() => handleResetLink(preset)}
                     data-testid="preset-reset-link-button"
-                    className={actionBtnClass}
-                    style={{
-                      border: '1px solid var(--border-active)',
-                      color: 'var(--text-secondary)',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--accent-amber)';
-                      e.currentTarget.style.color = 'var(--accent-amber)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--border-active)';
-                      e.currentTarget.style.color = 'var(--text-secondary)';
-                    }}
+                    className={`${actionBtnClass} border border-border-active text-text-secondary hover:border-accent-amber hover:text-accent-amber`}
                   >
                     {t('resetLink')}
                   </button>
@@ -344,16 +294,9 @@ export function PresetList({ initialPresets }: Props) {
                   <button
                     onClick={() => handleDelete(preset.id)}
                     data-testid="preset-delete-button"
-                    className={actionBtnClass}
+                    className={`${actionBtnClass} text-accent-red hover:bg-[var(--glow-red)]`}
                     style={{
                       border: '1px solid rgba(196, 78, 78, 0.3)',
-                      color: 'var(--accent-red)',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'var(--glow-red)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'transparent';
                     }}
                   >
                     {t('delete')}
