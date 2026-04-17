@@ -8,6 +8,7 @@ import type { GP200Preset } from '@/core/types';
 import { extractModules, extractEffects } from '@/core/extractModules';
 import { verifyCsrf } from '@/lib/csrf';
 import { logError } from '@/lib/errorLog';
+import { rateLimit } from '@/lib/rateLimit';
 
 export async function POST(request: Request) {
   if (!verifyCsrf(request)) {
@@ -16,6 +17,14 @@ export async function POST(request: Request) {
   const result = await requireVerifiedUser();
   if (result.error) return result.error;
   const { user } = result;
+
+  // Per-user upload rate-limit caps the storage/DB cost of an authenticated
+  // attacker who tries to spam the library. 30 presets/hour is well above
+  // any legitimate user's workflow.
+  const limit = rateLimit(`preset-upload:${user.id}`, 30, 60 * 60 * 1000);
+  if (!limit.allowed) {
+    return NextResponse.json({ error: 'Too many uploads. Try again later.' }, { status: 429 });
+  }
 
   const formData = await request.formData().catch(() => null);
   if (!formData) {

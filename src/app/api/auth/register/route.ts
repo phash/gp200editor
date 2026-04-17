@@ -9,9 +9,10 @@ import { rateLimit } from '@/lib/rateLimit';
 import { logError } from '@/lib/errorLog';
 import { verifyTurnstile } from '@/lib/turnstile';
 import { isDisposableEmail } from '@/lib/disposableEmails';
+import { getClientIp } from '@/lib/getClientIp';
 
 export async function POST(request: NextRequest) {
-  const ip = request.headers.get('x-real-ip') || 'unknown';
+  const ip = getClientIp(request);
   const { allowed } = rateLimit(`register:${ip}`, 5, 15 * 60 * 1000);
   if (!allowed) {
     return NextResponse.json({ error: 'Too many attempts. Please try again later.' }, { status: 429 });

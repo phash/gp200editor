@@ -3,11 +3,12 @@ import { prisma } from '@/lib/prisma';
 import { downloadPresetBuffer } from '@/lib/storage';
 import { rateLimit } from '@/lib/rateLimit';
 import { logError } from '@/lib/errorLog';
+import { getClientIp } from '@/lib/getClientIp';
 
 type RouteContext = { params: Promise<{ token: string }> };
 
 export async function GET(request: NextRequest, context: RouteContext) {
-  const ip = request.headers.get('x-real-ip') || 'unknown';
+  const ip = getClientIp(request);
   const { token } = await context.params;
   const { allowed } = rateLimit(`share-dl:${ip}:${token}`, 20, 15 * 60 * 1000);
   if (!allowed) {

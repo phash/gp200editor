@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withAdminAuth } from '@/lib/withAdminAuth';
 import { adminErrorsQuerySchema } from '@/lib/validators.admin';
+import { logAdminAction } from '@/lib/admin';
 
 export const GET = withAdminAuth(async (request) => {
   const params = Object.fromEntries(request.nextUrl.searchParams);
@@ -43,7 +44,21 @@ export const GET = withAdminAuth(async (request) => {
   });
 }, { csrf: false });
 
-export const DELETE = withAdminAuth(async () => {
-  await prisma.errorLog.deleteMany();
-  return NextResponse.json({ success: true });
+export const DELETE = withAdminAuth(async (_request, { admin }) => {
+  const { count } = await prisma.errorLog.deleteMany();
+  // Audit-trail: record the purge against the acting admin's own ID so an
+  // admin wiping forensic data can't hide it. Non-fatal on failure — the
+  // primary action already succeeded.
+  try {
+    await logAdminAction({
+      adminId: admin.id,
+      action: 'PURGE_ERROR_LOGS',
+      targetType: 'user',
+      targetId: admin.id,
+      metadata: { count },
+    });
+  } catch {
+    // swallow — don't fail the DELETE because audit logging errored
+  }
+  return NextResponse.json({ success: true, count });
 });

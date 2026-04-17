@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { sendPasswordResetEmail } from '@/lib/email';
 import { forgotPasswordSchema } from '@/lib/validators';
 import { rateLimit } from '@/lib/rateLimit';
+import { getClientIp } from '@/lib/getClientIp';
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
@@ -20,11 +21,7 @@ export async function POST(request: NextRequest) {
   // different emails from the same client. Without the IP guard, an attacker
   // could walk a large email list looking for 200-with-email-sent side-channel
   // differences (throughput, error shape, etc.).
-  const ip =
-    request.headers.get('cf-connecting-ip') ??
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-    request.headers.get('x-real-ip') ??
-    'unknown';
+  const ip = getClientIp(request);
 
   const emailLimit = rateLimit(`forgot:email:${email}`, 3, 60 * 60 * 1000);
   const ipLimit = rateLimit(`forgot:ip:${ip}`, 10, 15 * 60 * 1000);

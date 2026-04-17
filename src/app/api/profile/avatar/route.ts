@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { validateSession, refreshSessionCookie } from '@/lib/session';
 import { uploadAvatar, deleteAvatar } from '@/lib/storage';
 import { verifyCsrf } from '@/lib/csrf';
+import { rateLimit } from '@/lib/rateLimit';
 
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -17,6 +18,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   await refreshSessionCookie(session);
+
+  // Avatar uploads run Sharp (CPU-heavy) + S3 PUT — cap at 5/h/user so a
+  // compromised session can't burn the resize pipeline.
+  const limit = rateLimit(`avatar:${user.id}`, 5, 60 * 60 * 1000);
+  if (!limit.allowed) {
+    return NextResponse.json({ error: 'Too many avatar uploads.' }, { status: 429 });
+  }
 
   const formData = await request.formData().catch(() => null);
   const file = formData?.get('avatar');

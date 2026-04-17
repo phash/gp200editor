@@ -3,6 +3,7 @@ import { requireVerifiedUser } from '@/lib/session';
 import { verifyCsrf } from '@/lib/csrf';
 import { prisma } from '@/lib/prisma';
 import { ratePresetSchema } from '@/lib/validators';
+import { rateLimit } from '@/lib/rateLimit';
 
 export async function POST(
   request: NextRequest,
@@ -12,6 +13,13 @@ export async function POST(
   const result = await requireVerifiedUser();
   if (result.error) return result.error;
   const { user } = result;
+
+  // The rating transaction runs an aggregate+upsert — cap at 60/min/user to
+  // prevent a tight loop from exhausting the DB connection pool.
+  const limit = rateLimit(`rate:${user.id}`, 60, 60 * 1000);
+  if (!limit.allowed) {
+    return NextResponse.json({ error: 'Too many rating changes.' }, { status: 429 });
+  }
 
   const { id } = await params;
   const body = await request.json();

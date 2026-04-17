@@ -4,9 +4,10 @@ import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { lucia } from '@/lib/auth';
 import { rateLimit } from '@/lib/rateLimit';
+import { getClientIp } from '@/lib/getClientIp';
 
 export async function GET(request: NextRequest) {
-  const ip = request.headers.get('x-real-ip') || 'unknown';
+  const ip = getClientIp(request);
   const { allowed } = rateLimit(`verify-email:${ip}`, 10, 15 * 60 * 1000);
   if (!allowed) {
     return NextResponse.json({ error: 'Too many attempts. Please try again later.' }, { status: 429 });
