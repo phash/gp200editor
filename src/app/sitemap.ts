@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { listAmpCategories } from '@/core/ampCategories';
+import { getActiveAmpSlugs } from '@/lib/ampActivity';
 import { LOCALES, BASE_URL } from '@/lib/hreflang';
 
 // Force dynamic generation — the default sitemap.ts output is baked at build
@@ -39,15 +40,30 @@ export default async function sitemap(): Promise<SitemapEntry[]> {
     })),
   );
 
-  // Amp category landing pages — one per (amp, locale) combo.
-  const ampPages: SitemapEntry[] = listAmpCategories().flatMap((cat) =>
-    LOCALES.map((locale) => ({
-      url: `${BASE_URL}/${locale}/amp/${cat.slug}`,
-      lastModified: now,
-      changeFrequency: 'weekly' as const,
-      priority: 0.7,
-    })),
-  );
+  // Amp category landing pages — only emit slugs that have ≥1 public preset.
+  // Empty amp pages render "No presets yet" copy and are noindex'd at the
+  // page level; including them in the sitemap would invite Google to crawl
+  // 384 thin pages and dilute the site's overall quality signal.
+  let activeAmpSlugs: Set<string>;
+  try {
+    activeAmpSlugs = await getActiveAmpSlugs();
+  } catch (err) {
+    console.error(
+      '[sitemap] failed to load active amp slugs:',
+      err instanceof Error ? `${err.name}: ${err.message}` : err,
+    );
+    activeAmpSlugs = new Set();
+  }
+  const ampPages: SitemapEntry[] = listAmpCategories()
+    .filter((cat) => activeAmpSlugs.has(cat.slug))
+    .flatMap((cat) =>
+      LOCALES.map((locale) => ({
+        url: `${BASE_URL}/${locale}/amp/${cat.slug}`,
+        lastModified: now,
+        changeFrequency: 'weekly' as const,
+        priority: 0.7,
+      })),
+    );
 
   // Public preset share pages — 6 locale variants + 1 JSON endpoint per preset.
   // Sitemap.xml has a hard limit of 50 000 URLs. With 6 locales + 1 JSON per

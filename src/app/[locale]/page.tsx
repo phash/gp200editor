@@ -1,7 +1,10 @@
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/routing';
 import { getChangelog } from '@/lib/changelog';
+import { serializeJsonLd } from '@/lib/jsonLd';
 import type { Locale } from '@/i18n/locales';
+
+type FaqItem = { q: string; a: string };
 
 // Landing page — renders a marketing-style overview of what Preset Forge
 // is and does. Was previously just a redirect to /editor. Server Component
@@ -20,6 +23,20 @@ export default async function HomePage({ params }: Props) {
   // Pull the most recent release for the "what's new" section.
   const releases = getChangelog();
   const latest = releases[0];
+
+  // Read the FAQ array from translations (next-intl returns the raw value
+  // for non-string keys via t.raw). Used both for visible rendering and the
+  // FAQPage JSON-LD emitted inline below.
+  const faqItems = t.raw('faq.items') as FaqItem[];
+  const faqJsonLd = serializeJsonLd({
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqItems.map((item) => ({
+      '@type': 'Question',
+      name: item.q,
+      acceptedAnswer: { '@type': 'Answer', text: item.a },
+    })),
+  });
 
   return (
     <main className="max-w-5xl mx-auto px-4 py-10">
@@ -198,6 +215,49 @@ export default async function HomePage({ params }: Props) {
           </div>
         </section>
       )}
+
+      {/* ───────── FAQ ───────── */}
+      <section className="mb-14">
+        <h2
+          className="font-mono-display text-sm uppercase tracking-wider mb-6 text-center"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          {t('faq.heading')}
+        </h2>
+        <div className="space-y-3 max-w-3xl mx-auto">
+          {faqItems.map((item, i) => (
+            <details
+              key={i}
+              className="rounded-lg p-4 group"
+              style={{
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border-subtle)',
+              }}
+            >
+              <summary
+                className="font-mono-display font-bold text-base cursor-pointer list-none flex items-center justify-between"
+                style={{ color: 'var(--accent-amber)' }}
+              >
+                <span>{item.q}</span>
+                <span className="text-xs ml-3 transition-transform group-open:rotate-180" aria-hidden>▾</span>
+              </summary>
+              <p
+                className="text-sm mt-3"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                {item.a}
+              </p>
+            </details>
+          ))}
+        </div>
+        {/* FAQ JSON-LD: serializeJsonLd escapes `<`, ` `, ` ` so this
+            is safe for static developer-controlled content from messages/*.json */}
+        <script
+          type="application/ld+json"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: faqJsonLd }}
+        />
+      </section>
 
       {/* ───────── Support / community ───────── */}
       <section className="mb-8">

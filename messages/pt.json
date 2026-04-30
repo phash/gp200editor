@@ -79,6 +79,35 @@
     "empty": {
       "headline": "Preset Forge",
       "subtitle": "Edite, compartilhe e sincronize presets do Valeton GP-200 ao vivo via USB MIDI."
+    },
+    "faq": {
+      "heading": "Perguntas frequentes",
+      "items": [
+        {
+          "q": "O Preset Forge funciona no macOS?",
+          "a": "Sim. O Preset Forge funciona em qualquer navegador moderno no macOS, Linux e Windows. O editor oficial do Valeton GP-200 é apenas para Windows, portanto esta é a única forma de editar presets do GP-200 nativamente no Mac."
+        },
+        {
+          "q": "O Preset Forge é uma ferramenta oficial da Valeton?",
+          "a": "Não. É um projeto comunitário independente e de código aberto. A Valeton não o endossou. O formato .prst foi obtido por engenharia reversa a partir de presets reais do GP-200."
+        },
+        {
+          "q": "Preciso instalar alguma coisa?",
+          "a": "Não. Abra o editor no navegador. Funciona offline como Progressive Web App após o primeiro carregamento."
+        },
+        {
+          "q": "Posso importar presets do Line6 HX Stomp?",
+          "a": "Sim. Arraste um arquivo .hlx para o editor e o Preset Forge converte a cadeia de sinal num preset GP-200 (.prst) totalmente no navegador, sem upload nem ida ao servidor."
+        },
+        {
+          "q": "Como sincronizo presets com o meu GP-200?",
+          "a": "Conecte o GP-200 por USB e use Chrome ou Edge (Web MIDI não funciona no Firefox nem no Safari). O Preset Forge pode ler o preset ativo, enviar alterações de parâmetros ao vivo e gravar um preset num slot específico."
+        },
+        {
+          "q": "O Preset Forge é gratuito?",
+          "a": "Sim. Sem anúncios, sem planos pagos, sem necessidade de conta para navegar ou editar. Partilhar presets na galeria pública requer uma conta gratuita."
+        }
+      ]
     }
   },
   "footer": {
@@ -245,7 +274,9 @@
     "openInEditor": "Abrir no Editor",
     "loading": "Carregando…",
     "ratingStarFilled": "estrela de avaliação preenchida",
-    "ratingStarEmpty": "estrela de avaliação vazia"
+    "ratingStarEmpty": "estrela de avaliação vazia",
+    "recentHeading": "Presets recentes da comunidade",
+    "browseAll": "Explore todos os presets acima"
   },
   "device": {
     "connect": "Conectar GP-200",

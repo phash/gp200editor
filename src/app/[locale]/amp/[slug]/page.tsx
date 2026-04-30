@@ -32,9 +32,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = `Browse free Valeton GP-200 presets modelled on the ${cat.realName}. Download any preset and open it in the browser editor - works on Linux, Windows, macOS.`;
   const canonical = `${BASE_URL}/${locale}/amp/${slug}`;
 
+  // Empty amp pages (no community presets) are noindex'd to avoid being
+  // flagged as thin content. Crawl is still allowed so Google reaches the
+  // breadcrumb back to /gallery. Count is an index-only lookup — cheap
+  // even though the page render below also queries presets.
+  const presetCount = await prisma.preset.count({
+    where: { public: true, effects: { hasSome: cat.valetonNames } },
+  });
+  const isEmpty = presetCount === 0;
+
   return {
     title,
     description,
+    ...(isEmpty && { robots: { index: false, follow: true } }),
     alternates: buildAlternates(`/amp/${slug}`, locale),
     openGraph: {
       title,

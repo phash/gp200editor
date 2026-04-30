@@ -79,6 +79,35 @@
     "empty": {
       "headline": "Preset Forge",
       "subtitle": "Edit, share, and sync Valeton GP-200 presets live via USB MIDI."
+    },
+    "faq": {
+      "heading": "Frequently Asked Questions",
+      "items": [
+        {
+          "q": "Does Preset Forge work on macOS?",
+          "a": "Yes. Preset Forge runs in any modern browser on macOS, Linux, and Windows. The official Valeton GP-200 editor is Windows-only, so this is the only way to edit GP-200 presets natively on Mac."
+        },
+        {
+          "q": "Is Preset Forge an official Valeton tool?",
+          "a": "No. It is an independent, open-source community project. Valeton has not endorsed it. The .prst file format was reverse-engineered from real GP-200 presets."
+        },
+        {
+          "q": "Do I need to install anything?",
+          "a": "No. Open the editor in your browser. It runs offline as a Progressive Web App after the first load."
+        },
+        {
+          "q": "Can I import Line6 HX Stomp presets?",
+          "a": "Yes. Drop a .hlx file into the editor and Preset Forge converts the signal chain to a GP-200 preset (.prst) entirely in your browser — no upload, no server round-trip."
+        },
+        {
+          "q": "How do I sync presets to my GP-200 hardware?",
+          "a": "Connect the GP-200 by USB and use Chrome or Edge (Web MIDI is not supported in Firefox or Safari). Preset Forge can read the active preset, send live parameter changes, and write a preset to a specific slot."
+        },
+        {
+          "q": "Is Preset Forge free?",
+          "a": "Yes. No ads, no paid tier, no account required for browsing or editing. Sharing presets to the public gallery requires a free account."
+        }
+      ]
     }
   },
   "footer": {
@@ -245,7 +274,9 @@
     "openInEditor": "Open in Editor",
     "loading": "Loading…",
     "ratingStarFilled": "filled rating star",
-    "ratingStarEmpty": "empty rating star"
+    "ratingStarEmpty": "empty rating star",
+    "recentHeading": "Recent community presets",
+    "browseAll": "Browse all presets above"
   },
   "device": {
     "connect": "Connect GP-200",
