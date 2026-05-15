@@ -1,4 +1,7 @@
 import { z } from 'zod';
+import { LOCALES } from '@/i18n/locales';
+
+export const localeSchema = z.enum(LOCALES);
 
 export const registerSchema = z.object({
   email: z.string().email().max(320),
@@ -8,6 +11,7 @@ export const registerSchema = z.object({
     .max(30, 'Username must be at most 30 characters')
     .regex(/^[a-zA-Z0-9_]+$/, 'Only letters, numbers, and underscores'),
   password: z.string().min(8, 'Password must be at least 8 characters').max(256),
+  locale: localeSchema.default('en'),
 });
 
 export const loginSchema = z.object({

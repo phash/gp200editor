@@ -5,7 +5,43 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
   patchProfileSchema,
+  localeSchema,
 } from '@/lib/validators';
+import { LOCALES } from '@/i18n/locales';
+
+describe('registerSchema locale', () => {
+  it('accepts all six supported locales', () => {
+    for (const locale of ['de', 'en', 'es', 'fr', 'it', 'pt']) {
+      const parsed = registerSchema.safeParse({
+        email: 'a@b.de', username: 'manuel', password: 'CorrectHorseBattery1!', locale,
+      });
+      expect(parsed.success, `locale=${locale}`).toBe(true);
+    }
+  });
+
+  it('rejects unknown locale', () => {
+    const parsed = registerSchema.safeParse({
+      email: 'a@b.de', username: 'manuel', password: 'CorrectHorseBattery1!', locale: 'zh',
+    });
+    expect(parsed.success).toBe(false);
+  });
+
+  it('defaults locale to "en" when omitted', () => {
+    const parsed = registerSchema.safeParse({
+      email: 'a@b.de', username: 'manuel', password: 'CorrectHorseBattery1!',
+    });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) expect(parsed.data.locale).toBe('en');
+  });
+});
+
+describe('localeSchema', () => {
+  it('parses each supported locale', () => {
+    for (const locale of LOCALES) {
+      expect(localeSchema.safeParse(locale).success, `locale=${locale}`).toBe(true);
+    }
+  });
+});
 
 describe('registerSchema', () => {
   it('accepts valid input', () => {
