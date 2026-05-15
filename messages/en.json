@@ -592,5 +592,36 @@
       },
       "closing": "Feedback or bugs? The Discord link is in the navbar. Happy tweaking!"
     }
+  },
+  "email": {
+    "common": {
+      "brand": "PRESET FORGE",
+      "footerCopyright": "© Preset Forge · preset-forge.com",
+      "expiryNote": "This link expires in 24 hours."
+    },
+    "welcome": {
+      "subject": "Welcome to Preset Forge — verify your email",
+      "preheader": "One last step: confirm your email to start saving presets.",
+      "headline": "Welcome, {username}.",
+      "subhead": "Your account is created. Confirm your email address to save and share presets.",
+      "step1": "Click the button below to confirm",
+      "step2": "Connect your GP-200 via USB-MIDI",
+      "step3": "Load a .prst, edit live, save back to a slot",
+      "cta": "Verify Email"
+    },
+    "verifyReminderD2": {
+      "subject": "Your verification link — fresh copy",
+      "preheader": "Your original link expired. Here's a new one.",
+      "headline": "Still here?",
+      "body": "Your original verification link expired after 24 hours. We've issued a fresh one — verify to unlock saving, sharing, and live editing.",
+      "cta": "Verify Email"
+    },
+    "verifyReminderD7": {
+      "subject": "Last reminder — verify your email",
+      "preheader": "One last nudge — then we'll leave you alone.",
+      "headline": "One last nudge.",
+      "body": "We don't want to spam you. This is the final reminder — verify your email to keep your account active. If you don't, we'll quietly let it be.",
+      "cta": "Verify Email"
+    }
   }
 }

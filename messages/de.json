@@ -592,5 +592,36 @@
       },
       "closing": "Feedback oder Bugs? Der Discord-Link ist in der Navbar. Viel Spaß beim Schrauben!"
     }
+  },
+  "email": {
+    "common": {
+      "brand": "PRESET FORGE",
+      "footerCopyright": "© Preset Forge · preset-forge.com",
+      "expiryNote": "Dieser Link ist 24 Stunden gültig."
+    },
+    "welcome": {
+      "subject": "Willkommen bei Preset Forge — E-Mail bestätigen",
+      "preheader": "Ein letzter Schritt: bestätige deine E-Mail.",
+      "headline": "Willkommen, {username}.",
+      "subhead": "Dein Account ist erstellt. Bestätige deine E-Mail-Adresse, um Presets zu speichern und zu teilen.",
+      "step1": "Bestätigung anklicken",
+      "step2": "GP-200 per USB-MIDI anschließen",
+      "step3": "Preset laden, live editieren, in einen Slot speichern",
+      "cta": "E-Mail bestätigen"
+    },
+    "verifyReminderD2": {
+      "subject": "Dein Bestätigungslink — neu",
+      "preheader": "Dein erster Link ist abgelaufen. Hier ist ein neuer.",
+      "headline": "Noch nicht bestätigt?",
+      "body": "Dein erster Bestätigungslink ist nach 24 Stunden abgelaufen. Hier ist ein frischer — bestätige, um Speichern, Teilen und Live-Editing freizuschalten.",
+      "cta": "E-Mail bestätigen"
+    },
+    "verifyReminderD7": {
+      "subject": "Letzter Reminder — E-Mail bestätigen",
+      "preheader": "Ein letzter Anstoß — danach lassen wir dich in Ruhe.",
+      "headline": "Ein letzter Anstoß.",
+      "body": "Wir möchten dich nicht spammen. Das ist der finale Reminder — bestätige deine E-Mail, um deinen Account aktiv zu halten. Falls nicht, lassen wir dich in Ruhe.",
+      "cta": "E-Mail bestätigen"
+    }
   }
 }
