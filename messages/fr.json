@@ -592,36 +592,5 @@
       },
       "closing": "Retours ou bugs ? Le lien Discord est dans la barre de navigation. Bons réglages !"
     }
-  },
-  "email": {
-    "common": {
-      "brand": "PRESET FORGE",
-      "footerCopyright": "© Preset Forge · preset-forge.com",
-      "expiryNote": "Ce lien expire dans 24 heures."
-    },
-    "welcome": {
-      "subject": "Bienvenue sur Preset Forge — vérifie ton adresse e-mail",
-      "preheader": "Une dernière étape : confirme ton e-mail pour commencer à sauvegarder des presets.",
-      "headline": "Bienvenue, {username}.",
-      "subhead": "Ton compte est créé. Confirme ton adresse e-mail pour sauvegarder et partager des presets.",
-      "step1": "Clique sur le bouton ci-dessous pour confirmer",
-      "step2": "Connecte ton GP-200 via USB-MIDI",
-      "step3": "Charge un .prst, édite-le en live et sauvegarde-le dans un slot",
-      "cta": "Vérifier l'e-mail"
-    },
-    "verifyReminderD2": {
-      "subject": "Ton lien de vérification — nouvelle copie",
-      "preheader": "Ton lien original a expiré. En voici un nouveau.",
-      "headline": "Toujours là ?",
-      "body": "Ton lien de vérification original a expiré après 24 heures. Nous t'en avons envoyé un nouveau — vérifie pour débloquer la sauvegarde, le partage et l'édition en live.",
-      "cta": "Vérifier l'e-mail"
-    },
-    "verifyReminderD7": {
-      "subject": "Dernier rappel — vérifie ton e-mail",
-      "preheader": "Un dernier coup de pouce — ensuite on te laisse tranquille.",
-      "headline": "Un dernier coup de pouce.",
-      "body": "On ne veut pas te spammer. C'est le dernier rappel — vérifie ton e-mail pour garder ton compte actif. Sinon, on n'insistera plus.",
-      "cta": "Vérifier l'e-mail"
-    }
   }
 }

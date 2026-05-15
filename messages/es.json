@@ -592,36 +592,5 @@
       },
       "closing": "¿Comentarios o errores? El enlace de Discord está en la barra de navegación. ¡A trastear!"
     }
-  },
-  "email": {
-    "common": {
-      "brand": "PRESET FORGE",
-      "footerCopyright": "© Preset Forge · preset-forge.com",
-      "expiryNote": "Este enlace caduca en 24 horas."
-    },
-    "welcome": {
-      "subject": "Bienvenido a Preset Forge — verifica tu correo",
-      "preheader": "Un último paso: confirma tu correo para empezar a guardar presets.",
-      "headline": "Bienvenido, {username}.",
-      "subhead": "Tu cuenta está creada. Confirma tu dirección de correo para guardar y compartir presets.",
-      "step1": "Haz clic en el botón de abajo para confirmar",
-      "step2": "Conecta tu GP-200 por USB-MIDI",
-      "step3": "Carga un .prst, edítalo en vivo y guárdalo en un slot",
-      "cta": "Verificar correo"
-    },
-    "verifyReminderD2": {
-      "subject": "Tu enlace de verificación — copia nueva",
-      "preheader": "Tu enlace original caducó. Aquí tienes uno nuevo.",
-      "headline": "¿Sigues ahí?",
-      "body": "Tu enlace de verificación original caducó después de 24 horas. Te hemos enviado uno nuevo — verifica para desbloquear el guardado, el compartir y la edición en vivo.",
-      "cta": "Verificar correo"
-    },
-    "verifyReminderD7": {
-      "subject": "Último aviso — verifica tu correo",
-      "preheader": "Un último empujón — luego te dejamos tranquilo.",
-      "headline": "Un último empujón.",
-      "body": "No queremos enviarte spam. Este es el aviso final — verifica tu correo para mantener tu cuenta activa. Si no lo haces, no volveremos a molestarte.",
-      "cta": "Verificar correo"
-    }
   }
 }
