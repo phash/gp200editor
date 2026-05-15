@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
   let user;
   try {
     user = await prisma.user.create({
-      data: { email, username, passwordHash, emailVerified: false },
+      data: { email, username, passwordHash, emailVerified: false, locale },
     });
   } catch (e) {
     if (e instanceof PrismaClientKnownRequestError && e.code === 'P2002') {
