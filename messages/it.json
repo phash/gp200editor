@@ -203,6 +203,8 @@
     "verifyRedirecting": "Reindirizzamento…",
     "verifyFailed": "Verifica fallita",
     "verifyInvalidToken": "Link non valido o scaduto.",
+    "verifyConfirmDescription": "Clicca il pulsante per confermare il tuo indirizzo e-mail. Questo passaggio extra protegge il tuo account dagli scanner automatici di link.",
+    "verifyConfirmButton": "Verifica e-mail",
     "resendVerification": "Rinvia email di verifica",
     "resendSent": "Email reinviata. Controlla la tua casella di posta.",
     "emailTaken": "Questo indirizzo email è già in uso.",
@@ -533,5 +535,62 @@
     "downloads": "{count} download",
     "noResults": "Nessun risultato",
     "page": "Pagina {page} di {total}"
+  },
+  "email": {
+    "brand": "PRESET FORGE",
+    "tagline": "Editor browser per il Valeton GP-200",
+    "footerNote": "Ricevi questa e-mail perché ti sei registrato su Preset Forge.",
+    "verify": {
+      "subject": "Verifica la tua e-mail — Preset Forge",
+      "preheader": "Conferma il tuo indirizzo e-mail per attivare il tuo account Preset Forge.",
+      "heading": "Conferma la tua e-mail",
+      "intro": "Benvenuto su Preset Forge! Clicca il pulsante per verificare il tuo indirizzo e-mail. Il link scade in 24 ore.",
+      "ctaLabel": "Verifica e-mail",
+      "closing": "Se non hai creato l'account, puoi ignorare questa e-mail."
+    },
+    "reset": {
+      "subject": "Reimposta la password — Preset Forge",
+      "preheader": "Reimposta la tua password Preset Forge.",
+      "heading": "Reimposta la tua password",
+      "intro": "Clicca il pulsante per impostare una nuova password. Il link scade in 1 ora.",
+      "ctaLabel": "Imposta nuova password",
+      "closing": "Se non hai richiesto questo, puoi ignorare questa e-mail."
+    },
+    "warning": {
+      "subject": "Avviso — Preset Forge",
+      "preheader": "Hai ricevuto un avviso dal team di moderazione.",
+      "heading": "Avviso dal team di moderazione",
+      "intro": "Hai ricevuto un avviso riguardo ai tuoi contenuti su Preset Forge.",
+      "reasonLabel": "Motivo",
+      "detailsLabel": "Dettagli",
+      "closing": "Per favore controlla i tuoi contenuti. Ulteriori violazioni possono portare alla sospensione dell'account."
+    },
+    "welcome": {
+      "subject": "Benvenuto su Preset Forge!",
+      "preheader": "Il tuo account è attivo. Ecco i prossimi passi.",
+      "heading": "Benvenuto, {username}!",
+      "intro": "La tua e-mail è verificata — il tuo account Preset Forge è pronto. Ecco cosa puoi fare adesso:",
+      "stepUpload": {
+        "title": "Carica il tuo primo preset",
+        "body": "Condividi i tuoi file .prst con la community. Tag, descrizioni, valutazioni — tutto incluso.",
+        "ctaLabel": "Carica preset"
+      },
+      "stepEditor": {
+        "title": "Apri l'editor",
+        "body": "Modifica i preset nel browser o collega il tuo GP-200 via USB MIDI per l'editing live.",
+        "ctaLabel": "Apri editor"
+      },
+      "stepGallery": {
+        "title": "Esplora la galleria",
+        "body": "Sfoglia oltre 145 preset gratuiti della community, filtrati per amp, stile o effetto.",
+        "ctaLabel": "Vai alla galleria"
+      },
+      "stepProfile": {
+        "title": "Completa il profilo",
+        "body": "Scegli un nome utente, carica un avatar e lascia che gli altri scoprano i tuoi preset.",
+        "ctaLabel": "Modifica profilo"
+      },
+      "closing": "Feedback o bug? Il link Discord è nella barra di navigazione. Buon divertimento!"
+    }
   }
 }

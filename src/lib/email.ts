@@ -1,12 +1,29 @@
 import nodemailer from 'nodemailer';
+import { LOCALES, type Locale } from '@/i18n/locales';
+import { renderEmailHtml, renderEmailText, type EmailSection } from './emailTemplate';
+import de from '../../messages/de.json';
+import en from '../../messages/en.json';
+import es from '../../messages/es.json';
+import fr from '../../messages/fr.json';
+import it from '../../messages/it.json';
+import pt from '../../messages/pt.json';
 
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;');
+type EmailMessages = (typeof en)['email'];
+
+const MESSAGES: Record<Locale, EmailMessages> = {
+  de: (de as unknown as typeof en).email,
+  en: en.email,
+  es: (es as unknown as typeof en).email,
+  fr: (fr as unknown as typeof en).email,
+  it: (it as unknown as typeof en).email,
+  pt: (pt as unknown as typeof en).email,
+};
+
+function normalizeLocale(locale: Locale | string | undefined | null): Locale {
+  if (typeof locale === 'string' && (LOCALES as readonly string[]).includes(locale)) {
+    return locale as Locale;
+  }
+  return 'en';
 }
 
 function getTransporter() {
@@ -28,36 +45,63 @@ function getFrom(): string {
   return process.env.EMAIL_FROM ?? `noreply@${process.env.MAIL_HOST ?? 'preset-forge.com'}`;
 }
 
-export async function sendPasswordResetEmail(
-  to: string,
-  resetUrl: string,
-): Promise<void> {
-  await getTransporter().sendMail({
-    from: getFrom(),
-    to,
-    subject: 'Reset your password — Preset Forge',
-    html: `
-      <p>Click the link below to reset your password. It expires in 1&nbsp;hour.</p>
-      <p><a href="${escapeHtml(resetUrl)}">${escapeHtml(resetUrl)}</a></p>
-      <p>If you did not request this, you can safely ignore this email.</p>
-    `,
-  });
+function appUrl(): string {
+  return process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.preset-forge.com';
 }
 
 export async function sendVerificationEmail(
   to: string,
   verifyUrl: string,
+  locale: Locale | string = 'en',
 ): Promise<void> {
+  const lc = normalizeLocale(locale);
+  const m = MESSAGES[lc];
+  const opts = {
+    locale: lc,
+    preheader: m.verify.preheader,
+    heading: m.verify.heading,
+    intro: m.verify.intro,
+    cta: { label: m.verify.ctaLabel, url: verifyUrl },
+    closing: m.verify.closing,
+    brand: m.brand,
+    tagline: m.tagline,
+    footerNote: m.footerNote,
+    homeUrl: `${appUrl()}/${lc}`,
+  };
   await getTransporter().sendMail({
     from: getFrom(),
     to,
-    subject: 'Verify your email — Preset Forge',
-    html: `
-      <p>Welcome to Preset Forge! Please verify your email address by clicking the link below.</p>
-      <p><a href="${escapeHtml(verifyUrl)}">${escapeHtml(verifyUrl)}</a></p>
-      <p>This link expires in 24 hours.</p>
-      <p>If you did not create an account, you can safely ignore this email.</p>
-    `,
+    subject: m.verify.subject,
+    html: renderEmailHtml(opts),
+    text: renderEmailText(opts),
+  });
+}
+
+export async function sendPasswordResetEmail(
+  to: string,
+  resetUrl: string,
+  locale: Locale | string = 'en',
+): Promise<void> {
+  const lc = normalizeLocale(locale);
+  const m = MESSAGES[lc];
+  const opts = {
+    locale: lc,
+    preheader: m.reset.preheader,
+    heading: m.reset.heading,
+    intro: m.reset.intro,
+    cta: { label: m.reset.ctaLabel, url: resetUrl },
+    closing: m.reset.closing,
+    brand: m.brand,
+    tagline: m.tagline,
+    footerNote: m.footerNote,
+    homeUrl: `${appUrl()}/${lc}`,
+  };
+  await getTransporter().sendMail({
+    from: getFrom(),
+    to,
+    subject: m.reset.subject,
+    html: renderEmailHtml(opts),
+    text: renderEmailText(opts),
   });
 }
 
@@ -65,17 +109,83 @@ export async function sendWarningEmail(
   to: string,
   reason: string,
   message?: string,
+  locale: Locale | string = 'en',
 ): Promise<void> {
+  const lc = normalizeLocale(locale);
+  const m = MESSAGES[lc];
+  const sections: EmailSection[] = [
+    { title: m.warning.reasonLabel, body: reason },
+  ];
+  if (message) sections.push({ title: m.warning.detailsLabel, body: message });
+  const opts = {
+    locale: lc,
+    preheader: m.warning.preheader,
+    heading: m.warning.heading,
+    intro: m.warning.intro,
+    sections,
+    closing: m.warning.closing,
+    brand: m.brand,
+    tagline: m.tagline,
+    footerNote: m.footerNote,
+    homeUrl: `${appUrl()}/${lc}`,
+  };
   await getTransporter().sendMail({
     from: getFrom(),
     to,
-    subject: 'Warning — Preset Forge',
-    html: `
-      <p>You have received a warning from the Preset Forge moderation team.</p>
-      <p><strong>Reason:</strong> ${escapeHtml(reason)}</p>
-      ${message ? `<p><strong>Details:</strong> ${escapeHtml(message)}</p>` : ''}
-      <p>Please review your content and ensure it complies with our community guidelines.
-      Continued violations may result in account suspension.</p>
-    `,
+    subject: m.warning.subject,
+    html: renderEmailHtml(opts),
+    text: renderEmailText(opts),
+  });
+}
+
+export async function sendWelcomeEmail(
+  to: string,
+  username: string,
+  locale: Locale | string = 'en',
+): Promise<void> {
+  const lc = normalizeLocale(locale);
+  const m = MESSAGES[lc];
+  const base = `${appUrl()}/${lc}`;
+  const sections: EmailSection[] = [
+    {
+      title: m.welcome.stepUpload.title,
+      body: m.welcome.stepUpload.body,
+      cta: { label: m.welcome.stepUpload.ctaLabel, url: `${base}/presets` },
+    },
+    {
+      title: m.welcome.stepEditor.title,
+      body: m.welcome.stepEditor.body,
+      cta: { label: m.welcome.stepEditor.ctaLabel, url: `${base}/editor` },
+    },
+    {
+      title: m.welcome.stepGallery.title,
+      body: m.welcome.stepGallery.body,
+      cta: { label: m.welcome.stepGallery.ctaLabel, url: `${base}/gallery` },
+    },
+    {
+      title: m.welcome.stepProfile.title,
+      body: m.welcome.stepProfile.body,
+      cta: { label: m.welcome.stepProfile.ctaLabel, url: `${base}/profile` },
+    },
+  ];
+  const heading = m.welcome.heading.replace('{username}', username);
+  const opts = {
+    locale: lc,
+    preheader: m.welcome.preheader,
+    heading,
+    intro: m.welcome.intro,
+    sections,
+    closing: m.welcome.closing,
+    brand: m.brand,
+    tagline: m.tagline,
+    footerNote: m.footerNote,
+    homeUrl: base,
+  };
+  await getTransporter().sendMail({
+    from: getFrom(),
+    to,
+    subject: m.welcome.subject,
+    html: renderEmailHtml(opts),
+    text: renderEmailText(opts),
   });
 }

@@ -10,6 +10,7 @@ import { logError } from '@/lib/errorLog';
 import { verifyTurnstile } from '@/lib/turnstile';
 import { isDisposableEmail } from '@/lib/disposableEmails';
 import { getClientIp } from '@/lib/getClientIp';
+import { LOCALES, type Locale } from '@/i18n/locales';
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
@@ -37,7 +38,7 @@ export async function POST(request: NextRequest) {
   }
 
   const { email, username, password } = parsed.data;
-  const locale = (body?.locale === 'de' ? 'de' : 'en') as string;
+  const locale: Locale = (LOCALES as readonly string[]).includes(body?.locale) ? body.locale : 'en';
 
   // Disposable email check
   if (isDisposableEmail(email)) {
@@ -106,7 +107,7 @@ export async function POST(request: NextRequest) {
   const verifyUrl = `${appUrl}/${locale}/auth/verify-email?token=${token}`;
 
   try {
-    await sendVerificationEmail(email, verifyUrl);
+    await sendVerificationEmail(email, verifyUrl, locale);
   } catch (err) {
     logError({
       message: `Failed to send verification email: ${err instanceof Error ? err.message : String(err)}`,

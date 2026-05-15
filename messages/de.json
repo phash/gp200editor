@@ -203,6 +203,8 @@
     "verifyRedirecting": "Du wirst gleich weitergeleitet…",
     "verifyFailed": "Bestätigung fehlgeschlagen",
     "verifyInvalidToken": "Ungültiger oder abgelaufener Link.",
+    "verifyConfirmDescription": "Klicke den Button unten, um deine E-Mail-Adresse zu bestätigen. Dieser zusätzliche Schritt schützt deinen Account vor automatischen Link-Scannern.",
+    "verifyConfirmButton": "E-Mail bestätigen",
     "resendVerification": "Bestätigungs-E-Mail erneut senden",
     "resendSent": "E-Mail wurde erneut gesendet. Prüfe deinen Posteingang.",
     "emailTaken": "Diese E-Mail-Adresse ist bereits vergeben.",
@@ -533,5 +535,62 @@
     "downloads": "{count} Downloads",
     "noResults": "Keine Ergebnisse",
     "page": "Seite {page} von {total}"
+  },
+  "email": {
+    "brand": "PRESET FORGE",
+    "tagline": "Browser-Editor für den Valeton GP-200",
+    "footerNote": "Du erhältst diese E-Mail, weil du dich bei Preset Forge registriert hast.",
+    "verify": {
+      "subject": "Bestätige deine E-Mail — Preset Forge",
+      "preheader": "Bestätige deine E-Mail-Adresse, um deinen Preset-Forge-Account zu aktivieren.",
+      "heading": "E-Mail-Adresse bestätigen",
+      "intro": "Willkommen bei Preset Forge! Klicke auf den Button unten, um deine E-Mail-Adresse zu bestätigen. Der Link ist 24 Stunden gültig.",
+      "ctaLabel": "E-Mail bestätigen",
+      "closing": "Wenn du keinen Account angelegt hast, kannst du diese E-Mail ignorieren."
+    },
+    "reset": {
+      "subject": "Passwort zurücksetzen — Preset Forge",
+      "preheader": "Setze dein Preset-Forge-Passwort zurück.",
+      "heading": "Passwort zurücksetzen",
+      "intro": "Klicke auf den Button unten, um ein neues Passwort zu setzen. Der Link ist 1 Stunde gültig.",
+      "ctaLabel": "Neues Passwort setzen",
+      "closing": "Wenn du das nicht angefordert hast, kannst du diese E-Mail ignorieren."
+    },
+    "warning": {
+      "subject": "Verwarnung — Preset Forge",
+      "preheader": "Du hast eine Verwarnung vom Moderationsteam erhalten.",
+      "heading": "Verwarnung vom Moderationsteam",
+      "intro": "Du hast eine Verwarnung bezüglich deiner Inhalte auf Preset Forge erhalten.",
+      "reasonLabel": "Grund",
+      "detailsLabel": "Details",
+      "closing": "Bitte überprüfe deine Inhalte. Weitere Verstöße können zur Sperrung deines Accounts führen."
+    },
+    "welcome": {
+      "subject": "Willkommen bei Preset Forge!",
+      "preheader": "Dein Account ist aktiv. Hier sind deine nächsten Schritte.",
+      "heading": "Willkommen, {username}!",
+      "intro": "Deine E-Mail ist bestätigt — dein Preset-Forge-Account ist bereit. Das kannst du jetzt tun:",
+      "stepUpload": {
+        "title": "Erstes Preset hochladen",
+        "body": "Teile eigene .prst-Dateien mit der Community. Tags, Beschreibungen, Bewertungen — alles dabei.",
+        "ctaLabel": "Preset hochladen"
+      },
+      "stepEditor": {
+        "title": "Editor öffnen",
+        "body": "Bearbeite Presets im Browser oder verbinde deinen GP-200 per USB MIDI für Live-Tweaking.",
+        "ctaLabel": "Editor öffnen"
+      },
+      "stepGallery": {
+        "title": "Galerie entdecken",
+        "body": "Durchstöbere 145+ kostenlose Community-Presets, gefiltert nach Amp, Stil oder Effekt.",
+        "ctaLabel": "Galerie öffnen"
+      },
+      "stepProfile": {
+        "title": "Profil vervollständigen",
+        "body": "Wähle einen Benutzernamen, lade ein Avatar hoch und lass andere deine Presets entdecken.",
+        "ctaLabel": "Profil bearbeiten"
+      },
+      "closing": "Feedback oder Bugs? Der Discord-Link ist in der Navbar. Viel Spaß beim Schrauben!"
+    }
   }
 }

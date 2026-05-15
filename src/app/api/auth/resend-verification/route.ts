@@ -4,11 +4,12 @@ import { prisma } from '@/lib/prisma';
 import { sendVerificationEmail } from '@/lib/email';
 import { rateLimit } from '@/lib/rateLimit';
 import { logError } from '@/lib/errorLog';
+import { LOCALES, type Locale } from '@/i18n/locales';
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
   const email = body?.email;
-  const locale = (body?.locale === 'de' ? 'de' : 'en') as string;
+  const locale: Locale = (LOCALES as readonly string[]).includes(body?.locale) ? body.locale : 'en';
   if (!email || typeof email !== 'string') {
     return NextResponse.json({ error: 'Email required' }, { status: 400 });
   }
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
   const verifyUrl = `${appUrl}/${locale}/auth/verify-email?token=${token}`;
 
   try {
-    await sendVerificationEmail(email, verifyUrl);
+    await sendVerificationEmail(email, verifyUrl, locale);
   } catch (err) {
     logError({
       message: `Failed to resend verification email: ${err instanceof Error ? err.message : String(err)}`,

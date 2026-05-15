@@ -37,8 +37,9 @@ async function registerAndLogin(page: Page) {
 
   if (!verifyUrl) throw new Error(`No verification email found for ${email}`);
 
-  // Visit verify URL → auto-logs in → redirects to /editor
+  // Visit verify URL → click confirm button → logs in → redirects to /editor
   await page.goto(verifyUrl);
+  await page.getByRole('button', { name: /Verify my email/i }).click();
   await page.waitForURL('**/editor', { timeout: 10000 });
 
   return { username, email };

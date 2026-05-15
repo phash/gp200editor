@@ -5,6 +5,7 @@ import { sendPasswordResetEmail } from '@/lib/email';
 import { forgotPasswordSchema } from '@/lib/validators';
 import { rateLimit } from '@/lib/rateLimit';
 import { getClientIp } from '@/lib/getClientIp';
+import { LOCALES, type Locale } from '@/i18n/locales';
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
@@ -14,7 +15,7 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) return NextResponse.json({});
 
   const { email } = parsed.data;
-  const locale = (body?.locale === 'de' ? 'de' : 'en') as string;
+  const locale: Locale = (LOCALES as readonly string[]).includes(body?.locale) ? body.locale : 'en';
 
   // Defense in depth: per-email limit prevents spamming one user; per-IP
   // limit prevents enumeration of the user database by spraying many
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
     const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${locale}/auth/reset-password?token=${rawToken}`;
     // SMTP errors propagate as 500 (intentional — user knows to retry)
     try {
-      await sendPasswordResetEmail(email, resetUrl);
+      await sendPasswordResetEmail(email, resetUrl, locale);
     } catch (err) {
       // Clean up the orphaned token before propagating the error
       await prisma.passwordResetToken.delete({ where: { id: token.id } }).catch(() => {});

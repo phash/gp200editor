@@ -39,7 +39,9 @@ async function registerAndVerifyUser(
       const body = decodeQP(verifyEmail.Content.Body);
       const tokenMatch = body.match(/token=([a-f0-9]{64})/);
       if (tokenMatch) {
-        const verifyRes = await request.get(`/api/auth/verify-email?token=${tokenMatch[1]}`);
+        const verifyRes = await request.post('/api/auth/verify-email', {
+          data: { token: tokenMatch[1] },
+        });
         return verifyRes.ok();
       }
     }
