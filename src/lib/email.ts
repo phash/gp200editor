@@ -189,3 +189,36 @@ export async function sendWelcomeEmail(
     text: renderEmailText(opts),
   });
 }
+
+export async function sendVerifyReminderEmail(
+  to: string,
+  verifyUrl: string,
+  locale: Locale | string = 'en',
+  day: 2 | 7,
+): Promise<void> {
+  if (day !== 2 && day !== 7) {
+    throw new Error(`sendVerifyReminderEmail: unsupported day ${day}`);
+  }
+  const lc = normalizeLocale(locale);
+  const m = MESSAGES[lc];
+  const r = day === 2 ? m.verifyReminderD2 : m.verifyReminderD7;
+  const opts = {
+    locale: lc,
+    preheader: r.preheader,
+    heading: r.heading,
+    intro: r.intro,
+    cta: { label: r.ctaLabel, url: verifyUrl },
+    closing: r.closing,
+    brand: m.brand,
+    tagline: m.tagline,
+    footerNote: m.footerNote,
+    homeUrl: `${appUrl()}/${lc}`,
+  };
+  await getTransporter().sendMail({
+    from: getFrom(),
+    to,
+    subject: r.subject,
+    html: renderEmailHtml(opts),
+    text: renderEmailText(opts),
+  });
+}
