@@ -591,6 +591,22 @@
         "ctaLabel": "Editar perfil"
       },
       "closing": "Comentários ou bugs? O link do Discord está na barra de navegação. Bom uso!"
+    },
+    "verifyReminderD2": {
+      "subject": "Seu link de verificação — uma nova cópia",
+      "preheader": "Seu link original expirou. Aqui está um novo.",
+      "heading": "Ainda não confirmou?",
+      "intro": "Seu link de verificação original expirou após 24 horas. Geramos um novo — clique abaixo para verificar seu e-mail e liberar o salvamento, o compartilhamento e a edição ao vivo.",
+      "ctaLabel": "Verificar e-mail",
+      "closing": "Se você não quiser mais uma conta no Preset Forge, pode ignorar este e-mail."
+    },
+    "verifyReminderD7": {
+      "subject": "Último lembrete — verifique seu e-mail",
+      "preheader": "Um último aviso — depois disso, vamos deixar você em paz.",
+      "heading": "Um último aviso.",
+      "intro": "Não queremos encher sua caixa de entrada. Este é o lembrete final — clique abaixo para verificar seu e-mail e manter sua conta ativa. Se não fizer isso, não vamos mais incomodar você.",
+      "ctaLabel": "Verificar e-mail",
+      "closing": "Este é o último lembrete de verificação que enviaremos. Sua conta não verificada permanecerá inativa até que você confirme seu e-mail."
     }
   }
 }

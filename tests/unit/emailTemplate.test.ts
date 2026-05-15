@@ -107,6 +107,18 @@ describe('email i18n keys (parity)', () => {
     'email.welcome.stepGallery.ctaLabel',
     'email.welcome.stepProfile.title',
     'email.welcome.stepProfile.ctaLabel',
+    'email.verifyReminderD2.subject',
+    'email.verifyReminderD2.preheader',
+    'email.verifyReminderD2.heading',
+    'email.verifyReminderD2.intro',
+    'email.verifyReminderD2.ctaLabel',
+    'email.verifyReminderD2.closing',
+    'email.verifyReminderD7.subject',
+    'email.verifyReminderD7.preheader',
+    'email.verifyReminderD7.heading',
+    'email.verifyReminderD7.intro',
+    'email.verifyReminderD7.ctaLabel',
+    'email.verifyReminderD7.closing',
   ];
 
   function getPath(obj: unknown, path: string): unknown {

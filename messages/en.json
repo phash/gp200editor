@@ -591,6 +591,22 @@
         "ctaLabel": "Edit profile"
       },
       "closing": "Feedback or bugs? The Discord link is in the navbar. Happy tweaking!"
+    },
+    "verifyReminderD2": {
+      "subject": "Your verification link — fresh copy",
+      "preheader": "Your original link expired. Here's a new one.",
+      "heading": "Still here?",
+      "intro": "Your original verification link expired after 24 hours. We've issued a fresh one — click below to verify your email and unlock saving, sharing, and live editing.",
+      "ctaLabel": "Verify my email",
+      "closing": "If you no longer want a Preset Forge account, you can safely ignore this email."
+    },
+    "verifyReminderD7": {
+      "subject": "Last reminder — verify your email",
+      "preheader": "One last nudge — then we'll leave you alone.",
+      "heading": "One last nudge.",
+      "intro": "We don't want to spam you. This is the final reminder — click below to verify your email and keep your account active. If you don't, we'll quietly let it be.",
+      "ctaLabel": "Verify my email",
+      "closing": "This is the last verification reminder we'll send. Your unverified account will stay inactive until you confirm your email."
     }
   }
 }

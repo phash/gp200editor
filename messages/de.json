@@ -591,6 +591,22 @@
         "ctaLabel": "Profil bearbeiten"
       },
       "closing": "Feedback oder Bugs? Der Discord-Link ist in der Navbar. Viel Spaß beim Schrauben!"
+    },
+    "verifyReminderD2": {
+      "subject": "Dein Bestätigungslink — neu",
+      "preheader": "Dein erster Link ist abgelaufen. Hier ist ein neuer.",
+      "heading": "Noch nicht bestätigt?",
+      "intro": "Dein erster Bestätigungslink ist nach 24 Stunden abgelaufen. Hier ist ein frischer — klick unten, um deine E-Mail zu bestätigen und Speichern, Teilen und Live-Editing freizuschalten.",
+      "ctaLabel": "E-Mail bestätigen",
+      "closing": "Falls du keinen Preset-Forge-Account mehr möchtest, kannst du diese E-Mail einfach ignorieren."
+    },
+    "verifyReminderD7": {
+      "subject": "Letzte Erinnerung — E-Mail bestätigen",
+      "preheader": "Ein letzter Anstoß — danach lassen wir dich in Ruhe.",
+      "heading": "Ein letzter Anstoß.",
+      "intro": "Wir möchten dich nicht spammen. Das ist die finale Erinnerung — klick unten, um deine E-Mail zu bestätigen und deinen Account aktiv zu halten. Falls nicht, lassen wir dich in Ruhe.",
+      "ctaLabel": "E-Mail bestätigen",
+      "closing": "Das ist die letzte Bestätigungs-Erinnerung, die wir schicken. Dein unbestätigter Account bleibt inaktiv, bis du deine E-Mail bestätigst."
     }
   }
 }
