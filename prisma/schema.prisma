@@ -24,6 +24,10 @@ model User {
   avatarKey     String?
   createdAt     DateTime @default(now())
 
+  locale                  String    @default("en")
+  welcomeReminderD2SentAt DateTime?
+  welcomeReminderD7SentAt DateTime?
+
   sessions            Session[]
   resetTokens         PasswordResetToken[]
   emailVerifyTokens   EmailVerificationToken[]
@@ -32,6 +36,9 @@ model User {
   role                Role          @default(USER)
   suspended           Boolean       @default(false)
   adminActions        AdminAction[]
+
+  @@index([emailVerified, welcomeReminderD2SentAt, createdAt])
+  @@index([emailVerified, welcomeReminderD7SentAt, createdAt])
 }
 
 model Preset {
