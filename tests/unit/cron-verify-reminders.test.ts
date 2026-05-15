@@ -79,7 +79,8 @@ describe('cron verify-reminders — D2 pass', () => {
       emailVerified: false,
       welcomeReminderD2SentAt: null,
     });
-    expect(firstCallArgs.where.createdAt.lt).toBeInstanceOf(Date);
+    const createdAt = firstCallArgs.where!.createdAt as { lt: Date };
+    expect(createdAt.lt).toBeInstanceOf(Date);
     expect(firstCallArgs.take).toBe(200);
   });
 
