@@ -137,3 +137,56 @@ wine ~/.wine/drive_c/Program\ Files/Valeton/GP-200/GP-200.exe
 | 084047 | — | State-Dump Slot 13 (04-B), Knob-Notification Verifizierung |
 | 084156 | — | State-Dump Slot 0 (01-A), Baseline |
 | 085205 | — | D→H Knob-Notifications: AMP alle 6 Knobs + VOL, je 0→100→~50 |
+
+---
+
+## Verify-Reminder Cron
+
+A system-cron entry on the VPS hits `POST /api/cron/verify-reminders` hourly to fire Day-2 and Day-7 reminder mails for users who never verified their email. The cron route is idempotent (each user gets each reminder at most once via a race-safe `updateMany`-claim), so missing a tick is harmless.
+
+### Setup (once per environment)
+
+```bash
+# 1. Generate the secret on the VPS
+ssh musikersuche@82.165.40.140
+openssl rand -hex 32
+# → copy the 64-char hex output
+
+# 2. Add to .env.prod
+echo "CRON_SECRET=<value>" >> /opt/gp200editor/.env.prod
+
+# 3. Restart so the app loads the env var
+cd /opt/gp200editor && bash scripts/deploy-update.sh
+
+# 4. Install the crontab entry (musikersuche user)
+crontab -e
+```
+
+Add this line:
+```cron
+0 * * * * curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" https://preset-forge.com/api/cron/verify-reminders >> /opt/gp200editor/logs/cron-verify-reminders.log 2>&1
+```
+
+`$CRON_SECRET` must be in the cron user's shell environment (e.g., set in `~/.profile`) — or inline the 64-char value into the crontab line directly.
+
+### Smoke test
+
+```bash
+source /opt/gp200editor/.env.prod
+curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" \
+  https://preset-forge.com/api/cron/verify-reminders | jq
+```
+
+Expected on a fresh install (no eligible users yet):
+```json
+{
+  "d2": { "sent": 0, "failed": 0, "skippedByRace": 0 },
+  "d7": { "sent": 0, "failed": 0, "skippedByRace": 0 }
+}
+```
+
+A 401 means the secret didn't match — check `.env.prod` and that the app restart picked it up.
+
+### Local dev / E2E
+
+In `.env.dev` set `CRON_SECRET=test-secret-value` and `TEST_SECRET=test`. These values match the defaults in `tests/e2e/verify-reminder.spec.ts`. The test-only `/api/test/backdate-user` endpoint returns 404 when `NODE_ENV=production` and is invisible in deployed builds.
