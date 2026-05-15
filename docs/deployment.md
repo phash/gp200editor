@@ -154,6 +154,7 @@ openssl rand -hex 32
 
 # 2. Add to .env.prod
 echo "CRON_SECRET=<value>" >> /opt/gp200editor/.env.prod
+chmod 600 /opt/gp200editor/.env.prod   # lock to owner-read only
 
 # 3. Restart so the app loads the env var
 cd /opt/gp200editor && bash scripts/deploy-update.sh

@@ -26,19 +26,35 @@ function normalizeLocale(locale: Locale | string | undefined | null): Locale {
   return 'en';
 }
 
-function getTransporter() {
+// Module-scope cached transporter. Caching across requests is important for
+// the cron route's 200-user sequential batch — without it, every send would
+// re-handshake SMTP. Timeouts ensure a hung mailserver can't wedge the loop.
+type CachedTransporter = ReturnType<typeof nodemailer.createTransport>;
+let _transporter: CachedTransporter | null = null;
+
+function getTransporter(): CachedTransporter {
+  if (_transporter) return _transporter;
   const host = process.env.MAIL_HOST ?? process.env.EMAIL_SMTP_HOST;
   const port = Number(process.env.MAIL_PORT ?? process.env.EMAIL_SMTP_PORT ?? 1025);
   const user = process.env.MAIL_USERNAME ?? process.env.EMAIL_SMTP_USER;
   const pass = process.env.MAIL_PASSWORD ?? process.env.EMAIL_SMTP_PASS;
 
-  return nodemailer.createTransport({
+  // Cast the pool-transporter to the non-pool Transporter shape we cache.
+  // The two share the sendMail surface we use; the pool variant adds a
+  // `pending` accessor that we don't need but TS picks up on.
+  _transporter = nodemailer.createTransport({
     host,
     port,
     secure: port === 465,
     auth: user ? { user, pass } : undefined,
     tls: { rejectUnauthorized: process.env.NODE_ENV === 'production' },
-  });
+    pool: true,
+    maxConnections: 3,
+    connectionTimeout: 10_000,
+    greetingTimeout: 5_000,
+    socketTimeout: 15_000,
+  }) as unknown as CachedTransporter;
+  return _transporter;
 }
 
 function getFrom(): string {

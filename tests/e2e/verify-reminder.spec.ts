@@ -4,6 +4,9 @@ import { UNIQUE } from './helpers';
 const MAILHOG = process.env.MAILHOG_URL ?? 'http://localhost:8025';
 const APP = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
 const CRON_SECRET = process.env.CRON_SECRET ?? 'test-secret-value';
+// NOTE: TEST_SECRET must be set in .env.dev (or shell env) for this to pass.
+// In production NODE_ENV !== 'development', so /api/test/backdate-user
+// returns 404 regardless — the fallback below only helps local dev runs.
 const TEST_SECRET = process.env.TEST_SECRET ?? 'test';
 
 function decodeQP(text: string): string {

@@ -3,6 +3,9 @@ import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { sendVerifyReminderEmail } from '@/lib/email';
 import { logError } from '@/lib/errorLog';
+import { rateLimit } from '@/lib/rateLimit';
+import { getClientIp } from '@/lib/getClientIp';
+import { LOCALES, type Locale } from '@/i18n/locales';
 
 function authorized(request: NextRequest): boolean {
   const provided = request.headers.get('authorization');
@@ -14,6 +17,10 @@ function authorized(request: NextRequest): boolean {
   if (a.length !== b.length) return false;
   return crypto.timingSafeEqual(a, b);
 }
+
+// Module-scope single-flight flag: a second concurrent invocation returns 409
+// instead of stampeding the same D2/D7 candidate set.
+let cronInFlight = false;
 
 interface ReminderBucket {
   sent: number;
@@ -52,6 +59,13 @@ async function runReminderPass(args: ReminderPassArgs): Promise<void> {
       continue;
     }
 
+    // Defensive normalization: even though register validates locale, a
+    // future writer (admin tool, migration) could produce an invalid value.
+    // Fall back to 'en' rather than building a 404-locale verify URL.
+    const locale: Locale = (LOCALES as readonly string[]).includes(u.locale)
+      ? (u.locale as Locale)
+      : 'en';
+
     try {
       const token = crypto.randomBytes(32).toString('hex');
       const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
@@ -63,20 +77,31 @@ async function runReminderPass(args: ReminderPassArgs): Promise<void> {
         },
       });
       const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.preset-forge.com';
-      const verifyUrl = `${appUrl}/${u.locale}/auth/verify-email?token=${token}`;
-      await sendVerifyReminderEmail(u.email, verifyUrl, u.locale, args.day);
+      const verifyUrl = `${appUrl}/${locale}/auth/verify-email?token=${token}`;
+      await sendVerifyReminderEmail(u.email, verifyUrl, locale, args.day);
       args.bucket.sent++;
     } catch (err) {
-      await prisma.user.update({
-        where: { id: u.id },
-        data: { [args.field]: null },
-      });
+      // Rollback must not break the loop: if the DB write itself fails, we
+      // log and move on — the next cron tick will retry the user.
+      try {
+        await prisma.user.update({
+          where: { id: u.id },
+          data: { [args.field]: null },
+        });
+      } catch (rollbackErr) {
+        console.error(
+          `[cron] Rollback failed for user ${u.id} after D${args.day} send failure:`,
+          rollbackErr,
+        );
+      }
       await logError({
         message: `Verify reminder D${args.day} failed for user ${u.id}: ${err instanceof Error ? err.message : String(err)}`,
         stack: err instanceof Error ? err.stack : undefined,
         url: '/api/cron/verify-reminders',
         userId: u.id,
-      }).catch(() => {});
+      }).catch((logErr) => {
+        console.error('[cron] logError itself failed:', logErr);
+      });
       args.bucket.failed++;
     }
   }
@@ -87,24 +112,39 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
 
-  const result = {
-    d2: { sent: 0, failed: 0, skippedByRace: 0 } as ReminderBucket,
-    d7: { sent: 0, failed: 0, skippedByRace: 0 } as ReminderBucket,
-  };
+  const ip = getClientIp(request);
+  const { allowed } = rateLimit(`cron-verify-reminders:${ip}`, 6, 60 * 1000);
+  if (!allowed) {
+    return NextResponse.json({ error: 'rate-limited' }, { status: 429 });
+  }
 
-  await runReminderPass({
-    field: 'welcomeReminderD2SentAt',
-    daysAgo: 2,
-    day: 2,
-    bucket: result.d2,
-  });
+  if (cronInFlight) {
+    return NextResponse.json({ error: 'in-flight' }, { status: 409 });
+  }
+  cronInFlight = true;
 
-  await runReminderPass({
-    field: 'welcomeReminderD7SentAt',
-    daysAgo: 7,
-    day: 7,
-    bucket: result.d7,
-  });
+  try {
+    const result = {
+      d2: { sent: 0, failed: 0, skippedByRace: 0 } as ReminderBucket,
+      d7: { sent: 0, failed: 0, skippedByRace: 0 } as ReminderBucket,
+    };
 
-  return NextResponse.json(result);
+    await runReminderPass({
+      field: 'welcomeReminderD2SentAt',
+      daysAgo: 2,
+      day: 2,
+      bucket: result.d2,
+    });
+
+    await runReminderPass({
+      field: 'welcomeReminderD7SentAt',
+      daysAgo: 7,
+      day: 7,
+      bucket: result.d7,
+    });
+
+    return NextResponse.json(result);
+  } finally {
+    cronInFlight = false;
+  }
 }

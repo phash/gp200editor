@@ -12,10 +12,16 @@ vi.mock('@/lib/prisma', () => ({
 }));
 vi.mock('@/lib/email', () => ({ sendVerifyReminderEmail: vi.fn() }));
 vi.mock('@/lib/errorLog', () => ({ logError: vi.fn().mockResolvedValue(undefined) }));
+// rateLimit is module-scoped (in-memory map). Mock it so each test controls
+// the gate cleanly without state bleeding between tests.
+vi.mock('@/lib/rateLimit', () => ({
+  rateLimit: vi.fn().mockReturnValue({ allowed: true, remaining: 5 }),
+}));
 
 import { POST } from '@/app/api/cron/verify-reminders/route';
 import { prisma } from '@/lib/prisma';
 import { sendVerifyReminderEmail } from '@/lib/email';
+import { rateLimit } from '@/lib/rateLimit';
 
 function makeReq(headers: Record<string, string> = {}) {
   return new Request('http://localhost/api/cron/verify-reminders', {
@@ -27,6 +33,7 @@ function makeReq(headers: Record<string, string> = {}) {
 describe('cron verify-reminders — auth guard', () => {
   beforeEach(() => {
     process.env.CRON_SECRET = 'test-secret-value';
+    vi.mocked(rateLimit).mockReturnValue({ allowed: true, remaining: 5 });
   });
 
   it('returns 401 when Authorization header missing', async () => {
@@ -63,6 +70,7 @@ describe('cron verify-reminders — auth guard', () => {
 describe('cron verify-reminders — D2 pass', () => {
   beforeEach(() => {
     process.env.CRON_SECRET = 'test-secret-value';
+    vi.mocked(rateLimit).mockReset().mockReturnValue({ allowed: true, remaining: 5 });
     vi.mocked(prisma.user.findMany).mockReset().mockResolvedValue([]);
     vi.mocked(prisma.user.updateMany).mockReset().mockResolvedValue({ count: 1 });
     vi.mocked(prisma.user.update).mockReset().mockResolvedValue({} as never);
@@ -134,6 +142,7 @@ describe('cron verify-reminders — D2 pass', () => {
 describe('cron verify-reminders — D7 pass', () => {
   beforeEach(() => {
     process.env.CRON_SECRET = 'test-secret-value';
+    vi.mocked(rateLimit).mockReset().mockReturnValue({ allowed: true, remaining: 5 });
     vi.mocked(prisma.user.findMany).mockReset().mockResolvedValue([]);
     vi.mocked(prisma.user.updateMany).mockReset().mockResolvedValue({ count: 1 });
     vi.mocked(prisma.emailVerificationToken.create).mockReset().mockResolvedValue({} as never);
@@ -167,5 +176,91 @@ describe('cron verify-reminders — D7 pass', () => {
       'fr',
       7,
     );
+  });
+});
+
+describe('cron verify-reminders — rate limit', () => {
+  beforeEach(() => {
+    process.env.CRON_SECRET = 'test-secret-value';
+    vi.mocked(prisma.user.findMany).mockReset().mockResolvedValue([]);
+    vi.mocked(prisma.user.updateMany).mockReset().mockResolvedValue({ count: 1 });
+    vi.mocked(sendVerifyReminderEmail).mockReset().mockResolvedValue();
+    vi.mocked(rateLimit).mockReset();
+  });
+
+  it('returns 429 when rateLimit denies the request', async () => {
+    vi.mocked(rateLimit).mockReturnValue({ allowed: false, remaining: 0 });
+    const res = await POST(makeReq({ authorization: 'Bearer test-secret-value' }));
+    expect(res.status).toBe(429);
+    const json = await res.json();
+    expect(json).toEqual({ error: 'rate-limited' });
+    // No DB work should have happened
+    expect(prisma.user.findMany).not.toHaveBeenCalled();
+  });
+
+  it('invokes rateLimit with the cron-verify-reminders key and 6/min budget', async () => {
+    vi.mocked(rateLimit).mockReturnValue({ allowed: true, remaining: 5 });
+    await POST(makeReq({ authorization: 'Bearer test-secret-value' }));
+    expect(rateLimit).toHaveBeenCalledWith(
+      expect.stringMatching(/^cron-verify-reminders:/),
+      6,
+      60 * 1000,
+    );
+  });
+});
+
+describe('cron verify-reminders — single-flight', () => {
+  beforeEach(() => {
+    process.env.CRON_SECRET = 'test-secret-value';
+    vi.mocked(rateLimit).mockReset().mockReturnValue({ allowed: true, remaining: 5 });
+    vi.mocked(prisma.user.findMany).mockReset().mockResolvedValue([]);
+    vi.mocked(prisma.user.updateMany).mockReset().mockResolvedValue({ count: 1 });
+    vi.mocked(sendVerifyReminderEmail).mockReset().mockResolvedValue();
+  });
+
+  it('returns 409 when another invocation is in-flight', async () => {
+    // Hold the first findMany unresolved → first POST stays inside the
+    // try block with cronInFlight=true. The second POST then short-circuits
+    // with 409.
+    let firstResolve: (value: unknown[]) => void = () => {};
+    vi.mocked(prisma.user.findMany).mockReturnValueOnce(
+      new Promise((res) => {
+        firstResolve = res;
+      }) as never,
+    );
+    const first = POST(makeReq({ authorization: 'Bearer test-secret-value' }));
+    // Yield once so `first` enters runReminderPass before we issue `second`
+    await Promise.resolve();
+    const second = await POST(makeReq({ authorization: 'Bearer test-secret-value' }));
+    expect(second.status).toBe(409);
+    const json = await second.json();
+    expect(json).toEqual({ error: 'in-flight' });
+    // Release the first call so the flag clears for downstream tests
+    firstResolve([]);
+    await first;
+  });
+});
+
+describe('cron verify-reminders — locale validation', () => {
+  beforeEach(() => {
+    process.env.CRON_SECRET = 'test-secret-value';
+    vi.mocked(rateLimit).mockReset().mockReturnValue({ allowed: true, remaining: 5 });
+    vi.mocked(prisma.user.findMany).mockReset().mockResolvedValue([]);
+    vi.mocked(prisma.user.updateMany).mockReset().mockResolvedValue({ count: 1 });
+    vi.mocked(prisma.user.update).mockReset().mockResolvedValue({} as never);
+    vi.mocked(prisma.emailVerificationToken.create).mockReset().mockResolvedValue({} as never);
+    vi.mocked(sendVerifyReminderEmail).mockReset().mockResolvedValue();
+  });
+
+  it('falls back to "en" when user locale is not in LOCALES', async () => {
+    vi.mocked(prisma.user.findMany).mockResolvedValueOnce([
+      { id: 'u1', email: 'a@b.de', locale: 'xx', username: 'mallory' },
+    ] as never).mockResolvedValueOnce([]);
+
+    await POST(makeReq({ authorization: 'Bearer test-secret-value' }));
+    const call = vi.mocked(sendVerifyReminderEmail).mock.calls[0]!;
+    expect(call[2]).toBe('en');
+    // verifyUrl must also use 'en'
+    expect(call[1]).toMatch(/\/en\/auth\/verify-email/);
   });
 });
