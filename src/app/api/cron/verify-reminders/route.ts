@@ -46,6 +46,7 @@ async function runReminderPass(args: ReminderPassArgs): Promise<void> {
       createdAt: { lt: cutoff },
     },
     select: { id: true, email: true, locale: true },
+    orderBy: { createdAt: 'asc' },
     take: 200,
   });
 
@@ -67,6 +68,12 @@ async function runReminderPass(args: ReminderPassArgs): Promise<void> {
       : 'en';
 
     try {
+      // Mirror resend-verification pattern: delete any pending tokens before
+      // issuing a fresh one so a user can't accumulate multiple valid tokens
+      // (register + D2 cron + D7 cron).
+      await prisma.emailVerificationToken.deleteMany({
+        where: { userId: u.id, usedAt: null },
+      });
       const token = crypto.randomBytes(32).toString('hex');
       const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
       await prisma.emailVerificationToken.create({

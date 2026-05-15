@@ -209,7 +209,7 @@ export async function sendWelcomeEmail(
 export async function sendVerifyReminderEmail(
   to: string,
   verifyUrl: string,
-  locale: Locale | string = 'en',
+  locale: Locale | string,
   day: 2 | 7,
 ): Promise<void> {
   if (day !== 2 && day !== 7) {

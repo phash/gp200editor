@@ -163,19 +163,36 @@ cd /opt/gp200editor && bash scripts/deploy-update.sh
 crontab -e
 ```
 
-Add this line:
+Add this to the crontab (`crontab -e`):
+
 ```cron
-0 * * * * curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" https://preset-forge.com/api/cron/verify-reminders >> /opt/gp200editor/logs/cron-verify-reminders.log 2>&1
+# Verify-reminder cron — runs hourly
+CRON_SECRET=<paste the 64-char hex value here>
+0 * * * * curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" https://www.preset-forge.com/api/cron/verify-reminders >> /opt/gp200editor/logs/cron-verify-reminders.log 2>&1
 ```
 
-`$CRON_SECRET` must be in the cron user's shell environment (e.g., set in `~/.profile`) — or inline the 64-char value into the crontab line directly.
+Two important details:
+
+- **Use `www.preset-forge.com`** (with www), not `preset-forge.com` — the bare-domain Caddy block does a 301 redirect to `www`, and curl strips the `Authorization` header on cross-host redirects (security default per RFC 7235). Direct `www` URL preserves the header.
+- **Declare `CRON_SECRET` inside the crontab file**, NOT in `~/.profile`. System cron does not source the user's shell profile. The `VAR=VAL` line at the top of the crontab is read directly by cron and exported for each scheduled command.
+
+If you prefer not to put the secret in the crontab file, inline the 64-char value directly:
+
+```cron
+0 * * * * curl -fsS -X POST -H "Authorization: Bearer 72d08e8e9d..." https://www.preset-forge.com/api/cron/verify-reminders >> /opt/gp200editor/logs/cron-verify-reminders.log 2>&1
+```
+
+Also: create the log directory if it doesn't exist yet:
+```bash
+mkdir -p /opt/gp200editor/logs
+```
 
 ### Smoke test
 
 ```bash
 source /opt/gp200editor/.env.prod
 curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" \
-  https://preset-forge.com/api/cron/verify-reminders | jq
+  https://www.preset-forge.com/api/cron/verify-reminders | jq
 ```
 
 Expected on a fresh install (no eligible users yet):

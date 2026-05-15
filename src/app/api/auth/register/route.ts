@@ -10,7 +10,6 @@ import { logError } from '@/lib/errorLog';
 import { verifyTurnstile } from '@/lib/turnstile';
 import { isDisposableEmail } from '@/lib/disposableEmails';
 import { getClientIp } from '@/lib/getClientIp';
-import { LOCALES, type Locale } from '@/i18n/locales';
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
@@ -37,8 +36,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { email, username, password } = parsed.data;
-  const locale: Locale = (LOCALES as readonly string[]).includes(body?.locale) ? body.locale : 'en';
+  const { email, username, password, locale } = parsed.data;
 
   // Disposable email check
   if (isDisposableEmail(email)) {

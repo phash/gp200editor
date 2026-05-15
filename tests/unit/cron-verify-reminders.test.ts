@@ -7,7 +7,10 @@ vi.mock('@/lib/prisma', () => ({
       updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       update: vi.fn().mockResolvedValue({}),
     },
-    emailVerificationToken: { create: vi.fn().mockResolvedValue({} as never) },
+    emailVerificationToken: {
+      deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+      create: vi.fn().mockResolvedValue({} as never),
+    },
   },
 }));
 vi.mock('@/lib/email', () => ({ sendVerifyReminderEmail: vi.fn() }));
@@ -74,6 +77,7 @@ describe('cron verify-reminders — D2 pass', () => {
     vi.mocked(prisma.user.findMany).mockReset().mockResolvedValue([]);
     vi.mocked(prisma.user.updateMany).mockReset().mockResolvedValue({ count: 1 });
     vi.mocked(prisma.user.update).mockReset().mockResolvedValue({} as never);
+    vi.mocked(prisma.emailVerificationToken.deleteMany).mockReset().mockResolvedValue({ count: 0 });
     vi.mocked(prisma.emailVerificationToken.create).mockReset().mockResolvedValue({} as never);
     vi.mocked(sendVerifyReminderEmail).mockReset().mockResolvedValue();
   });
@@ -145,6 +149,7 @@ describe('cron verify-reminders — D7 pass', () => {
     vi.mocked(rateLimit).mockReset().mockReturnValue({ allowed: true, remaining: 5 });
     vi.mocked(prisma.user.findMany).mockReset().mockResolvedValue([]);
     vi.mocked(prisma.user.updateMany).mockReset().mockResolvedValue({ count: 1 });
+    vi.mocked(prisma.emailVerificationToken.deleteMany).mockReset().mockResolvedValue({ count: 0 });
     vi.mocked(prisma.emailVerificationToken.create).mockReset().mockResolvedValue({} as never);
     vi.mocked(sendVerifyReminderEmail).mockReset().mockResolvedValue();
   });
@@ -248,6 +253,7 @@ describe('cron verify-reminders — locale validation', () => {
     vi.mocked(prisma.user.findMany).mockReset().mockResolvedValue([]);
     vi.mocked(prisma.user.updateMany).mockReset().mockResolvedValue({ count: 1 });
     vi.mocked(prisma.user.update).mockReset().mockResolvedValue({} as never);
+    vi.mocked(prisma.emailVerificationToken.deleteMany).mockReset().mockResolvedValue({ count: 0 });
     vi.mocked(prisma.emailVerificationToken.create).mockReset().mockResolvedValue({} as never);
     vi.mocked(sendVerifyReminderEmail).mockReset().mockResolvedValue();
   });
