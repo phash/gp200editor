@@ -59,6 +59,9 @@ model Preset {
   flagged       Boolean  @default(false)
   ratingAverage Float    @default(0)
   ratingCount   Int      @default(0)
+  audioKey      String?
+  audioMimeType String?
+  audioDurationMs Int?
   sourceUrl     String?
   sourceLabel   String?
   contentHash   String?
