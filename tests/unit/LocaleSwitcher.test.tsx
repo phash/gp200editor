@@ -15,7 +15,7 @@ const replaceMock = vi.fn();
 vi.mock('@/i18n/routing', () => ({
   useRouter: () => ({ replace: replaceMock }),
   usePathname: () => '/editor',
-  LOCALES: ['de', 'en', 'es', 'fr', 'it', 'pt'] as const,
+  LOCALES: ['de', 'en', 'es', 'fr', 'it', 'pt', 'pt-BR'] as const,
 }));
 vi.mock('next-intl', () => {
   const messages: Record<string, string> = {
@@ -40,18 +40,18 @@ describe('LocaleSwitcher', () => {
     expect(screen.getByRole('button', { name: 'Switch language' })).toBeTruthy();
   });
 
-  it('opens a menu with all 6 locale options when clicked', () => {
+  it('opens a menu with all 7 locale options when clicked', () => {
     render(<LocaleSwitcher />);
     fireEvent.click(screen.getByRole('button', { name: 'Switch language' }));
     const items = screen.getAllByRole('menuitem');
-    expect(items.length).toBe(6);
+    expect(items.length).toBe(7);
   });
 
-  it('shows beta label only on es/fr/it/pt', () => {
+  it('shows beta label on es/fr/it/pt/pt-BR', () => {
     render(<LocaleSwitcher />);
     fireEvent.click(screen.getByRole('button', { name: 'Switch language' }));
     const betaLabels = screen.getAllByText('beta');
-    expect(betaLabels.length).toBe(4);
+    expect(betaLabels.length).toBe(5);
   });
 
   it('calls router.replace with chosen locale on click', () => {
@@ -65,7 +65,7 @@ describe('LocaleSwitcher', () => {
   it('closes on Escape key', () => {
     render(<LocaleSwitcher />);
     fireEvent.click(screen.getByRole('button', { name: 'Switch language' }));
-    expect(screen.getAllByRole('menuitem').length).toBe(6);
+    expect(screen.getAllByRole('menuitem').length).toBe(7);
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryAllByRole('menuitem').length).toBe(0);
   });

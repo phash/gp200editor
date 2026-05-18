@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { buildHreflang, buildAlternates } from '@/lib/hreflang';
 
 describe('buildHreflang', () => {
-  it('returns all 6 locale URLs + x-default for a static path', () => {
+  it('returns all 7 locale URLs + x-default for a static path', () => {
     const result = buildHreflang('/editor');
     expect(result).toEqual({
       de: 'https://www.preset-forge.com/de/editor',
@@ -11,6 +11,7 @@ describe('buildHreflang', () => {
       fr: 'https://www.preset-forge.com/fr/editor',
       it: 'https://www.preset-forge.com/it/editor',
       pt: 'https://www.preset-forge.com/pt/editor',
+      'pt-BR': 'https://www.preset-forge.com/pt-BR/editor',
       'x-default': 'https://www.preset-forge.com/en/editor',
     });
   });
@@ -63,11 +64,11 @@ describe('buildHreflang edge cases', () => {
     expect(result.fr).toBe('https://www.preset-forge.com/fr/share/abc?debug=1');
   });
 
-  it('returns 7 entries — 6 locales + x-default', () => {
+  it('returns 8 entries — 7 locales + x-default', () => {
     const result = buildHreflang('/editor');
-    expect(Object.keys(result).length).toBe(7);
+    expect(Object.keys(result).length).toBe(8);
     expect(Object.keys(result).sort()).toEqual(
-      ['de', 'en', 'es', 'fr', 'it', 'pt', 'x-default'].sort(),
+      ['de', 'en', 'es', 'fr', 'it', 'pt', 'pt-BR', 'x-default'].sort(),
     );
   });
 });
