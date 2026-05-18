@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-05-18
+
+### Features
+- **FX-Loop SEND/RETURN editor** — neuer Insertion-Point-Editor analog zum offiziellen Valeton GP-200 Editor. Pfeile (`↗` SEND, `↘` RETURN) lassen sich per Drag & Drop oder Tastatur (←/→) zwischen den 11 Effekt-Slots (PRE…VOL) verschieben. Bypass-Anzeige wenn SEND === RETURN. ARIA-konform (`role="slider"`, vollständige Screenreader-Labels in allen 6 Sprachen).
+- **Live MIDI für FX-Loop** — SEND/RETURN-Bewegungen werden bei verbundenem Gerät sofort als SysEx `sub=0x20` ans Pedal geschickt. Push-Constraint (`SEND ≤ RETURN`) feuert bei Bedarf zwei Messages, um beide Pfeile synchron zu halten.
+- **`.prst` Codec für FX-Loop** — SEND/RETURN werden an Bytes `0x92`/`0x93` (innerhalb des Routing-Section-Headers) gelesen und geschrieben. Round-Trip-stabil, inkl. `rawSource`-basierter Presets.
+
+### Protocol
+- **`sub=0x20` Reorder vs. FX-Loop Move differenziert** — `decoded[14]`/`[15]` halten SEND/RETURN (vorher fälschlich als Konstanten markiert); `decoded[27]` ist ein Diskriminator: `0x08` = SEND verschoben, `0xBA` = RETURN verschoben, `0x44` = reine Routing-Umordnung. Reverse-engineered aus zwei USB-MIDI-Captures (2026-05-18), byte-für-byte verifiziert.
+
 ## 2026-04-11
 
 ### Features
