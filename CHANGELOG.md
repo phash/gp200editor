@@ -1,22 +1,18 @@
 # Changelog
 
-## 2026-05-18 (later)
+## 2026-05-18
 
 ### Features
 - **Inline-Rating in der Gallery** — Bewertungen können direkt auf der Gallery-Liste abgegeben werden. Anonyme Klicks zeigen einen Tooltip mit Login-Link; eigene Presets sind erwartungsgemäß nicht bewertbar.
 - **Kommentare auf Share-Pages** — Plaintext-Kommentare mit 1-Level-Threading (Top-Level + Reply), max 1000 Zeichen, URLs werden automatisch verlinkt (`rel=nofollow`). Verifizierte User können kommentieren, jederzeit editieren und soft-löschen. Soft-Delete zeigt einen Platzhalter, Replies bleiben sichtbar.
 - **Admin-Moderation für Kommentare** — Neuer Tab im Admin-Dashboard: Liste der letzten 50 Kommentare. Hard-Delete erfordert einen Grund (5–200 Zeichen) und wird im AdminAction-Log auditiert; kaskadiert auf Replies.
 - **Featured Preset auf der Startseite** — Bayes-Average (m=5, C=globaler Durchschnitt) über alle Presets mit Ratings der letzten 30 Tage. Hero-Block mit Signal-Chain-Grafik (Amp/Cab-Realnamen), Sternebewertung, Beschreibung und den 3 neuesten Kommentaren. Fallback auf All-Time-Best wenn das 30-Tage-Fenster leer ist.
-
-### Schema
-- **Neue Tabelle `Comment`** mit Self-FK für 1-Level-Threading (`parentId` nullable), Soft-Delete-Marker (`deletedAt`/`deletedBy`), Cascade-Delete bei Preset/User/Parent-Removal.
-
-## 2026-05-18
-
-### Features
 - **FX-Loop SEND/RETURN editor** — neuer Insertion-Point-Editor analog zum offiziellen Valeton GP-200 Editor. Pfeile (`↗` SEND, `↘` RETURN) lassen sich per Drag & Drop oder Tastatur (←/→) zwischen den 11 Effekt-Slots (PRE…VOL) verschieben. Bypass-Anzeige wenn SEND === RETURN. ARIA-konform (`role="slider"`, vollständige Screenreader-Labels in allen 6 Sprachen).
 - **Live MIDI für FX-Loop** — SEND/RETURN-Bewegungen werden bei verbundenem Gerät sofort als SysEx `sub=0x20` ans Pedal geschickt. Push-Constraint (`SEND ≤ RETURN`) feuert bei Bedarf zwei Messages, um beide Pfeile synchron zu halten.
 - **`.prst` Codec für FX-Loop** — SEND/RETURN werden an Bytes `0x92`/`0x93` (innerhalb des Routing-Section-Headers) gelesen und geschrieben. Round-Trip-stabil, inkl. `rawSource`-basierter Presets.
+
+### Schema
+- **Neue Tabelle `Comment`** mit Self-FK für 1-Level-Threading (`parentId` nullable), Soft-Delete-Marker (`deletedAt`/`deletedBy`), Cascade-Delete bei Preset/User/Parent-Removal.
 
 ### Protocol
 - **`sub=0x20` Reorder vs. FX-Loop Move differenziert** — `decoded[14]`/`[15]` halten SEND/RETURN (vorher fälschlich als Konstanten markiert); `decoded[27]` ist ein Diskriminator: `0x08` = SEND verschoben, `0xBA` = RETURN verschoben, `0x44` = reine Routing-Umordnung. Reverse-engineered aus zwei USB-MIDI-Captures (2026-05-18), byte-für-byte verifiziert.
