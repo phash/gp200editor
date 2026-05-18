@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireVerifiedUser } from '@/lib/session';
+import { requireVerifiedUser, validateSession } from '@/lib/session';
 import { verifyCsrf } from '@/lib/csrf';
 import { prisma } from '@/lib/prisma';
 import { rateLimit } from '@/lib/rateLimit';
-import { commentBodySchema } from '@/lib/commentValidators';
+import { commentBodySchema, adminDeleteReasonSchema } from '@/lib/commentValidators';
 
 export async function PATCH(
   request: NextRequest,
@@ -42,7 +42,59 @@ export async function PATCH(
   return NextResponse.json({ comment });
 }
 
-// DELETE — implemented in Task 8 (this is a stub to keep the route file present).
-export async function DELETE() {
-  return NextResponse.json({ error: 'Not implemented' }, { status: 501 });
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  if (!verifyCsrf(request)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const { user, session } = await validateSession();
+  if (!user || !session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const { id } = await params;
+  const existing = await prisma.comment.findUnique({
+    where: { id },
+    select: { id: true, userId: true, deletedAt: true },
+  });
+  if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+  const isAdmin = user.role === 'ADMIN';
+  const isAuthor = existing.userId === user.id;
+  if (!isAdmin && !isAuthor) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+  if (isAdmin && !isAuthor) {
+    // Hard delete + audit log
+    const json = await request.json().catch(() => null);
+    const parsed = adminDeleteReasonSchema.safeParse(json?.reason);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+    }
+
+    const repliesDeletedCount = await prisma.comment.count({ where: { parentId: id } });
+    await prisma.comment.delete({ where: { id } });
+    await prisma.adminAction.create({
+      data: {
+        adminId: user.id,
+        action: 'DELETE_COMMENT',
+        targetType: 'comment',
+        targetId: id,
+        reason: parsed.data,
+        metadata: { repliesDeletedCount },
+      },
+    });
+    return NextResponse.json({ ok: true, repliesDeleted: repliesDeletedCount });
+  }
+
+  // Author soft-delete
+  const limit = rateLimit(`comment-delete:${user.id}`, 30, 60 * 60 * 1000);
+  if (!limit.allowed) {
+    return NextResponse.json({ error: 'Too many deletes. Try again later.' }, { status: 429 });
+  }
+  if (existing.deletedAt) {
+    return NextResponse.json({ error: 'Already deleted' }, { status: 409 });
+  }
+  await prisma.comment.update({
+    where: { id },
+    data: { deletedAt: new Date(), deletedBy: 'AUTHOR', body: null },
+  });
+  return NextResponse.json({ ok: true });
 }

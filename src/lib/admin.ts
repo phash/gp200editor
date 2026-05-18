@@ -20,7 +20,7 @@ export async function requireAdmin(): Promise<{ user: User; session: Session }> 
 export function logAdminAction(opts: {
   adminId: string;
   action: string;
-  targetType: 'user' | 'preset';
+  targetType: 'user' | 'preset' | 'comment';
   targetId: string;
   reason?: string;
   metadata?: Record<string, unknown>;
