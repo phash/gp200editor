@@ -1019,3 +1019,28 @@ describe('SysExCodec: fxLoop parse', () => {
     expect(preset.fxLoopReturn).toBe(4);
   });
 });
+
+describe('SysExCodec: buildWriteChunks fxLoop', () => {
+  it('writes preset.fxLoopSend/Return to write-payload [114/115]', () => {
+    const preset: GP200Preset = {
+      version: '1',
+      patchName: 'WriteTest',
+      effects: Array.from({ length: 11 }, (_, i) => ({
+        slotIndex: i, effectId: 0x07000055, enabled: true,
+        params: Array(15).fill(0),
+      })),
+      checksum: 0,
+      fxLoopSend: 6,
+      fxLoopReturn: 7,
+    };
+    const chunks = SysExCodec.buildWriteChunks(preset, 5);
+    // Reassemble nibble bytes from all chunks (each chunk: F0..[10..12 header]..[nibble]..F7)
+    const allNibbles: number[] = [];
+    for (const ch of chunks) {
+      for (let i = 13; i < ch.length - 1; i++) allNibbles.push(ch[i]);
+    }
+    const decoded = SysExCodec.nibbleDecode(new Uint8Array(allNibbles));
+    expect(decoded[114]).toBe(6);
+    expect(decoded[115]).toBe(7);
+  });
+});

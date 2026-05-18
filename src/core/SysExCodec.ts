@@ -199,7 +199,8 @@ export const SysExCodec = {
     // [108:128] Routing section
     payload.set([0x08, 0x00, 0x10, 0x00], 108);
     payload[112] = 0x25; payload[113] = 0x00; // static write marker (captured: 0x25)
-    payload.set([0x04, 0x04], 114);       // constant
+    payload[114] = preset.fxLoopSend;
+    payload[115] = preset.fxLoopReturn;
     // Routing order from preset effects' slotIndex ordering
     for (let i = 0; i < 11; i++) {
       payload[116 + i] = preset.effects[i]?.slotIndex ?? i;
