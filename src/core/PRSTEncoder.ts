@@ -23,6 +23,8 @@ const AUTHOR_MAX         = 16;
 
 // Routing section (0x8C-0x9F)
 const OFFSET_ROUTING     = 0x8C;
+const OFFSET_FX_SEND     = 0x92;
+const OFFSET_FX_RETURN   = 0x93;
 
 // Effect blocks
 const EFFECT_BLOCK_COUNT = 11;
@@ -93,13 +95,15 @@ export class PRSTEncoder {
       gen.writeUint8(OFFSET_ROUTING + 1, 0x00);
       gen.writeUint8(OFFSET_ROUTING + 2, 0x10);
       gen.writeUint8(OFFSET_ROUTING + 3, 0x00);
-      gen.writeUint8(OFFSET_ROUTING + 6, 0x04);
-      gen.writeUint8(OFFSET_ROUTING + 7, 0x04);
     }
     for (let i = 0; i < EFFECT_BLOCK_COUNT; i++) {
       const slot = preset.effects[i];
       gen.writeUint8(OFFSET_ROUTING + 8 + i, slot ? slot.slotIndex : i);
     }
+    // FX-loop SEND/RETURN positions (1..10). Always written, regardless of
+    // rawSource, because the editor owns these bytes.
+    gen.writeUint8(OFFSET_FX_SEND, preset.fxLoopSend);
+    gen.writeUint8(OFFSET_FX_RETURN, preset.fxLoopReturn);
 
     // ── Effect blocks (0xA0-0x3AF, 11 × 72 bytes) ───────────────────────
     // Each slot's physical byte position is determined by its slotIndex

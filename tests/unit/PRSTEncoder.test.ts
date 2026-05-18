@@ -135,4 +135,38 @@ describe('PRSTEncoder', () => {
     expect(params[4]).toBeCloseTo(-12.0, 5);
     expect(params[5]).toBeCloseTo(0.1, 5);
   });
+
+  it('writes fxLoopSend/Return to bytes 0x92/0x93', () => {
+    const preset: GP200Preset = {
+      version: '1',
+      patchName: 'X',
+      effects: Array.from({ length: 11 }, (_, i) => ({
+        slotIndex: i, effectId: 0, enabled: false, params: Array(15).fill(0),
+      })),
+      checksum: 0,
+      fxLoopSend: 2,
+      fxLoopReturn: 8,
+    };
+    const ab = new PRSTEncoder().encode(preset);
+    const bytes = new Uint8Array(ab);
+    expect(bytes[0x92]).toBe(2);
+    expect(bytes[0x93]).toBe(8);
+  });
+
+  it('preserves fxLoopSend/Return through encode→decode round-trip', () => {
+    const preset: GP200Preset = {
+      version: '1',
+      patchName: 'X',
+      effects: Array.from({ length: 11 }, (_, i) => ({
+        slotIndex: i, effectId: 0, enabled: false, params: Array(15).fill(0),
+      })),
+      checksum: 0,
+      fxLoopSend: 5,
+      fxLoopReturn: 9,
+    };
+    const ab = new PRSTEncoder().encode(preset);
+    const decoded = new PRSTDecoder(new Uint8Array(ab)).decode();
+    expect(decoded.fxLoopSend).toBe(5);
+    expect(decoded.fxLoopReturn).toBe(9);
+  });
 });
