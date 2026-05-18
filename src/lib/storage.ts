@@ -103,3 +103,31 @@ export async function downloadPresetBuffer(key: string): Promise<Buffer> {
   }
   return Buffer.concat(chunks);
 }
+
+function audioBucket() {
+  return process.env.GARAGE_AUDIO_BUCKET!;
+}
+
+export async function uploadAudio(key: string, buffer: Buffer, contentType: string): Promise<void> {
+  await getClient().send(
+    new PutObjectCommand({
+      Bucket: audioBucket(),
+      Key: key,
+      Body: buffer,
+      ContentType: contentType,
+    }),
+  );
+}
+
+export async function deleteAudio(key: string): Promise<void> {
+  await getClient().send(
+    new DeleteObjectCommand({ Bucket: audioBucket(), Key: key }),
+  );
+}
+
+export async function getAudioStream(key: string): Promise<Readable> {
+  const response = await getClient().send(
+    new GetObjectCommand({ Bucket: audioBucket(), Key: key }),
+  );
+  return response.Body as Readable;
+}
