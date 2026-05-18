@@ -551,7 +551,18 @@
     "presetCount": "{count} Presets",
     "downloads": "{count} Downloads",
     "noResults": "Keine Ergebnisse",
-    "page": "Seite {page} von {total}"
+    "page": "Seite {page} von {total}",
+    "comments": {
+      "tabTitle": "Kommentare",
+      "columnUser": "User",
+      "columnPreset": "Preset",
+      "columnBody": "Inhalt",
+      "columnDate": "Datum",
+      "hardDeleteButton": "Hart löschen",
+      "hardDeleteDialogTitle": "Kommentar hart löschen",
+      "hardDeleteReasonLabel": "Grund (Pflicht, 5–200 Zeichen)",
+      "confirmDelete": "Löschen"
+    }
   },
   "email": {
     "brand": "PRESET FORGE",

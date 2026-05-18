@@ -4,8 +4,9 @@ import { useEffect, useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { ConfirmDialog } from './ConfirmDialog';
 import { WarnDialog } from './WarnDialog';
+import { AdminCommentsTab } from './admin/AdminCommentsTab';
 
-type Tab = 'users' | 'presets' | 'errors' | 'auditLog';
+type Tab = 'users' | 'presets' | 'errors' | 'auditLog' | 'comments';
 
 interface Stats { userCount: number; presetCount: number; errorCount: number; suspendedCount: number; }
 interface AdminUser { id: string; username: string; email: string; role: string; suspended: boolean; avatarUrl: string | null; createdAt: string; presetCount: number; }
@@ -89,9 +90,10 @@ export function AdminDashboard() {
     else if (tab === 'presets') fetchPresets();
     else if (tab === 'errors') fetchErrors();
     else if (tab === 'auditLog') fetchActions();
+    // 'comments' tab manages its own data fetch inside AdminCommentsTab
   }, [tab, fetchUsers, fetchPresets, fetchErrors, fetchActions]);
 
-  function reload() { fetchStats(); if (tab === 'users') fetchUsers(); else if (tab === 'presets') fetchPresets(); else if (tab === 'errors') fetchErrors(); else fetchActions(); }
+  function reload() { fetchStats(); if (tab === 'users') fetchUsers(); else if (tab === 'presets') fetchPresets(); else if (tab === 'errors') fetchErrors(); else if (tab === 'auditLog') fetchActions(); }
 
   async function adminFetch(url: string, method: string, body?: unknown) {
     setLoading(true);
@@ -145,8 +147,8 @@ export function AdminDashboard() {
     }
   }
 
-  const tabs: Tab[] = ['users', 'presets', 'errors', 'auditLog'];
-  const tabLabels: Record<Tab, string> = { users: t('users'), presets: t('presets'), errors: t('errors'), auditLog: t('auditLog') };
+  const tabs: Tab[] = ['users', 'presets', 'errors', 'auditLog', 'comments'];
+  const tabLabels: Record<Tab, string> = { users: t('users'), presets: t('presets'), errors: t('errors'), auditLog: t('auditLog'), comments: t('comments.tabTitle') };
 
   const btnStyle = (color: string) => ({ border: `1px solid ${color}`, color, background: 'transparent' });
   const btnClass = 'px-2.5 py-1 text-xs rounded transition-colors cursor-pointer';
@@ -172,7 +174,7 @@ export function AdminDashboard() {
 
       {/* Search / Filter Bar */}
       <div className="flex gap-3 mb-4 items-center">
-        {tab !== 'auditLog' && (
+        {tab !== 'auditLog' && tab !== 'comments' && (
           <input
             type="text" value={search} onChange={(e) => setSearch(e.target.value)}
             placeholder={tab === 'users' ? t('searchUsers') : tab === 'presets' ? t('searchPresets') : t('searchErrors')}
@@ -354,6 +356,9 @@ export function AdminDashboard() {
           ))}
         </div>
       )}
+
+      {/* Comments Tab */}
+      {tab === 'comments' && <AdminCommentsTab />}
 
       {/* Pagination */}
       {totalPages > 1 && (
