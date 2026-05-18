@@ -22,6 +22,8 @@ const samplePreset: GP200Preset = {
     params: EMPTY_PARAMS,
   })),
   checksum: 0,
+  fxLoopSend: 4,
+  fxLoopReturn: 4,
 };
 
 describe('PRSTEncoder', () => {
@@ -134,5 +136,62 @@ describe('PRSTEncoder', () => {
     expect(params[3]).toBeCloseTo(0.0, 5);
     expect(params[4]).toBeCloseTo(-12.0, 5);
     expect(params[5]).toBeCloseTo(0.1, 5);
+  });
+
+  it('writes fxLoopSend/Return to bytes 0x92/0x93', () => {
+    const preset: GP200Preset = {
+      version: '1',
+      patchName: 'X',
+      effects: Array.from({ length: 11 }, (_, i) => ({
+        slotIndex: i, effectId: 0, enabled: false, params: Array(15).fill(0),
+      })),
+      checksum: 0,
+      fxLoopSend: 2,
+      fxLoopReturn: 8,
+    };
+    const ab = new PRSTEncoder().encode(preset);
+    const bytes = new Uint8Array(ab);
+    expect(bytes[0x92]).toBe(2);
+    expect(bytes[0x93]).toBe(8);
+  });
+
+  it('preserves fxLoopSend/Return through encode→decode round-trip', () => {
+    const preset: GP200Preset = {
+      version: '1',
+      patchName: 'X',
+      effects: Array.from({ length: 11 }, (_, i) => ({
+        slotIndex: i, effectId: 0, enabled: false, params: Array(15).fill(0),
+      })),
+      checksum: 0,
+      fxLoopSend: 5,
+      fxLoopReturn: 9,
+    };
+    const ab = new PRSTEncoder().encode(preset);
+    const decoded = new PRSTDecoder(new Uint8Array(ab)).decode();
+    expect(decoded.fxLoopSend).toBe(5);
+    expect(decoded.fxLoopReturn).toBe(9);
+  });
+
+  it('writes fxLoopSend/Return for rawSource-based preset (user edit)', () => {
+    // Encode a synthetic preset first, then re-decode and re-encode with edited
+    // fxLoop values — this exercises the rawSource path (the second encode has
+    // rawSource set from the first decode).
+    const initial = new PRSTEncoder().encode({
+      version: '1',
+      patchName: 'X',
+      effects: Array.from({ length: 11 }, (_, i) => ({
+        slotIndex: i, effectId: 0, enabled: false, params: Array(15).fill(0),
+      })),
+      checksum: 0,
+      fxLoopSend: 4,
+      fxLoopReturn: 4,
+    });
+    const decoded = new PRSTDecoder(new Uint8Array(initial)).decode();
+    expect(decoded.rawSource).toBeDefined(); // confirm we're on the rawSource path
+    // User edits SEND/RETURN
+    const edited = { ...decoded, fxLoopSend: 3, fxLoopReturn: 9 };
+    const reencoded = new Uint8Array(new PRSTEncoder().encode(edited));
+    expect(reencoded[0x92]).toBe(3);
+    expect(reencoded[0x93]).toBe(9);
   });
 });

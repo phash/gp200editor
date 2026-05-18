@@ -5,7 +5,7 @@ import type { GP200Preset } from '@/core/types';
 
 const EMPTY_PARAMS = Array(15).fill(0);
 
-function makePreset(): GP200Preset {
+function makePreset(overrides: Partial<GP200Preset> = {}): GP200Preset {
   return {
     version: '1',
     patchName: 'Test',
@@ -16,6 +16,9 @@ function makePreset(): GP200Preset {
       params: [...EMPTY_PARAMS],
     })),
     checksum: 0,
+    fxLoopSend: 4,
+    fxLoopReturn: 4,
+    ...overrides,
   };
 }
 
@@ -86,6 +89,43 @@ describe('usePreset', () => {
       act(() => result.current.loadPreset(makePreset()));
       act(() => result.current.setParam(0, 5, 42.5));
       expect(result.current.preset!.effects[0].params[5]).toBe(42.5);
+    });
+  });
+
+  describe('setFxLoopSend', () => {
+    it('clamps to [1,10]', () => {
+      const { result } = renderHook(() => usePreset());
+      act(() => result.current.loadPreset(makePreset({ fxLoopSend: 4, fxLoopReturn: 4 })));
+      act(() => result.current.setFxLoopSend(15));
+      expect(result.current.preset?.fxLoopSend).toBe(10);
+      act(() => result.current.setFxLoopSend(0));
+      expect(result.current.preset?.fxLoopSend).toBe(1);
+    });
+
+    it('pushes RETURN forward when colliding', () => {
+      const { result } = renderHook(() => usePreset());
+      act(() => result.current.loadPreset(makePreset({ fxLoopSend: 2, fxLoopReturn: 5 })));
+      act(() => result.current.setFxLoopSend(8));
+      expect(result.current.preset?.fxLoopSend).toBe(8);
+      expect(result.current.preset?.fxLoopReturn).toBe(8);
+    });
+
+    it('leaves RETURN alone when no collision', () => {
+      const { result } = renderHook(() => usePreset());
+      act(() => result.current.loadPreset(makePreset({ fxLoopSend: 2, fxLoopReturn: 8 })));
+      act(() => result.current.setFxLoopSend(5));
+      expect(result.current.preset?.fxLoopSend).toBe(5);
+      expect(result.current.preset?.fxLoopReturn).toBe(8);
+    });
+  });
+
+  describe('setFxLoopReturn', () => {
+    it('pushes SEND backward when colliding', () => {
+      const { result } = renderHook(() => usePreset());
+      act(() => result.current.loadPreset(makePreset({ fxLoopSend: 5, fxLoopReturn: 8 })));
+      act(() => result.current.setFxLoopReturn(2));
+      expect(result.current.preset?.fxLoopSend).toBe(2);
+      expect(result.current.preset?.fxLoopReturn).toBe(2);
     });
   });
 });

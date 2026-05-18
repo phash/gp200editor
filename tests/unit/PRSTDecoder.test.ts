@@ -124,6 +124,24 @@ describe('PRSTDecoder', () => {
       expect(params[i]).toBe(0);
     }
   });
+
+  it('reads fxLoopSend / fxLoopReturn from offset 0x92 / 0x93', () => {
+    const buf = buildTestBuffer();
+    buf[0x92] = 0x03;
+    buf[0x93] = 0x07;
+    const decoded = new PRSTDecoder(buf).decode();
+    expect(decoded.fxLoopSend).toBe(3);
+    expect(decoded.fxLoopReturn).toBe(7);
+  });
+
+  it('falls back to default 4 when fxLoop bytes are out of range', () => {
+    const buf = buildTestBuffer();
+    buf[0x92] = 0x00; // out of range
+    buf[0x93] = 0x0F; // out of range
+    const decoded = new PRSTDecoder(buf).decode();
+    expect(decoded.fxLoopSend).toBe(4);
+    expect(decoded.fxLoopReturn).toBe(4);
+  });
 });
 
 describe('PRSTDecoder mit echten .prst Dateien', () => {

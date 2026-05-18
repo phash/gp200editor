@@ -167,7 +167,14 @@
     "minLabel": "Min",
     "maxLabel": "Max",
     "unassigned": "Nicht zugewiesen",
-    "expSendError": "EXP-Zuweisung konnte nicht gesendet werden"
+    "expSendError": "EXP-Zuweisung konnte nicht gesendet werden",
+    "fxLoop": {
+      "send": "Send",
+      "return": "Return",
+      "bypass": "FX-Loop deaktiviert (Send = Return)",
+      "ariaSend": "FX-Loop Send-Position, derzeit zwischen Effekt {prev} und {next}",
+      "ariaReturn": "FX-Loop Return-Position, derzeit zwischen Effekt {prev} und {next}"
+    }
   },
   "auth": {
     "loginTitle": "Anmelden",

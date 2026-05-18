@@ -11,6 +11,8 @@ interface PresetActions {
   changeEffect: (slotIndex: number, effectId: number) => void;
   reorderEffects: (fromIndex: number, toIndex: number) => void;
   setParam: (slotIndex: number, paramIdx: number, value: number) => void;
+  setFxLoopSend: (pos: number) => void;
+  setFxLoopReturn: (pos: number) => void;
   reset: () => void;
 }
 
@@ -92,9 +94,32 @@ export function usePreset(): PresetActions {
     });
   }, []);
 
+  const setFxLoopSend = useCallback((pos: number) => {
+    const clamped = Math.max(1, Math.min(10, pos));
+    setPreset((prev) => {
+      if (!prev) return null;
+      const nextReturn = Math.max(clamped, prev.fxLoopReturn);
+      return { ...prev, fxLoopSend: clamped, fxLoopReturn: nextReturn };
+    });
+  }, []);
+
+  const setFxLoopReturn = useCallback((pos: number) => {
+    const clamped = Math.max(1, Math.min(10, pos));
+    setPreset((prev) => {
+      if (!prev) return null;
+      const nextSend = Math.min(clamped, prev.fxLoopSend);
+      return { ...prev, fxLoopSend: nextSend, fxLoopReturn: clamped };
+    });
+  }, []);
+
   const reset = useCallback(() => {
     setPreset(null);
   }, []);
 
-  return { preset, loadPreset, setPatchName, setAuthor, toggleEffect, changeEffect, reorderEffects, setParam, reset };
+  return {
+    preset, loadPreset, setPatchName, setAuthor,
+    toggleEffect, changeEffect, reorderEffects, setParam,
+    setFxLoopSend, setFxLoopReturn,
+    reset,
+  };
 }

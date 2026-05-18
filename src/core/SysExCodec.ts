@@ -115,6 +115,11 @@ export const SysExCodec = {
       }
     }
 
+    const rawSend = decoded.length > 106 ? decoded[106] : 4;
+    const rawReturn = decoded.length > 107 ? decoded[107] : 4;
+    const fxLoopSend = rawSend >= 1 && rawSend <= 10 ? rawSend : 4;
+    const fxLoopReturn = rawReturn >= 1 && rawReturn <= 10 ? rawReturn : 4;
+
     const effects: GP200Preset['effects'] = [];
     const view = new DataView(decoded.buffer, decoded.byteOffset, decoded.byteLength);
     for (let b = 0; b < 11; b++) {
@@ -133,7 +138,7 @@ export const SysExCodec = {
       effects.push({ slotIndex, enabled, effectId, params });
     }
 
-    return GP200PresetSchema.parse({ version: '1', patchName, author: author || undefined, effects, checksum: 0 });
+    return GP200PresetSchema.parse({ version: '1', patchName, author: author || undefined, effects, fxLoopSend, fxLoopReturn, checksum: 0 });
   },
 
   parseReadChunks(chunks: Uint8Array[]): GP200Preset {
@@ -194,7 +199,8 @@ export const SysExCodec = {
     // [108:128] Routing section
     payload.set([0x08, 0x00, 0x10, 0x00], 108);
     payload[112] = 0x25; payload[113] = 0x00; // static write marker (captured: 0x25)
-    payload.set([0x04, 0x04], 114);       // constant
+    payload[114] = preset.fxLoopSend;
+    payload[115] = preset.fxLoopReturn;
     // Routing order from preset effects' slotIndex ordering
     for (let i = 0; i < 11; i++) {
       payload[116 + i] = preset.effects[i]?.slotIndex ?? i;
@@ -523,21 +529,51 @@ export const SysExCodec = {
     return msg;
   },
 
-  buildReorderEffects(order: number[]): Uint8Array {
+  buildReorderEffects(order: number[], send: number, ret: number): Uint8Array {
     // CMD=0x12, sub=0x20, 78 bytes — nibble-encoded 32-byte payload
     // Confirmed: capture 101538 (NR↔AMP swap) + 101714 (NR↔AMP + DLY↔RVB)
     // order: array of 11 slot indices representing the new chain order
+    // decoded[14]=SEND, decoded[15]=RETURN (1..10). decoded[27]=0x44 flags this
+    // as a routing-reorder (vs FX-loop move which uses 0x08/0xBA — see buildFxLoopMove).
     // Device responds with sub=0x14 echoing the new routing order
     const decoded = new Uint8Array(32);
     decoded[2] = 0x04;                          // constant
     decoded[8] = 0x08;                          // msg type: reorder
     decoded[10] = 0x10;                         // constant
-    decoded[14] = 0x04;                         // constant
-    decoded[15] = 0x04;                         // constant
+    decoded[14] = send & 0xFF;                  // SEND position (1..10)
+    decoded[15] = ret & 0xFF;                   // RETURN position (1..10)
     for (let i = 0; i < 11 && i < order.length; i++) {
       decoded[16 + i] = order[i];
     }
     decoded[27] = 0x44;                         // terminator
+
+    const nibbles = this.nibbleEncode(decoded);
+    const msg = new Uint8Array(78);
+    msg.set([0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x20, 0x00, 0x00, 0x00]);
+    msg.set(nibbles, 13);
+    msg[77] = 0xF7;
+    return msg;
+  },
+
+  buildFxLoopMove(order: number[], send: number, ret: number, which: 'send' | 'return'): Uint8Array {
+    // CMD=0x12, sub=0x20, 78 bytes — nibble-encoded 32-byte payload
+    // Confirmed: captures 075745 (SEND moves) + 075856 (RETURN moves) — 2026-05-18
+    // Same envelope as buildReorderEffects, but with FX-loop discriminators:
+    //   decoded[6]=0x51 and decoded[12]=0x51 (vs 0x00 in reorder)
+    //   decoded[27]=0x08 (send moved) or 0xBA (return moved), vs 0x44 (reorder)
+    // Routing array decoded[16:27] reflects current state (unchanged by this op).
+    const decoded = new Uint8Array(32);
+    decoded[2] = 0x04;
+    decoded[6] = 0x51;
+    decoded[8] = 0x08;
+    decoded[10] = 0x10;
+    decoded[12] = 0x51;
+    decoded[14] = send & 0xFF;
+    decoded[15] = ret & 0xFF;
+    for (let i = 0; i < 11 && i < order.length; i++) {
+      decoded[16 + i] = order[i];
+    }
+    decoded[27] = which === 'send' ? 0x08 : 0xBA;
 
     const nibbles = this.nibbleEncode(decoded);
     const msg = new Uint8Array(78);

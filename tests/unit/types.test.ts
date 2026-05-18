@@ -46,6 +46,42 @@ describe('GP200PresetSchema', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it('defaults fxLoopSend and fxLoopReturn to 4 when omitted', () => {
+    const parsed = GP200PresetSchema.parse({
+      version: '1',
+      patchName: 'X',
+      effects: FULL_EFFECTS,
+      checksum: 0,
+    });
+    expect(parsed.fxLoopSend).toBe(4);
+    expect(parsed.fxLoopReturn).toBe(4);
+  });
+
+  it('accepts custom fxLoopSend/Return in range 1..10', () => {
+    const parsed = GP200PresetSchema.parse({
+      version: '1',
+      patchName: 'X',
+      effects: FULL_EFFECTS,
+      checksum: 0,
+      fxLoopSend: 1,
+      fxLoopReturn: 10,
+    });
+    expect(parsed.fxLoopSend).toBe(1);
+    expect(parsed.fxLoopReturn).toBe(10);
+  });
+
+  it('rejects fxLoopSend and fxLoopReturn out of range', () => {
+    const base = {
+      version: '1', patchName: 'X',
+      effects: FULL_EFFECTS,
+      checksum: 0,
+    };
+    expect(() => GP200PresetSchema.parse({ ...base, fxLoopSend: 0 })).toThrow();
+    expect(() => GP200PresetSchema.parse({ ...base, fxLoopSend: 11 })).toThrow();
+    expect(() => GP200PresetSchema.parse({ ...base, fxLoopReturn: 0 })).toThrow();
+    expect(() => GP200PresetSchema.parse({ ...base, fxLoopReturn: 11 })).toThrow();
+  });
 });
 
 describe('EffectSlotSchema', () => {

@@ -167,7 +167,14 @@
     "minLabel": "Min",
     "maxLabel": "Max",
     "unassigned": "Non assigné",
-    "expSendError": "Échec de l'envoi de l'assignation EXP"
+    "expSendError": "Échec de l'envoi de l'assignation EXP",
+    "fxLoop": {
+      "send": "Envoi",
+      "return": "Retour",
+      "bypass": "Boucle d'effets désactivée (Envoi = Retour)",
+      "ariaSend": "Position d'envoi de la boucle d'effets, actuellement entre les effets {prev} et {next}",
+      "ariaReturn": "Position de retour de la boucle d'effets, actuellement entre les effets {prev} et {next}"
+    }
   },
   "auth": {
     "loginTitle": "Connexion",

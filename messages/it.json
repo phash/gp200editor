@@ -167,7 +167,14 @@
     "minLabel": "Min",
     "maxLabel": "Max",
     "unassigned": "Non assegnato",
-    "expSendError": "Invio assegnazione EXP fallito"
+    "expSendError": "Invio assegnazione EXP fallito",
+    "fxLoop": {
+      "send": "Invio",
+      "return": "Ritorno",
+      "bypass": "FX Loop disattivato (Invio = Ritorno)",
+      "ariaSend": "Posizione di invio del FX Loop, attualmente tra gli effetti {prev} e {next}",
+      "ariaReturn": "Posizione di ritorno del FX Loop, attualmente tra gli effetti {prev} e {next}"
+    }
   },
   "auth": {
     "loginTitle": "Accedi",

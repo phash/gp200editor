@@ -267,5 +267,7 @@ export function convertHLX(hlx: HLXPreset): GP200Preset {
     author,
     effects,
     checksum: 0,
+    fxLoopSend: 4,
+    fxLoopReturn: 4,
   };
 }

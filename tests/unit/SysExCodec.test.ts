@@ -226,6 +226,8 @@ describe('SysExCodec: buildWriteChunks', () => {
       effectId: 0x03000001 + i,
       params: Array.from({ length: 15 }, (_, p) => p * 1.5),
     })),
+    fxLoopSend: 4,
+    fxLoopReturn: 4,
   };
 
   it('returns exactly 5 chunks (extended to include blocks 8, 9 complete + block 10 partial)', () => {
@@ -705,7 +707,7 @@ describe('SysExCodec: buildParamChange', () => {
 
 describe('SysExCodec: buildReorderEffects', () => {
   it('returns a 78-byte SysEx with CMD=0x12, sub=0x20', () => {
-    const msg = SysExCodec.buildReorderEffects([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    const msg = SysExCodec.buildReorderEffects([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 4, 4);
     expect(msg.length).toBe(78);
     expect(msg[0]).toBe(0xF0);
     expect(msg[8]).toBe(0x12);
@@ -715,7 +717,8 @@ describe('SysExCodec: buildReorderEffects', () => {
 
   it('NR↔AMP swap matches capture (gp200-capture-20260319-101714)', () => {
     // Reorder 1: PRE, WAH, BOOST, NR(4), AMP(3), CAB, EQ, MOD, DLY, RVB, VOL
-    const msg = SysExCodec.buildReorderEffects([0, 1, 2, 4, 3, 5, 6, 7, 8, 9, 10]);
+    // Capture shows decoded[14]=0x04, decoded[15]=0x04 — pass send=4, ret=4
+    const msg = SysExCodec.buildReorderEffects([0, 1, 2, 4, 3, 5, 6, 7, 8, 9, 10], 4, 4);
     // Exact bytes from USB capture gp200-capture-20260319-101714 Pkt 457 (t=35.9s)
     const expected = new Uint8Array([
       0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x20, // [0-9]   header
@@ -734,16 +737,34 @@ describe('SysExCodec: buildReorderEffects', () => {
   });
 
   it('DLY↔RVB swap produces correct routing at decoded[16:27]', () => {
-    const msg = SysExCodec.buildReorderEffects([0, 1, 2, 4, 3, 5, 6, 7, 9, 8, 10]);
+    const msg = SysExCodec.buildReorderEffects([0, 1, 2, 4, 3, 5, 6, 7, 9, 8, 10], 4, 4);
     const decoded = SysExCodec.nibbleDecode(msg.slice(13, 77));
     expect(Array.from(decoded.slice(16, 27))).toEqual([0, 1, 2, 4, 3, 5, 6, 7, 9, 8, 10]);
     expect(decoded[27]).toBe(0x44); // terminator
   });
 
   it('default order has sequential indices', () => {
-    const msg = SysExCodec.buildReorderEffects([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    const msg = SysExCodec.buildReorderEffects([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 4, 4);
     const decoded = SysExCodec.nibbleDecode(msg.slice(13, 77));
     expect(Array.from(decoded.slice(16, 27))).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  });
+});
+
+describe('SysExCodec: buildReorderEffects with SEND/RETURN', () => {
+  it('places send and ret at decoded[14] and [15]', () => {
+    const order = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    const msg = SysExCodec.buildReorderEffects(order, 5, 9);
+    const nibble = msg.slice(13, msg.length - 1);
+    const decoded = SysExCodec.nibbleDecode(nibble);
+    expect(decoded[14]).toBe(5);
+    expect(decoded[15]).toBe(9);
+    for (let i = 0; i < 11; i++) expect(decoded[16 + i]).toBe(order[i]);
+  });
+
+  it('keeps the existing flag byte decoded[27]=0x44 for reorder', () => {
+    const msg = SysExCodec.buildReorderEffects([0,1,2,3,4,5,6,7,8,9,10], 4, 4);
+    const decoded = SysExCodec.nibbleDecode(msg.slice(13, msg.length - 1));
+    expect(decoded[27]).toBe(0x44);
   });
 });
 
@@ -983,6 +1004,8 @@ describe('SysExCodec: author in read/write chunks', () => {
     const preset = {
       version: '1', patchName: 'Test', author: 'Author1', checksum: 0,
       effects: Array.from({ length: 11 }, (_, i) => ({ slotIndex: i, effectId: 0, enabled: false, params: Array(15).fill(0) })),
+      fxLoopSend: 4,
+      fxLoopReturn: 4,
     };
     const chunks = SysExCodec.buildWriteChunks(preset, 0);
     // Reassemble nibble data and decode
@@ -995,5 +1018,95 @@ describe('SysExCodec: author in read/write chunks', () => {
       author += String.fromCharCode(decoded[52 + i]);
     }
     expect(author).toBe('Author1');
+  });
+});
+
+describe('SysExCodec: fxLoop parse', () => {
+  it('reads SEND from decoded[106] and RETURN from decoded[107]', () => {
+    const buf = buildDecodedPreset('Test', 0);
+    buf[106] = 0x03;
+    buf[107] = 0x09;
+    const chunks = buildFakeChunks(buf, 0);
+    const preset = SysExCodec.parseReadChunks(chunks);
+    expect(preset.fxLoopSend).toBe(3);
+    expect(preset.fxLoopReturn).toBe(9);
+  });
+
+  it('clamps out-of-range fxLoop values to default 4', () => {
+    const buf = buildDecodedPreset('Test', 0);
+    buf[106] = 0x00; // out of range
+    buf[107] = 0xFF; // out of range
+    const chunks = buildFakeChunks(buf, 0);
+    const preset = SysExCodec.parseReadChunks(chunks);
+    expect(preset.fxLoopSend).toBe(4);
+    expect(preset.fxLoopReturn).toBe(4);
+  });
+});
+
+describe('SysExCodec: buildFxLoopMove', () => {
+  // Capture: scripts/gp200-capture-20260518-075745.pcap, host->dev pkt 43
+  // Raw payload after F0..GP-2..CMD..SUB..3-byte pad (= msg.slice(13, -1)):
+  // 64 nibble bytes that decode to:
+  //   00 00 04 00 00 00 51 00 08 00 10 00 51 00 05 05 00 01 02 03 04 05 06 07 08 09 0a 08 00 00 00 00
+  const CAPTURE_1_PAYLOAD = new Uint8Array([
+    0x00,0x00,0x00,0x00,0x00,0x04,0x00,0x00,0x00,0x00,0x00,0x00,0x05,0x01,0x00,0x00,
+    0x00,0x08,0x00,0x00,0x01,0x00,0x00,0x00,0x05,0x01,0x00,0x00,0x00,0x05,0x00,0x05,
+    0x00,0x00,0x00,0x01,0x00,0x02,0x00,0x03,0x00,0x04,0x00,0x05,0x00,0x06,0x00,0x07,
+    0x00,0x08,0x00,0x09,0x00,0x0a,0x00,0x08,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+  ]);
+
+  it("matches capture pkt 43 byte-for-byte (SEND=5, RETURN=5, kind='send')", () => {
+    const msg = SysExCodec.buildFxLoopMove(
+      [0,1,2,3,4,5,6,7,8,9,10],
+      5, 5,
+      'send',
+    );
+    // Strip envelope (F0..CMD..SUB..3-byte pad → 13 bytes) and trailing F7
+    const payload = msg.slice(13, msg.length - 1);
+    expect(payload).toEqual(CAPTURE_1_PAYLOAD);
+  });
+
+  it("sets decoded[27]=0xBA when kind='return'", () => {
+    const msg = SysExCodec.buildFxLoopMove(
+      [0,1,2,3,4,5,6,7,8,9,10],
+      1, 9,
+      'return',
+    );
+    const decoded = SysExCodec.nibbleDecode(msg.slice(13, msg.length - 1));
+    expect(decoded[27]).toBe(0xBA);
+    expect(decoded[14]).toBe(1);
+    expect(decoded[15]).toBe(9);
+  });
+
+  it('total SysEx length is 78 bytes (matches Reorder envelope)', () => {
+    const msg = SysExCodec.buildFxLoopMove([0,1,2,3,4,5,6,7,8,9,10], 4, 4, 'send');
+    expect(msg.length).toBe(78);
+    expect(msg[0]).toBe(0xF0);
+    expect(msg[77]).toBe(0xF7);
+  });
+});
+
+describe('SysExCodec: buildWriteChunks fxLoop', () => {
+  it('writes preset.fxLoopSend/Return to write-payload [114/115]', () => {
+    const preset: GP200Preset = {
+      version: '1',
+      patchName: 'WriteTest',
+      effects: Array.from({ length: 11 }, (_, i) => ({
+        slotIndex: i, effectId: 0x07000055, enabled: true,
+        params: Array(15).fill(0),
+      })),
+      checksum: 0,
+      fxLoopSend: 6,
+      fxLoopReturn: 7,
+    };
+    const chunks = SysExCodec.buildWriteChunks(preset, 5);
+    // Reassemble nibble bytes from all chunks (each chunk: F0..[10..12 header]..[nibble]..F7)
+    const allNibbles: number[] = [];
+    for (const ch of chunks) {
+      for (let i = 13; i < ch.length - 1; i++) allNibbles.push(ch[i]);
+    }
+    const decoded = SysExCodec.nibbleDecode(new Uint8Array(allNibbles));
+    expect(decoded[114]).toBe(6);
+    expect(decoded[115]).toBe(7);
   });
 });

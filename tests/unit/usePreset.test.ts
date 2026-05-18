@@ -14,6 +14,8 @@ const samplePreset: GP200Preset = {
     params: PARAMS,
   })),
   checksum: 0,
+  fxLoopSend: 4,
+  fxLoopReturn: 4,
 };
 
 describe('usePreset', () => {

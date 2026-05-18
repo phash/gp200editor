@@ -11,7 +11,7 @@ function makePreset(slots: { enabled: boolean; effectId: number }[]): GP200Prese
     effectId: slots[i]?.effectId ?? 0,
     params: PARAMS,
   }));
-  return { version: '1', patchName: 'Test', effects, checksum: 0 };
+  return { version: '1', patchName: 'Test', effects, checksum: 0, fxLoopSend: 4, fxLoopReturn: 4 };
 }
 
 describe('extractModules', () => {

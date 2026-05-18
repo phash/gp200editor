@@ -188,6 +188,8 @@ describe('generateDescription', () => {
         params: Array(15).fill(0),
       })),
       checksum: 0,
+      fxLoopSend: 4,
+      fxLoopReturn: 4,
     };
   }
 
@@ -210,6 +212,8 @@ describe('autoTag', () => {
         slotIndex, enabled: false, effectId: 0, params: Array(15).fill(0),
       })),
       checksum: 0,
+      fxLoopSend: 4,
+      fxLoopReturn: 4,
     };
   }
 
