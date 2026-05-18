@@ -529,17 +529,19 @@ export const SysExCodec = {
     return msg;
   },
 
-  buildReorderEffects(order: number[]): Uint8Array {
+  buildReorderEffects(order: number[], send: number, ret: number): Uint8Array {
     // CMD=0x12, sub=0x20, 78 bytes — nibble-encoded 32-byte payload
     // Confirmed: capture 101538 (NR↔AMP swap) + 101714 (NR↔AMP + DLY↔RVB)
     // order: array of 11 slot indices representing the new chain order
+    // decoded[14]=SEND, decoded[15]=RETURN (1..10). decoded[27]=0x44 flags this
+    // as a routing-reorder (vs FX-loop move which uses 0x08/0xBA — see buildFxLoopMove).
     // Device responds with sub=0x14 echoing the new routing order
     const decoded = new Uint8Array(32);
     decoded[2] = 0x04;                          // constant
     decoded[8] = 0x08;                          // msg type: reorder
     decoded[10] = 0x10;                         // constant
-    decoded[14] = 0x04;                         // constant
-    decoded[15] = 0x04;                         // constant
+    decoded[14] = send & 0xFF;                  // SEND position (1..10)
+    decoded[15] = ret & 0xFF;                   // RETURN position (1..10)
     for (let i = 0; i < 11 && i < order.length; i++) {
       decoded[16 + i] = order[i];
     }

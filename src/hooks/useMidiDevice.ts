@@ -52,7 +52,7 @@ export interface UseMidiDeviceReturn {
   saveToSlot: (presetName: string, slot?: number) => Promise<void>;
   sendToggle: (blockIndex: number, enabled: boolean) => void;
   sendParamChange: (blockIndex: number, paramIndex: number, effectId: number, value: number) => void;
-  sendReorder: (order: number[]) => void;
+  sendReorder: (order: number[], send: number, ret: number) => void;
   sendSlotChange: (slot: number) => void;
   sendAuthor: (author: string) => void;
   sendStyleName: (styleName: string) => void;

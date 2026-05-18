@@ -29,7 +29,7 @@ export interface UseMidiSendReturn {
   sendEffectChange: (blockIndex: number, effectId: number) => void;
   sendToggle: (blockIndex: number, enabled: boolean) => void;
   sendParamChange: (blockIndex: number, paramIndex: number, effectId: number, value: number) => void;
-  sendReorder: (order: number[]) => void;
+  sendReorder: (order: number[], send: number, ret: number) => void;
   sendSlotChange: (slot: number) => void;
   sendAuthor: (author: string) => void;
   sendStyleName: (styleName: string) => void;
@@ -142,10 +142,10 @@ export function useMidiSend(opts: UseMidiSendOpts): UseMidiSendReturn {
     [],
   );
 
-  const sendReorder = useCallback((order: number[]) => {
+  const sendReorder = useCallback((order: number[], send: number, ret: number) => {
     if (!outputRef.current) return;
-    const msg = SysExCodec.buildReorderEffects(order);
-    console.log('[GP-200] reorder:', order);
+    const msg = SysExCodec.buildReorderEffects(order, send, ret);
+    console.log('[GP-200] reorder:', order, 'send:', send, 'ret:', ret);
     outputRef.current.send(msg);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

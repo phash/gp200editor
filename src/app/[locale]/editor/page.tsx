@@ -482,7 +482,7 @@ export default function EditorPage() {
         const order = preset.effects.map(e => e.slotIndex);
         const [moved] = order.splice(dragIndex, 1);
         order.splice(toIndex, 0, moved);
-        midiDevice.sendReorder(order);
+        midiDevice.sendReorder(order, preset.fxLoopSend, preset.fxLoopReturn);
       }
     }
     setDragIndex(null);

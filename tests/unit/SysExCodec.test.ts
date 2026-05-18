@@ -705,7 +705,7 @@ describe('SysExCodec: buildParamChange', () => {
 
 describe('SysExCodec: buildReorderEffects', () => {
   it('returns a 78-byte SysEx with CMD=0x12, sub=0x20', () => {
-    const msg = SysExCodec.buildReorderEffects([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    const msg = SysExCodec.buildReorderEffects([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 4, 4);
     expect(msg.length).toBe(78);
     expect(msg[0]).toBe(0xF0);
     expect(msg[8]).toBe(0x12);
@@ -715,7 +715,8 @@ describe('SysExCodec: buildReorderEffects', () => {
 
   it('NR↔AMP swap matches capture (gp200-capture-20260319-101714)', () => {
     // Reorder 1: PRE, WAH, BOOST, NR(4), AMP(3), CAB, EQ, MOD, DLY, RVB, VOL
-    const msg = SysExCodec.buildReorderEffects([0, 1, 2, 4, 3, 5, 6, 7, 8, 9, 10]);
+    // Capture shows decoded[14]=0x04, decoded[15]=0x04 — pass send=4, ret=4
+    const msg = SysExCodec.buildReorderEffects([0, 1, 2, 4, 3, 5, 6, 7, 8, 9, 10], 4, 4);
     // Exact bytes from USB capture gp200-capture-20260319-101714 Pkt 457 (t=35.9s)
     const expected = new Uint8Array([
       0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x20, // [0-9]   header
@@ -734,16 +735,34 @@ describe('SysExCodec: buildReorderEffects', () => {
   });
 
   it('DLY↔RVB swap produces correct routing at decoded[16:27]', () => {
-    const msg = SysExCodec.buildReorderEffects([0, 1, 2, 4, 3, 5, 6, 7, 9, 8, 10]);
+    const msg = SysExCodec.buildReorderEffects([0, 1, 2, 4, 3, 5, 6, 7, 9, 8, 10], 4, 4);
     const decoded = SysExCodec.nibbleDecode(msg.slice(13, 77));
     expect(Array.from(decoded.slice(16, 27))).toEqual([0, 1, 2, 4, 3, 5, 6, 7, 9, 8, 10]);
     expect(decoded[27]).toBe(0x44); // terminator
   });
 
   it('default order has sequential indices', () => {
-    const msg = SysExCodec.buildReorderEffects([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    const msg = SysExCodec.buildReorderEffects([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 4, 4);
     const decoded = SysExCodec.nibbleDecode(msg.slice(13, 77));
     expect(Array.from(decoded.slice(16, 27))).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  });
+});
+
+describe('SysExCodec: buildReorderEffects with SEND/RETURN', () => {
+  it('places send and ret at decoded[14] and [15]', () => {
+    const order = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    const msg = SysExCodec.buildReorderEffects(order, 5, 9);
+    const nibble = msg.slice(13, msg.length - 1);
+    const decoded = SysExCodec.nibbleDecode(nibble);
+    expect(decoded[14]).toBe(5);
+    expect(decoded[15]).toBe(9);
+    for (let i = 0; i < 11; i++) expect(decoded[16 + i]).toBe(order[i]);
+  });
+
+  it('keeps the existing flag byte decoded[27]=0x44 for reorder', () => {
+    const msg = SysExCodec.buildReorderEffects([0,1,2,3,4,5,6,7,8,9,10], 4, 4);
+    const decoded = SysExCodec.nibbleDecode(msg.slice(13, msg.length - 1));
+    expect(decoded[27]).toBe(0x44);
   });
 });
 
