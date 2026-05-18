@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { CommentList, type TopLevelComment } from './CommentList';
@@ -18,30 +18,56 @@ export function CommentSection({ presetId, currentUserId, isVerified, isAdmin }:
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inFlightRef = useRef(false);
 
-  const load = useCallback(async (initial = false) => {
-    const url = `/api/presets/${presetId}/comments${!initial && cursor ? `?cursor=${cursor}` : ''}`;
-    const res = await fetch(url);
-    if (!res.ok) return;
-    const data = await res.json();
-    setComments((prev) => initial ? data.comments : [...prev, ...data.comments]);
-    setCursor(data.nextCursor);
-    setHasMore(!!data.nextCursor);
-  }, [presetId, cursor]);
-
-  useEffect(() => { load(true); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [presetId]);
-
-  function handleError(status: number) {
-    if (status === 429) setToast(t('rateLimitToast'));
-    setTimeout(() => setToast(null), 3000);
+  function showToast(msg: string) {
+    setToast(msg);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setToast(null), 3000);
   }
 
+  // Toast message per response status. 401 happens when the session expired
+  // mid-typing; 429 is rate limit; anything else surfaces a generic error.
+  function toastForStatus(status: number) {
+    if (status === 429) showToast(t('rateLimitToast'));
+    else if (status === 401 || status === 403) showToast(t('authToast'));
+    else showToast(t('genericError'));
+  }
+
+  const load = useCallback(async (initial = false) => {
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
+    try {
+      // Read cursor at call-time via the closure — passing `initial=true`
+      // forces a fresh fetch ignoring the saved cursor (used after mutations).
+      const cur = initial ? null : cursor;
+      const url = `/api/presets/${presetId}/comments${cur ? `?cursor=${cur}` : ''}`;
+      const res = await fetch(url);
+      if (!res.ok) return;
+      const data = await res.json();
+      setComments((prev) => initial ? data.comments : [...prev, ...data.comments]);
+      setCursor(data.nextCursor);
+      setHasMore(!!data.nextCursor);
+    } finally {
+      inFlightRef.current = false;
+    }
+  }, [presetId, cursor]);
+
+  // Reload from scratch when presetId changes. We deliberately exclude `load`
+  // from deps — its identity changes whenever cursor updates after a fetch,
+  // and re-running this effect on every cursor flip would infinitely re-load.
+  useEffect(() => { load(true); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [presetId]);
+
+  // Each mutation throws on non-OK so CommentForm can keep the user's text.
+  // The parent catches and surfaces the right toast for the status.
   async function postTop(body: string) {
     const res = await fetch(`/api/presets/${presetId}/comments`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ body }),
     });
-    if (res.ok) { setCursor(null); load(true); } else handleError(res.status);
+    if (!res.ok) { toastForStatus(res.status); throw new Error(`HTTP ${res.status}`); }
+    load(true);
   }
 
   async function postReply(parentId: string, body: string) {
@@ -49,7 +75,8 @@ export function CommentSection({ presetId, currentUserId, isVerified, isAdmin }:
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ body }),
     });
-    if (res.ok) { setCursor(null); load(true); } else handleError(res.status);
+    if (!res.ok) { toastForStatus(res.status); throw new Error(`HTTP ${res.status}`); }
+    load(true);
   }
 
   async function edit(id: string, body: string) {
@@ -57,18 +84,20 @@ export function CommentSection({ presetId, currentUserId, isVerified, isAdmin }:
       method: 'PATCH', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ body }),
     });
-    if (res.ok) { setCursor(null); load(true); } else handleError(res.status);
+    if (!res.ok) { toastForStatus(res.status); throw new Error(`HTTP ${res.status}`); }
+    load(true);
   }
 
   async function del(id: string) {
     const res = await fetch(`/api/comments/${id}`, { method: 'DELETE' });
-    if (res.ok) { setCursor(null); load(true); } else handleError(res.status);
+    if (!res.ok) { toastForStatus(res.status); return; }
+    load(true);
   }
 
   return (
     <section className="mt-8">
       <h3 className="font-mono-display text-sm uppercase tracking-widest mb-3" style={{ color: 'var(--text-secondary)' }}>
-        Comments
+        {t('heading')}
       </h3>
 
       {!currentUserId ? (
@@ -81,7 +110,7 @@ export function CommentSection({ presetId, currentUserId, isVerified, isAdmin }:
         <CommentForm presetId={presetId} onSubmit={postTop} />
       ) : (
         <p className="text-sm mb-3" style={{ color: 'var(--text-muted)' }}>
-          Email verification required to comment.
+          {t('verifyRequired')}
         </p>
       )}
 

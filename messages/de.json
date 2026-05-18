@@ -294,7 +294,8 @@
     "browseAll": "Alle Presets oben durchsuchen",
     "rate": {
       "signInTooltip": "Anmelden zum Bewerten",
-      "ownPresetTooltip": "Eigene Presets nicht bewertbar"
+      "ownPresetTooltip": "Eigene Presets nicht bewertbar",
+      "errorTooltip": "Bewertung fehlgeschlagen — bitte erneut versuchen"
     }
   },
   "device": {
@@ -561,7 +562,9 @@
       "hardDeleteButton": "Hart löschen",
       "hardDeleteDialogTitle": "Kommentar hart löschen",
       "hardDeleteReasonLabel": "Grund (Pflicht, 5–200 Zeichen)",
-      "confirmDelete": "Löschen"
+      "confirmDelete": "Löschen",
+      "cancel": "Abbrechen",
+      "loadMore": "Mehr laden"
     }
   },
   "email": {
@@ -652,8 +655,11 @@
     "signInToComment": "Anmelden zum Kommentieren",
     "loadMore": "Mehr laden",
     "confirmDelete": "Diesen Kommentar löschen?",
-    "adminDeleteReasonLabel": "Grund (Pflicht, 5–200 Zeichen)",
     "rateLimitToast": "Zu viele Kommentare. Bitte später erneut versuchen.",
-    "emptyState": "Noch keine Kommentare — sei der erste!"
+    "emptyState": "Noch keine Kommentare — sei der erste!",
+    "heading": "Kommentare",
+    "verifyRequired": "E-Mail-Verifizierung erforderlich, um zu kommentieren.",
+    "authToast": "Sitzung abgelaufen. Bitte erneut anmelden.",
+    "genericError": "Konnte nicht speichern — bitte erneut versuchen."
   }
 }

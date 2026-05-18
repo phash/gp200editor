@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { AutoLink } from '@/lib/autoLink';
 import { CommentForm } from './CommentForm';
+import { ConfirmDialog } from '../ConfirmDialog';
 
 export interface CommentData {
   id: string;
@@ -29,6 +30,16 @@ interface Props {
 export function CommentItem({ comment, currentUserId, isAdmin, onReply, onEdit, onDelete }: Props) {
   const t = useTranslations('comments');
   const [editing, setEditing] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleConfirmDelete() {
+    setDeleting(true);
+    try { await onDelete(comment.id); } finally {
+      setDeleting(false);
+      setConfirmingDelete(false);
+    }
+  }
 
   const isOwn = currentUserId === comment.userId;
   const isDeleted = !!comment.deletedAt;
@@ -81,7 +92,7 @@ export function CommentItem({ comment, currentUserId, isAdmin, onReply, onEdit, 
           {isOwn && (
             <>
               <button onClick={() => setEditing(true)}>{t('edit')}</button>
-              <button onClick={() => onDelete(comment.id)}>{t('delete')}</button>
+              <button onClick={() => setConfirmingDelete(true)}>{t('delete')}</button>
             </>
           )}
           {isAdmin && !isOwn && (
@@ -89,6 +100,14 @@ export function CommentItem({ comment, currentUserId, isAdmin, onReply, onEdit, 
           )}
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmingDelete}
+        message={t('confirmDelete')}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmingDelete(false)}
+        loading={deleting}
+      />
     </div>
   );
 }

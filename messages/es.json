@@ -294,7 +294,8 @@
     "browseAll": "Explora todos los presets arriba",
     "rate": {
       "signInTooltip": "Inicia sesión para valorar",
-      "ownPresetTooltip": "No puedes valorar tu propio preset"
+      "ownPresetTooltip": "No puedes valorar tu propio preset",
+      "errorTooltip": "Falló la valoración — inténtalo de nuevo"
     }
   },
   "device": {
@@ -561,7 +562,9 @@
       "hardDeleteButton": "Eliminar permanentemente",
       "hardDeleteDialogTitle": "Eliminar comentario permanentemente",
       "hardDeleteReasonLabel": "Razón (obligatorio, 5–200 caracteres)",
-      "confirmDelete": "Eliminar"
+      "confirmDelete": "Eliminar",
+      "cancel": "Cancelar",
+      "loadMore": "Cargar más"
     }
   },
   "email": {
@@ -652,8 +655,11 @@
     "signInToComment": "Inicia sesión para comentar",
     "loadMore": "Cargar más",
     "confirmDelete": "¿Eliminar este comentario?",
-    "adminDeleteReasonLabel": "Razón (obligatorio, 5–200 caracteres)",
     "rateLimitToast": "Demasiados comentarios. Inténtalo más tarde.",
-    "emptyState": "Aún no hay comentarios — ¡sé el primero!"
+    "emptyState": "Aún no hay comentarios — ¡sé el primero!",
+    "heading": "Comentarios",
+    "verifyRequired": "Se requiere verificación de email para comentar.",
+    "authToast": "Sesión expirada. Inicia sesión de nuevo.",
+    "genericError": "No se pudo guardar — inténtalo de nuevo."
   }
 }

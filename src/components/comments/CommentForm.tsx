@@ -22,9 +22,15 @@ export function CommentForm({ onSubmit, onCancel, initialValue = '', isEdit = fa
   async function handleSubmit() {
     if (disabled) return;
     setBusy(true);
-    await onSubmit(trimmed);
+    let ok = false;
+    try {
+      await onSubmit(trimmed);
+      ok = true;
+    } catch {
+      // Keep the body so the user can retry — the parent already shows a toast.
+    }
     flushSync(() => {
-      if (!isEdit) setBody('');
+      if (ok && !isEdit) setBody('');
       setBusy(false);
     });
   }
