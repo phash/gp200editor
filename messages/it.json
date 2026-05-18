@@ -173,8 +173,7 @@
       "return": "Ritorno",
       "bypass": "FX Loop disattivato (Invio = Ritorno)",
       "ariaSend": "Posizione di invio del FX Loop, attualmente tra gli effetti {prev} e {next}",
-      "ariaReturn": "Posizione di ritorno del FX Loop, attualmente tra gli effetti {prev} e {next}",
-      "positionLabel": "Posizione {pos} di 10"
+      "ariaReturn": "Posizione di ritorno del FX Loop, attualmente tra gli effetti {prev} e {next}"
     }
   },
   "auth": {

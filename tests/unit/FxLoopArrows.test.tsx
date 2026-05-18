@@ -45,14 +45,13 @@ describe('FxLoopArrows', () => {
     expect(onReturn).toHaveBeenCalledWith(6);
   });
 
-  it('ArrowRight at position 10 does not exceed bounds', () => {
+  it('ArrowRight at position 10 calls onSendChange with clamped value 10', () => {
     const onSend = vi.fn();
     render(wrap(<FxLoopArrows send={10} ret={10} onSendChange={onSend} onReturnChange={() => {}} />));
     const sendArrow = screen.getByLabelText(/send position/i);
     sendArrow.focus();
     fireEvent.keyDown(sendArrow, { key: 'ArrowRight' });
-    if (onSend.mock.calls.length > 0) {
-      expect(onSend.mock.calls[0][0]).toBeLessThanOrEqual(10);
-    }
+    expect(onSend).toHaveBeenCalledTimes(1);
+    expect(onSend).toHaveBeenCalledWith(10);
   });
 });

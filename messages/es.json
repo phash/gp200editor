@@ -173,8 +173,7 @@
       "return": "Retorno",
       "bypass": "Bucle de efectos desactivado (Envío = Retorno)",
       "ariaSend": "Posición de envío del bucle de efectos, actualmente entre los efectos {prev} y {next}",
-      "ariaReturn": "Posición de retorno del bucle de efectos, actualmente entre los efectos {prev} y {next}",
-      "positionLabel": "Posición {pos} de 10"
+      "ariaReturn": "Posición de retorno del bucle de efectos, actualmente entre los efectos {prev} y {next}"
     }
   },
   "auth": {

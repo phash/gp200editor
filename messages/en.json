@@ -173,8 +173,7 @@
       "return": "Return",
       "bypass": "FX Loop bypass (Send = Return)",
       "ariaSend": "FX Loop Send position, currently between effects {prev} and {next}",
-      "ariaReturn": "FX Loop Return position, currently between effects {prev} and {next}",
-      "positionLabel": "Position {pos} of 10"
+      "ariaReturn": "FX Loop Return position, currently between effects {prev} and {next}"
     }
   },
   "auth": {
