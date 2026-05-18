@@ -51,9 +51,7 @@ describe('GP200PresetSchema', () => {
     const parsed = GP200PresetSchema.parse({
       version: '1',
       patchName: 'X',
-      effects: Array.from({ length: 11 }, (_, i) => ({
-        slotIndex: i, effectId: 0, enabled: false, params: Array(15).fill(0),
-      })),
+      effects: FULL_EFFECTS,
       checksum: 0,
     });
     expect(parsed.fxLoopSend).toBe(4);
@@ -64,9 +62,7 @@ describe('GP200PresetSchema', () => {
     const parsed = GP200PresetSchema.parse({
       version: '1',
       patchName: 'X',
-      effects: Array.from({ length: 11 }, (_, i) => ({
-        slotIndex: i, effectId: 0, enabled: false, params: Array(15).fill(0),
-      })),
+      effects: FULL_EFFECTS,
       checksum: 0,
       fxLoopSend: 1,
       fxLoopReturn: 10,
@@ -75,12 +71,10 @@ describe('GP200PresetSchema', () => {
     expect(parsed.fxLoopReturn).toBe(10);
   });
 
-  it('rejects fxLoopSend < 1 or > 10', () => {
+  it('rejects fxLoopSend and fxLoopReturn out of range', () => {
     const base = {
       version: '1', patchName: 'X',
-      effects: Array.from({ length: 11 }, (_, i) => ({
-        slotIndex: i, effectId: 0, enabled: false, params: Array(15).fill(0),
-      })),
+      effects: FULL_EFFECTS,
       checksum: 0,
     };
     expect(() => GP200PresetSchema.parse({ ...base, fxLoopSend: 0 })).toThrow();
