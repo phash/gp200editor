@@ -14,12 +14,13 @@ const OFFSET_CHECKSUM    = 0x4C6; // BE uint16 (last 2 bytes of 1224-byte file)
 const EFFECT_BLOCK_COUNT  = 11;    // GP-200 has 11 effect slots
 const EFFECT_BLOCK_START  = 0xa0;  // first block offset
 const EFFECT_BLOCK_SIZE   = 0x48;  // 72 bytes per block
+// FX-loop insertion points — live inside the routing section header (0x8C..0x9F).
+const OFFSET_FX_SEND       = 0x92;  // 1 byte: FX-loop SEND position (1..10)
+const OFFSET_FX_RETURN     = 0x93;  // 1 byte: FX-loop RETURN position (1..10)
 // Routing section — 11 playback-order bytes at 0x94..0x9E inside the
 // 0x8C header block. Each byte is the slotIndex (block type) that runs
 // at playback position i.
 const OFFSET_ROUTING_ORDER = 0x94;
-const OFFSET_FX_SEND       = 0x92;  // 1 byte: FX-loop SEND position (1..10)
-const OFFSET_FX_RETURN     = 0x93;  // 1 byte: FX-loop RETURN position (1..10)
 // Within each block:
 const SLOT_OFFSET         = 4;     // slot index (0–10)
 const ACTIVE_OFFSET       = 5;     // 0 = bypassed, 1 = active
