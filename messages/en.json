@@ -108,6 +108,12 @@
           "a": "Yes. No ads, no paid tier, no account required for browsing or editing. Sharing presets to the public gallery requires a free account."
         }
       ]
+    },
+    "featured": {
+      "title": "Featured · Top Rated · 30 Days",
+      "recentComments": "Recent comments",
+      "openPreset": "Open preset →",
+      "noFeatured": "No featured preset yet"
     }
   },
   "footer": {
@@ -285,7 +291,11 @@
     "ratingStarFilled": "filled rating star",
     "ratingStarEmpty": "empty rating star",
     "recentHeading": "Recent community presets",
-    "browseAll": "Browse all presets above"
+    "browseAll": "Browse all presets above",
+    "rate": {
+      "signInTooltip": "Sign in to rate",
+      "ownPresetTooltip": "Cannot rate your own preset"
+    }
   },
   "device": {
     "connect": "Connect GP-200",
@@ -541,7 +551,18 @@
     "presetCount": "{count} presets",
     "downloads": "{count} downloads",
     "noResults": "No results",
-    "page": "Page {page} of {total}"
+    "page": "Page {page} of {total}",
+    "comments": {
+      "tabTitle": "Comments",
+      "columnUser": "User",
+      "columnPreset": "Preset",
+      "columnBody": "Body",
+      "columnDate": "Date",
+      "hardDeleteButton": "Hard delete",
+      "hardDeleteDialogTitle": "Hard-delete comment",
+      "hardDeleteReasonLabel": "Reason (required, 5–200 chars)",
+      "confirmDelete": "Delete"
+    }
   },
   "email": {
     "brand": "PRESET FORGE",
@@ -615,5 +636,24 @@
       "ctaLabel": "Verify my email",
       "closing": "This is the last verification reminder we'll send. Your unverified account will stay inactive until you confirm your email."
     }
+  },
+  "comments": {
+    "placeholder": "Share your thoughts…",
+    "charCount": "{count} / 1000",
+    "post": "Post",
+    "reply": "Reply",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "deletedByAuthor": "Removed by author",
+    "deletedByAdmin": "Removed by moderator",
+    "edited": "edited",
+    "signInToComment": "Sign in to comment",
+    "loadMore": "Load more",
+    "confirmDelete": "Delete this comment?",
+    "adminDeleteReasonLabel": "Reason (required, 5–200 chars)",
+    "rateLimitToast": "Too many comments. Try again later.",
+    "emptyState": "No comments yet — be the first!"
   }
 }

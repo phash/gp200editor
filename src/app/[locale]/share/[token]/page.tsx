@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { prisma } from '@/lib/prisma';
 import { validateSession } from '@/lib/session';
 import { RatingWidget } from './RatingWidget';
+import { CommentSection } from '@/components/comments/CommentSection';
 import { downloadPresetBuffer } from '@/lib/storage';
 import { PRSTDecoder } from '@/core/PRSTDecoder';
 import { encodeToJson } from '@/core/PRSTJsonCodec';
@@ -286,6 +287,13 @@ export default async function SharePage({ params }: Props) {
           initialCount={preset.ratingCount}
           canRate={canRate}
           existingRating={existingRating}
+        />
+
+        <CommentSection
+          presetId={preset.id}
+          currentUserId={user?.id ?? null}
+          isVerified={!!user?.emailVerified}
+          isAdmin={user?.role === 'ADMIN'}
         />
 
         <a

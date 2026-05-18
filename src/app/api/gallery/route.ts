@@ -59,6 +59,8 @@ export async function GET(request: NextRequest) {
         ratingAverage: true,
         ratingCount: true,
         createdAt: true,
+        flagged: true,
+        userId: true,
         user: { select: { username: true } },
       },
     }),

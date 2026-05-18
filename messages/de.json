@@ -108,6 +108,12 @@
           "a": "Ja. Keine Werbung, kein Bezahlmodell, kein Account zum Stöbern oder Editieren nötig. Zum Teilen von Presets in der öffentlichen Galerie braucht es einen kostenlosen Account."
         }
       ]
+    },
+    "featured": {
+      "title": "Top Bewertet · Letzte 30 Tage",
+      "recentComments": "Aktuelle Kommentare",
+      "openPreset": "Preset öffnen →",
+      "noFeatured": "Noch kein Featured-Preset"
     }
   },
   "footer": {
@@ -285,7 +291,11 @@
     "ratingStarFilled": "Bewertungsstern ausgefüllt",
     "ratingStarEmpty": "Bewertungsstern leer",
     "recentHeading": "Neueste Community-Presets",
-    "browseAll": "Alle Presets oben durchsuchen"
+    "browseAll": "Alle Presets oben durchsuchen",
+    "rate": {
+      "signInTooltip": "Anmelden zum Bewerten",
+      "ownPresetTooltip": "Eigene Presets nicht bewertbar"
+    }
   },
   "device": {
     "connect": "GP-200 verbinden",
@@ -541,7 +551,18 @@
     "presetCount": "{count} Presets",
     "downloads": "{count} Downloads",
     "noResults": "Keine Ergebnisse",
-    "page": "Seite {page} von {total}"
+    "page": "Seite {page} von {total}",
+    "comments": {
+      "tabTitle": "Kommentare",
+      "columnUser": "User",
+      "columnPreset": "Preset",
+      "columnBody": "Inhalt",
+      "columnDate": "Datum",
+      "hardDeleteButton": "Hart löschen",
+      "hardDeleteDialogTitle": "Kommentar hart löschen",
+      "hardDeleteReasonLabel": "Grund (Pflicht, 5–200 Zeichen)",
+      "confirmDelete": "Löschen"
+    }
   },
   "email": {
     "brand": "PRESET FORGE",
@@ -615,5 +636,24 @@
       "ctaLabel": "E-Mail bestätigen",
       "closing": "Das ist die letzte Bestätigungs-Erinnerung, die wir schicken. Dein unbestätigter Account bleibt inaktiv, bis du deine E-Mail bestätigst."
     }
+  },
+  "comments": {
+    "placeholder": "Deine Gedanken teilen…",
+    "charCount": "{count} / 1000",
+    "post": "Senden",
+    "reply": "Antworten",
+    "edit": "Bearbeiten",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "deletedByAuthor": "Vom Autor entfernt",
+    "deletedByAdmin": "Vom Moderator entfernt",
+    "edited": "bearbeitet",
+    "signInToComment": "Anmelden zum Kommentieren",
+    "loadMore": "Mehr laden",
+    "confirmDelete": "Diesen Kommentar löschen?",
+    "adminDeleteReasonLabel": "Grund (Pflicht, 5–200 Zeichen)",
+    "rateLimitToast": "Zu viele Kommentare. Bitte später erneut versuchen.",
+    "emptyState": "Noch keine Kommentare — sei der erste!"
   }
 }

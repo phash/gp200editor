@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-05-18 (later)
+
+### Features
+- **Inline-Rating in der Gallery** — Bewertungen können direkt auf der Gallery-Liste abgegeben werden. Anonyme Klicks zeigen einen Tooltip mit Login-Link; eigene Presets sind erwartungsgemäß nicht bewertbar.
+- **Kommentare auf Share-Pages** — Plaintext-Kommentare mit 1-Level-Threading (Top-Level + Reply), max 1000 Zeichen, URLs werden automatisch verlinkt (`rel=nofollow`). Verifizierte User können kommentieren, jederzeit editieren und soft-löschen. Soft-Delete zeigt einen Platzhalter, Replies bleiben sichtbar.
+- **Admin-Moderation für Kommentare** — Neuer Tab im Admin-Dashboard: Liste der letzten 50 Kommentare. Hard-Delete erfordert einen Grund (5–200 Zeichen) und wird im AdminAction-Log auditiert; kaskadiert auf Replies.
+- **Featured Preset auf der Startseite** — Bayes-Average (m=5, C=globaler Durchschnitt) über alle Presets mit Ratings der letzten 30 Tage. Hero-Block mit Signal-Chain-Grafik (Amp/Cab-Realnamen), Sternebewertung, Beschreibung und den 3 neuesten Kommentaren. Fallback auf All-Time-Best wenn das 30-Tage-Fenster leer ist.
+
+### Schema
+- **Neue Tabelle `Comment`** mit Self-FK für 1-Level-Threading (`parentId` nullable), Soft-Delete-Marker (`deletedAt`/`deletedBy`), Cascade-Delete bei Preset/User/Parent-Removal.
+
 ## 2026-05-18
 
 ### Features

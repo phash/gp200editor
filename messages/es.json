@@ -108,6 +108,12 @@
           "a": "Sí. Sin anuncios, sin niveles de pago, sin cuenta necesaria para explorar o editar. Compartir presets en la galería pública requiere una cuenta gratuita."
         }
       ]
+    },
+    "featured": {
+      "title": "Destacado · Mejor valorado · 30 días",
+      "recentComments": "Comentarios recientes",
+      "openPreset": "Abrir preset →",
+      "noFeatured": "Aún no hay preset destacado"
     }
   },
   "footer": {
@@ -285,7 +291,11 @@
     "ratingStarFilled": "estrella de valoración llena",
     "ratingStarEmpty": "estrella de valoración vacía",
     "recentHeading": "Presets recientes de la comunidad",
-    "browseAll": "Explora todos los presets arriba"
+    "browseAll": "Explora todos los presets arriba",
+    "rate": {
+      "signInTooltip": "Inicia sesión para valorar",
+      "ownPresetTooltip": "No puedes valorar tu propio preset"
+    }
   },
   "device": {
     "connect": "Conectar GP-200",
@@ -541,7 +551,18 @@
     "presetCount": "{count} presets",
     "downloads": "{count} descargas",
     "noResults": "Sin resultados",
-    "page": "Página {page} de {total}"
+    "page": "Página {page} de {total}",
+    "comments": {
+      "tabTitle": "Comentarios",
+      "columnUser": "Usuario",
+      "columnPreset": "Preset",
+      "columnBody": "Contenido",
+      "columnDate": "Fecha",
+      "hardDeleteButton": "Eliminar permanentemente",
+      "hardDeleteDialogTitle": "Eliminar comentario permanentemente",
+      "hardDeleteReasonLabel": "Razón (obligatorio, 5–200 caracteres)",
+      "confirmDelete": "Eliminar"
+    }
   },
   "email": {
     "brand": "PRESET FORGE",
@@ -615,5 +636,24 @@
       "ctaLabel": "Verificar correo",
       "closing": "Este es el último recordatorio de verificación que te enviaremos. Tu cuenta no verificada permanecerá inactiva hasta que confirmes tu correo."
     }
+  },
+  "comments": {
+    "placeholder": "Compartir tus pensamientos…",
+    "charCount": "{count} / 1000",
+    "post": "Publicar",
+    "reply": "Responder",
+    "edit": "Editar",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "deletedByAuthor": "Eliminado por el autor",
+    "deletedByAdmin": "Eliminado por moderador",
+    "edited": "editado",
+    "signInToComment": "Inicia sesión para comentar",
+    "loadMore": "Cargar más",
+    "confirmDelete": "¿Eliminar este comentario?",
+    "adminDeleteReasonLabel": "Razón (obligatorio, 5–200 caracteres)",
+    "rateLimitToast": "Demasiados comentarios. Inténtalo más tarde.",
+    "emptyState": "Aún no hay comentarios — ¡sé el primero!"
   }
 }

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { MODULE_COLORS, getEffectsByModule } from '@/core/effectNames';
-import { GuitarRating } from '@/components/GuitarRating';
+import { RateableGuitarRating } from '@/components/RateableGuitarRating';
 import { AdminActions } from '@/components/AdminActions';
 
 type GalleryPreset = {
@@ -22,12 +22,19 @@ type GalleryPreset = {
   ratingCount: number;
   createdAt: string;
   flagged: boolean;
+  userId: string;
   user: { username: string };
 };
 
 const ALL_MODULES = Object.keys(MODULE_COLORS);
 
-export function GalleryClient() {
+interface GalleryClientProps {
+  currentUserId: string | null;
+  emailVerified: boolean;
+  myRatings: Record<string, number>;
+}
+
+export function GalleryClient({ currentUserId, emailVerified, myRatings }: GalleryClientProps) {
   const t = useTranslations('gallery');
   const [presets, setPresets] = useState<GalleryPreset[]>([]);
   const [total, setTotal] = useState(0);
@@ -331,9 +338,20 @@ export function GalleryClient() {
                   <span className="text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
                     {preset.downloadCount} ↓
                   </span>
-                  {preset.ratingCount > 0 && (
-                    <GuitarRating value={preset.ratingAverage} count={preset.ratingCount} size="sm" />
-                  )}
+                  <RateableGuitarRating
+                    presetId={preset.id}
+                    average={preset.ratingAverage}
+                    count={preset.ratingCount}
+                    canRate={!!currentUserId && emailVerified && preset.userId !== currentUserId}
+                    existing={myRatings[preset.id] ?? 0}
+                    reason={
+                      !currentUserId ? 'anon' :
+                      !emailVerified ? 'unverified' :
+                      preset.userId === currentUserId ? 'own' :
+                      null
+                    }
+                    size="sm"
+                  />
                 </div>
                 <div className="flex gap-2 shrink-0">
                   <Link

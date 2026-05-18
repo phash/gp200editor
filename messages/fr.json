@@ -108,6 +108,12 @@
           "a": "Oui. Pas de pub, pas d'offre payante, pas besoin de compte pour parcourir ou éditer. Partager des presets dans la galerie publique nécessite un compte gratuit."
         }
       ]
+    },
+    "featured": {
+      "title": "En vedette · Mieux noté · 30 jours",
+      "recentComments": "Commentaires récents",
+      "openPreset": "Ouvrir le preset →",
+      "noFeatured": "Aucun preset en vedette pour l'instant"
     }
   },
   "footer": {
@@ -285,7 +291,11 @@
     "ratingStarFilled": "étoile de note remplie",
     "ratingStarEmpty": "étoile de note vide",
     "recentHeading": "Presets récents de la communauté",
-    "browseAll": "Parcourez tous les presets ci-dessus"
+    "browseAll": "Parcourez tous les presets ci-dessus",
+    "rate": {
+      "signInTooltip": "Connectez-vous pour évaluer",
+      "ownPresetTooltip": "Vous ne pouvez pas évaluer votre propre preset"
+    }
   },
   "device": {
     "connect": "Connecter le GP-200",
@@ -541,7 +551,18 @@
     "presetCount": "{count} presets",
     "downloads": "{count} téléchargements",
     "noResults": "Aucun résultat",
-    "page": "Page {page} sur {total}"
+    "page": "Page {page} sur {total}",
+    "comments": {
+      "tabTitle": "Commentaires",
+      "columnUser": "Utilisateur",
+      "columnPreset": "Preset",
+      "columnBody": "Contenu",
+      "columnDate": "Date",
+      "hardDeleteButton": "Suppression définitive",
+      "hardDeleteDialogTitle": "Supprimer définitivement le commentaire",
+      "hardDeleteReasonLabel": "Raison (obligatoire, 5–200 caractères)",
+      "confirmDelete": "Supprimer"
+    }
   },
   "email": {
     "brand": "PRESET FORGE",
@@ -615,5 +636,24 @@
       "ctaLabel": "Vérifier mon e-mail",
       "closing": "C'est le dernier rappel de vérification que nous vous enverrons. Votre compte non vérifié restera inactif jusqu'à ce que vous confirmiez votre e-mail."
     }
+  },
+  "comments": {
+    "placeholder": "Partager vos pensées…",
+    "charCount": "{count} / 1000",
+    "post": "Publier",
+    "reply": "Répondre",
+    "edit": "Modifier",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "deletedByAuthor": "Supprimé par l’auteur",
+    "deletedByAdmin": "Supprimé par modérateur",
+    "edited": "modifié",
+    "signInToComment": "Connectez-vous pour commenter",
+    "loadMore": "Charger plus",
+    "confirmDelete": "Supprimer ce commentaire ?",
+    "adminDeleteReasonLabel": "Raison (obligatoire, 5–200 caractères)",
+    "rateLimitToast": "Trop de commentaires. Réessayez plus tard.",
+    "emptyState": "Aucun commentaire pour l’instant — soyez le premier !"
   }
 }
