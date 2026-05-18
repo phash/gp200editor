@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { rateLimit } from '@/lib/rateLimit';
 import { uploadAudio, deleteAudio } from '@/lib/storage';
 import { validateAudio } from '@/lib/audioValidation';
+import { adminDeleteReasonSchema } from '@/lib/commentValidators';
 
 const EXT_BY_MIME: Record<string, string> = {
   'audio/mpeg': 'mp3',
@@ -93,7 +94,54 @@ export async function POST(
   });
 }
 
-// DELETE — implemented in Task 6.
-export async function DELETE() {
-  return NextResponse.json({ error: 'Not implemented' }, { status: 501 });
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  if (!verifyCsrf(request)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const { user, session } = await validateSession();
+  if (!user || !session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const { id } = await params;
+  const preset = await prisma.preset.findUnique({
+    where: { id },
+    select: { id: true, userId: true, audioKey: true },
+  });
+  if (!preset) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  if (!preset.audioKey) return NextResponse.json({ error: 'No audio attached' }, { status: 404 });
+
+  const isOwner = preset.userId === user.id;
+  const isAdmin = user.role === 'ADMIN';
+  if (!isOwner && !isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+  let reason: string | null = null;
+  if (isAdmin && !isOwner) {
+    const json = await request.json().catch(() => null);
+    const parsed = adminDeleteReasonSchema.safeParse(json?.reason);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+    }
+    reason = parsed.data;
+  }
+
+  await prisma.preset.update({
+    where: { id: preset.id },
+    data: { audioKey: null, audioMimeType: null, audioDurationMs: null },
+  });
+  await Promise.resolve(deleteAudio(preset.audioKey)).catch(() => {});
+
+  if (isAdmin && !isOwner) {
+    await prisma.adminAction.create({
+      data: {
+        adminId: user.id,
+        action: 'DELETE_PRESET_AUDIO',
+        targetType: 'preset',
+        targetId: preset.id,
+        reason,
+        metadata: { audioKey: preset.audioKey },
+      },
+    });
+  }
+
+  return NextResponse.json({ ok: true });
 }
