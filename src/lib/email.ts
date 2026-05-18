@@ -7,6 +7,7 @@ import es from '../../messages/es.json';
 import fr from '../../messages/fr.json';
 import it from '../../messages/it.json';
 import pt from '../../messages/pt.json';
+import ptBR from '../../messages/pt-BR.json';
 
 type EmailMessages = (typeof en)['email'];
 
@@ -17,6 +18,7 @@ const MESSAGES: Record<Locale, EmailMessages> = {
   fr: (fr as unknown as typeof en).email,
   it: (it as unknown as typeof en).email,
   pt: (pt as unknown as typeof en).email,
+  'pt-BR': (ptBR as unknown as typeof en).email,
 };
 
 function normalizeLocale(locale: Locale | string | undefined | null): Locale {

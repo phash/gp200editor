@@ -7,8 +7,9 @@ import esMsg from '../../messages/es.json';
 import frMsg from '../../messages/fr.json';
 import itMsg from '../../messages/it.json';
 import ptMsg from '../../messages/pt.json';
+import ptBRMsg from '../../messages/pt-BR.json';
 
-const ALL = { de: deMsg, en: enMsg, es: esMsg, fr: frMsg, it: itMsg, pt: ptMsg };
+const ALL = { de: deMsg, en: enMsg, es: esMsg, fr: frMsg, it: itMsg, pt: ptMsg, 'pt-BR': ptBRMsg };
 
 describe('renderEmailHtml', () => {
   it('includes brand wordmark and amber CTA', () => {

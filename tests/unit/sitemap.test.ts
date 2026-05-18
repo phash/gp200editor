@@ -30,18 +30,19 @@ describe('sitemap', () => {
 
     const entries = await sitemap();
     const urls = entries.map((e) => e.url);
-    // All 6 locale variants
+    // All 7 locale variants
     expect(urls).toContain('https://www.preset-forge.com/de/share/abc');
     expect(urls).toContain('https://www.preset-forge.com/en/share/abc');
     expect(urls).toContain('https://www.preset-forge.com/es/share/abc');
     expect(urls).toContain('https://www.preset-forge.com/fr/share/abc');
     expect(urls).toContain('https://www.preset-forge.com/it/share/abc');
     expect(urls).toContain('https://www.preset-forge.com/pt/share/abc');
+    expect(urls).toContain('https://www.preset-forge.com/pt-BR/share/abc');
     // Plus the JSON endpoint
     expect(urls).toContain('https://www.preset-forge.com/api/share/abc/json');
   });
 
-  it('emits seven entries per preset (6 locale HTML + 1 JSON)', async () => {
+  it('emits eight entries per preset (7 locale HTML + 1 JSON)', async () => {
     (prisma.preset.findMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
       Array.from({ length: 10 }, (_, i) => ({
         shareToken: `tok${i}`,
@@ -55,17 +56,17 @@ describe('sitemap', () => {
         (e.url.includes('/share/') || e.url.includes('/api/share/')) &&
         !e.url.includes('/amp/'),
     );
-    expect(presetEntries).toHaveLength(70);
+    expect(presetEntries).toHaveLength(80);
   });
 
-  it('emits amp category URLs for all 6 locales (only for active slugs)', async () => {
+  it('emits amp category URLs for all 7 locales (only for active slugs)', async () => {
     (prisma.preset.findMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce([]);
     // Pretend 12 amp slugs have presets — sitemap should emit them, skip the rest.
     const activeSlugs = new Set(['fender-65-twin-reverb', 'mesa-boogie-mark-iv-lead-channel', 'marshall-jcm800-lead-bright-channel', 'marshall-jcm800-lead-normal-channel', 'fender-deluxe-reverb', 'bogner-xtc-blue-channel', 'bogner-xtc-red-channel', 'fender-tweed-deluxe', 'engl-savage-120-amplifier', 'diezel-vh4-channel-1-clean', 'diezel-vh4-channel-2-crunch', 'ampeg-svt-bass-amp']);
     (getActiveAmpSlugs as ReturnType<typeof vi.fn>).mockResolvedValueOnce(activeSlugs);
 
     const entries = await sitemap();
-    const perLocale = ['de', 'en', 'es', 'fr', 'it', 'pt'].map((l) =>
+    const perLocale = ['de', 'en', 'es', 'fr', 'it', 'pt', 'pt-BR'].map((l) =>
       entries.filter((e) => e.url.match(new RegExp(`/${l}/amp/[a-z0-9-]+$`))),
     );
 

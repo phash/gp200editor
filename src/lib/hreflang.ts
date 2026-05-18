@@ -19,12 +19,13 @@ export const LOCALE_META: Record<Locale, { flag: string; code: string }> = {
   fr: { flag: '🇫🇷', code: 'FR' },
   it: { flag: '🇮🇹', code: 'IT' },
   pt: { flag: '🇵🇹', code: 'PT' },
+  'pt-BR': { flag: '🇧🇷', code: 'PT-BR' },
 };
 
 // Locales still behind a `beta` badge in the switcher. Remove an entry to
 // graduate a locale to stable — one-line change, no config flag. Exported
 // so future tests (e.g. sitemap-priority lowering) can read the same set.
-export const BETA_LOCALES = new Set<Locale>(['es', 'fr', 'it', 'pt']);
+export const BETA_LOCALES = new Set<Locale>(['es', 'fr', 'it', 'pt', 'pt-BR']);
 
 /**
  * Build an hreflang `languages` map for next.js Metadata.alternates.
