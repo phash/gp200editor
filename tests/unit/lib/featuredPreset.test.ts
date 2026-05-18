@@ -11,6 +11,11 @@ describe('computeBayesScore', () => {
   it('zero ratings returns C', () => {
     expect(computeBayesScore({ ratingAverage: 0, ratingCount: 0 }, 4, 5)).toBe(4);
   });
+  it('default m=10 dampens single 5★ outliers: 1×5★ with C=4 → 4.09', () => {
+    // Sybil-dampening: a single accomplice rating shouldn't push a fresh
+    // preset past presets with established rating history.
+    expect(computeBayesScore({ ratingAverage: 5, ratingCount: 1 }, 4)).toBeCloseTo(4.09, 2);
+  });
 });
 
 vi.mock('@/lib/prisma', () => ({
