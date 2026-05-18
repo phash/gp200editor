@@ -30,6 +30,7 @@ export interface UseMidiSendReturn {
   sendToggle: (blockIndex: number, enabled: boolean) => void;
   sendParamChange: (blockIndex: number, paramIndex: number, effectId: number, value: number) => void;
   sendReorder: (order: number[], send: number, ret: number) => void;
+  sendFxLoopMove: (order: number[], send: number, ret: number, which: 'send' | 'return') => void;
   sendSlotChange: (slot: number) => void;
   sendAuthor: (author: string) => void;
   sendStyleName: (styleName: string) => void;
@@ -150,6 +151,17 @@ export function useMidiSend(opts: UseMidiSendOpts): UseMidiSendReturn {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const sendFxLoopMove = useCallback(
+    (order: number[], send: number, ret: number, which: 'send' | 'return') => {
+      if (!outputRef.current) return;
+      const msg = SysExCodec.buildFxLoopMove(order, send, ret, which);
+      console.log(`[GP-200] fxLoop ${which}: send=${send} ret=${ret}`);
+      outputRef.current.send(msg);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    },
+    [],
+  );
+
   const sendSlotChange = useCallback((slot: number) => {
     if (!outputRef.current) return;
     // sub=0x08 with slot at byte[26] — confirmed via capture 222343
@@ -258,6 +270,7 @@ export function useMidiSend(opts: UseMidiSendOpts): UseMidiSendReturn {
     sendToggle,
     sendParamChange,
     sendReorder,
+    sendFxLoopMove,
     sendSlotChange,
     sendAuthor,
     sendStyleName,

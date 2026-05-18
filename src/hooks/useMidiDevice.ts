@@ -53,6 +53,7 @@ export interface UseMidiDeviceReturn {
   sendToggle: (blockIndex: number, enabled: boolean) => void;
   sendParamChange: (blockIndex: number, paramIndex: number, effectId: number, value: number) => void;
   sendReorder: (order: number[], send: number, ret: number) => void;
+  sendFxLoopMove: (order: number[], send: number, ret: number, which: 'send' | 'return') => void;
   sendSlotChange: (slot: number) => void;
   sendAuthor: (author: string) => void;
   sendStyleName: (styleName: string) => void;
@@ -632,6 +633,7 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     sendToggle: send.sendToggle,
     sendParamChange: send.sendParamChange,
     sendReorder: send.sendReorder,
+    sendFxLoopMove: send.sendFxLoopMove,
     sendSlotChange: send.sendSlotChange,
     sendAuthor: send.sendAuthor,
     sendStyleName: send.sendStyleName,
