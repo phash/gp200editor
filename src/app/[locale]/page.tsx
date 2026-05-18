@@ -1,7 +1,9 @@
+import { Suspense } from 'react';
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/routing';
 import { getChangelog } from '@/lib/changelog';
 import { serializeJsonLd } from '@/lib/jsonLd';
+import { FeaturedPresetBlock } from '@/components/FeaturedPresetBlock';
 import type { Locale } from '@/i18n/locales';
 
 type FaqItem = { q: string; a: string };
@@ -40,6 +42,10 @@ export default async function HomePage({ params }: Props) {
 
   return (
     <main className="max-w-5xl mx-auto px-4 py-10">
+      <Suspense fallback={null}>
+        <FeaturedPresetBlock locale={locale} />
+      </Suspense>
+
       {/* ───────── Hero ───────── */}
       <section className="mb-14 text-center">
         <p
