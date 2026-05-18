@@ -291,7 +291,11 @@
     "ratingStarFilled": "Bewertungsstern ausgefüllt",
     "ratingStarEmpty": "Bewertungsstern leer",
     "recentHeading": "Neueste Community-Presets",
-    "browseAll": "Alle Presets oben durchsuchen"
+    "browseAll": "Alle Presets oben durchsuchen",
+    "rate": {
+      "signInTooltip": "Anmelden zum Bewerten",
+      "ownPresetTooltip": "Eigene Presets nicht bewertbar"
+    }
   },
   "device": {
     "connect": "GP-200 verbinden",

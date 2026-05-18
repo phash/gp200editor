@@ -291,7 +291,11 @@
     "ratingStarFilled": "estrella de valoración llena",
     "ratingStarEmpty": "estrella de valoración vacía",
     "recentHeading": "Presets recientes de la comunidad",
-    "browseAll": "Explora todos los presets arriba"
+    "browseAll": "Explora todos los presets arriba",
+    "rate": {
+      "signInTooltip": "Inicia sesión para valorar",
+      "ownPresetTooltip": "No puedes valorar tu propio preset"
+    }
   },
   "device": {
     "connect": "Conectar GP-200",

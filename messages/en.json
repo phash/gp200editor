@@ -291,7 +291,11 @@
     "ratingStarFilled": "filled rating star",
     "ratingStarEmpty": "empty rating star",
     "recentHeading": "Recent community presets",
-    "browseAll": "Browse all presets above"
+    "browseAll": "Browse all presets above",
+    "rate": {
+      "signInTooltip": "Sign in to rate",
+      "ownPresetTooltip": "Cannot rate your own preset"
+    }
   },
   "device": {
     "connect": "Connect GP-200",
