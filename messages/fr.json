@@ -93,15 +93,15 @@
         },
         {
           "q": "Dois-je installer quelque chose ?",
-          "a": "Non. Ouvrez l'éditeur dans votre navigateur. Il fonctionne hors-ligne en Progressive Web App après le premier chargement."
+          "a": "Non. Ouvre l'éditeur dans ton navigateur. Il fonctionne hors-ligne en Progressive Web App après le premier chargement."
         },
         {
           "q": "Puis-je importer des presets Line6 HX Stomp ?",
-          "a": "Oui. Déposez un fichier .hlx dans l'éditeur et Preset Forge convertit la chaîne d'effets en preset GP-200 (.prst) entièrement dans votre navigateur, sans upload ni aller-retour serveur."
+          "a": "Oui. Dépose un fichier .hlx dans l'éditeur et Preset Forge convertit la chaîne d'effets en preset GP-200 (.prst) entièrement dans ton navigateur, sans upload ni aller-retour serveur."
         },
         {
           "q": "Comment synchroniser les presets avec mon GP-200 ?",
-          "a": "Connectez le GP-200 en USB et utilisez Chrome ou Edge (Web MIDI ne fonctionne pas sur Firefox ni Safari). Preset Forge peut lire le preset actif, envoyer des changements de paramètres en direct et écrire un preset sur un slot précis."
+          "a": "Connecte le GP-200 en USB et utilise Chrome ou Edge (Web MIDI ne fonctionne pas sur Firefox ni Safari). Preset Forge peut lire le preset actif, envoyer des changements de paramètres en direct et écrire un preset sur un slot précis."
         },
         {
           "q": "Preset Forge est-il gratuit ?",
@@ -216,7 +216,7 @@
     "verifyRedirecting": "Redirection…",
     "verifyFailed": "Échec de la vérification",
     "verifyInvalidToken": "Lien invalide ou expiré.",
-    "verifyConfirmDescription": "Cliquez sur le bouton ci-dessous pour confirmer votre adresse e-mail. Cette étape supplémentaire protège votre compte des scanners de liens automatiques.",
+    "verifyConfirmDescription": "Clique sur le bouton ci-dessous pour confirmer ton adresse e-mail. Cette étape supplémentaire protège ton compte des scanners de liens automatiques.",
     "verifyConfirmButton": "Vérifier mon e-mail",
     "resendVerification": "Renvoyer l'e-mail de vérification",
     "resendSent": "E-mail renvoyé. Vérifie ta boîte de réception.",
@@ -293,7 +293,7 @@
     "recentHeading": "Presets récents de la communauté",
     "browseAll": "Parcourez tous les presets ci-dessus",
     "rate": {
-      "signInTooltip": "Connectez-vous pour évaluer",
+      "signInTooltip": "Connecte-toi pour évaluer",
       "ownPresetTooltip": "Vous ne pouvez pas évaluer votre propre preset",
       "errorTooltip": "Évaluation échouée — réessayez"
     }
@@ -652,7 +652,7 @@
     "deletedByAuthor": "Supprimé par l’auteur",
     "deletedByAdmin": "Supprimé par modérateur",
     "edited": "modifié",
-    "signInToComment": "Connectez-vous pour commenter",
+    "signInToComment": "Connecte-toi pour commenter",
     "loadMore": "Charger plus",
     "confirmDelete": "Supprimer ce commentaire ?",
     "rateLimitToast": "Trop de commentaires. Réessayez plus tard.",

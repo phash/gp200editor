@@ -110,7 +110,7 @@
       ]
     },
     "featured": {
-      "title": "In primo piano · Top Rated · 30 giorni",
+      "title": "In primo piano · Più votati · 30 giorni",
       "recentComments": "Commenti recenti",
       "openPreset": "Apri preset →",
       "noFeatured": "Nessun preset in primo piano"
@@ -512,10 +512,10 @@
       "suspend": "Sospendi",
       "unsuspend": "Riattiva",
       "delete": "Elimina",
-      "unpublish": "Unpublish",
-      "republish": "Republish",
-      "flag": "Flag",
-      "unflag": "Unflag",
+      "unpublish": "Rimuovi dalla galleria",
+      "republish": "Ripubblica",
+      "flag": "Segnala",
+      "unflag": "Rimuovi segnalazione",
       "createIssue": "Crea GH Issue",
       "copy": "Copia",
       "deleteAll": "Elimina tutti"

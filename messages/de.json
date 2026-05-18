@@ -110,7 +110,7 @@
       ]
     },
     "featured": {
-      "title": "Top Bewertet · Letzte 30 Tage",
+      "title": "Empfohlen · Top Bewertet · 30 Tage",
       "recentComments": "Aktuelle Kommentare",
       "openPreset": "Preset öffnen →",
       "noFeatured": "Noch kein Featured-Preset"
@@ -512,10 +512,10 @@
       "suspend": "Sperren",
       "unsuspend": "Entsperren",
       "delete": "Löschen",
-      "unpublish": "Unpublish",
-      "republish": "Republish",
-      "flag": "Flag",
-      "unflag": "Unflag",
+      "unpublish": "Aus Galerie nehmen",
+      "republish": "Erneut veröffentlichen",
+      "flag": "Markieren",
+      "unflag": "Markierung entfernen",
       "createIssue": "GH Issue erstellen",
       "copy": "Kopieren",
       "deleteAll": "Alle löschen"

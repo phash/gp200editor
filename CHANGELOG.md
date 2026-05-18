@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-05-19 (later)
+
+### Features
+- **Brasilianisches Portugiesisch (pt-BR) als 7. Locale.** Vorher war `pt.json` faktisch brasilianisch übersetzt (Salvar/Senha/usuário/arquivo); der Inhalt wandert nach `pt-BR.json` und steht jetzt brasilianischen Nutzern als eigenes Locale mit 🇧🇷-Flag im Switcher zur Verfügung. `pt.json` wurde mit ~175 gezielten Substitutionen auf echtes europäisches Portugiesisch konvertiert (Guardar/Palavra-passe/utilizador/ficheiro/Iniciar sessão/A guardar/A carregar/Ligar/Registo/Rastreio).
+
+### i18n-Polish (Sprach-Review aller 7 Locales)
+- **DE/IT:** 4 Admin-Buttons (`Unpublish/Republish/Flag/Unflag`) waren noch englisch — jetzt übersetzt.
+- **DE:** `home.featured.title` hatte den „Featured ·"-Präfix verloren — wieder dran.
+- **IT:** `home.featured.title` hatte „Top Rated" englisch — jetzt „Più votati".
+- **FR:** tu/vous-Inkonsistenz behoben — drei FAQ-Antworten + zwei Tooltips + die Verify-Confirm-Seite waren in `vous`, während die App sonst `tu` nutzt. E-Mail-Templates bleiben bewusst in `vous` (formaler Kontext).
+- **PT-BR:** Ein EU-PT-Slip in `gallery.rate.ownPresetTooltip` korrigiert.
+
+### Fix
+- **Übersetzungs-Skript-Bug korrigiert.** Beim BR→EU-Sweep der `legal.privacyOverviewText` wurde „salvo quando exigido por lei" (im Sinne von „außer wenn") fälschlich zu „guardado quando exigido por lei" umgeschrieben. Zurückgedreht.
+
 ## 2026-05-19
 
 ### Security

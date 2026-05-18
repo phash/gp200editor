@@ -294,7 +294,7 @@
     "browseAll": "Explore todos os presets acima",
     "rate": {
       "signInTooltip": "Faça login para avaliar",
-      "ownPresetTooltip": "Não pode avaliar o seu próprio preset",
+      "ownPresetTooltip": "Você não pode avaliar seu próprio preset",
       "errorTooltip": "Avaliação falhou — tente novamente"
     }
   },
