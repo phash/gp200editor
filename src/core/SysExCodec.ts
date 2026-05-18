@@ -555,6 +555,34 @@ export const SysExCodec = {
     return msg;
   },
 
+  buildFxLoopMove(order: number[], send: number, ret: number, which: 'send' | 'return'): Uint8Array {
+    // CMD=0x12, sub=0x20, 78 bytes — nibble-encoded 32-byte payload
+    // Confirmed: captures 075745 (SEND moves) + 075856 (RETURN moves) — 2026-05-18
+    // Same envelope as buildReorderEffects, but with FX-loop discriminators:
+    //   decoded[6]=0x51 and decoded[12]=0x51 (vs 0x00 in reorder)
+    //   decoded[27]=0x08 (send moved) or 0xBA (return moved), vs 0x44 (reorder)
+    // Routing array decoded[16:27] reflects current state (unchanged by this op).
+    const decoded = new Uint8Array(32);
+    decoded[2] = 0x04;
+    decoded[6] = 0x51;
+    decoded[8] = 0x08;
+    decoded[10] = 0x10;
+    decoded[12] = 0x51;
+    decoded[14] = send & 0xFF;
+    decoded[15] = ret & 0xFF;
+    for (let i = 0; i < 11 && i < order.length; i++) {
+      decoded[16 + i] = order[i];
+    }
+    decoded[27] = which === 'send' ? 0x08 : 0xBA;
+
+    const nibbles = this.nibbleEncode(decoded);
+    const msg = new Uint8Array(78);
+    msg.set([0xF0, 0x21, 0x25, 0x7E, 0x47, 0x50, 0x2D, 0x32, 0x12, 0x20, 0x00, 0x00, 0x00]);
+    msg.set(nibbles, 13);
+    msg[77] = 0xF7;
+    return msg;
+  },
+
   buildSaveCommit(presetName: string, slot: number): Uint8Array {
     // CMD=0x12, sub=0x18, 62 bytes — nibble-encoded "save to slot" commit
     // From captures 100548 + 101538: sent after live edits or write chunks to persist

@@ -1039,6 +1039,49 @@ describe('SysExCodec: fxLoop parse', () => {
   });
 });
 
+describe('SysExCodec: buildFxLoopMove', () => {
+  // Capture: scripts/gp200-capture-20260518-075745.pcap, host->dev pkt 43
+  // Raw payload after F0..GP-2..CMD..SUB..3-byte pad (= msg.slice(13, -1)):
+  // 64 nibble bytes that decode to:
+  //   00 00 04 00 00 00 51 00 08 00 10 00 51 00 05 05 00 01 02 03 04 05 06 07 08 09 0a 08 00 00 00 00
+  const CAPTURE_1_PAYLOAD = new Uint8Array([
+    0x00,0x00,0x00,0x00,0x00,0x04,0x00,0x00,0x00,0x00,0x00,0x00,0x05,0x01,0x00,0x00,
+    0x00,0x08,0x00,0x00,0x01,0x00,0x00,0x00,0x05,0x01,0x00,0x00,0x00,0x05,0x00,0x05,
+    0x00,0x00,0x00,0x01,0x00,0x02,0x00,0x03,0x00,0x04,0x00,0x05,0x00,0x06,0x00,0x07,
+    0x00,0x08,0x00,0x09,0x00,0x0a,0x00,0x08,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+  ]);
+
+  it("matches capture pkt 43 byte-for-byte (SEND=5, RETURN=5, kind='send')", () => {
+    const msg = SysExCodec.buildFxLoopMove(
+      [0,1,2,3,4,5,6,7,8,9,10],
+      5, 5,
+      'send',
+    );
+    // Strip envelope (F0..CMD..SUB..3-byte pad → 13 bytes) and trailing F7
+    const payload = msg.slice(13, msg.length - 1);
+    expect(payload).toEqual(CAPTURE_1_PAYLOAD);
+  });
+
+  it("sets decoded[27]=0xBA when kind='return'", () => {
+    const msg = SysExCodec.buildFxLoopMove(
+      [0,1,2,3,4,5,6,7,8,9,10],
+      1, 9,
+      'return',
+    );
+    const decoded = SysExCodec.nibbleDecode(msg.slice(13, msg.length - 1));
+    expect(decoded[27]).toBe(0xBA);
+    expect(decoded[14]).toBe(1);
+    expect(decoded[15]).toBe(9);
+  });
+
+  it('total SysEx length is 78 bytes (matches Reorder envelope)', () => {
+    const msg = SysExCodec.buildFxLoopMove([0,1,2,3,4,5,6,7,8,9,10], 4, 4, 'send');
+    expect(msg.length).toBe(78);
+    expect(msg[0]).toBe(0xF0);
+    expect(msg[77]).toBe(0xF7);
+  });
+});
+
 describe('SysExCodec: buildWriteChunks fxLoop', () => {
   it('writes preset.fxLoopSend/Return to write-payload [114/115]', () => {
     const preset: GP200Preset = {
