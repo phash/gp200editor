@@ -23,12 +23,14 @@ describe('AudioPlayerProvider', () => {
       </AudioPlayerProvider>
     );
 
-    expect(firstEl && secondEl).toBeTruthy();
+    const f = firstEl as HTMLAudioElement | null;
+    const s = secondEl as HTMLAudioElement | null;
+    expect(f && s).toBeTruthy();
     let paused = false;
-    if (firstEl) firstEl.pause = () => { paused = true; };
+    if (f) f.pause = () => { paused = true; };
 
-    act(() => { firstMgr!.notifyPlay(firstEl!); });
-    act(() => { firstMgr!.notifyPlay(secondEl!); });
+    act(() => { firstMgr!.notifyPlay(f!); });
+    act(() => { firstMgr!.notifyPlay(s!); });
     expect(paused).toBe(true);
   });
 

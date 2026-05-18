@@ -2,6 +2,7 @@
 
 import { type ReactNode, useEffect } from 'react';
 import { MidiDeviceProvider } from '@/contexts/MidiDeviceContext';
+import { AudioPlayerProvider } from '@/components/audio/AudioPlayerProvider';
 
 export function ClientProviders({ children }: { children: ReactNode }) {
   useEffect(() => {
@@ -10,5 +11,9 @@ export function ClientProviders({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  return <MidiDeviceProvider>{children}</MidiDeviceProvider>;
+  return (
+    <MidiDeviceProvider>
+      <AudioPlayerProvider>{children}</AudioPlayerProvider>
+    </MidiDeviceProvider>
+  );
 }
