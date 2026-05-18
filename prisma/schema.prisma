@@ -141,6 +141,9 @@ model Comment {
 
   @@index([presetId, parentId, createdAt(sort: Desc)])
   @@index([userId])
+  // Admin moderation list orders by createdAt globally (no presetId filter).
+  // Without this index the query degrades to a full sort once the table grows.
+  @@index([createdAt(sort: Desc)])
 }
 
 model ErrorLog {
