@@ -21,12 +21,21 @@ function req(body: unknown) {
   });
 }
 
+// Shapes match the route's `findUnique({ select: { ..., preset: { ... } } })`.
+const VALID_PARENT = {
+  id: 'c1',
+  parentId: null,
+  presetId: 'p1',
+  preset: { public: true, flagged: false },
+};
+const NEW_REPLY = { id: 'r1', user: { id: 'u1', username: 'a', avatarKey: null } };
+
 beforeEach(() => vi.clearAllMocks());
 
 describe('POST /api/comments/[id]/reply', () => {
   it('creates reply to top-level comment', async () => {
-    vi.mocked(prisma.comment.findUnique).mockResolvedValue({ id: 'c1', parentId: null, presetId: 'p1' } as never);
-    vi.mocked(prisma.comment.create).mockResolvedValue({ id: 'r1' } as never);
+    vi.mocked(prisma.comment.findUnique).mockResolvedValue(VALID_PARENT as never);
+    vi.mocked(prisma.comment.create).mockResolvedValue(NEW_REPLY as never);
     const res = await POST(req({ body: 'reply text' }), { params: Promise.resolve({ id: 'c1' }) });
     expect(res.status).toBe(200);
     expect(prisma.comment.create).toHaveBeenCalledWith(expect.objectContaining({
@@ -35,20 +44,38 @@ describe('POST /api/comments/[id]/reply', () => {
   });
 
   it('rejects reply to reply (400)', async () => {
-    vi.mocked(prisma.comment.findUnique).mockResolvedValue({ id: 'c1', parentId: 'c0', presetId: 'p1' } as never);
+    vi.mocked(prisma.comment.findUnique).mockResolvedValue({ ...VALID_PARENT, parentId: 'c0' } as never);
     const res = await POST(req({ body: 'x' }), { params: Promise.resolve({ id: 'c1' }) });
     expect(res.status).toBe(400);
   });
 
   it('allows reply to soft-deleted parent', async () => {
-    vi.mocked(prisma.comment.findUnique).mockResolvedValue({ id: 'c1', parentId: null, presetId: 'p1', deletedAt: new Date() } as never);
-    vi.mocked(prisma.comment.create).mockResolvedValue({ id: 'r1' } as never);
+    vi.mocked(prisma.comment.findUnique).mockResolvedValue({ ...VALID_PARENT, deletedAt: new Date() } as never);
+    vi.mocked(prisma.comment.create).mockResolvedValue(NEW_REPLY as never);
     const res = await POST(req({ body: 'x' }), { params: Promise.resolve({ id: 'c1' }) });
     expect(res.status).toBe(200);
   });
 
   it('returns 404 when parent missing', async () => {
     vi.mocked(prisma.comment.findUnique).mockResolvedValue(null);
+    const res = await POST(req({ body: 'x' }), { params: Promise.resolve({ id: 'c1' }) });
+    expect(res.status).toBe(404);
+  });
+
+  it('returns 404 when preset has been un-published', async () => {
+    vi.mocked(prisma.comment.findUnique).mockResolvedValue({
+      ...VALID_PARENT,
+      preset: { public: false, flagged: false },
+    } as never);
+    const res = await POST(req({ body: 'x' }), { params: Promise.resolve({ id: 'c1' }) });
+    expect(res.status).toBe(404);
+  });
+
+  it('returns 404 when preset is flagged', async () => {
+    vi.mocked(prisma.comment.findUnique).mockResolvedValue({
+      ...VALID_PARENT,
+      preset: { public: true, flagged: true },
+    } as never);
     const res = await POST(req({ body: 'x' }), { params: Promise.resolve({ id: 'c1' }) });
     expect(res.status).toBe(404);
   });

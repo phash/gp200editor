@@ -4,6 +4,7 @@ import { verifyCsrf } from '@/lib/csrf';
 import { prisma } from '@/lib/prisma';
 import { rateLimit } from '@/lib/rateLimit';
 import { commentBodySchema, adminDeleteReasonSchema } from '@/lib/commentValidators';
+import { commentUserSelect, serializeCommentUser } from '@/lib/commentSerializer';
 
 export async function PATCH(
   request: NextRequest,
@@ -37,9 +38,11 @@ export async function PATCH(
   const comment = await prisma.comment.update({
     where: { id },
     data: { body: parsed.data, editedAt: new Date() },
-    include: { user: { select: { id: true, username: true, avatarKey: true } } },
+    include: { user: { select: commentUserSelect } },
   });
-  return NextResponse.json({ comment });
+  return NextResponse.json({
+    comment: { ...comment, user: serializeCommentUser(comment.user) },
+  });
 }
 
 export async function DELETE(

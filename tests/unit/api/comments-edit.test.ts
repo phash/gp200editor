@@ -26,7 +26,7 @@ beforeEach(() => vi.clearAllMocks());
 describe('PATCH /api/comments/[id]', () => {
   it('updates body and sets editedAt for author', async () => {
     vi.mocked(prisma.comment.findUnique).mockResolvedValue({ id: 'c1', userId: 'u1', deletedAt: null } as never);
-    vi.mocked(prisma.comment.update).mockResolvedValue({ id: 'c1', body: 'new', editedAt: new Date() } as never);
+    vi.mocked(prisma.comment.update).mockResolvedValue({ id: 'c1', body: 'new', editedAt: new Date(), user: { id: 'u1', username: 'a', avatarKey: null } } as never);
     const res = await PATCH(req({ body: 'new' }), { params: Promise.resolve({ id: 'c1' }) });
     expect(res.status).toBe(200);
     expect(prisma.comment.update).toHaveBeenCalledWith(expect.objectContaining({

@@ -4,6 +4,7 @@ import { verifyCsrf } from '@/lib/csrf';
 import { prisma } from '@/lib/prisma';
 import { rateLimit } from '@/lib/rateLimit';
 import { commentBodySchema } from '@/lib/commentValidators';
+import { commentUserSelect, serializeCommentUser } from '@/lib/commentSerializer';
 
 export async function POST(
   request: NextRequest,
@@ -26,35 +27,25 @@ export async function POST(
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
   }
 
+  // Block commenting on private, flagged, or non-existent presets. flagged
+  // pauses activity until moderation completes; non-public excludes drafts
+  // and revoked links.
   const preset = await prisma.preset.findUnique({
     where: { id },
-    select: { id: true, public: true },
+    select: { id: true, public: true, flagged: true },
   });
-  if (!preset || !preset.public) {
+  if (!preset || !preset.public || preset.flagged) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
   const comment = await prisma.comment.create({
     data: { presetId: id, userId: user.id, body: parsed.data, parentId: null },
-    include: { user: { select: userSelect } },
+    include: { user: { select: commentUserSelect } },
   });
-
-  const { user: commentUser, ...commentRest } = comment as typeof comment & {
-    user: { id: string; username: string; avatarKey: string | null };
-  };
 
   return NextResponse.json({
-    comment: {
-      ...commentRest,
-      user: commentUser ? serializeUser(commentUser) : null,
-    },
+    comment: { ...comment, user: serializeCommentUser(comment.user) },
   });
-}
-
-const userSelect = { id: true, username: true, avatarKey: true } as const;
-
-function serializeUser(u: { id: string; username: string; avatarKey: string | null }) {
-  return { id: u.id, username: u.username, avatarUrl: u.avatarKey ? `/api/avatar/${u.avatarKey}` : null };
 }
 
 export async function GET(
@@ -62,6 +53,18 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+
+  // Refuse to expose a discussion that has been un-published or flagged —
+  // un-publishing is the user's way of revoking the share link, and the
+  // comment thread must follow.
+  const preset = await prisma.preset.findUnique({
+    where: { id },
+    select: { id: true, public: true, flagged: true },
+  });
+  if (!preset || !preset.public || preset.flagged) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
   const cursor = request.nextUrl.searchParams.get('cursor');
   const LIMIT = 20;
 
@@ -71,10 +74,10 @@ export async function GET(
     take: LIMIT + 1,
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     include: {
-      user: { select: userSelect },
+      user: { select: commentUserSelect },
       replies: {
         orderBy: { createdAt: 'asc' },
-        include: { user: { select: userSelect } },
+        include: { user: { select: commentUserSelect } },
       },
     },
   });
@@ -86,11 +89,11 @@ export async function GET(
   const sanitized = items.map((c) => ({
     ...c,
     body: c.deletedAt ? null : c.body,
-    user: serializeUser(c.user),
+    user: serializeCommentUser(c.user),
     replies: c.replies.map((r) => ({
       ...r,
       body: r.deletedAt ? null : r.body,
-      user: serializeUser(r.user),
+      user: serializeCommentUser(r.user),
     })),
   }));
 
