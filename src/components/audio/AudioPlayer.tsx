@@ -62,6 +62,9 @@ export function AudioPlayer({ src, mime, durationMs, variant }: Props) {
         >
           <span aria-hidden="true">{playing ? '❚❚' : '▶'}</span>
         </button>
+        {/* Browsers parse the `src` attribute first and ignore inner
+            <source> when both are present, so we keep this minimal. The
+            actual MIME comes back on the response's Content-Type header. */}
         <audio
           ref={ref}
           src={src}
@@ -71,9 +74,8 @@ export function AudioPlayer({ src, mime, durationMs, variant }: Props) {
           onPause={onPause}
           onEnded={onEnded}
           aria-hidden="true"
-        >
-          <source src={src} type={mime} />
-        </audio>
+          data-mime={mime}
+        />
       </>
     );
   }
@@ -126,9 +128,8 @@ export function AudioPlayer({ src, mime, durationMs, variant }: Props) {
         onPause={onPause}
         onEnded={onEnded}
         aria-hidden="true"
-      >
-        <source src={src} type={mime} />
-      </audio>
+        data-mime={mime}
+      />
     </div>
   );
 }

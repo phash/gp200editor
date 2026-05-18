@@ -81,7 +81,7 @@ export function AudioUploadField({ presetId, hasAudio, onChange }: Props) {
         <input
           ref={fileRef}
           type="file"
-          accept="audio/mpeg,audio/mp4,audio/x-m4a,audio/aac,.mp3,.m4a,.aac"
+          accept="audio/mpeg,audio/mp4,audio/x-m4a,.mp3,.m4a"
           onChange={handlePick}
           disabled={busy}
           className="text-xs"

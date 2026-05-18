@@ -254,6 +254,10 @@ export default function EditorPage() {
   }
 
   async function handleSaveToPresets(data: { author: string; style: string; note: string; publish: boolean; audioFile: File | null }) {
+    // Clear any stale audio-failure banner from a previous attempt before
+    // running the save flow again — otherwise the message lingers across
+    // unrelated resubmits.
+    setSaveDialogAudioError(null);
     // Sync editor state with dialog values
     if (data.author) setAuthor(data.author);
     if (data.style) setPresetStyle(data.style);

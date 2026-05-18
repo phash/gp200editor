@@ -1,10 +1,13 @@
 import { parseBuffer } from 'music-metadata';
 
+// `audio/aac` is intentionally excluded: raw ADTS-AAC has no `ftyp` container
+// magic so detectMagicMime can't confirm it, and browsers play `.aac` files
+// inconsistently. iOS exports already produce audio/mp4 (.m4a) which is
+// covered here.
 export const ALLOWED_AUDIO_MIME = new Set([
   'audio/mpeg',
   'audio/mp4',
   'audio/x-m4a',
-  'audio/aac',
 ]);
 
 export const MAX_AUDIO_BYTES = 2 * 1024 * 1024;            // 2 MB
@@ -40,7 +43,7 @@ function detectMagicMime(buf: Buffer): string | null {
 
 function mimeFamily(mime: string): 'mp3' | 'mp4' | null {
   if (mime === 'audio/mpeg') return 'mp3';
-  if (mime === 'audio/mp4' || mime === 'audio/x-m4a' || mime === 'audio/aac') return 'mp4';
+  if (mime === 'audio/mp4' || mime === 'audio/x-m4a') return 'mp4';
   return null;
 }
 

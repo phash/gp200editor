@@ -34,7 +34,7 @@ describe('AudioPlayerProvider', () => {
     expect(paused).toBe(true);
   });
 
-  it('notifyEnded clears the active ref', () => {
+  it('notifyEnded clears the active ref so a subsequent notifyPlay does not pause the prior element', () => {
     let mgr: ReturnType<typeof useAudioPlayerManager> | null = null;
     let el: HTMLAudioElement | null = null;
     render(
@@ -42,9 +42,16 @@ describe('AudioPlayerProvider', () => {
         <Probe onReady={(m, e) => { mgr = m; el = e; }} />
       </AudioPlayerProvider>
     );
-    act(() => { mgr!.notifyPlay(el!); });
-    act(() => { mgr!.notifyEnded(el!); });
-    act(() => { mgr!.notifyPlay(el!); });
-    expect(true).toBe(true);
+    const cast = el as HTMLAudioElement | null;
+    expect(cast).toBeTruthy();
+    let pauseCalls = 0;
+    if (cast) cast.pause = () => { pauseCalls += 1; };
+
+    act(() => { mgr!.notifyPlay(cast!); });
+    act(() => { mgr!.notifyEnded(cast!); });
+    // After notifyEnded the active ref is null; another notifyPlay on the
+    // same element must NOT trigger pause (no prior playing element to stop).
+    act(() => { mgr!.notifyPlay(cast!); });
+    expect(pauseCalls).toBe(0);
   });
 });

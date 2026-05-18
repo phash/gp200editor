@@ -79,6 +79,10 @@ model Preset {
   @@index([public, createdAt])
   @@index([public, downloadCount])
   @@index([public, ratingAverage])
+  // Public audio GET resolves the row by audioKey on every request (mime
+  // pinning + un-publish gate). Without this index the lookup is a
+  // sequential scan that grows linearly with the preset table.
+  @@index([audioKey])
 }
 
 model Session {

@@ -164,7 +164,7 @@ export function SavePresetDialog({ presetName, defaultAuthor, defaultStyle, defa
             </label>
             <input
               type="file"
-              accept="audio/mpeg,audio/mp4,audio/x-m4a,audio/aac,.mp3,.m4a,.aac"
+              accept="audio/mpeg,audio/mp4,audio/x-m4a,.mp3,.m4a"
               onChange={(e) => setAudioFile(e.target.files?.[0] ?? null)}
               className="text-xs"
               aria-label={t('audioSnippet')}
