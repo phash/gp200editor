@@ -296,7 +296,8 @@
       "signInTooltip": "Sign in to rate",
       "ownPresetTooltip": "Cannot rate your own preset",
       "errorTooltip": "Rating failed — try again"
-    }
+    },
+    "audio": { "iconLabel": "Play preview" }
   },
   "device": {
     "connect": "Connect GP-200",
@@ -661,5 +662,29 @@
     "authToast": "Session expired. Please sign in again.",
     "genericError": "Could not save — please try again.",
     "emptyState": "No comments yet — be the first!"
+  },
+  "audio": {
+    "player": {
+      "playLabel": "Play",
+      "pauseLabel": "Pause",
+      "progressLabel": "Progress {current} of {total}",
+      "duration": "{seconds} s audio preview",
+      "noAudio": "No audio sample"
+    },
+    "upload": {
+      "label": "Audio snippet (optional)",
+      "placeholder": "Pick MP3 or M4A, max 30 s, max 2 MB",
+      "replace": "Replace",
+      "remove": "Remove",
+      "dropHere": "Drop file here",
+      "picking": "Pick file…",
+      "uploading": "Uploading…",
+      "success": "Audio saved",
+      "tooLong": "File too long — max 30 s",
+      "tooBig": "File too large — max 2 MB",
+      "wrongType": "Unsupported format — MP3 or M4A",
+      "notAuthorized": "Only the preset owner can upload audio",
+      "genericError": "Upload failed — please try again"
+    }
   }
 }
