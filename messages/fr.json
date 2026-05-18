@@ -108,6 +108,12 @@
           "a": "Oui. Pas de pub, pas d'offre payante, pas besoin de compte pour parcourir ou éditer. Partager des presets dans la galerie publique nécessite un compte gratuit."
         }
       ]
+    },
+    "featured": {
+      "title": "En vedette · Mieux noté · 30 jours",
+      "recentComments": "Commentaires récents",
+      "openPreset": "Ouvrir le preset →",
+      "noFeatured": "Aucun preset en vedette pour l'instant"
     }
   },
   "footer": {

@@ -108,6 +108,12 @@
           "a": "Sì. Niente pubblicità, niente piani a pagamento, nessun account richiesto per navigare o modificare. Condividere preset nella galleria pubblica richiede un account gratuito."
         }
       ]
+    },
+    "featured": {
+      "title": "In primo piano · Top Rated · 30 giorni",
+      "recentComments": "Commenti recenti",
+      "openPreset": "Apri preset →",
+      "noFeatured": "Nessun preset in primo piano"
     }
   },
   "footer": {

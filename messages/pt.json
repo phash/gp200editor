@@ -108,6 +108,12 @@
           "a": "Sim. Sem anúncios, sem planos pagos, sem necessidade de conta para navegar ou editar. Partilhar presets na galeria pública requer uma conta gratuita."
         }
       ]
+    },
+    "featured": {
+      "title": "Destaque · Mais bem avaliado · 30 dias",
+      "recentComments": "Comentários recentes",
+      "openPreset": "Abrir preset →",
+      "noFeatured": "Ainda sem preset em destaque"
     }
   },
   "footer": {

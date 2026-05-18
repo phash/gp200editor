@@ -108,6 +108,12 @@
           "a": "Yes. No ads, no paid tier, no account required for browsing or editing. Sharing presets to the public gallery requires a free account."
         }
       ]
+    },
+    "featured": {
+      "title": "Featured · Top Rated · 30 Days",
+      "recentComments": "Recent comments",
+      "openPreset": "Open preset →",
+      "noFeatured": "No featured preset yet"
     }
   },
   "footer": {

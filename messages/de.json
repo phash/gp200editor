@@ -108,6 +108,12 @@
           "a": "Ja. Keine Werbung, kein Bezahlmodell, kein Account zum Stöbern oder Editieren nötig. Zum Teilen von Presets in der öffentlichen Galerie braucht es einen kostenlosen Account."
         }
       ]
+    },
+    "featured": {
+      "title": "Top Bewertet · Letzte 30 Tage",
+      "recentComments": "Aktuelle Kommentare",
+      "openPreset": "Preset öffnen →",
+      "noFeatured": "Noch kein Featured-Preset"
     }
   },
   "footer": {
