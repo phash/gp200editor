@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { validateSession, requireVerifiedUser, refreshSessionCookie } from '@/lib/session';
-import { uploadPreset, deletePreset } from '@/lib/storage';
+import { uploadPreset, deletePreset, deleteAudio } from '@/lib/storage';
 import { patchPresetSchema } from '@/lib/validators';
 import { PRSTDecoder } from '@/core/PRSTDecoder';
 import type { GP200Preset } from '@/core/types';
@@ -165,7 +165,10 @@ export async function DELETE(_request: Request, context: RouteContext) {
 
   const { id } = await context.params;
 
-  const existing = await prisma.preset.findUnique({ where: { id } });
+  const existing = await prisma.preset.findUnique({
+    where: { id },
+    select: { userId: true, presetKey: true, audioKey: true },
+  });
   if (!existing) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
@@ -173,8 +176,11 @@ export async function DELETE(_request: Request, context: RouteContext) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  // Delete Garage object first (best-effort), then DB record
+  // Delete Garage objects first (best-effort), then DB record
   await deletePreset(existing.presetKey).catch(() => {});
+  if (existing.audioKey) {
+    await deleteAudio(existing.audioKey).catch(() => {});
+  }
   await prisma.preset.delete({ where: { id } });
 
   return NextResponse.json({});
