@@ -6,6 +6,7 @@ import { Link } from '@/i18n/routing';
 import { MODULE_COLORS, getEffectsByModule } from '@/core/effectNames';
 import { RateableGuitarRating } from '@/components/RateableGuitarRating';
 import { AdminActions } from '@/components/AdminActions';
+import { AudioPlayer } from '@/components/audio/AudioPlayer';
 
 type GalleryPreset = {
   id: string;
@@ -31,6 +32,9 @@ type GalleryPreset = {
   canRate: boolean;
   rateReason: 'anon' | 'own' | 'unverified' | null;
   existingRating: number;
+  audioKey: string | null;
+  audioMimeType: string | null;
+  audioDurationMs: number | null;
 };
 
 const ALL_MODULES = Object.keys(MODULE_COLORS);
@@ -348,6 +352,14 @@ export function GalleryClient() {
                     reason={preset.rateReason}
                     size="sm"
                   />
+                  {preset.audioKey && preset.audioMimeType && preset.audioDurationMs !== null && (
+                    <AudioPlayer
+                      src={`/api/preset-audio/${preset.audioKey}`}
+                      mime={preset.audioMimeType}
+                      durationMs={preset.audioDurationMs}
+                      variant="icon"
+                    />
+                  )}
                 </div>
                 <div className="flex gap-2 shrink-0">
                   <Link

@@ -180,7 +180,10 @@
       "bypass": "FX-Loop deaktiviert (Send = Return)",
       "ariaSend": "FX-Loop Send-Position, derzeit zwischen Effekt {prev} und {next}",
       "ariaReturn": "FX-Loop Return-Position, derzeit zwischen Effekt {prev} und {next}"
-    }
+    },
+    "audioSnippet": "Audio-Schnipsel (optional)",
+    "audioHint": "MP3 oder M4A, max 30 s und 2 MB. Kann später auf der Share-Seite bearbeitet werden.",
+    "audioFailedRetryOnSharePage": "Preset gespeichert, aber Audio-Upload fehlgeschlagen. Auf der Share-Seite erneut versuchen."
   },
   "auth": {
     "loginTitle": "Anmelden",
@@ -296,6 +299,9 @@
       "signInTooltip": "Anmelden zum Bewerten",
       "ownPresetTooltip": "Eigene Presets nicht bewertbar",
       "errorTooltip": "Bewertung fehlgeschlagen — bitte erneut versuchen"
+    },
+    "audio": {
+      "iconLabel": "Vorschau abspielen"
     }
   },
   "device": {
@@ -661,5 +667,29 @@
     "verifyRequired": "E-Mail-Verifizierung erforderlich, um zu kommentieren.",
     "authToast": "Sitzung abgelaufen. Bitte erneut anmelden.",
     "genericError": "Konnte nicht speichern — bitte erneut versuchen."
+  },
+  "audio": {
+    "player": {
+      "playLabel": "Abspielen",
+      "pauseLabel": "Pause",
+      "progressLabel": "Fortschritt {current} von {total}",
+      "duration": "{seconds} s Audio-Vorschau",
+      "noAudio": "Kein Audio-Beispiel"
+    },
+    "upload": {
+      "label": "Audio-Schnipsel (optional)",
+      "placeholder": "MP3 oder M4A wählen, max 30 s, max 2 MB",
+      "replace": "Ersetzen",
+      "remove": "Entfernen",
+      "dropHere": "Datei hier ablegen",
+      "picking": "Datei wählen…",
+      "uploading": "Lade hoch…",
+      "success": "Audio gespeichert",
+      "tooLong": "Datei zu lang — max 30 s",
+      "tooBig": "Datei zu groß — max 2 MB",
+      "wrongType": "Format nicht unterstützt — MP3 oder M4A",
+      "notAuthorized": "Nur der Preset-Owner kann Audio hochladen",
+      "genericError": "Upload fehlgeschlagen — bitte erneut versuchen"
+    }
   }
 }

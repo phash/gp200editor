@@ -180,7 +180,10 @@
       "bypass": "Boucle d'effets désactivée (Envoi = Retour)",
       "ariaSend": "Position d'envoi de la boucle d'effets, actuellement entre les effets {prev} et {next}",
       "ariaReturn": "Position de retour de la boucle d'effets, actuellement entre les effets {prev} et {next}"
-    }
+    },
+    "audioSnippet": "Extrait audio (optionnel)",
+    "audioHint": "MP3 ou M4A, max 30 s et 2 Mo. Peut être ajouté/modifié plus tard sur la page de partage.",
+    "audioFailedRetryOnSharePage": "Preset enregistré, mais l'audio a échoué. Réessaie sur la page de partage."
   },
   "auth": {
     "loginTitle": "Connexion",
@@ -296,6 +299,9 @@
       "signInTooltip": "Connecte-toi pour évaluer",
       "ownPresetTooltip": "Vous ne pouvez pas évaluer votre propre preset",
       "errorTooltip": "Évaluation échouée — réessayez"
+    },
+    "audio": {
+      "iconLabel": "Lire l'aperçu"
     }
   },
   "device": {
@@ -661,5 +667,29 @@
     "verifyRequired": "Vérification d'email requise pour commenter.",
     "authToast": "Session expirée. Veuillez vous reconnecter.",
     "genericError": "Impossible d'enregistrer — réessayez."
+  },
+  "audio": {
+    "player": {
+      "playLabel": "Lire",
+      "pauseLabel": "Pause",
+      "progressLabel": "Progression {current} sur {total}",
+      "duration": "{seconds} s d'aperçu audio",
+      "noAudio": "Pas d'échantillon audio"
+    },
+    "upload": {
+      "label": "Extrait audio (optionnel)",
+      "placeholder": "Choisis un MP3 ou M4A, max 30 s, max 2 Mo",
+      "replace": "Remplacer",
+      "remove": "Retirer",
+      "dropHere": "Dépose le fichier ici",
+      "picking": "Choisir un fichier…",
+      "uploading": "Téléversement…",
+      "success": "Audio enregistré",
+      "tooLong": "Fichier trop long — max 30 s",
+      "tooBig": "Fichier trop volumineux — max 2 Mo",
+      "wrongType": "Format non supporté — MP3 ou M4A",
+      "notAuthorized": "Seul le propriétaire du preset peut téléverser l'audio",
+      "genericError": "Échec — réessaie"
+    }
   }
 }

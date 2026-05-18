@@ -28,6 +28,9 @@ const FEATURED_SELECT = {
   effects: true,
   style: true,
   author: true,
+  audioKey: true,
+  audioMimeType: true,
+  audioDurationMs: true,
   user: { select: { id: true, username: true, avatarKey: true } },
 } satisfies Prisma.PresetSelect;
 

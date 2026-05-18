@@ -5,6 +5,8 @@ import { prisma } from '@/lib/prisma';
 import { validateSession } from '@/lib/session';
 import { RatingWidget } from './RatingWidget';
 import { CommentSection } from '@/components/comments/CommentSection';
+import { AudioPlayer } from '@/components/audio/AudioPlayer';
+import { AudioUploadField } from '@/components/audio/AudioUploadField';
 import { downloadPresetBuffer } from '@/lib/storage';
 import { PRSTDecoder } from '@/core/PRSTDecoder';
 import { encodeToJson } from '@/core/PRSTJsonCodec';
@@ -116,6 +118,9 @@ export default async function SharePage({ params }: Props) {
       ratingAverage: true,
       ratingCount: true,
       createdAt: true,
+      audioKey: true,
+      audioMimeType: true,
+      audioDurationMs: true,
       user: { select: { username: true } },
     },
   });
@@ -288,6 +293,27 @@ export default async function SharePage({ params }: Props) {
           canRate={canRate}
           existingRating={existingRating}
         />
+
+        {preset.audioKey && preset.audioMimeType && preset.audioDurationMs !== null && preset.audioDurationMs !== undefined && (
+          <div className="my-4">
+            <AudioPlayer
+              src={`/api/preset-audio/${preset.audioKey}`}
+              mime={preset.audioMimeType}
+              durationMs={preset.audioDurationMs}
+              variant="full"
+            />
+          </div>
+        )}
+
+        {user && user.emailVerified && (user.id === preset.userId || user.role === 'ADMIN') && (
+          <div className="my-3">
+            <AudioUploadField
+              presetId={preset.id}
+              hasAudio={!!preset.audioKey}
+              onChange={() => { /* server component — user reloads to see new state */ }}
+            />
+          </div>
+        )}
 
         <CommentSection
           presetId={preset.id}

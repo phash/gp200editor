@@ -28,6 +28,7 @@
     "disposable-email-domains": "^1.0.62",
     "idb": "^8.0.3",
     "lucia": "^3.2.2",
+    "music-metadata": "^11.12.3",
     "next": "^15.5.15",
     "next-intl": "^4.9.1",
     "nodemailer": "^8.0.2",

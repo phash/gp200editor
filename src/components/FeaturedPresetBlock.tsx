@@ -5,6 +5,7 @@ import { pickFeaturedPreset } from '@/lib/featuredPreset';
 import { GuitarRating } from './GuitarRating';
 import { SignalChainStrip } from './SignalChainStrip';
 import { AutoLink } from '@/lib/autoLink';
+import { AudioPlayer } from './audio/AudioPlayer';
 import type { Locale } from '@/i18n/locales';
 
 interface Props { locale: Locale }
@@ -49,11 +50,21 @@ export async function FeaturedPresetBlock({ locale }: Props) {
       <h2 className="font-mono-display text-2xl mt-4 mb-1" style={{ color: 'var(--text-primary)' }}>
         {featured.name}
       </h2>
-      <div className="mb-2 flex items-center gap-2">
-        <GuitarRating value={featured.ratingAverage} count={featured.ratingCount} size="md" />
-        <span className="font-mono-display text-xs" style={{ color: 'var(--text-muted)' }}>
-          {featured.ratingAverage.toFixed(1)}
-        </span>
+      <div className="mb-2 flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <GuitarRating value={featured.ratingAverage} count={featured.ratingCount} size="md" />
+          <span className="font-mono-display text-xs" style={{ color: 'var(--text-muted)' }}>
+            {featured.ratingAverage.toFixed(1)}
+          </span>
+        </div>
+        {featured.audioKey && featured.audioMimeType && featured.audioDurationMs !== null && featured.audioDurationMs !== undefined && (
+          <AudioPlayer
+            src={`/api/preset-audio/${featured.audioKey}`}
+            mime={featured.audioMimeType}
+            durationMs={featured.audioDurationMs}
+            variant="icon"
+          />
+        )}
       </div>
       {description && (
         <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>{description}</p>

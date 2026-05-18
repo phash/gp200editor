@@ -180,7 +180,10 @@
       "bypass": "Bucle de efectos desactivado (Envío = Retorno)",
       "ariaSend": "Posición de envío del bucle de efectos, actualmente entre los efectos {prev} y {next}",
       "ariaReturn": "Posición de retorno del bucle de efectos, actualmente entre los efectos {prev} y {next}"
-    }
+    },
+    "audioSnippet": "Clip de audio (opcional)",
+    "audioHint": "MP3 o M4A, máx 30 s y 2 MB. Se puede añadir/editar después en la página de compartir.",
+    "audioFailedRetryOnSharePage": "Preset guardado, pero el audio falló. Vuelve a intentarlo en la página de compartir."
   },
   "auth": {
     "loginTitle": "Iniciar sesión",
@@ -296,6 +299,9 @@
       "signInTooltip": "Inicia sesión para valorar",
       "ownPresetTooltip": "No puedes valorar tu propio preset",
       "errorTooltip": "Falló la valoración — inténtalo de nuevo"
+    },
+    "audio": {
+      "iconLabel": "Reproducir vista previa"
     }
   },
   "device": {
@@ -661,5 +667,29 @@
     "verifyRequired": "Se requiere verificación de email para comentar.",
     "authToast": "Sesión expirada. Inicia sesión de nuevo.",
     "genericError": "No se pudo guardar — inténtalo de nuevo."
+  },
+  "audio": {
+    "player": {
+      "playLabel": "Reproducir",
+      "pauseLabel": "Pausar",
+      "progressLabel": "Progreso {current} de {total}",
+      "duration": "{seconds} s vista previa de audio",
+      "noAudio": "Sin muestra de audio"
+    },
+    "upload": {
+      "label": "Clip de audio (opcional)",
+      "placeholder": "Elige MP3 o M4A, máx 30 s, máx 2 MB",
+      "replace": "Reemplazar",
+      "remove": "Quitar",
+      "dropHere": "Suelta el archivo aquí",
+      "picking": "Elegir archivo…",
+      "uploading": "Subiendo…",
+      "success": "Audio guardado",
+      "tooLong": "Archivo demasiado largo — máx 30 s",
+      "tooBig": "Archivo demasiado grande — máx 2 MB",
+      "wrongType": "Formato no admitido — MP3 o M4A",
+      "notAuthorized": "Solo el propietario del preset puede subir audio",
+      "genericError": "Fallo al subir — inténtalo de nuevo"
+    }
   }
 }

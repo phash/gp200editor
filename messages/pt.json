@@ -180,7 +180,10 @@
       "bypass": "FX Loop desativado (Envio = Retorno)",
       "ariaSend": "Posição de envio do FX Loop, atualmente entre os efeitos {prev} e {next}",
       "ariaReturn": "Posição de retorno do FX Loop, atualmente entre os efeitos {prev} e {next}"
-    }
+    },
+    "audioSnippet": "Excerto de áudio (opcional)",
+    "audioHint": "MP3 ou M4A, máx 30 s e 2 MB. Pode ser adicionado/editado mais tarde na página de partilha.",
+    "audioFailedRetryOnSharePage": "Preset guardado, mas o áudio falhou. Tente novamente na página de partilha."
   },
   "auth": {
     "loginTitle": "Iniciar sessão",
@@ -296,6 +299,9 @@
       "signInTooltip": "Inicie sessão para avaliar",
       "ownPresetTooltip": "Não pode avaliar o seu próprio preset",
       "errorTooltip": "Avaliação falhou — tente novamente"
+    },
+    "audio": {
+      "iconLabel": "Reproduzir pré-visualização"
     }
   },
   "device": {
@@ -661,5 +667,29 @@
     "verifyRequired": "É necessária verificação de e-mail para comentar.",
     "authToast": "Sessão expirada. Inicie sessão novamente.",
     "genericError": "Não foi possível guardar — tente novamente."
+  },
+  "audio": {
+    "player": {
+      "playLabel": "Reproduzir",
+      "pauseLabel": "Pausa",
+      "progressLabel": "Progresso {current} de {total}",
+      "duration": "{seconds} s pré-visualização de áudio",
+      "noAudio": "Sem amostra de áudio"
+    },
+    "upload": {
+      "label": "Excerto de áudio (opcional)",
+      "placeholder": "Escolha MP3 ou M4A, máx 30 s, máx 2 MB",
+      "replace": "Substituir",
+      "remove": "Remover",
+      "dropHere": "Largue o ficheiro aqui",
+      "picking": "Escolher ficheiro…",
+      "uploading": "A enviar…",
+      "success": "Áudio guardado",
+      "tooLong": "Ficheiro demasiado longo — máx 30 s",
+      "tooBig": "Ficheiro demasiado grande — máx 2 MB",
+      "wrongType": "Formato não suportado — MP3 ou M4A",
+      "notAuthorized": "Apenas o dono do preset pode carregar áudio",
+      "genericError": "Falha no envio — tente novamente"
+    }
   }
 }

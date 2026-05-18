@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-05-19
+
+### Features
+- **30 s Audio-Schnipsel pro Preset.** Owner können beim Save-to-Gallery oder nachträglich auf `/share/[token]` ein MP3- oder M4A/AAC-File (max 30 s, max 2 MB) anhängen. Player erscheint auf der Share-Page (voll), im Homepage-Featured-Block und auf jeder Gallery-Card (Icon). Nur ein Player spielt gleichzeitig — Klick auf einen Card-Play pausiert alle anderen.
+- **Admin-Audit für fremdes Audio.** Wenn ein Admin Audio eines fremden Presets ersetzt oder löscht, wird die Aktion mit Reason (bei Delete) im AdminAction-Log auditiert.
+
+### Storage / Validation
+- Neuer Garage S3-Bucket `gp200editor-audio`. Server prüft Mime + Magic Bytes + Größe (≤ 2 MB) + Dauer (≤ 30.5 s via `music-metadata`) vor jedem S3 PUT.
+
+### Schema
+- Drei neue nullable Felder auf `Preset`: `audioKey`, `audioMimeType`, `audioDurationMs`.
+
 ## 2026-05-19 (later)
 
 ### Features

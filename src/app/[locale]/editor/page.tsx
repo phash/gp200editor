@@ -51,6 +51,7 @@ export default function EditorPage() {
   // Track which bank slots have been reordered but not yet saved to device
   const [bankDirtySlots, setBankDirtySlots] = useState<Set<number>>(new Set());
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [saveDialogAudioError, setSaveDialogAudioError] = useState<string | null>(null);
   const { isLoggedIn, username } = useAuthStatus();
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showPlaylistDialog, setShowPlaylistDialog] = useState(false);
@@ -252,7 +253,11 @@ export default function EditorPage() {
     if (preset) downloadPresetFile(preset);
   }
 
-  async function handleSaveToPresets(data: { author: string; style: string; note: string; publish: boolean }) {
+  async function handleSaveToPresets(data: { author: string; style: string; note: string; publish: boolean; audioFile: File | null }) {
+    // Clear any stale audio-failure banner from a previous attempt before
+    // running the save flow again — otherwise the message lingers across
+    // unrelated resubmits.
+    setSaveDialogAudioError(null);
     // Sync editor state with dialog values
     if (data.author) setAuthor(data.author);
     if (data.style) setPresetStyle(data.style);
@@ -280,8 +285,20 @@ export default function EditorPage() {
 
       const res = await fetch('/api/presets', { method: 'POST', body: formData });
       if (res.ok) {
+        const saved = await res.json() as { id: string };
+        if (data.audioFile && saved.id) {
+          const fd = new FormData();
+          fd.append('audio', data.audioFile);
+          const audioRes = await fetch(`/api/presets/${saved.id}/audio`, { method: 'POST', body: fd });
+          if (!audioRes.ok) {
+            setSaveStatus('idle');
+            setSaveDialogAudioError(t('audioFailedRetryOnSharePage'));
+            return;
+          }
+        }
         setSaveStatus('saved');
         setShowSaveDialog(false);
+        setSaveDialogAudioError(null);
         setTimeout(() => {
           router.push('/presets');
           router.refresh();
@@ -1131,8 +1148,9 @@ export default function EditorPage() {
           defaultStyle={presetStyle}
           defaultNote={presetNote}
           onSave={handleSaveToPresets}
-          onCancel={() => setShowSaveDialog(false)}
+          onCancel={() => { setShowSaveDialog(false); setSaveDialogAudioError(null); }}
           saving={saveStatus === 'saving'}
+          audioError={saveDialogAudioError ?? undefined}
         />
       )}
 
