@@ -18,6 +18,7 @@ import { PatchSettingsCard } from '@/components/PatchSettingsCard';
 import { ControllerPanel } from '@/components/ControllerPanel';
 import { AmpHeadPanel } from '@/components/AmpHeadPanel';
 import { HelpButton } from '@/components/HelpButton';
+import { FxLoopArrows } from '@/components/FxLoopArrows';
 // Firmware compat now uses version check (sub=0x0A) result, not version string matching
 import { SavePresetDialog } from '@/components/SavePresetDialog';
 import { AddToPlaylistDialog } from '@/components/AddToPlaylistDialog';
@@ -34,7 +35,7 @@ const PRESET_STYLES = [
 export default function EditorPage() {
   const t = useTranslations('editor');
   const router = useRouter();
-  const { preset, loadPreset, setPatchName, setAuthor, toggleEffect, changeEffect, reorderEffects, setParam } = usePreset();
+  const { preset, loadPreset, setPatchName, setAuthor, toggleEffect, changeEffect, reorderEffects, setParam, setFxLoopSend, setFxLoopReturn } = usePreset();
   const midiDevice = useMidiDeviceContext();
   const [slotBrowserMode, setSlotBrowserMode] = useState<'pull' | 'push' | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -905,6 +906,48 @@ export default function EditorPage() {
             </button>
           )}
         </div>
+      )}
+
+      {/* FX-Loop SEND/RETURN positions — drag arrows between effect slots */}
+      {preset && (
+        <FxLoopArrows
+          send={preset.fxLoopSend}
+          ret={preset.fxLoopReturn}
+          onSendChange={(pos) => {
+            const clamped = Math.max(1, Math.min(10, pos));
+            const nextSend = clamped;
+            const nextReturn = Math.max(clamped, preset.fxLoopReturn);
+            const sendChanged = nextSend !== preset.fxLoopSend;
+            const returnPushed = nextReturn !== preset.fxLoopReturn;
+            setFxLoopSend(pos);
+            if (midiDevice.status === 'connected') {
+              const order = preset.effects.map((e) => e.slotIndex);
+              if (sendChanged) {
+                midiDevice.sendFxLoopMove(order, nextSend, nextReturn, 'send');
+              }
+              if (returnPushed) {
+                midiDevice.sendFxLoopMove(order, nextSend, nextReturn, 'return');
+              }
+            }
+          }}
+          onReturnChange={(pos) => {
+            const clamped = Math.max(1, Math.min(10, pos));
+            const nextReturn = clamped;
+            const nextSend = Math.min(clamped, preset.fxLoopSend);
+            const returnChanged = nextReturn !== preset.fxLoopReturn;
+            const sendPushed = nextSend !== preset.fxLoopSend;
+            setFxLoopReturn(pos);
+            if (midiDevice.status === 'connected') {
+              const order = preset.effects.map((e) => e.slotIndex);
+              if (returnChanged) {
+                midiDevice.sendFxLoopMove(order, nextSend, nextReturn, 'return');
+              }
+              if (sendPushed) {
+                midiDevice.sendFxLoopMove(order, nextSend, nextReturn, 'send');
+              }
+            }
+          }}
+        />
       )}
 
       {/* Signal chain */}
