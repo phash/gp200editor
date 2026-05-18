@@ -625,5 +625,24 @@
       "ctaLabel": "E-Mail bestätigen",
       "closing": "Das ist die letzte Bestätigungs-Erinnerung, die wir schicken. Dein unbestätigter Account bleibt inaktiv, bis du deine E-Mail bestätigst."
     }
+  },
+  "comments": {
+    "placeholder": "Deine Gedanken teilen…",
+    "charCount": "{count} / 1000",
+    "post": "Senden",
+    "reply": "Antworten",
+    "edit": "Bearbeiten",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "deletedByAuthor": "Vom Autor entfernt",
+    "deletedByAdmin": "Vom Moderator entfernt",
+    "edited": "bearbeitet",
+    "signInToComment": "Anmelden zum Kommentieren",
+    "loadMore": "Mehr laden",
+    "confirmDelete": "Diesen Kommentar löschen?",
+    "adminDeleteReasonLabel": "Grund (Pflicht, 5–200 Zeichen)",
+    "rateLimitToast": "Zu viele Kommentare. Bitte später erneut versuchen.",
+    "emptyState": "Noch keine Kommentare — sei der erste!"
   }
 }

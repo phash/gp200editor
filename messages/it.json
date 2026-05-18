@@ -625,5 +625,24 @@
       "ctaLabel": "Verifica e-mail",
       "closing": "Questo è l'ultimo promemoria di verifica che ti invieremo. Il tuo account non verificato rimarrà inattivo finché non confermi la tua e-mail."
     }
+  },
+  "comments": {
+    "placeholder": "Condividi i tuoi pensieri…",
+    "charCount": "{count} / 1000",
+    "post": "Pubblica",
+    "reply": "Rispondi",
+    "edit": "Modifica",
+    "save": "Salva",
+    "cancel": "Annulla",
+    "delete": "Elimina",
+    "deletedByAuthor": "Rimosso dall’autore",
+    "deletedByAdmin": "Rimosso dal moderatore",
+    "edited": "modificato",
+    "signInToComment": "Accedi per commentare",
+    "loadMore": "Carica altro",
+    "confirmDelete": "Eliminare questo commento?",
+    "adminDeleteReasonLabel": "Motivo (obbligatorio, 5–200 caratteri)",
+    "rateLimitToast": "Troppi commenti. Riprova più tardi.",
+    "emptyState": "Ancora nessun commento — sii il primo!"
   }
 }

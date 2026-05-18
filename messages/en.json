@@ -625,5 +625,24 @@
       "ctaLabel": "Verify my email",
       "closing": "This is the last verification reminder we'll send. Your unverified account will stay inactive until you confirm your email."
     }
+  },
+  "comments": {
+    "placeholder": "Share your thoughts…",
+    "charCount": "{count} / 1000",
+    "post": "Post",
+    "reply": "Reply",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "deletedByAuthor": "Removed by author",
+    "deletedByAdmin": "Removed by moderator",
+    "edited": "edited",
+    "signInToComment": "Sign in to comment",
+    "loadMore": "Load more",
+    "confirmDelete": "Delete this comment?",
+    "adminDeleteReasonLabel": "Reason (required, 5–200 chars)",
+    "rateLimitToast": "Too many comments. Try again later.",
+    "emptyState": "No comments yet — be the first!"
   }
 }

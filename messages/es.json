@@ -625,5 +625,24 @@
       "ctaLabel": "Verificar correo",
       "closing": "Este es el último recordatorio de verificación que te enviaremos. Tu cuenta no verificada permanecerá inactiva hasta que confirmes tu correo."
     }
+  },
+  "comments": {
+    "placeholder": "Compartir tus pensamientos…",
+    "charCount": "{count} / 1000",
+    "post": "Publicar",
+    "reply": "Responder",
+    "edit": "Editar",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "deletedByAuthor": "Eliminado por el autor",
+    "deletedByAdmin": "Eliminado por moderador",
+    "edited": "editado",
+    "signInToComment": "Inicia sesión para comentar",
+    "loadMore": "Cargar más",
+    "confirmDelete": "¿Eliminar este comentario?",
+    "adminDeleteReasonLabel": "Razón (obligatorio, 5–200 caracteres)",
+    "rateLimitToast": "Demasiados comentarios. Inténtalo más tarde.",
+    "emptyState": "Aún no hay comentarios — ¡sé el primero!"
   }
 }
