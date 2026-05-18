@@ -14,17 +14,29 @@ interface AdminComment {
 export function AdminCommentsTab() {
   const t = useTranslations('admin.comments');
   const [comments, setComments] = useState<AdminComment[]>([]);
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [target, setTarget] = useState<AdminComment | null>(null);
   const [reason, setReason] = useState('');
 
-  async function load() {
-    const res = await fetch('/api/admin/comments');
-    if (res.ok) {
+  async function load(append = false) {
+    if (loading) return;
+    setLoading(true);
+    try {
+      const cur = append ? cursor : null;
+      const url = `/api/admin/comments${cur ? `?cursor=${cur}` : ''}`;
+      const res = await fetch(url);
+      if (!res.ok) return;
       const data = await res.json();
-      setComments(data.comments);
+      setComments((prev) => (append ? [...prev, ...data.comments] : data.comments));
+      setCursor(data.nextCursor);
+      setHasMore(!!data.nextCursor);
+    } finally {
+      setLoading(false);
     }
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(false); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
 
   async function hardDelete() {
     if (!target || reason.trim().length < 5) return;
@@ -35,7 +47,7 @@ export function AdminCommentsTab() {
     });
     if (res.ok) {
       setTarget(null); setReason('');
-      load();
+      load(false);
     }
   }
 
@@ -72,6 +84,19 @@ export function AdminCommentsTab() {
         </tbody>
       </table>
 
+      {hasMore && (
+        <div className="mt-3">
+          <button
+            onClick={() => load(true)}
+            disabled={loading}
+            className="text-xs uppercase tracking-wider font-mono-display"
+            style={{ color: 'var(--accent-amber)', opacity: loading ? 0.5 : 1 }}
+          >
+            {t('loadMore')}
+          </button>
+        </div>
+      )}
+
       {target && (
         <div role="dialog" className="fixed inset-0 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)' }}>
           <div className="p-4 rounded max-w-md" style={{ background: 'var(--surface)', border: '1px solid var(--accent-amber-dim)' }}>
@@ -85,7 +110,7 @@ export function AdminCommentsTab() {
               style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-primary)', border: '1px solid rgba(255,255,255,0.08)' }}
             />
             <div className="flex justify-end gap-2">
-              <button onClick={() => { setTarget(null); setReason(''); }} className="px-3 py-1">Cancel</button>
+              <button onClick={() => { setTarget(null); setReason(''); }} className="px-3 py-1">{t('cancel')}</button>
               <button onClick={hardDelete} disabled={reason.trim().length < 5} style={{ color: '#ef4444' }} className="px-3 py-1">
                 {t('confirmDelete')}
               </button>

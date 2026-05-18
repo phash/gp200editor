@@ -27,12 +27,12 @@ function makeRequest(body: unknown, headers: Record<string,string> = {}) {
 
 beforeEach(() => {
   vi.mocked(requireVerifiedUser).mockResolvedValue({ user: { id: 'u1' } as never, session: {} as never });
-  vi.mocked(prisma.preset.findUnique).mockResolvedValue({ id: 'p1', public: true } as never);
+  vi.mocked(prisma.preset.findUnique).mockResolvedValue({ id: 'p1', public: true, flagged: false } as never);
+  vi.mocked(prisma.comment.create).mockResolvedValue({ id: 'c1', body: 'hi', user: { id: 'u1', username: 'a', avatarKey: null } } as never);
 });
 
 describe('POST /api/presets/[id]/comments', () => {
   it('creates top-level comment for verified user', async () => {
-    vi.mocked(prisma.comment.create).mockResolvedValue({ id: 'c1', body: 'hi' } as never);
     const res = await POST(makeRequest({ body: 'hi' }), { params: Promise.resolve({ id: 'p1' }) });
     expect(res.status).toBe(200);
     expect(prisma.comment.create).toHaveBeenCalledWith(expect.objectContaining({
@@ -64,7 +64,13 @@ describe('POST /api/presets/[id]/comments', () => {
   });
 
   it('returns 404 for non-public preset', async () => {
-    vi.mocked(prisma.preset.findUnique).mockResolvedValue({ id: 'p1', public: false } as never);
+    vi.mocked(prisma.preset.findUnique).mockResolvedValue({ id: 'p1', public: false, flagged: false } as never);
+    const res = await POST(makeRequest({ body: 'hi' }), { params: Promise.resolve({ id: 'p1' }) });
+    expect(res.status).toBe(404);
+  });
+
+  it('returns 404 for flagged preset', async () => {
+    vi.mocked(prisma.preset.findUnique).mockResolvedValue({ id: 'p1', public: true, flagged: true } as never);
     const res = await POST(makeRequest({ body: 'hi' }), { params: Promise.resolve({ id: 'p1' }) });
     expect(res.status).toBe(404);
   });

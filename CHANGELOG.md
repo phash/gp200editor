@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-05-19
+
+### Security
+- **Comments leak after un-publish — fixed.** `GET /api/presets/[id]/comments` now refuses to return the thread when the preset has been made non-public or flagged. POST top-level + Reply gained the same gate (Reply previously checked neither). Anyone who had the preset id from a previous public link can no longer continue reading a thread the author tried to retract.
+- **Featured-Preset Sybil-Dampening verstärkt.** Bayes-Konstante `m` von 5 auf 10 — eine einzelne 5★-Bewertung von einem Accomplice-Account scoret jetzt nur noch ~4.09 (statt 4.17) und schiebt sich nicht mehr vor etablierte Presets mit echtem Rating-Verlauf.
+
+### Bugfixes
+- **Inline-Rating Optimistic-UI ohne Rollback** — bei fehlgeschlagenem POST blieb die UI bei der Phantom-Bewertung. Snapshot+Restore + `errorTooltip`-Toast.
+- **Comment-Textarea verlor Inhalt bei 429/Auth-Fail** — `CommentForm` clear jetzt nur bei Success; bei Fehler steht der Text zum Retry da.
+- **CommentSection swallowed 401/5xx silently** — separate Toasts für Rate-Limit, Session-Expired und generischen Fehler.
+- **Gallery-Rating Page 2+ zeigte falschen Count** — bereits-bewertete Presets jenseits der ersten SSR-Page bekamen `existingRating=0`, was bei Re-Rating zu Phantom-Counts führte. Session-Lookup zog ans `/api/gallery`-Endpoint, jede Card trägt jetzt korrekte Rating-Context.
+- **AdminCommentsTab hatte keine Pagination-UI** — alle Comments jenseits der ersten 50 waren unerreichbar. Load-More-Button + In-Flight-Guard.
+
+### UI / i18n
+- **Confirm-Dialog vor User-Soft-Delete.** Klick auf „Delete" beim eigenen Kommentar öffnet jetzt einen Bestätigungsdialog (Soft-Delete ist nicht reversibel — `body` wird genullt). Admin-Hard-Delete behält seinen separaten Reason-Dialog.
+- **Drei hardcoded englische Strings korrigiert** (`Comments` Header, `Email verification required`, Admin-`Cancel`-Button) — jetzt in allen 6 Locales übersetzt.
+- **Toter i18n-Key entfernt** (`comments.adminDeleteReasonLabel` — Admin-Tab nutzt `admin.comments.hardDeleteReasonLabel`).
+
+### Schema / Performance
+- **Index `Comment(createdAt DESC)`** — die Admin-Moderation-Liste sortiert ohne `presetId`-Filter; der bisherige Compound-Index half nicht. Cheap forward-looking change.
+- **Shared `commentSerializer`** — Avatar-Mapping (`avatarKey → /api/avatar/<key>`) lebt jetzt in `src/lib/commentSerializer.ts`; PATCH gab bisher den Raw-`avatarKey` zurück, alle anderen Routes serialisierten zu `avatarUrl`. Inkonsistenz behoben.
+
 ## 2026-05-18
 
 ### Features

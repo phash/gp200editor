@@ -4,6 +4,7 @@ import { verifyCsrf } from '@/lib/csrf';
 import { prisma } from '@/lib/prisma';
 import { rateLimit } from '@/lib/rateLimit';
 import { commentBodySchema } from '@/lib/commentValidators';
+import { commentUserSelect, serializeCommentUser } from '@/lib/commentSerializer';
 
 export async function POST(
   request: NextRequest,
@@ -26,32 +27,32 @@ export async function POST(
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
   }
 
+  // Pull the parent + its preset's public/flagged state in one round-trip
+  // so we can reject replies on threads that have been un-published or
+  // admin-flagged. POST top-level applies the same gate.
   const parent = await prisma.comment.findUnique({
     where: { id: parentId },
-    select: { id: true, parentId: true, presetId: true },
+    select: {
+      id: true,
+      parentId: true,
+      presetId: true,
+      preset: { select: { public: true, flagged: true } },
+    },
   });
   if (!parent) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   if (parent.parentId !== null) {
     return NextResponse.json({ error: 'Replies must target a top-level comment' }, { status: 400 });
   }
+  if (!parent.preset.public || parent.preset.flagged) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
 
   const comment = await prisma.comment.create({
     data: { presetId: parent.presetId, userId: user.id, body: parsed.data, parentId: parent.id },
-    include: { user: { select: { id: true, username: true, avatarKey: true } } },
+    include: { user: { select: commentUserSelect } },
   });
-
-  const { user: commentUser, ...commentRest } = comment as typeof comment & {
-    user: { id: string; username: string; avatarKey: string | null };
-  };
 
   return NextResponse.json({
-    comment: {
-      ...commentRest,
-      user: commentUser ? serializeUser(commentUser) : null,
-    },
+    comment: { ...comment, user: serializeCommentUser(comment.user) },
   });
-}
-
-function serializeUser(u: { id: string; username: string; avatarKey: string | null }) {
-  return { id: u.id, username: u.username, avatarUrl: u.avatarKey ? `/api/avatar/${u.avatarKey}` : null };
 }

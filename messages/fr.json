@@ -294,7 +294,8 @@
     "browseAll": "Parcourez tous les presets ci-dessus",
     "rate": {
       "signInTooltip": "Connectez-vous pour évaluer",
-      "ownPresetTooltip": "Vous ne pouvez pas évaluer votre propre preset"
+      "ownPresetTooltip": "Vous ne pouvez pas évaluer votre propre preset",
+      "errorTooltip": "Évaluation échouée — réessayez"
     }
   },
   "device": {
@@ -561,7 +562,9 @@
       "hardDeleteButton": "Suppression définitive",
       "hardDeleteDialogTitle": "Supprimer définitivement le commentaire",
       "hardDeleteReasonLabel": "Raison (obligatoire, 5–200 caractères)",
-      "confirmDelete": "Supprimer"
+      "confirmDelete": "Supprimer",
+      "cancel": "Annuler",
+      "loadMore": "Charger plus"
     }
   },
   "email": {
@@ -652,8 +655,11 @@
     "signInToComment": "Connectez-vous pour commenter",
     "loadMore": "Charger plus",
     "confirmDelete": "Supprimer ce commentaire ?",
-    "adminDeleteReasonLabel": "Raison (obligatoire, 5–200 caractères)",
     "rateLimitToast": "Trop de commentaires. Réessayez plus tard.",
-    "emptyState": "Aucun commentaire pour l’instant — soyez le premier !"
+    "emptyState": "Aucun commentaire pour l’instant — soyez le premier !",
+    "heading": "Commentaires",
+    "verifyRequired": "Vérification d'email requise pour commenter.",
+    "authToast": "Session expirée. Veuillez vous reconnecter.",
+    "genericError": "Impossible d'enregistrer — réessayez."
   }
 }

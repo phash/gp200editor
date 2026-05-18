@@ -2,7 +2,6 @@ import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
 import { Link } from '@/i18n/routing';
 import { prisma } from '@/lib/prisma';
-import { validateSession } from '@/lib/session';
 import { GalleryClient } from './GalleryClient';
 import { HelpButton } from '@/components/HelpButton';
 import { buildAlternates, BASE_URL, type Locale } from '@/lib/hreflang';
@@ -35,35 +34,9 @@ export default async function GalleryPage({ params }: Props) {
   const { locale } = await params;
   const t = await getTranslations('gallery');
 
-  // Load session + existing ratings for the first page of gallery presets.
-  // These are passed to GalleryClient so cards can render RateableGuitarRating
-  // with correct canRate / existingRating on first paint. Presets loaded via
-  // "load more" will use existingRating=0 (no-op; users can still rate them).
-  const { user } = await validateSession();
-
-  // Fetch first-page preset IDs so we can pre-load the user's ratings.
-  // We mirror the default gallery query (newest, page 1, limit 20).
-  let myRatings: Record<string, number> = {};
-  if (user) {
-    try {
-      const firstPageIds = await prisma.preset.findMany({
-        where: { public: true },
-        orderBy: { createdAt: 'desc' },
-        take: 20,
-        select: { id: true },
-      });
-      const ratings = await prisma.presetRating.findMany({
-        where: { userId: user.id, presetId: { in: firstPageIds.map((p) => p.id) } },
-        select: { presetId: true, score: true },
-      });
-      myRatings = Object.fromEntries(ratings.map((r) => [r.presetId, r.score]));
-    } catch (err) {
-      console.error('[gallery] failed to pre-load ratings:', err instanceof Error ? `${err.name}: ${err.message}` : err);
-    }
-  }
-
-  const currentUserId = user?.id ?? null;
-  const emailVerified = user?.emailVerified ?? false;
+  // GalleryClient does its own /api/gallery fetch on mount; that endpoint
+  // resolves the session and returns canRate/rateReason/existingRating per
+  // card, so SSR no longer needs to pre-load session-aware rating state.
 
   // Server-side fetch: 30 newest public presets for the SEO directory.
   // Failure here must not break the page — fall back to the empty list.
@@ -123,11 +96,7 @@ export default async function GalleryPage({ params }: Props) {
         </h1>
         <HelpButton section="gallery" />
       </div>
-      <GalleryClient
-        currentUserId={currentUserId}
-        emailVerified={emailVerified}
-        myRatings={myRatings}
-      />
+      <GalleryClient />
 
       {recent.length > 0 && (
         <section className="mt-16 pt-8" style={{ borderTop: '1px solid var(--border-subtle)' }}>

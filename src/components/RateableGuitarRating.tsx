@@ -22,19 +22,31 @@ export function RateableGuitarRating({ presetId, average, count, canRate, existi
   const [tip, setTip] = useState<string | null>(null);
 
   async function handleRate(score: number) {
-    if (canRate) {
-      const wasNew = mine === 0;
-      const newCount = wasNew ? cnt + 1 : cnt;
-      const newAvg = wasNew ? (avg * cnt + score) / newCount : (avg * cnt - mine + score) / cnt;
-      setAvg(newAvg); setCnt(newCount); setMine(score);
-      await fetch(`/api/presets/${presetId}/rate`, {
+    if (!canRate) {
+      setTip(reason === 'own' ? t('ownPresetTooltip') : t('signInTooltip'));
+      setTimeout(() => setTip(null), 2500);
+      return;
+    }
+
+    // Snapshot for rollback before applying the optimistic update.
+    const prevAvg = avg, prevCnt = cnt, prevMine = mine;
+    const wasNew = mine === 0;
+    const newCount = wasNew ? cnt + 1 : cnt;
+    const newAvg = wasNew ? (avg * cnt + score) / newCount : (avg * cnt - mine + score) / cnt;
+    setAvg(newAvg); setCnt(newCount); setMine(score);
+
+    try {
+      const res = await fetch(`/api/presets/${presetId}/rate`, {
         method: 'POST', headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ score }),
       });
-      return;
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    } catch {
+      // Roll back optimistic state — the rating did not persist.
+      setAvg(prevAvg); setCnt(prevCnt); setMine(prevMine);
+      setTip(t('errorTooltip'));
+      setTimeout(() => setTip(null), 2500);
     }
-    setTip(reason === 'own' ? t('ownPresetTooltip') : t('signInTooltip'));
-    setTimeout(() => setTip(null), 2500);
   }
 
   return (

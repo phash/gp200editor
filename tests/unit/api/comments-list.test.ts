@@ -2,13 +2,19 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 
 vi.mock('@/lib/prisma', () => ({
-  prisma: { comment: { findMany: vi.fn() } },
+  prisma: {
+    comment: { findMany: vi.fn() },
+    preset: { findUnique: vi.fn() },
+  },
 }));
 
 import { GET } from '@/app/api/presets/[id]/comments/route';
 import { prisma } from '@/lib/prisma';
 
-beforeEach(() => { vi.clearAllMocks(); });
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.mocked(prisma.preset.findUnique).mockResolvedValue({ id: 'p1', public: true, flagged: false } as never);
+});
 
 function makeReq(url = 'http://test/api/presets/p1/comments') {
   return new NextRequest(url);
@@ -55,5 +61,23 @@ describe('GET /api/presets/[id]/comments', () => {
     const res = await GET(makeReq(), { params: Promise.resolve({ id: 'p1' }) });
     const data = await res.json();
     expect(data.nextCursor).toBeNull();
+  });
+
+  it('returns 404 when preset is non-public (post un-publish)', async () => {
+    vi.mocked(prisma.preset.findUnique).mockResolvedValue({ id: 'p1', public: false, flagged: false } as never);
+    const res = await GET(makeReq(), { params: Promise.resolve({ id: 'p1' }) });
+    expect(res.status).toBe(404);
+  });
+
+  it('returns 404 when preset is flagged', async () => {
+    vi.mocked(prisma.preset.findUnique).mockResolvedValue({ id: 'p1', public: true, flagged: true } as never);
+    const res = await GET(makeReq(), { params: Promise.resolve({ id: 'p1' }) });
+    expect(res.status).toBe(404);
+  });
+
+  it('returns 404 when preset does not exist', async () => {
+    vi.mocked(prisma.preset.findUnique).mockResolvedValue(null);
+    const res = await GET(makeReq(), { params: Promise.resolve({ id: 'p1' }) });
+    expect(res.status).toBe(404);
   });
 });

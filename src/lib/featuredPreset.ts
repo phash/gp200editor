@@ -1,7 +1,12 @@
 import { prisma } from './prisma';
 import type { Prisma } from '@prisma/client';
 
-const M = 5;
+// Bayesian prior parameters. m = "how many votes a preset needs before its own
+// average dominates the global prior". m=10 means a preset with 1×5★ scores
+// (4*10+5)/11 ≈ 4.09, only marginally above the prior — strong sybil-dampening
+// for newly-uploaded presets. m=5 (initial value) was too generous and let a
+// single 5★ accomplice rating push an unproven preset onto the homepage.
+const M = 10;
 const FALLBACK_C = 4.0;
 const WINDOW_DAYS = 30;
 

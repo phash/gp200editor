@@ -294,7 +294,8 @@
     "browseAll": "Browse all presets above",
     "rate": {
       "signInTooltip": "Sign in to rate",
-      "ownPresetTooltip": "Cannot rate your own preset"
+      "ownPresetTooltip": "Cannot rate your own preset",
+      "errorTooltip": "Rating failed — try again"
     }
   },
   "device": {
@@ -561,7 +562,9 @@
       "hardDeleteButton": "Hard delete",
       "hardDeleteDialogTitle": "Hard-delete comment",
       "hardDeleteReasonLabel": "Reason (required, 5–200 chars)",
-      "confirmDelete": "Delete"
+      "confirmDelete": "Delete",
+      "cancel": "Cancel",
+      "loadMore": "Load more"
     }
   },
   "email": {
@@ -638,6 +641,7 @@
     }
   },
   "comments": {
+    "heading": "Comments",
     "placeholder": "Share your thoughts…",
     "charCount": "{count} / 1000",
     "post": "Post",
@@ -650,10 +654,12 @@
     "deletedByAdmin": "Removed by moderator",
     "edited": "edited",
     "signInToComment": "Sign in to comment",
+    "verifyRequired": "Email verification required to comment.",
     "loadMore": "Load more",
     "confirmDelete": "Delete this comment?",
-    "adminDeleteReasonLabel": "Reason (required, 5–200 chars)",
     "rateLimitToast": "Too many comments. Try again later.",
+    "authToast": "Session expired. Please sign in again.",
+    "genericError": "Could not save — please try again.",
     "emptyState": "No comments yet — be the first!"
   }
 }
