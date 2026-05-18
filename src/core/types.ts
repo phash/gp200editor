@@ -14,6 +14,10 @@ export const GP200PresetSchema = z.object({
   author: z.string().max(16).optional(), // .prst offset 0x54, 16 bytes null-terminated
   effects: z.array(EffectSlotSchema).length(11), // GP-200 always has exactly 11 slots
   checksum: z.number().int().min(0).max(65535), // BE uint16 at end of file
+  /** FX-loop SEND insertion point. 1 = between PRE(0) and WAH(1). Range 1..10. */
+  fxLoopSend: z.number().int().min(1).max(10).default(4),
+  /** FX-loop RETURN insertion point. 1..10. Invariant SEND <= RETURN enforced at mutation points, not in the schema. */
+  fxLoopReturn: z.number().int().min(1).max(10).default(4),
   /**
    * Original raw file bytes (1224 or 1176). When present, the encoder uses
    * this as the starting buffer and overwrites only the fields the editor
