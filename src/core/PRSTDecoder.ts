@@ -18,6 +18,8 @@ const EFFECT_BLOCK_SIZE   = 0x48;  // 72 bytes per block
 // 0x8C header block. Each byte is the slotIndex (block type) that runs
 // at playback position i.
 const OFFSET_ROUTING_ORDER = 0x94;
+const OFFSET_FX_SEND       = 0x92;  // 1 byte: FX-loop SEND position (1..10)
+const OFFSET_FX_RETURN     = 0x93;  // 1 byte: FX-loop RETURN position (1..10)
 // Within each block:
 const SLOT_OFFSET         = 4;     // slot index (0–10)
 const ACTIVE_OFFSET       = 5;     // 0 = bypassed, 1 = active
@@ -90,6 +92,11 @@ export class PRSTDecoder {
         ? routing.map((si) => byBlock[si])
         : byBlock;
 
+    const rawSend = this.parser.readUint8(OFFSET_FX_SEND);
+    const rawReturn = this.parser.readUint8(OFFSET_FX_RETURN);
+    const fxLoopSend = rawSend >= 1 && rawSend <= 10 ? rawSend : 4;
+    const fxLoopReturn = rawReturn >= 1 && rawReturn <= 10 ? rawReturn : 4;
+
     // User presets (1224 bytes) carry a BE16 checksum at 0x4C6. Factory
     // presets (1176 bytes) don't have room for that footer — the checksum
     // offset (1222) is past the end of the buffer. Skip the read and use 0
@@ -108,7 +115,9 @@ export class PRSTDecoder {
     ));
 
     return GP200PresetSchema.parse({
-      version, patchName, author: author || undefined, effects, checksum, rawSource,
+      version, patchName, author: author || undefined, effects,
+      fxLoopSend, fxLoopReturn,
+      checksum, rawSource,
     });
   }
 }

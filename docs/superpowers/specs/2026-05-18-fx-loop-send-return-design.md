@@ -35,7 +35,7 @@ Same logical fields appear at three different physical offsets across the format
 
 | Format | SEND offset | RETURN offset |
 |--------|-------------|---------------|
-| `.prst` file (1224 B) | `0xB2` (178 dec) | `0xB3` (179 dec) |
+| `.prst` file (1224 B) | `0x92` (146 dec) | `0x93` (147 dec) |
 | SysEx Read decoded (1176 B) | `[106]` | `[107]` |
 | SysEx Write decoded (876 B in our codec) | `[114]` | `[115]` |
 
@@ -63,7 +63,7 @@ Defaults match the historical hardcoded `0x04, 0x04` so presets that never had F
 
 ### 2. `.prst` decode/encode — `src/core/PRSTDecoder.ts`, `src/core/PRSTEncoder.ts`
 
-- Add constants `OFFSET_FX_SEND = 0xB2` and `OFFSET_FX_RETURN = 0xB3`.
+- Add constants `OFFSET_FX_SEND = 0x92` and `OFFSET_FX_RETURN = 0x93`.
 - Decoder: read both bytes into the resulting `GP200Preset`. Clamp to `[1, 10]`; if out of range or zero, fall back to default 4.
 - Encoder: write both bytes from the preset (replaces hardcoded values).
 - Checksum: unchanged — `sum(bytes[0:0x4C6]) & 0xFFFF` automatically picks up the new bytes.
@@ -143,7 +143,7 @@ i18n keys added to `messages/{de,en,es,fr,it,pt}.json` under `editor.fxLoop`:
 
 **PRST codec (`tests/unit/PRSTDecoder.test.ts`, `PRSTEncoder.test.ts`)**
 - Decode test fixture with known SEND/RETURN values → correct extraction.
-- Encode preset with `fxLoopSend=3, fxLoopReturn=7` → bytes at 0xB2/0xB3 are `0x03, 0x07`, checksum still valid.
+- Encode preset with `fxLoopSend=3, fxLoopReturn=7` → bytes at 0x92/0x93 are `0x03, 0x07`, checksum still valid.
 - Round-trip: decode → encode → decode preserves SEND/RETURN.
 
 **`usePreset` (`tests/unit/usePreset.test.ts`)**
@@ -165,7 +165,7 @@ i18n keys added to `messages/{de,en,es,fr,it,pt}.json` under `editor.fxLoop`:
 ### 8. Migration / Backward-Compat
 
 - No DB schema change (presets are stored as binary `.prst` in S3; the bytes are already there).
-- No migration script needed — existing `.prst` files already have SEND/RETURN at 0xB2/0xB3 (written by GP-200 firmware on save). We just start reading them.
+- No migration script needed — existing `.prst` files already have SEND/RETURN at 0x92/0x93 (written by GP-200 firmware on save). We just start reading them.
 - Test fixtures (`prst/63-B American Idiot.prst`, `prst/63-C claude1.prst`, etc.): we read their actual SEND/RETURN values during test updates and assert against them.
 - UI: when loading a preset that doesn't decode SEND/RETURN cleanly (out of range), the decoder defaults to 4/4 — no broken rendering.
 
