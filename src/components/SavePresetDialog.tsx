@@ -13,23 +13,25 @@ interface SavePresetDialogProps {
   defaultAuthor: string;
   defaultStyle?: string;
   defaultNote?: string;
-  onSave: (data: { author: string; style: string; note: string; publish: boolean }) => void;
+  onSave: (data: { author: string; style: string; note: string; publish: boolean; audioFile: File | null }) => void;
   onCancel: () => void;
   saving: boolean;
+  audioError?: string;
 }
 
-export function SavePresetDialog({ presetName, defaultAuthor, defaultStyle, defaultNote, onSave, onCancel, saving }: SavePresetDialogProps) {
+export function SavePresetDialog({ presetName, defaultAuthor, defaultStyle, defaultNote, onSave, onCancel, saving, audioError }: SavePresetDialogProps) {
   const t = useTranslations('editor');
   const [author, setAuthor] = useState(defaultAuthor);
   const [style, setStyle] = useState(defaultStyle || '');
   const [customStyle, setCustomStyle] = useState('');
   const [note, setNote] = useState(defaultNote || '');
   const [publish, setPublish] = useState(false);
+  const [audioFile, setAudioFile] = useState<File | null>(null);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const finalStyle = style === '__custom__' ? customStyle.trim() : style;
-    onSave({ author: author.trim(), style: finalStyle, note: note.trim(), publish });
+    onSave({ author: author.trim(), style: finalStyle, note: note.trim(), publish, audioFile });
   }
 
   return (
@@ -154,6 +156,37 @@ export function SavePresetDialog({ presetName, defaultAuthor, defaultStyle, defa
               onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border-active)'; }}
             />
           </div>
+
+          {/* Audio snippet (optional) */}
+          <div className="flex flex-col gap-1 mt-3">
+            <label className="text-xs font-mono-display uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+              {t('audioSnippet')}
+            </label>
+            <input
+              type="file"
+              accept="audio/mpeg,audio/mp4,audio/x-m4a,audio/aac,.mp3,.m4a,.aac"
+              onChange={(e) => setAudioFile(e.target.files?.[0] ?? null)}
+              className="text-xs"
+              aria-label={t('audioSnippet')}
+            />
+            <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+              {t('audioHint')}
+            </span>
+          </div>
+
+          {/* Non-fatal audio error (preset already saved) */}
+          {audioError && (
+            <div
+              className="px-3 py-2 rounded text-xs font-mono-display"
+              style={{
+                background: 'rgba(239,68,68,0.1)',
+                border: '1px solid rgba(239,68,68,0.3)',
+                color: '#ef4444',
+              }}
+            >
+              {audioError}
+            </div>
+          )}
 
           {/* Publish checkbox */}
           <label className="flex items-center gap-3 cursor-pointer">
