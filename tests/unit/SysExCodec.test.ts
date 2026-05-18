@@ -997,3 +997,25 @@ describe('SysExCodec: author in read/write chunks', () => {
     expect(author).toBe('Author1');
   });
 });
+
+describe('SysExCodec: fxLoop parse', () => {
+  it('reads SEND from decoded[106] and RETURN from decoded[107]', () => {
+    const buf = buildDecodedPreset('Test', 0);
+    buf[106] = 0x03;
+    buf[107] = 0x09;
+    const chunks = buildFakeChunks(buf, 0);
+    const preset = SysExCodec.parseReadChunks(chunks);
+    expect(preset.fxLoopSend).toBe(3);
+    expect(preset.fxLoopReturn).toBe(9);
+  });
+
+  it('clamps out-of-range fxLoop values to default 4', () => {
+    const buf = buildDecodedPreset('Test', 0);
+    buf[106] = 0x00; // out of range
+    buf[107] = 0xFF; // out of range
+    const chunks = buildFakeChunks(buf, 0);
+    const preset = SysExCodec.parseReadChunks(chunks);
+    expect(preset.fxLoopSend).toBe(4);
+    expect(preset.fxLoopReturn).toBe(4);
+  });
+});

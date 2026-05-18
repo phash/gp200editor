@@ -115,6 +115,11 @@ export const SysExCodec = {
       }
     }
 
+    const rawSend = decoded.length > 106 ? decoded[106] : 4;
+    const rawReturn = decoded.length > 107 ? decoded[107] : 4;
+    const fxLoopSend = rawSend >= 1 && rawSend <= 10 ? rawSend : 4;
+    const fxLoopReturn = rawReturn >= 1 && rawReturn <= 10 ? rawReturn : 4;
+
     const effects: GP200Preset['effects'] = [];
     const view = new DataView(decoded.buffer, decoded.byteOffset, decoded.byteLength);
     for (let b = 0; b < 11; b++) {
@@ -133,7 +138,7 @@ export const SysExCodec = {
       effects.push({ slotIndex, enabled, effectId, params });
     }
 
-    return GP200PresetSchema.parse({ version: '1', patchName, author: author || undefined, effects, checksum: 0 });
+    return GP200PresetSchema.parse({ version: '1', patchName, author: author || undefined, effects, fxLoopSend, fxLoopReturn, checksum: 0 });
   },
 
   parseReadChunks(chunks: Uint8Array[]): GP200Preset {
