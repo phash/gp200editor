@@ -24,17 +24,18 @@ type GalleryPreset = {
   flagged: boolean;
   userId: string;
   user: { username: string };
+  // Per-card rating context — populated by /api/gallery using the session
+  // cookie. Stays consistent across pagination (the original SSR-only path
+  // returned existingRating=0 for "load more" pages, which corrupted the
+  // optimistic count when a user re-rated an already-rated preset).
+  canRate: boolean;
+  rateReason: 'anon' | 'own' | 'unverified' | null;
+  existingRating: number;
 };
 
 const ALL_MODULES = Object.keys(MODULE_COLORS);
 
-interface GalleryClientProps {
-  currentUserId: string | null;
-  emailVerified: boolean;
-  myRatings: Record<string, number>;
-}
-
-export function GalleryClient({ currentUserId, emailVerified, myRatings }: GalleryClientProps) {
+export function GalleryClient() {
   const t = useTranslations('gallery');
   const [presets, setPresets] = useState<GalleryPreset[]>([]);
   const [total, setTotal] = useState(0);
@@ -342,14 +343,9 @@ export function GalleryClient({ currentUserId, emailVerified, myRatings }: Galle
                     presetId={preset.id}
                     average={preset.ratingAverage}
                     count={preset.ratingCount}
-                    canRate={!!currentUserId && emailVerified && preset.userId !== currentUserId}
-                    existing={myRatings[preset.id] ?? 0}
-                    reason={
-                      !currentUserId ? 'anon' :
-                      !emailVerified ? 'unverified' :
-                      preset.userId === currentUserId ? 'own' :
-                      null
-                    }
+                    canRate={preset.canRate}
+                    existing={preset.existingRating}
+                    reason={preset.rateReason}
                     size="sm"
                   />
                 </div>
