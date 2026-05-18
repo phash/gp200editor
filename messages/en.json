@@ -167,7 +167,15 @@
     "minLabel": "Min",
     "maxLabel": "Max",
     "unassigned": "Not assigned",
-    "expSendError": "Failed to send EXP assignment"
+    "expSendError": "Failed to send EXP assignment",
+    "fxLoop": {
+      "send": "Send",
+      "return": "Return",
+      "bypass": "FX Loop bypass (Send = Return)",
+      "ariaSend": "FX Loop Send position, currently between effects {prev} and {next}",
+      "ariaReturn": "FX Loop Return position, currently between effects {prev} and {next}",
+      "positionLabel": "Position {pos} of 10"
+    }
   },
   "auth": {
     "loginTitle": "Sign In",
