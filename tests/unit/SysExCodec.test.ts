@@ -226,6 +226,8 @@ describe('SysExCodec: buildWriteChunks', () => {
       effectId: 0x03000001 + i,
       params: Array.from({ length: 15 }, (_, p) => p * 1.5),
     })),
+    fxLoopSend: 4,
+    fxLoopReturn: 4,
   };
 
   it('returns exactly 5 chunks (extended to include blocks 8, 9 complete + block 10 partial)', () => {
@@ -1002,6 +1004,8 @@ describe('SysExCodec: author in read/write chunks', () => {
     const preset = {
       version: '1', patchName: 'Test', author: 'Author1', checksum: 0,
       effects: Array.from({ length: 11 }, (_, i) => ({ slotIndex: i, effectId: 0, enabled: false, params: Array(15).fill(0) })),
+      fxLoopSend: 4,
+      fxLoopReturn: 4,
     };
     const chunks = SysExCodec.buildWriteChunks(preset, 0);
     // Reassemble nibble data and decode

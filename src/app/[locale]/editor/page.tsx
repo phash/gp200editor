@@ -919,7 +919,7 @@ export default function EditorPage() {
             const nextReturn = Math.max(clamped, preset.fxLoopReturn);
             const sendChanged = nextSend !== preset.fxLoopSend;
             const returnPushed = nextReturn !== preset.fxLoopReturn;
-            setFxLoopSend(pos);
+            setFxLoopSend(clamped);
             if (midiDevice.status === 'connected') {
               const order = preset.effects.map((e) => e.slotIndex);
               if (sendChanged) {
@@ -936,7 +936,7 @@ export default function EditorPage() {
             const nextSend = Math.min(clamped, preset.fxLoopSend);
             const returnChanged = nextReturn !== preset.fxLoopReturn;
             const sendPushed = nextSend !== preset.fxLoopSend;
-            setFxLoopReturn(pos);
+            setFxLoopReturn(clamped);
             if (midiDevice.status === 'connected') {
               const order = preset.effects.map((e) => e.slotIndex);
               if (returnChanged) {

@@ -18,6 +18,8 @@ export function createTestPresetBuffer(patchName = 'Test Preset'): Buffer {
       params: Array(60).fill(0),
     })),
     checksum: 0,
+    fxLoopSend: 4,
+    fxLoopReturn: 4,
   };
 
   const arrayBuffer = new PRSTEncoder().encode(preset);

@@ -22,6 +22,8 @@ const samplePreset: GP200Preset = {
     params: EMPTY_PARAMS,
   })),
   checksum: 0,
+  fxLoopSend: 4,
+  fxLoopReturn: 4,
 };
 
 describe('PRSTEncoder', () => {
