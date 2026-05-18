@@ -169,4 +169,27 @@ describe('PRSTEncoder', () => {
     expect(decoded.fxLoopSend).toBe(5);
     expect(decoded.fxLoopReturn).toBe(9);
   });
+
+  it('writes fxLoopSend/Return for rawSource-based preset (user edit)', () => {
+    // Encode a synthetic preset first, then re-decode and re-encode with edited
+    // fxLoop values — this exercises the rawSource path (the second encode has
+    // rawSource set from the first decode).
+    const initial = new PRSTEncoder().encode({
+      version: '1',
+      patchName: 'X',
+      effects: Array.from({ length: 11 }, (_, i) => ({
+        slotIndex: i, effectId: 0, enabled: false, params: Array(15).fill(0),
+      })),
+      checksum: 0,
+      fxLoopSend: 4,
+      fxLoopReturn: 4,
+    });
+    const decoded = new PRSTDecoder(new Uint8Array(initial)).decode();
+    expect(decoded.rawSource).toBeDefined(); // confirm we're on the rawSource path
+    // User edits SEND/RETURN
+    const edited = { ...decoded, fxLoopSend: 3, fxLoopReturn: 9 };
+    const reencoded = new Uint8Array(new PRSTEncoder().encode(edited));
+    expect(reencoded[0x92]).toBe(3);
+    expect(reencoded[0x93]).toBe(9);
+  });
 });
