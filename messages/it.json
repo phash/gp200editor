@@ -180,7 +180,10 @@
       "bypass": "FX Loop disattivato (Invio = Ritorno)",
       "ariaSend": "Posizione di invio del FX Loop, attualmente tra gli effetti {prev} e {next}",
       "ariaReturn": "Posizione di ritorno del FX Loop, attualmente tra gli effetti {prev} e {next}"
-    }
+    },
+    "audioSnippet": "Snippet audio (opzionale)",
+    "audioHint": "MP3 o M4A, max 30 s e 2 MB. Si può aggiungere/modificare dopo nella pagina di condivisione.",
+    "audioFailedRetryOnSharePage": "Preset salvato, ma l'audio non è stato caricato. Riprova nella pagina di condivisione."
   },
   "auth": {
     "loginTitle": "Accedi",
@@ -296,6 +299,9 @@
       "signInTooltip": "Accedi per valutare",
       "ownPresetTooltip": "Non puoi valutare il tuo preset",
       "errorTooltip": "Valutazione fallita — riprova"
+    },
+    "audio": {
+      "iconLabel": "Riproduci anteprima"
     }
   },
   "device": {
@@ -661,5 +667,29 @@
     "verifyRequired": "È richiesta la verifica dell'email per commentare.",
     "authToast": "Sessione scaduta. Accedi di nuovo.",
     "genericError": "Impossibile salvare — riprova."
+  },
+  "audio": {
+    "player": {
+      "playLabel": "Riproduci",
+      "pauseLabel": "Pausa",
+      "progressLabel": "Avanzamento {current} di {total}",
+      "duration": "{seconds} s anteprima audio",
+      "noAudio": "Nessun campione audio"
+    },
+    "upload": {
+      "label": "Snippet audio (opzionale)",
+      "placeholder": "Scegli MP3 o M4A, max 30 s, max 2 MB",
+      "replace": "Sostituisci",
+      "remove": "Rimuovi",
+      "dropHere": "Trascina il file qui",
+      "picking": "Scegli file…",
+      "uploading": "Caricamento…",
+      "success": "Audio salvato",
+      "tooLong": "File troppo lungo — max 30 s",
+      "tooBig": "File troppo grande — max 2 MB",
+      "wrongType": "Formato non supportato — MP3 o M4A",
+      "notAuthorized": "Solo il proprietario del preset può caricare l'audio",
+      "genericError": "Caricamento fallito — riprova"
+    }
   }
 }
