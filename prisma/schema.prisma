@@ -139,7 +139,7 @@ model Comment {
   parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies Comment[] @relation("CommentReplies")
 
-  @@index([presetId, parentId, createdAt])
+  @@index([presetId, parentId, createdAt(sort: Desc)])
   @@index([userId])
 }
 
