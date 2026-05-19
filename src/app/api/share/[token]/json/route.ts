@@ -10,8 +10,10 @@ type RouteParams = { params: Promise<{ token: string }> };
 export async function GET(_: Request, { params }: RouteParams): Promise<Response> {
   const { token } = await params;
 
-  const preset = await prisma.preset.findUnique({
-    where: { shareToken: token, public: true },
+  // Refuse to serve JSON metadata for un-published or flagged presets,
+  // even with a valid share token.
+  const preset = await prisma.preset.findFirst({
+    where: { shareToken: token, public: true, flagged: false },
     select: {
       shareToken: true,
       presetKey: true,

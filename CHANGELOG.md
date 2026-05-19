@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-05-19 (later)
+
+### Security
+- **Admin-Flag wird auf allen öffentlichen Read-Paths enforced.** Gallery, `/api/share/[token]`, `/share/[token]/download`, `/share/[token]/json` und Sitemap filtern jetzt zusätzlich auf `flagged: false`. Bis hierher konnte ein admin-geflaggtes Preset weiter ausgeliefert und von Googlebot gecrawlt werden — Moderation entzieht Inhalte jetzt tatsächlich.
+- **`fast-xml-builder` HIGH-Advisory geschlossen** (GHSA-5wm8-gmm8-39j9, CVSS 6.1) durch `npm update @aws-sdk/client-s3`. Erreichte prod via `@aws-sdk/xml-builder`.
+- **Admin-PATCH-User akzeptiert keine Email-Änderung mehr.** Bisher konnte ein kompromittierter Admin-Account Victim-Emails überschreiben und sofort einen Password-Reset triggern → Account-Takeover. Email-Änderungen brauchen jetzt einen Out-of-Band-Weg.
+- **Avatar-Upload gehärtet:** Magic-Byte-Probe (JPEG/PNG/WebP Signaturen), `limitInputPixels: 25 M` und try/catch um `sharp()` — eine PNG-Bombe oder umbenannte Binärdatei erzeugt jetzt 400 statt 500 mit CPU-/RAM-Spike.
+- **Avatar-Cache `immutable` entfernt** (`Cache-Control: public, max-age=3600`). Eine Admin-User-Löschung wirkt jetzt innerhalb einer Stunde an jedem Cache-Layer.
+
+### Fix
+- **Middleware-Auth-Guard erkennt `pt-BR`.** Die Regex `(de|en|es|fr|it|pt)` war beim Locale-Add nicht mitgezogen worden, sodass `/pt-BR/profile` & `/pt-BR/admin` den Cookie-Presence-Check der Middleware übersprangen. Page-Level-`validateSession` hat es abgefangen — kein Datenleck —, aber Defense-in-Depth weg. Regex wird jetzt aus `LOCALES` generiert; Test stellt sicher, dass jeder Eintrag der LOCALES-Tuple gematcht wird.
+- **`/api/admin/comments` nutzt `withAdminAuth`-Wrapper** statt manuellem `try/catch(requireAdmin)` — konsistent zu allen anderen `/api/admin/*` Routen.
+
 ## 2026-05-19
 
 ### Features

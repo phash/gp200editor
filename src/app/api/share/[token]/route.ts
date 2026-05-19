@@ -6,8 +6,10 @@ type RouteContext = { params: Promise<{ token: string }> };
 export async function GET(_request: Request, context: RouteContext) {
   const { token } = await context.params;
 
-  const preset = await prisma.preset.findUnique({
-    where: { shareToken: token },
+  // Flagged or un-published presets must not surface even with a valid
+  // share token — moderation has to actually take effect.
+  const preset = await prisma.preset.findFirst({
+    where: { shareToken: token, public: true, flagged: false },
     include: { user: { select: { username: true } } },
   });
 

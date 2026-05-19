@@ -13,7 +13,9 @@ export async function GET(request: NextRequest) {
 
   const { q, modules, effects, style, sort, page, limit } = parsed.data;
 
-  const where: Prisma.PresetWhereInput = { public: true };
+  // Public gallery hides un-published AND flagged presets — moderation has
+  // to actually withdraw a preset from discovery.
+  const where: Prisma.PresetWhereInput = { public: true, flagged: false };
 
   if (q) {
     where.OR = [
@@ -60,6 +62,9 @@ export async function GET(request: NextRequest) {
           ratingAverage: true,
           ratingCount: true,
           createdAt: true,
+          // Always false in this response because of the WHERE-clause guard;
+          // kept in the shape so AdminActions on the card has the field
+          // present and the type stays consistent across paths.
           flagged: true,
           userId: true,
           audioKey: true,

@@ -15,8 +15,10 @@ export async function GET(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: 'Too many downloads. Please try again later.' }, { status: 429 });
   }
 
-  const preset = await prisma.preset.findUnique({
-    where: { shareToken: token },
+  // Flagged or un-published presets are not downloadable; the share token
+  // alone is no longer sufficient once moderation has acted.
+  const preset = await prisma.preset.findFirst({
+    where: { shareToken: token, public: true, flagged: false },
   });
 
   if (!preset) {

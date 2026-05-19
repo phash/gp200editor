@@ -28,7 +28,11 @@ export async function GET(
       headers: {
         'Content-Type': 'image/webp',
         'Content-Length': String(buffer.length),
-        'Cache-Control': 'public, max-age=31536000, immutable',
+        // 1 h cache without `immutable` so admin user-deletion (which
+        // removes the S3 object) actually takes effect at every cache
+        // layer within an hour. Key already changes on every avatar
+        // replace, so this won't double-fetch unchanged content.
+        'Cache-Control': 'public, max-age=3600',
       },
     });
   } catch {

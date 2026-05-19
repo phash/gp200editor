@@ -21,7 +21,7 @@ describe('GET /api/admin/comments', () => {
     vi.mocked(prisma.comment.findMany).mockResolvedValue([
       { id: 'c1', body: 'hi', user: { username: 'X' }, preset: { name: 'P1', shareToken: 't1' } },
     ] as never);
-    const res = await GET(new NextRequest('http://test/api/admin/comments'));
+    const res = await GET(new NextRequest('http://test/api/admin/comments'), {} as never);
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.comments).toHaveLength(1);
@@ -29,7 +29,7 @@ describe('GET /api/admin/comments', () => {
 
   it('returns 403 for non-admin', async () => {
     vi.mocked(requireAdmin).mockRejectedValue(new AdminForbiddenError());
-    const res = await GET(new NextRequest('http://test/api/admin/comments'));
+    const res = await GET(new NextRequest('http://test/api/admin/comments'), {} as never);
     expect(res.status).toBe(403);
   });
 });
