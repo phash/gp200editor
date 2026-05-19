@@ -76,8 +76,10 @@ export default async function sitemap(): Promise<SitemapEntry[]> {
   const SITEMAP_PRESET_LIMIT = 5000;
   let presetPages: SitemapEntry[] = [];
   try {
+    // Exclude flagged presets — moderation must also remove a URL from the
+    // sitemap so Googlebot stops surfacing it.
     const publicPresets = await prisma.preset.findMany({
-      where: { public: true },
+      where: { public: true, flagged: false },
       orderBy: { updatedAt: 'desc' },
       take: SITEMAP_PRESET_LIMIT,
       select: { shareToken: true, updatedAt: true },

@@ -1,10 +1,13 @@
 import { z } from 'zod';
 
+// Note: `email` deliberately excluded — letting an admin overwrite a user's
+// email and then trigger a password-reset to the new address is a takeover
+// vector. Email changes must go through the user's own self-service flow
+// (or a DB-direct admin intervention with a separate audit trail).
 export const adminPatchUserSchema = z.object({
   suspended: z.boolean().optional(),
   role: z.enum(['USER', 'ADMIN']).optional(),
   username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/).optional(),
-  email: z.string().email().optional(),
   bio: z.string().max(500).nullable().optional(),
 });
 

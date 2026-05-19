@@ -1,17 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin, AdminForbiddenError } from '@/lib/admin';
+import { type NextRequest, NextResponse } from 'next/server';
+import { withAdminAuth } from '@/lib/withAdminAuth';
 import { prisma } from '@/lib/prisma';
 
-export async function GET(request: NextRequest) {
-  try {
-    await requireAdmin();
-  } catch (e) {
-    if (e instanceof AdminForbiddenError) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-    throw e;
-  }
-
+// GET-only listing for the admin moderation tab. CSRF is off because GETs
+// don't mutate; withAdminAuth still enforces the session + ADMIN role.
+export const GET = withAdminAuth(async (request: NextRequest) => {
   const cursor = request.nextUrl.searchParams.get('cursor');
   const LIMIT = 50;
   const comments = await prisma.comment.findMany({
@@ -28,4 +21,4 @@ export async function GET(request: NextRequest) {
   const items = comments.slice(0, LIMIT);
   const nextCursor = hasMore ? items[items.length - 1].id : null;
   return NextResponse.json({ comments: items, nextCursor });
-}
+}, { csrf: false });

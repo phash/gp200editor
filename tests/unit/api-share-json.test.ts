@@ -5,7 +5,7 @@ import path from 'node:path';
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     preset: {
-      findUnique: vi.fn(),
+      findUnique: vi.fn(), findFirst: vi.fn(),
     },
   },
 }));
@@ -28,7 +28,7 @@ beforeEach(() => {
 
 describe('GET /api/share/[token]/json', () => {
   it('returns 404 for unknown token', async () => {
-    (prisma.preset.findUnique as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
+    (prisma.preset.findFirst as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
     const res = await GET(new Request('http://localhost/api/share/nope/json'), {
       params: Promise.resolve({ token: 'nope' }),
     });
@@ -36,7 +36,7 @@ describe('GET /api/share/[token]/json', () => {
   });
 
   it('returns 200 with valid JSON for a public preset', async () => {
-    (prisma.preset.findUnique as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+    (prisma.preset.findFirst as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       shareToken: 'abc',
       presetKey: 'preset-foo.prst',
       sourceUrl: null,
@@ -59,7 +59,7 @@ describe('GET /api/share/[token]/json', () => {
   });
 
   it('returns 404 for non-public preset (no info leak)', async () => {
-    (prisma.preset.findUnique as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
+    (prisma.preset.findFirst as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
     const res = await GET(new Request('http://localhost/api/share/priv/json'), {
       params: Promise.resolve({ token: 'priv' }),
     });

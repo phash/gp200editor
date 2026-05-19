@@ -8,6 +8,23 @@ import { rateLimit } from '@/lib/rateLimit';
 
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+const MAX_PIXELS = 25_000_000; // ~5000x5000 — refuse image bombs before sharp decodes
+
+// Match the client-claimed mime against the file's actual magic bytes to
+// reject a renamed binary (or an HTML page pretending to be a PNG).
+function detectImageMime(buf: Buffer): 'image/jpeg' | 'image/png' | 'image/webp' | null {
+  if (buf.length < 12) return null;
+  // JPEG: FF D8 FF
+  if (buf[0] === 0xFF && buf[1] === 0xD8 && buf[2] === 0xFF) return 'image/jpeg';
+  // PNG: 89 50 4E 47 0D 0A 1A 0A
+  if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4E && buf[3] === 0x47) return 'image/png';
+  // WebP: RIFF....WEBP at bytes [0..3] + [8..11]
+  if (
+    buf[0] === 0x52 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x46 &&
+    buf[8] === 0x57 && buf[9] === 0x45 && buf[10] === 0x42 && buf[11] === 0x50
+  ) return 'image/webp';
+  return null;
+}
 
 export async function POST(request: Request) {
   if (!verifyCsrf(request)) {
@@ -43,11 +60,27 @@ export async function POST(request: Request) {
   }
 
   const input = Buffer.from(await file.arrayBuffer());
-  const webp = await sharp(input)
-    // fit: 'inside' preserves aspect ratio; image scaled down to fit within 512×512
-    .resize(512, 512, { fit: 'inside', withoutEnlargement: true })
-    .webp()
-    .toBuffer();
+
+  // Magic-byte probe — refuse a renamed binary even if the client mime
+  // looks legit. Family must match the claimed mime; otherwise reject.
+  const detected = detectImageMime(input);
+  if (!detected || detected !== file.type) {
+    return NextResponse.json({ error: 'Unsupported file type. Use JPEG, PNG, or WebP.' }, { status: 400 });
+  }
+
+  // limitInputPixels caps sharp's decoded surface so a 50000x50000 PNG
+  // (compression bomb) can't burn the worker. Wrap in try/catch so any
+  // sharp throw becomes a clean 400 instead of leaking a 500 stack.
+  let webp: Buffer;
+  try {
+    webp = await sharp(input, { limitInputPixels: MAX_PIXELS })
+      // fit: 'inside' preserves aspect ratio; scaled to fit within 512×512
+      .resize(512, 512, { fit: 'inside', withoutEnlargement: true })
+      .webp()
+      .toBuffer();
+  } catch {
+    return NextResponse.json({ error: 'Image could not be processed.' }, { status: 400 });
+  }
 
   const newKey = `user-${user.id}-${Date.now()}.webp`;
 
