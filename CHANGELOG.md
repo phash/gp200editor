@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026-05-19 (later)
+## 2026-05-19
 
 ### Security
 - **Admin-Flag wird auf allen öffentlichen Read-Paths enforced.** Gallery, `/api/share/[token]`, `/share/[token]/download`, `/share/[token]/json` und Sitemap filtern jetzt zusätzlich auf `flagged: false`. Bis hierher konnte ein admin-geflaggtes Preset weiter ausgeliefert und von Googlebot gecrawlt werden — Moderation entzieht Inhalte jetzt tatsächlich.
@@ -25,7 +25,7 @@
 ### Schema
 - Drei neue nullable Felder auf `Preset`: `audioKey`, `audioMimeType`, `audioDurationMs`.
 
-## 2026-05-19 (later)
+## 2026-05-19
 
 ### Features
 - **Brasilianisches Portugiesisch (pt-BR) als 7. Locale.** Vorher war `pt.json` faktisch brasilianisch übersetzt (Salvar/Senha/usuário/arquivo); der Inhalt wandert nach `pt-BR.json` und steht jetzt brasilianischen Nutzern als eigenes Locale mit 🇧🇷-Flag im Switcher zur Verfügung. `pt.json` wurde mit ~175 gezielten Substitutionen auf echtes europäisches Portugiesisch konvertiert (Guardar/Palavra-passe/utilizador/ficheiro/Iniciar sessão/A guardar/A carregar/Ligar/Registo/Rastreio).
