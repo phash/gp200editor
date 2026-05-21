@@ -43,8 +43,11 @@ export function YouTubeEmbed({ url, songName }: YouTubeEmbedProps) {
   return (
     <iframe
       className="aspect-video w-full rounded-lg"
-      src={`https://www.youtube.com/embed/${videoId}`}
+      // youtube-nocookie.com is YouTube's privacy-enhanced mode — no cookies until
+      // playback starts, which is the GDPR-conformant variant for embeds.
+      src={`https://www.youtube-nocookie.com/embed/${videoId}`}
       title={`YouTube: ${songName}`}
+      referrerPolicy="strict-origin-when-cross-origin"
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
       allowFullScreen
     />

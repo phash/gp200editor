@@ -38,7 +38,7 @@ const nextConfig = {
             "img-src 'self' data: blob:",
             "font-src 'self'",
             "connect-src 'self' https://musikersuche.org https://challenges.cloudflare.com",
-            "frame-src https://challenges.cloudflare.com",
+            "frame-src https://challenges.cloudflare.com https://www.youtube-nocookie.com",
             "object-src 'none'",
             "worker-src 'self'",
             "frame-ancestors 'none'",

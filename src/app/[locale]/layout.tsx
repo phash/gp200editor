@@ -4,12 +4,29 @@ import { routing } from '@/i18n/routing';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import Script from 'next/script';
+import { JetBrains_Mono, DM_Sans } from 'next/font/google';
 import '../globals.css'; // globals.css stays in src/app/, so relative path goes up
 import { Footer } from '@/components/Footer';
 import { Navbar } from '@/components/Navbar';
 import { ClientProviders } from './ClientProviders';
 import { buildAlternates, BASE_URL, type Locale } from '@/lib/hreflang';
 import { serializeJsonLd } from '@/lib/jsonLd';
+
+// Fonts are self-hosted at build time — no runtime request to fonts.googleapis.com,
+// avoiding the GDPR violation that German courts have ruled against (LG München 3 O 17493/20).
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-jetbrains-mono',
+  display: 'swap',
+});
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  style: ['normal', 'italic'],
+  variable: '--font-dm-sans',
+  display: 'swap',
+});
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -80,7 +97,7 @@ export default async function LocaleLayout({ children, params }: Props) {
   const messages = await getMessages();
   const jsonLdString = serializeJsonLd(jsonLd);
   return (
-    <html lang={locale}>
+    <html lang={locale} className={`${jetbrainsMono.variable} ${dmSans.variable}`}>
       <head>
         <meta name="theme-color" content="#d97706" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -95,9 +112,13 @@ export default async function LocaleLayout({ children, params }: Props) {
             <Footer />
           </ClientProviders>
         </NextIntlClientProvider>
-        {/* Matomo Analytics — Site ID 2 on musikersuche.org/matomo */}
+        {/* Matomo Analytics — Site ID 2 on musikersuche.org/matomo.
+            Cookieless + DNT-respecting configuration so we can omit a cookie banner
+            and stay consistent with the privacy notice's "no tracking cookies" claim. */}
         <Script id="matomo" strategy="afterInteractive">{`
           var _paq=window._paq=window._paq||[];
+          _paq.push(["disableCookies"]);
+          _paq.push(["setDoNotTrack", true]);
           _paq.push(["trackPageView"]);
           _paq.push(["enableLinkTracking"]);
           (function(){var u="//musikersuche.org/matomo/";

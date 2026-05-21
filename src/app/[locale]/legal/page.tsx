@@ -120,11 +120,16 @@ export default async function LegalPage() {
         {[
           { title: t('privacyOverviewTitle'), text: t('privacyOverviewText') },
           { title: t('privacyRightsTitle'), text: t('privacyRightsText') },
+          { title: t('privacyHostingTitle'), text: t('privacyHostingText') },
           { title: t('privacyServerLogsTitle'), text: t('privacyServerLogsText') },
           { title: t('privacyCookiesTitle'), text: t('privacyCookiesText') },
           { title: t('privacyAccountTitle'), text: t('privacyAccountText') },
           { title: t('privacyStorageTitle'), text: t('privacyStorageText') },
           { title: t('privacyAnalyticsTitle'), text: t('privacyAnalyticsText') },
+          { title: t('privacyYoutubeTitle'), text: t('privacyYoutubeText') },
+          { title: t('privacyTurnstileTitle'), text: t('privacyTurnstileText') },
+          { title: t('privacyFontsTitle'), text: t('privacyFontsText') },
+          { title: t('privacyServiceWorkerTitle'), text: t('privacyServiceWorkerText') },
           { title: t('privacyEmailTitle'), text: t('privacyEmailText') },
           { title: t('privacySslTitle'), text: t('privacySslText') },
         ].map((item) => (

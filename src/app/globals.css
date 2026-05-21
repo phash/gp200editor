@@ -2,7 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+/* Fonts are loaded via next/font/google in the root layout (self-hosted at build),
+   exposed as CSS variables --font-jetbrains-mono and --font-dm-sans. No runtime
+   request goes to fonts.googleapis.com / fonts.gstatic.com (GDPR). */
 
 :root {
   --bg-primary: #0f0f0f;
@@ -32,7 +34,7 @@
 body {
   color: var(--text-primary);
   background: var(--bg-primary);
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -133,7 +135,7 @@ select option {
     text-wrap: balance;
   }
   .font-mono-display {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: var(--font-jetbrains-mono), monospace;
   }
 }
 
