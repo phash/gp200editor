@@ -9,7 +9,7 @@ Live USB-MIDI Editing, Preset-Galerie, Community-Sharing.
 - **Domain:** https://preset-forge.com
 - **Zweck:** `.prst` Preset-Dateien im Browser laden, bearbeiten, speichern, teilen, live per USB-MIDI ans Gerät senden
 - **GitHub:** https://github.com/phash/gp200editor
-- **Stack:** Next.js 15 App Router · React 19 · TypeScript strict · Tailwind CSS · Prisma 5 · PostgreSQL 16 · Lucia v3 · Garage S3 · next-intl 4 (DE/EN/ES/FR/IT/PT)
+- **Stack:** Next.js 15 App Router · React 19 · TypeScript strict · Tailwind CSS · Prisma 5 · PostgreSQL 16 · Lucia v3 · Garage S3 · next-intl 4 (DE/EN/ES/FR/IT/PT/pt-BR — 7 Locales)
 - **Tests:** Vitest · Playwright + @axe-core/playwright (E2E + A11y)
 - **Ziel:** WCAG 2.1 AA
 - **UI:** Dark pedalboard theme (JetBrains Mono + DM Sans, Amber-Akzente, LED-Style Buttons)
@@ -30,7 +30,7 @@ bash scripts/local-ci.sh lint typecheck   # Einzelne Stages
 npx vitest run path/test.ts -t "pattern"  # Single-File + Test-Name-Grep (schnelles TDD-Iterate)
 ```
 
-**Prod-Deploy:** `ssh musikersuche@82.165.40.140` → `cd /opt/gp200editor && bash scripts/deploy-update.sh`
+**Prod-Deploy:** `ssh musikersuche@musikersuche.org` → `cd /opt/gp200editor && bash scripts/deploy-update.sh`
 **Prod-SQL:** `source .env.prod && docker compose -f docker-compose.prod.yml -f docker-compose.caddy.yml exec -T postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"`
 
 ---
@@ -57,12 +57,14 @@ src/
 │
 ├── components/              # Navbar, FileUpload, EffectSlot, EffectParams, AmpHeadPanel,
 │                            #   ControllerPanel, AdminDashboard, AdminActions, CuePointTable,
-│                            #   ConfirmDialog, WarnDialog, LocaleSwitcher, Footer
+│                            #   ConfirmDialog, WarnDialog, LocaleSwitcher, Footer,
+│                            #   YouTubeEmbed, audio/ (AudioPlayer + Provider, 30s Preset-Snippets)
 │
 ├── lib/                     # auth.ts (Lucia v3), prisma.ts, session.ts, admin.ts,
 │                            #   errorLog.ts, email.ts, storage.ts, validators.ts
 │
-├── app/[locale]/            # layout, page (Home), editor, auth/, admin, profile/, presets/, share/
+├── app/[locale]/            # layout, page (Home), editor, auth/, admin, profile/, presets/, share/,
+│                            #   playlists/, gallery/, changelog/, help/, legal/
 ├── app/api/                 # auth/, admin/, profile/, avatar/, presets/, share/, gallery
 ├── i18n/                    # routing.ts, request.ts
 └── middleware.ts            # next-intl + Auth-Guards
@@ -75,7 +77,7 @@ src/
 - `routing.ts` exportiert typisierte Navigation: `import { Link, useRouter, usePathname } from '@/i18n/routing'`
 - Nie `next/link` oder `next/navigation` direkt importieren (Ausnahme: `redirect()` in Server Components)
 - Alle UI-Strings über `useTranslations()` / `getTranslations()` (kein Hardcoding)
-- Translations in `messages/{de,en,es,fr,it,pt}.json` — 6 Locales, Key-Parität per Unit-Test erzwungen
+- Translations in `messages/{de,en,es,fr,it,pt,pt-BR}.json` — 7 Locales, Key-Parität per Unit-Test erzwungen
 - Hreflang: `src/lib/hreflang.ts` mit `buildAlternates(path, locale)` — nie inline schreiben
 
 ---
@@ -135,8 +137,11 @@ src/
 - Neue Spalten in `/api/gallery` response weglassen — Frontend erwartet `shareToken`
 - `page.goto()` in E2E ohne `waitUntil: 'domcontentloaded'` — default `'load'` hängt auf Matomo
 - Playwright-Tests mit vollem `/tmp` — `TMPDIR=/home/manuel/.tmp-playwright npx playwright test`
-- Inline locale type literals `'de' | 'en'` hardcoden — IMMER alle 6 Locales oder `Locale` aus `@/lib/hreflang`
+- Inline locale type literals `'de' | 'en'` hardcoden — IMMER alle 7 Locales oder `Locale` aus `@/lib/hreflang`
 - `otherLocale = locale === 'de' ? 'en' : 'de'` Toggle-Pattern — `<LocaleSwitcher />` verwenden
 - `next-intl` `requireVerifiedUser` ohne `refreshSessionCookie` — ist intern schon drin
 - `z.instanceof(Uint8Array)` mit einem Node `Buffer` füttern — `fs.readFileSync()` gibt `Buffer` zurück, Zod v4 lehnt das ab. Immer `new Uint8Array(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength))`
 - `slotIndex` in Reorder-Operationen überschreiben — `slotIndex` ist die PRST-Block-Identität (0=PRE, …10=VOL), unveränderlich. Drag&Drop ändert nur Array-Order, nie `slotIndex`
+- `@import url('https://fonts.googleapis.com/...')` oder andere externe Font-CDNs — Fonts laufen via `next/font/google` (Build-Time self-host); externe Imports brechen DSGVO-Compliance (LG München 3 O 17493/20)
+- Matomo-Script ohne `_paq.push(["disableCookies"])` + `_paq.push(["setDoNotTrack", true])` deployen — beide Flags MÜSSEN vor `trackPageView` stehen, sonst widerspricht der Code der Datenschutzerklärung
+- `youtube.com/embed/...` für Iframes verwenden — IMMER `youtube-nocookie.com/embed/...` (CSP `frame-src` erlaubt nur die nocookie-Domain)
