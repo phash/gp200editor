@@ -534,6 +534,8 @@
       "unflag": "Remover sinalização",
       "createIssue": "Criar GH Issue",
       "copy": "Copiar",
+      "resolve": "Resolver",
+      "unresolve": "Reabrir",
       "deleteAll": "Eliminar tudo"
     },
     "badges": {
@@ -701,5 +703,10 @@
       "notAuthorized": "Apenas o dono do preset pode carregar áudio",
       "genericError": "Falha no envio — tente novamente"
     }
+  },
+  "error": {
+    "title": "Algo correu mal",
+    "body": "Registámos o erro automaticamente. Tente novamente ou volte à página inicial.",
+    "retry": "Tentar novamente"
   }
 }

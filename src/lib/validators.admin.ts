@@ -41,9 +41,19 @@ export const adminPresetsQuerySchema = z.object({
 
 export const adminErrorsQuerySchema = z.object({
   q: z.string().max(100).optional(),
-  level: z.enum(['error', 'warn']).optional(),
+  severity: z.enum(['critical', 'error', 'warning', 'info']).optional(),
+  category: z.enum(['api', 'client', 'auth', 'db', 's3', 'external', 'validation', 'rate_limit', 'legacy']).optional(),
+  resolved: z.enum(['true', 'false']).optional(),
   page: z.string().optional().transform((v) => Math.max(1, parseInt(v ?? '1', 10) || 1)),
   limit: z.string().optional().transform((v) => Math.min(50, Math.max(1, parseInt(v ?? '20', 10) || 20))),
+});
+
+export const adminErrorsPatchSchema = z.object({
+  fingerprint: z.string().min(8).max(64).optional(),
+  ids: z.string().min(1).array().max(100).optional(),
+  resolved: z.boolean(),
+}).refine((v) => v.fingerprint || (v.ids && v.ids.length > 0), {
+  message: 'Either fingerprint or ids[] is required',
 });
 
 export const adminActionsQuerySchema = z.object({

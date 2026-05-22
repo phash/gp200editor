@@ -534,6 +534,8 @@
       "unflag": "Markierung entfernen",
       "createIssue": "GH Issue erstellen",
       "copy": "Kopieren",
+      "resolve": "Erledigt",
+      "unresolve": "Wieder öffnen",
       "deleteAll": "Alle löschen"
     },
     "badges": {
@@ -701,5 +703,10 @@
       "notAuthorized": "Nur der Preset-Owner kann Audio hochladen",
       "genericError": "Upload fehlgeschlagen — bitte erneut versuchen"
     }
+  },
+  "error": {
+    "title": "Da ist etwas schiefgegangen",
+    "body": "Wir haben den Fehler automatisch protokolliert. Versuch es erneut oder kehre zur Startseite zurück.",
+    "retry": "Erneut versuchen"
   }
 }

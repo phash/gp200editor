@@ -70,10 +70,15 @@ describe('adminPresetsQuerySchema', () => {
 });
 
 describe('adminErrorsQuerySchema', () => {
-  it('accepts level filter', () => {
-    expect(adminErrorsQuerySchema.safeParse({ level: 'error' }).success).toBe(true);
+  it('accepts severity filter', () => {
+    expect(adminErrorsQuerySchema.safeParse({ severity: 'critical' }).success).toBe(true);
   });
-  it('rejects invalid level', () => {
-    expect(adminErrorsQuerySchema.safeParse({ level: 'debug' }).success).toBe(false);
+  it('rejects unknown severity', () => {
+    expect(adminErrorsQuerySchema.safeParse({ severity: 'debug' }).success).toBe(false);
+  });
+  it('accepts category + resolved combination', () => {
+    expect(
+      adminErrorsQuerySchema.safeParse({ category: 'client', resolved: 'true' }).success,
+    ).toBe(true);
   });
 });

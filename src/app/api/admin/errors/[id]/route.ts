@@ -18,7 +18,13 @@ export const DELETE = withAdminAuth<{ id: string }>(async (_request, { params, a
       action: 'DELETE_ERROR_LOG',
       targetType: 'user',
       targetId: admin.id,
-      metadata: { errorId: id, level: error.level, message: error.message.slice(0, 120) },
+      metadata: {
+        errorId: id,
+        severity: error.severity,
+        category: error.category,
+        fingerprint: error.fingerprint,
+        message: error.message.slice(0, 120),
+      },
     });
   } catch {
     // non-fatal

@@ -11,13 +11,39 @@ type Tab = 'users' | 'presets' | 'errors' | 'auditLog' | 'comments';
 interface Stats { userCount: number; presetCount: number; errorCount: number; suspendedCount: number; }
 interface AdminUser { id: string; username: string; email: string; role: string; suspended: boolean; avatarUrl: string | null; createdAt: string; presetCount: number; }
 interface AdminPreset { id: string; name: string; author: string | null; style: string | null; public: boolean; flagged: boolean; modules: string[]; downloadCount: number; ratingAverage: number; createdAt: string; ownerUsername: string; }
-interface ErrorEntry { id: string; level: string; message: string; stack: string | null; url: string | null; userId: string | null; metadata: unknown; createdAt: string; }
+interface ErrorEntry {
+  id: string;
+  fingerprint: string;
+  category: string;
+  severity: string;
+  message: string;
+  stack: string | null;
+  route: string | null;
+  method: string | null;
+  url: string | null;
+  userId: string | null;
+  ip: string | null;
+  metadata: unknown;
+  count: number;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  resolvedAt: string | null;
+  createdAt: string;
+}
 interface AuditEntry { id: string; adminUsername: string; action: string; targetType: string; targetId: string; reason: string | null; metadata: unknown; createdAt: string; }
 
+const SEVERITY_COLORS: Record<string, { color: string; bg: string }> = {
+  critical: { color: '#ef4444', bg: 'rgba(239,68,68,0.18)' },
+  error:    { color: '#f97316', bg: 'rgba(249,115,22,0.14)' },
+  warning:  { color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+  info:     { color: '#60a5fa', bg: 'rgba(96,165,250,0.12)' },
+};
+
 function buildGhIssueUrl(error: ErrorEntry): string {
-  const title = encodeURIComponent(`[Bug] ${error.message}${error.url ? ` in ${error.url}` : ''}`);
+  const where = error.route ?? error.url ?? '';
+  const title = encodeURIComponent(`[Bug] ${error.message}${where ? ` in ${where}` : ''}`);
   const body = encodeURIComponent(
-    `## Error Details\n- **Message:** ${error.message}\n- **Route:** ${error.url ?? 'N/A'}\n- **Time:** ${error.createdAt}\n- **User:** ${error.userId ?? 'N/A'}\n\n` +
+    `## Error Details\n- **Severity:** ${error.severity}\n- **Category:** ${error.category}\n- **Fingerprint:** ${error.fingerprint.slice(0, 8)}\n- **Occurrences:** ${error.count}\n- **Message:** ${error.message}\n- **Route:** ${error.route ?? error.url ?? 'N/A'}\n- **First seen:** ${error.firstSeenAt}\n- **Last seen:** ${error.lastSeenAt}\n- **User:** ${error.userId ?? 'N/A'}\n\n` +
     (error.stack ? `## Stack Trace\n\`\`\`\n${error.stack}\n\`\`\`\n\n` : '') +
     (error.metadata ? `## Metadata\n\`\`\`json\n${JSON.stringify(error.metadata, null, 2)}\n\`\`\`\n` : '')
   );
@@ -34,7 +60,8 @@ export function AdminDashboard() {
   const [errors, setErrors] = useState<ErrorEntry[]>([]);
   const [actions, setActions] = useState<AuditEntry[]>([]);
   const [search, setSearch] = useState('');
-  const [levelFilter, setLevelFilter] = useState('');
+  const [severityFilter, setSeverityFilter] = useState('');
+  const [resolvedFilter, setResolvedFilter] = useState<'open' | 'resolved' | 'all'>('open');
   const [flaggedFilter, setFlaggedFilter] = useState(false);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -68,10 +95,12 @@ export function AdminDashboard() {
   const fetchErrors = useCallback(() => {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (search) params.set('q', search);
-    if (levelFilter) params.set('level', levelFilter);
+    if (severityFilter) params.set('severity', severityFilter);
+    if (resolvedFilter === 'open') params.set('resolved', 'false');
+    else if (resolvedFilter === 'resolved') params.set('resolved', 'true');
     fetch(`/api/admin/errors?${params}`).then((r) => r.ok ? r.json() : null)
       .then((d) => { if (d) { setErrors(d.errors); setTotal(d.total); } }).catch(() => {});
-  }, [page, search, levelFilter]);
+  }, [page, search, severityFilter, resolvedFilter]);
 
   const fetchActions = useCallback(() => {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
@@ -83,7 +112,7 @@ export function AdminDashboard() {
 
   useEffect(() => {
     setPage(1);
-  }, [tab, search, levelFilter, flaggedFilter]);
+  }, [tab, search, severityFilter, resolvedFilter, flaggedFilter]);
 
   useEffect(() => {
     if (tab === 'users') fetchUsers();
@@ -129,6 +158,10 @@ export function AdminDashboard() {
   async function handleDeleteAllErrors() {
     if (await adminFetch('/api/admin/errors', 'DELETE')) reload();
     setConfirmAction(null);
+  }
+
+  async function handleResolveError(fingerprint: string, resolved: boolean) {
+    if (await adminFetch('/api/admin/errors', 'PATCH', { fingerprint, resolved })) reload();
   }
 
   async function handleWarnUser(reason: string, message?: string) {
@@ -184,12 +217,21 @@ export function AdminDashboard() {
         )}
         {tab === 'errors' && (
           <>
-            <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)}
+            <select value={severityFilter} onChange={(e) => setSeverityFilter(e.target.value)}
               className="px-3 py-2 rounded-lg text-sm"
               style={{ background: 'var(--bg-input, #2a2a2a)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}>
               <option value="">{t('allLevels')}</option>
+              <option value="critical">critical</option>
               <option value="error">error</option>
-              <option value="warn">warn</option>
+              <option value="warning">warning</option>
+              <option value="info">info</option>
+            </select>
+            <select value={resolvedFilter} onChange={(e) => setResolvedFilter(e.target.value as 'open' | 'resolved' | 'all')}
+              className="px-3 py-2 rounded-lg text-sm"
+              style={{ background: 'var(--bg-input, #2a2a2a)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}>
+              <option value="open">open</option>
+              <option value="resolved">resolved</option>
+              <option value="all">all</option>
             </select>
             <button className={btnClass} style={btnStyle('#ef4444')}
               onClick={() => setConfirmAction({ message: t('confirm.deleteAllErrors'), onConfirm: handleDeleteAllErrors })}>
@@ -286,20 +328,32 @@ export function AdminDashboard() {
       {tab === 'errors' && (
         <div className="space-y-1">
           {errors.length === 0 && <p className="text-sm py-8 text-center" style={{ color: 'var(--text-muted)' }}>{t('noResults')}</p>}
-          {errors.map((err) => (
-            <div key={err.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+          {errors.map((err) => {
+            const sev = SEVERITY_COLORS[err.severity] ?? SEVERITY_COLORS.error;
+            const isResolved = err.resolvedAt !== null;
+            const routeOrUrl = err.route ?? err.url ?? '';
+            return (
+            <div key={err.id} style={{ borderBottom: '1px solid var(--border-subtle)', opacity: isResolved ? 0.55 : 1 }}>
               <div className="flex items-center p-3 cursor-pointer" onClick={() => setExpandedError(expandedError === err.id ? null : err.id)}>
-                <span className="text-[11px] font-mono px-1.5 py-0.5 rounded mr-3"
-                  style={{
-                    color: err.level === 'error' ? '#ef4444' : '#f59e0b',
-                    background: err.level === 'error' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)',
-                  }}>
-                  {err.level.toUpperCase()}
+                <span className="text-[11px] font-mono px-1.5 py-0.5 rounded mr-3 uppercase"
+                  style={{ color: sev.color, background: sev.bg }}>
+                  {err.severity}
                 </span>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded mr-2"
+                  style={{ color: 'var(--text-muted)', background: 'rgba(255,255,255,0.04)' }}>
+                  {err.category}
+                </span>
+                {err.count > 1 && (
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded mr-2"
+                    style={{ color: 'var(--accent-amber)', background: 'rgba(245,158,11,0.10)' }}
+                    title={`First seen ${new Date(err.firstSeenAt).toLocaleString()}`}>
+                    ×{err.count}
+                  </span>
+                )}
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-mono truncate" style={{ color: 'var(--text-primary)' }}>{err.message}</div>
                   <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                    {err.url ?? ''} · {err.userId ?? '—'} · {new Date(err.createdAt).toLocaleString()}
+                    {err.fingerprint.slice(0, 8)} · {routeOrUrl} · {err.userId ?? '—'} · {new Date(err.lastSeenAt).toLocaleString()}
                   </div>
                 </div>
                 <span style={{ color: 'var(--text-muted)' }}>{expandedError === err.id ? '▼' : '▶'}</span>
@@ -313,12 +367,16 @@ export function AdminDashboard() {
                       {err.metadata ? `\n--- Metadata ---\n${JSON.stringify(err.metadata, null, 2)}` : null}
                     </pre>
                   )}
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     <a href={buildGhIssueUrl(err)} target="_blank" rel="noopener noreferrer"
                       className={btnClass + ' flex items-center gap-1.5 no-underline'} style={btnStyle('var(--text-primary)')}>
                       <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
                       {t('actions.createIssue')}
                     </a>
+                    <button className={btnClass} style={btnStyle(isResolved ? '#f59e0b' : '#4ec46a')}
+                      onClick={() => handleResolveError(err.fingerprint, !isResolved)}>
+                      {isResolved ? t('actions.unresolve') : t('actions.resolve')}
+                    </button>
                     <button className={btnClass} style={btnStyle('var(--text-secondary)')}
                       onClick={() => navigator.clipboard.writeText(`${err.message}\n${err.stack ?? ''}\n${JSON.stringify(err.metadata)}`)}>
                       {t('actions.copy')}
@@ -331,7 +389,8 @@ export function AdminDashboard() {
                 </div>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

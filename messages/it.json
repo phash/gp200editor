@@ -534,6 +534,8 @@
       "unflag": "Rimuovi segnalazione",
       "createIssue": "Crea GH Issue",
       "copy": "Copia",
+      "resolve": "Risolvi",
+      "unresolve": "Riapri",
       "deleteAll": "Elimina tutti"
     },
     "badges": {
@@ -701,5 +703,10 @@
       "notAuthorized": "Solo il proprietario del preset può caricare l'audio",
       "genericError": "Caricamento fallito — riprova"
     }
+  },
+  "error": {
+    "title": "Qualcosa è andato storto",
+    "body": "Abbiamo registrato l'errore automaticamente. Riprova oppure torna alla home.",
+    "retry": "Riprova"
   }
 }
