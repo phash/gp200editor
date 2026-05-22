@@ -154,15 +154,32 @@ model Comment {
 }
 
 model ErrorLog {
-  id        String   @id @default(cuid())
-  level     String   // "error" | "warn"
-  message   String
-  stack     String?
-  url       String?
-  userId    String?
-  metadata  Json?
-  createdAt DateTime @default(now())
+  id            String    @id @default(cuid())
+  // 32-char hex (SHA-256 of category|message, truncated) — groups identical errors.
+  fingerprint   String
+  // Bucket: api | client | auth | db | s3 | external | validation | rate_limit | legacy
+  category      String
+  // critical | error | warning | info  (was: level)
+  severity      String
+  message       String
+  stack         String?   @db.Text
+  route         String?
+  method        String?
+  url           String?
+  userId        String?
+  ip            String?
+  metadata      Json?
+  count         Int       @default(1)
+  firstSeenAt   DateTime  @default(now())
+  lastSeenAt    DateTime  @default(now())
+  resolvedAt    DateTime?
+  // Throttle critical-email sends per fingerprint (1/hour).
+  lastEmailedAt DateTime?
+  createdAt     DateTime  @default(now())
 
+  @@index([fingerprint])
+  @@index([severity, resolvedAt])
+  @@index([lastSeenAt])
   @@index([createdAt])
 }
 

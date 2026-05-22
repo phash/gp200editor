@@ -534,6 +534,8 @@
       "unflag": "Desmarcar",
       "createIssue": "Crear GH Issue",
       "copy": "Copiar",
+      "resolve": "Resolver",
+      "unresolve": "Reabrir",
       "deleteAll": "Eliminar todo"
     },
     "badges": {
@@ -701,5 +703,10 @@
       "notAuthorized": "Solo el propietario del preset puede subir audio",
       "genericError": "Fallo al subir — inténtalo de nuevo"
     }
+  },
+  "error": {
+    "title": "Algo salió mal",
+    "body": "Hemos registrado el error automáticamente. Inténtalo de nuevo o vuelve a la página de inicio.",
+    "retry": "Reintentar"
   }
 }

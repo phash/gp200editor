@@ -300,7 +300,9 @@
       "ownPresetTooltip": "Cannot rate your own preset",
       "errorTooltip": "Rating failed — try again"
     },
-    "audio": { "iconLabel": "Play preview" }
+    "audio": {
+      "iconLabel": "Play preview"
+    }
   },
   "device": {
     "connect": "Connect GP-200",
@@ -532,6 +534,8 @@
       "unflag": "Unflag",
       "createIssue": "Create GH Issue",
       "copy": "Copy",
+      "resolve": "Resolve",
+      "unresolve": "Reopen",
       "deleteAll": "Delete all"
     },
     "badges": {
@@ -699,5 +703,10 @@
       "notAuthorized": "Only the preset owner can upload audio",
       "genericError": "Upload failed — please try again"
     }
+  },
+  "error": {
+    "title": "Something went wrong",
+    "body": "We logged the error automatically. Try again, or head back to the homepage.",
+    "retry": "Try again"
   }
 }

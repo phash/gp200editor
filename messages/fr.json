@@ -534,6 +534,8 @@
       "unflag": "Retirer le signalement",
       "createIssue": "Créer un ticket GH",
       "copy": "Copier",
+      "resolve": "Résoudre",
+      "unresolve": "Rouvrir",
       "deleteAll": "Tout supprimer"
     },
     "badges": {
@@ -701,5 +703,10 @@
       "notAuthorized": "Seul le propriétaire du preset peut téléverser l'audio",
       "genericError": "Échec — réessaie"
     }
+  },
+  "error": {
+    "title": "Une erreur est survenue",
+    "body": "Nous avons enregistré l’erreur automatiquement. Réessaie ou retourne à l’accueil.",
+    "retry": "Réessayer"
   }
 }
