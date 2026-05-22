@@ -15,7 +15,8 @@ export function Navbar() {
   const [username, setUsername] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [role, setRole] = useState<string | null>(null);
-  const [errorCount, setErrorCount] = useState(0);
+  const [unresolvedCritical, setUnresolvedCritical] = useState(0);
+  const [unresolvedError, setUnresolvedError] = useState(0);
 
   useEffect(() => {
     fetch('/api/profile')
@@ -26,12 +27,20 @@ export function Navbar() {
         if (data?.role === 'ADMIN') {
           fetch('/api/admin/stats')
             .then((r) => (r.ok ? r.json() : null))
-            .then((stats: { errorCount?: number } | null) => setErrorCount(stats?.errorCount ?? 0))
-            .catch(() => setErrorCount(0));
+            .then((stats: { unresolvedCritical?: number; unresolvedError?: number } | null) => {
+              setUnresolvedCritical(stats?.unresolvedCritical ?? 0);
+              setUnresolvedError(stats?.unresolvedError ?? 0);
+            })
+            .catch(() => { setUnresolvedCritical(0); setUnresolvedError(0); });
         }
       })
       .catch(() => { setUsername(null); setRole(null); });
   }, [pathname]);
+
+  // Critical wins visually — red dot with the critical count if any exist,
+  // otherwise an amber dot with the error count. Nothing when both are zero.
+  const badgeCount = unresolvedCritical > 0 ? unresolvedCritical : unresolvedError;
+  const badgeColor = unresolvedCritical > 0 ? '#ef4444' : '#f97316';
 
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -162,8 +171,14 @@ export function Navbar() {
             }}
             data-testid="nav-link-admin">
             {t('admin')}
-            {errorCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full" style={{ background: '#ef4444' }} />
+            {badgeCount > 0 && (
+              <span
+                className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center font-mono-display text-[9px] font-bold leading-none"
+                style={{ background: badgeColor, color: '#fff' }}
+                title={`${unresolvedCritical} critical · ${unresolvedError} error (unresolved)`}
+              >
+                {badgeCount > 99 ? '99+' : badgeCount}
+              </span>
             )}
           </Link>
         )}
@@ -204,8 +219,13 @@ export function Navbar() {
               className="transition-colors hover:text-[var(--accent-amber)] relative"
               style={{ color: pathname === '/admin' ? 'var(--accent-amber)' : 'var(--text-secondary)' }}>
               {t('admin')}
-              {errorCount > 0 && (
-                <span className="inline-block w-2 h-2 rounded-full ml-1" style={{ background: '#ef4444' }} />
+              {badgeCount > 0 && (
+                <span
+                  className="inline-block min-w-[16px] h-4 px-1 rounded-full ml-2 font-mono-display text-[9px] font-bold leading-none text-center"
+                  style={{ background: badgeColor, color: '#fff', lineHeight: '16px' }}
+                >
+                  {badgeCount > 99 ? '99+' : badgeCount}
+                </span>
               )}
             </Link>
           )}
