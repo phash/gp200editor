@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseChangelog } from '@/lib/changelog';
+import { parseChangelog, isUserFacingHeading, pickLatestUserFacing } from '@/lib/changelog';
 
 describe('parseChangelog', () => {
   it('returns empty array for empty input', () => {
@@ -88,5 +88,56 @@ Some paragraph text that should be ignored.
     const releases = parseChangelog(md);
     expect(releases[0].sections[0].items).toHaveLength(1);
     expect(releases[0].sections[0].items[0].title).toBe('Foo');
+  });
+});
+
+describe('isUserFacingHeading', () => {
+  it('accepts user-facing headings', () => {
+    for (const h of ['Features', 'Bugfixes', 'Fix', 'UI / i18n', 'Performance', 'i18n-Polish (Sprach-Review)']) {
+      expect(isUserFacingHeading(h)).toBe(true);
+    }
+  });
+
+  it('rejects internal headings', () => {
+    for (const h of ['Security', 'Schema', 'Protocol', 'Storage / Validation', 'Local CI', 'Schema / Performance']) {
+      expect(isUserFacingHeading(h)).toBe(false);
+    }
+  });
+
+  it('treats a combined heading as internal if any token is internal', () => {
+    expect(isUserFacingHeading('Performance + Security')).toBe(false);
+  });
+
+  it('rejects an empty heading', () => {
+    expect(isUserFacingHeading('   ')).toBe(false);
+  });
+});
+
+describe('pickLatestUserFacing', () => {
+  const release = (date: string, ...headings: string[]) => ({
+    date,
+    sections: headings.map((heading) => ({ heading, items: [{ title: heading, body: '' }] })),
+  });
+
+  it('keeps only the user-facing sections of the newest release that has any', () => {
+    const picked = pickLatestUserFacing([
+      release('2026-05-19', 'Security', 'Fix'),
+      release('2026-05-10', 'Features'),
+    ]);
+    expect(picked?.date).toBe('2026-05-19');
+    expect(picked?.sections.map((s) => s.heading)).toEqual(['Fix']);
+  });
+
+  it('falls through a purely-internal release to the last user-facing one', () => {
+    const picked = pickLatestUserFacing([
+      release('2026-05-19', 'Security', 'Schema'),
+      release('2026-05-10', 'Features'),
+    ]);
+    expect(picked?.date).toBe('2026-05-10');
+    expect(picked?.sections.map((s) => s.heading)).toEqual(['Features']);
+  });
+
+  it('returns null when nothing is user-facing', () => {
+    expect(pickLatestUserFacing([release('2026-05-19', 'Security')])).toBeNull();
   });
 });

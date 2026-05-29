@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/routing';
-import { getChangelog } from '@/lib/changelog';
+import { getLatestUserFacingRelease } from '@/lib/changelog';
 import { serializeJsonLd } from '@/lib/jsonLd';
 import { FeaturedPresetBlock } from '@/components/FeaturedPresetBlock';
 import type { Locale } from '@/i18n/locales';
@@ -22,9 +22,10 @@ export default async function HomePage({ params }: Props) {
   const { locale } = await params;
   const t = await getTranslations('home');
 
-  // Pull the most recent release for the "what's new" section.
-  const releases = getChangelog();
-  const latest = releases[0];
+  // Most recent release reduced to user-facing sections — security, schema,
+  // and protocol notes stay in the full /changelog but don't headline the
+  // landing page.
+  const latest = getLatestUserFacingRelease();
 
   // Read the FAQ array from translations (next-intl returns the raw value
   // for non-string keys via t.raw). Used both for visible rendering and the
