@@ -690,6 +690,7 @@ export default function EditorPage() {
                 value={preset.patchName}
                 onChange={(e) => setPatchName(e.target.value)}
                 maxLength={16}
+                aria-label={t('patchName')}
                 data-testid="patch-name-input"
                 className="font-mono-display text-lg font-bold tracking-tight bg-transparent border-none outline-none min-w-0 flex-1"
                 style={{ color: 'var(--accent-amber)' }}

@@ -74,7 +74,9 @@ const jsonLd = {
   '@type': 'WebApplication',
   name: 'Preset Forge',
   description: 'Free browser-based editor for Valeton GP-200 guitar presets — the only GP-200 editor that runs on Linux (tested on Linux Mint). The official Valeton app is Windows-only. Import Line6 HX Stomp .hlx files, build timed setlists with automatic preset switching, browse 305 effects in the community gallery.',
-  url: 'https://preset-forge.com',
+  // Must match the canonical www host (hreflang + OG all use BASE_URL) so the
+  // structured-data url doesn't disagree with the page's own canonical tag.
+  url: BASE_URL,
   applicationCategory: 'Music',
   operatingSystem: 'Windows, macOS, Linux, Linux Mint, Ubuntu, Chrome OS',
   offers: {

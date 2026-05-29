@@ -7,7 +7,7 @@ import { prisma } from '@/lib/prisma';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('admin');
-  return { title: `${t('title')} — Preset Forge`, robots: 'noindex' };
+  return { title: `${t('title')} — Preset Forge`, robots: 'noindex, nofollow' };
 }
 
 export default async function AdminPage() {

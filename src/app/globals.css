@@ -16,7 +16,10 @@
   --bg-deep: #0a0a0a;
   --bg-hover: #2e2e2e;
   --text-primary: #e8e4df;
-  --text-secondary: #8a8580;
+  /* Secondary sits a notch above muted so the two are visually distinct and
+     secondary clears WCAG AA (~6:1 on --bg-primary) with headroom; muted stays
+     at the AA threshold for genuinely de-emphasised / large uppercase labels. */
+  --text-secondary: #a8a29a;
   --text-muted: #8a8580;
   --border-subtle: #2a2724;
   --border-active: #3a3530;
@@ -148,4 +151,19 @@ select option {
   outline-offset: 2px;
   box-shadow: 0 0 0 4px var(--glow-amber);
   border-radius: 4px;
+}
+
+/* ── Reduced motion (WCAG 2.3.3) ──────────────────────────────────────── */
+/* Honour the OS "reduce motion" preference: kill the LED pulse + slot-enter
+   reveal and collapse transitions to near-instant. Users with vestibular
+   disorders opt out of the pedalboard's ambient motion without losing state. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
