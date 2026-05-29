@@ -183,7 +183,8 @@
     },
     "audioSnippet": "Snippet audio (opzionale)",
     "audioHint": "MP3 o M4A, max 30 s e 2 MB. Si può aggiungere/modificare dopo nella pagina di condivisione.",
-    "audioFailedRetryOnSharePage": "Preset salvato, ma l'audio non è stato caricato. Riprova nella pagina di condivisione."
+    "audioFailedRetryOnSharePage": "Preset salvato, ma l'audio non è stato caricato. Riprova nella pagina di condivisione.",
+    "mobileNotice": "L'editor funziona meglio su desktop o tablet grande: trascinare per riordinare e i cursori fini sono difficili su piccoli schermi touch."
   },
   "auth": {
     "loginTitle": "Accedi",

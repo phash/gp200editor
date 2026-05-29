@@ -183,7 +183,8 @@
     },
     "audioSnippet": "Audio-Schnipsel (optional)",
     "audioHint": "MP3 oder M4A, max 30 s und 2 MB. Kann später auf der Share-Seite bearbeitet werden.",
-    "audioFailedRetryOnSharePage": "Preset gespeichert, aber Audio-Upload fehlgeschlagen. Auf der Share-Seite erneut versuchen."
+    "audioFailedRetryOnSharePage": "Preset gespeichert, aber Audio-Upload fehlgeschlagen. Auf der Share-Seite erneut versuchen.",
+    "mobileNotice": "Der Editor funktioniert am besten auf Desktop oder großem Tablet — Drag-and-drop und die feinen Regler sind auf kleinen Touchscreens schwierig zu bedienen."
   },
   "auth": {
     "loginTitle": "Anmelden",

@@ -183,7 +183,8 @@
     },
     "audioSnippet": "Clip de audio (opcional)",
     "audioHint": "MP3 o M4A, máx 30 s y 2 MB. Se puede añadir/editar después en la página de compartir.",
-    "audioFailedRetryOnSharePage": "Preset guardado, pero el audio falló. Vuelve a intentarlo en la página de compartir."
+    "audioFailedRetryOnSharePage": "Preset guardado, pero el audio falló. Vuelve a intentarlo en la página de compartir.",
+    "mobileNotice": "El editor funciona mejor en un ordenador o tableta grande: arrastrar para reordenar y los controles finos son difíciles en pantallas táctiles pequeñas."
   },
   "auth": {
     "loginTitle": "Iniciar sesión",

@@ -183,7 +183,8 @@
     },
     "audioSnippet": "Extrait audio (optionnel)",
     "audioHint": "MP3 ou M4A, max 30 s et 2 Mo. Peut être ajouté/modifié plus tard sur la page de partage.",
-    "audioFailedRetryOnSharePage": "Preset enregistré, mais l'audio a échoué. Réessaie sur la page de partage."
+    "audioFailedRetryOnSharePage": "Preset enregistré, mais l'audio a échoué. Réessaie sur la page de partage.",
+    "mobileNotice": "L'éditeur fonctionne mieux sur ordinateur ou grande tablette — le glisser-déposer et les réglages fins sont difficiles sur les petits écrans tactiles."
   },
   "auth": {
     "loginTitle": "Connexion",

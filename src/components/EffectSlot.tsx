@@ -16,9 +16,13 @@ interface EffectSlotProps {
   onDragOver: (e: React.DragEvent, index: number) => void;
   onDrop: (index: number) => void;
   isDragOver: boolean;
+  onMoveUp: (index: number) => void;
+  onMoveDown: (index: number) => void;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
 }
 
-export function EffectSlot({ slot, index, onToggle, onChangeEffect, onParamChange, onDragStart, onDragOver, onDrop, isDragOver }: EffectSlotProps) {
+export function EffectSlot({ slot, index, onToggle, onChangeEffect, onParamChange, onDragStart, onDragOver, onDrop, isDragOver, onMoveUp, onMoveDown, canMoveUp, canMoveDown }: EffectSlotProps) {
   const t = useTranslations('editor');
   const [expanded, setExpanded] = useState(false);
   const effectName = getEffectName(slot.effectId);
@@ -50,8 +54,13 @@ export function EffectSlot({ slot, index, onToggle, onChangeEffect, onParamChang
         onClick={() => setExpanded(!expanded)}
         role="button"
         tabIndex={0}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(!expanded); } }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(!expanded); }
+          else if (e.key === 'ArrowUp' && canMoveUp) { e.preventDefault(); onMoveUp(index); }
+          else if (e.key === 'ArrowDown' && canMoveDown) { e.preventDefault(); onMoveDown(index); }
+        }}
         aria-expanded={expanded}
+        aria-keyshortcuts="ArrowUp ArrowDown"
         aria-label={`${effectName} ${t('parameters')}`}
         data-testid={`effect-slot-header-${index}`}
       >
