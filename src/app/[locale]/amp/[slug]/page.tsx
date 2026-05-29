@@ -74,22 +74,37 @@ function buildCollectionJsonLd(opts: {
   slug: string;
   presets: Array<{ name: string; shareToken: string }>;
 }) {
+  const base = `${BASE_URL}/${opts.locale}`;
   const data = {
     '@context': 'https://schema.org',
-    '@type': 'CollectionPage',
-    name: `${opts.realName} Valeton GP-200 Presets`,
-    description: `Free Valeton GP-200 presets modelled on the ${opts.realName}.`,
-    url: `${BASE_URL}/${opts.locale}/amp/${opts.slug}`,
-    mainEntity: {
-      '@type': 'ItemList',
-      numberOfItems: opts.presets.length,
-      itemListElement: opts.presets.slice(0, 25).map((p, i) => ({
-        '@type': 'ListItem',
-        position: i + 1,
-        url: `${BASE_URL}/${opts.locale}/share/${p.shareToken}`,
-        name: p.name,
-      })),
-    },
+    '@graph': [
+      {
+        '@type': 'CollectionPage',
+        name: `${opts.realName} Valeton GP-200 Presets`,
+        description: `Free Valeton GP-200 presets modelled on the ${opts.realName}.`,
+        url: `${base}/amp/${opts.slug}`,
+        mainEntity: {
+          '@type': 'ItemList',
+          numberOfItems: opts.presets.length,
+          itemListElement: opts.presets.slice(0, 25).map((p, i) => ({
+            '@type': 'ListItem',
+            position: i + 1,
+            url: `${base}/share/${p.shareToken}`,
+            name: p.name,
+          })),
+        },
+      },
+      // Mirrors the visible Home · Gallery · Amp breadcrumb above so Google can
+      // render a breadcrumb trail in the result snippet.
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Home', item: base },
+          { '@type': 'ListItem', position: 2, name: 'Gallery', item: `${base}/gallery` },
+          { '@type': 'ListItem', position: 3, name: opts.realName, item: `${base}/amp/${opts.slug}` },
+        ],
+      },
+    ],
   };
   return serializeJsonLd(data);
 }

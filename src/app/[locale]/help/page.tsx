@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
 import { buildAlternates, BASE_URL, type Locale } from '@/lib/hreflang';
+import { serializeJsonLd } from '@/lib/jsonLd';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -105,20 +106,36 @@ export default async function HelpPage() {
     { date: t('changelog20260316'), items: t('changelog20260316Items') },
   ];
 
-  // JSON-LD: static translation strings only, not user input — safe
-  const faqJsonLd = JSON.stringify({
+  // JSON-LD: static translation strings only. Emitted as a single @graph with
+  // the FAQPage plus one HowTo per procedural section, so answer engines / LLMs
+  // can extract both the Q&A and the ordered step lists. Routed through
+  // serializeJsonLd per project convention (escapes </script> + U+2028/9).
+  const jsonLd = serializeJsonLd({
     '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: faq.map(({ q, a }) => ({
-      '@type': 'Question',
-      name: q,
-      acceptedAnswer: { '@type': 'Answer', text: a },
-    })),
+    '@graph': [
+      {
+        '@type': 'FAQPage',
+        mainEntity: faq.map(({ q, a }) => ({
+          '@type': 'Question',
+          name: q,
+          acceptedAnswer: { '@type': 'Answer', text: a },
+        })),
+      },
+      ...sections.map((section) => ({
+        '@type': 'HowTo',
+        name: section.title,
+        step: section.items.map((text, i) => ({
+          '@type': 'HowToStep',
+          position: i + 1,
+          text,
+        })),
+      })),
+    ],
   });
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqJsonLd }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
       <h1
         className="font-mono-display text-2xl font-bold tracking-tight mb-8"
         style={{ color: 'var(--accent-amber)' }}
