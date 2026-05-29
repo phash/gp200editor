@@ -29,7 +29,8 @@
         "adFree": "Werbefrei",
         "openSource": "Open Source",
         "linux": "Linux / Windows / macOS"
-      }
+      },
+      "previewAlt": "Screenshot des Preset-Forge-Editors mit der GP-200-Signalkette, Effekt-Slots und Parameter-Reglern."
     },
     "features": {
       "heading": "Was du hier alles machen kannst",

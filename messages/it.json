@@ -29,7 +29,8 @@
         "adFree": "Senza pubblicità",
         "openSource": "Open Source",
         "linux": "Linux / Windows / macOS"
-      }
+      },
+      "previewAlt": "Schermata dell'editor di Preset Forge con la catena di segnale del GP-200, gli slot effetti e le manopole dei parametri."
     },
     "features": {
       "heading": "Cosa puoi fare qui",

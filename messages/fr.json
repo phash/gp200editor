@@ -29,7 +29,8 @@
         "adFree": "Sans pub",
         "openSource": "Open Source",
         "linux": "Linux / Windows / macOS"
-      }
+      },
+      "previewAlt": "Capture d'écran de l'éditeur Preset Forge montrant la chaîne de signal du GP-200 avec ses emplacements d'effets et ses potentiomètres."
     },
     "features": {
       "heading": "Ce que tu peux faire ici",

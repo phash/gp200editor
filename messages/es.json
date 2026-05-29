@@ -29,7 +29,8 @@
         "adFree": "Sin anuncios",
         "openSource": "Código Abierto",
         "linux": "Linux / Windows / macOS"
-      }
+      },
+      "previewAlt": "Captura del editor de Preset Forge mostrando la cadena de señal del GP-200 con slots de efectos y controles de parámetros."
     },
     "features": {
       "heading": "Qué puedes hacer aquí",
