@@ -19,6 +19,13 @@ export function Footer() {
         {t('legal')}
       </Link>
       <span style={{ margin: '0 8px' }}>·</span>
+      <Link
+        href="/guides"
+        style={{ color: 'var(--text-secondary)', textDecoration: 'underline' }}
+      >
+        {t('guides')}
+      </Link>
+      <span style={{ margin: '0 8px' }}>·</span>
       {t('poweredBy')}{' '}
       <a
         href="https://phash.de"

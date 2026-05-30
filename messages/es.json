@@ -120,7 +120,8 @@
   "footer": {
     "disclaimer": "Preset Forge — Herramienta no oficial. No afiliada con Valeton.",
     "legal": "Aviso legal y privacidad",
-    "poweredBy": "powered by"
+    "poweredBy": "powered by",
+    "guides": "Guías"
   },
   "editor": {
     "title": "Editar Preset",
@@ -719,5 +720,14 @@
     "valetonModels": "{count, plural, one {Modelo Valeton:} other {Modelos Valeton:}}",
     "breadcrumbAmp": "Amplificador",
     "by": "por"
+  },
+  "guides": {
+    "title": "Guías",
+    "subtitle": "Guías detalladas para sacar más partido a tu Valeton GP-200.",
+    "readGuide": "Leer guía",
+    "inEnglish": "Inglés",
+    "allGuides": "Todas las guías",
+    "updated": "Actualizado",
+    "ctaEditor": "Abrir el editor"
   }
 }

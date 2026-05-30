@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { listAmpCategories } from '@/core/ampCategories';
 import { getActiveAmpSlugs } from '@/lib/ampActivity';
 import { LOCALES, BASE_URL } from '@/lib/hreflang';
+import { GUIDE_SLUGS, guideLocales, getGuide } from '@/content/guides';
 
 // Force dynamic generation — the default sitemap.ts output is baked at build
 // time when the DB is unreachable, which means library presets imported after
@@ -25,6 +26,7 @@ const STATIC_PAGES: Array<{
   { path: '/editor',     changeFrequency: 'weekly',  priority: 1.0 },
   { path: '/gallery',    changeFrequency: 'daily',   priority: 0.8 },
   { path: '/help',       changeFrequency: 'monthly', priority: 0.6 },
+  { path: '/guides',     changeFrequency: 'monthly', priority: 0.6 },
   { path: '/changelog',  changeFrequency: 'weekly',  priority: 0.5 },
 ];
 
@@ -119,5 +121,16 @@ export default async function sitemap(): Promise<SitemapEntry[]> {
     );
   }
 
-  return [...staticPages, ...ampPages, ...presetPages];
+  // Long-form guide detail pages — only the locales that actually have a
+  // translation of each slug (others 404 and must stay out of the sitemap).
+  const guidePages: SitemapEntry[] = GUIDE_SLUGS.flatMap((slug) =>
+    guideLocales(slug).map((locale) => ({
+      url: `${BASE_URL}/${locale}/guides/${slug}`,
+      lastModified: new Date(getGuide(locale, slug)!.updated),
+      changeFrequency: 'monthly' as const,
+      priority: 0.7,
+    })),
+  );
+
+  return [...staticPages, ...ampPages, ...guidePages, ...presetPages];
 }
