@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import { prisma } from '@/lib/prisma';
 import {
   findAmpCategoryBySlug,
@@ -28,8 +29,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const cat = findAmpCategoryBySlug(slug);
   if (!cat) return {};
 
-  const title = `${cat.realName} - Free Valeton GP-200 Presets | Preset Forge`;
-  const description = `Browse free Valeton GP-200 presets modelled on the ${cat.realName}. Download any preset and open it in the browser editor - works on Linux, Windows, macOS.`;
+  const t = await getTranslations({ locale });
+  const title = t('amp.metaTitle', { name: cat.realName });
+  const description = t('amp.metaDescription', { name: cat.realName });
   const canonical = `${BASE_URL}/${locale}/amp/${slug}`;
 
   // Empty amp pages (no community presets) are noindex'd to avoid being
@@ -73,23 +75,40 @@ function buildCollectionJsonLd(opts: {
   locale: Locale;
   slug: string;
   presets: Array<{ name: string; shareToken: string }>;
+  homeLabel: string;
+  galleryLabel: string;
 }) {
+  const base = `${BASE_URL}/${opts.locale}`;
   const data = {
     '@context': 'https://schema.org',
-    '@type': 'CollectionPage',
-    name: `${opts.realName} Valeton GP-200 Presets`,
-    description: `Free Valeton GP-200 presets modelled on the ${opts.realName}.`,
-    url: `${BASE_URL}/${opts.locale}/amp/${opts.slug}`,
-    mainEntity: {
-      '@type': 'ItemList',
-      numberOfItems: opts.presets.length,
-      itemListElement: opts.presets.slice(0, 25).map((p, i) => ({
-        '@type': 'ListItem',
-        position: i + 1,
-        url: `${BASE_URL}/${opts.locale}/share/${p.shareToken}`,
-        name: p.name,
-      })),
-    },
+    '@graph': [
+      {
+        '@type': 'CollectionPage',
+        name: `${opts.realName} Valeton GP-200 Presets`,
+        description: `Free Valeton GP-200 presets modelled on the ${opts.realName}.`,
+        url: `${base}/amp/${opts.slug}`,
+        mainEntity: {
+          '@type': 'ItemList',
+          numberOfItems: opts.presets.length,
+          itemListElement: opts.presets.slice(0, 25).map((p, i) => ({
+            '@type': 'ListItem',
+            position: i + 1,
+            url: `${base}/share/${p.shareToken}`,
+            name: p.name,
+          })),
+        },
+      },
+      // Mirrors the visible Home · Gallery · Amp breadcrumb above so Google can
+      // render a breadcrumb trail in the result snippet.
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: opts.homeLabel, item: base },
+          { '@type': 'ListItem', position: 2, name: opts.galleryLabel, item: `${base}/gallery` },
+          { '@type': 'ListItem', position: 3, name: opts.realName, item: `${base}/amp/${opts.slug}` },
+        ],
+      },
+    ],
   };
   return serializeJsonLd(data);
 }
@@ -121,11 +140,14 @@ export default async function AmpCategoryPage({ params }: Props) {
     },
   });
 
+  const t = await getTranslations({ locale });
   const jsonLd = buildCollectionJsonLd({
     realName: cat.realName,
     locale,
     slug,
     presets,
+    homeLabel: t('nav.home'),
+    galleryLabel: t('nav.gallery'),
   });
 
   return (
@@ -137,11 +159,11 @@ export default async function AmpCategoryPage({ params }: Props) {
       />
 
       <nav className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
-        <Link href={`/${locale}`} className="hover:underline">Home</Link>
+        <Link href={`/${locale}`} className="hover:underline">{t('nav.home')}</Link>
         {' · '}
-        <Link href={`/${locale}/gallery`} className="hover:underline">Gallery</Link>
+        <Link href={`/${locale}/gallery`} className="hover:underline">{t('nav.gallery')}</Link>
         {' · '}
-        <span style={{ color: 'var(--text-secondary)' }}>Amp: {cat.realName}</span>
+        <span style={{ color: 'var(--text-secondary)' }}>{t('amp.breadcrumbAmp')}: {cat.realName}</span>
       </nav>
 
       <header className="mb-6">
@@ -153,11 +175,11 @@ export default async function AmpCategoryPage({ params }: Props) {
         </h1>
         <p className="text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>
           {presets.length === 0
-            ? 'No presets yet for this amp. Be the first to upload one!'
-            : `${presets.length} free Valeton GP-200 ${presets.length === 1 ? 'preset' : 'presets'} modelled on the ${cat.realName}.`}
+            ? t('amp.introEmpty')
+            : t('amp.introCount', { count: presets.length, name: cat.realName })}
         </p>
         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-          Valeton model{cat.valetonNames.length > 1 ? 's' : ''}:{' '}
+          {t('amp.valetonModels', { count: cat.valetonNames.length })}{' '}
           {cat.valetonNames.map((n, i) => (
             <span key={n}>
               {i > 0 && ', '}
@@ -202,9 +224,9 @@ export default async function AmpCategoryPage({ params }: Props) {
                   </p>
                 )}
                 <div className="flex gap-3 text-xs" style={{ color: 'var(--text-muted)' }}>
-                  <span>by @{p.user.username}</span>
+                  <span>{t('amp.by')} @{p.user.username}</span>
                   <span>·</span>
-                  <span>{p.downloadCount} downloads</span>
+                  <span>{p.downloadCount} {t('presets.downloads')}</span>
                   {p.ratingCount > 0 && (
                     <>
                       <span>·</span>

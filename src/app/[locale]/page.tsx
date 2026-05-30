@@ -1,7 +1,8 @@
 import { Suspense } from 'react';
+import Image from 'next/image';
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/routing';
-import { getChangelog } from '@/lib/changelog';
+import { getLatestUserFacingRelease } from '@/lib/changelog';
 import { serializeJsonLd } from '@/lib/jsonLd';
 import { FeaturedPresetBlock } from '@/components/FeaturedPresetBlock';
 import type { Locale } from '@/i18n/locales';
@@ -22,9 +23,10 @@ export default async function HomePage({ params }: Props) {
   const { locale } = await params;
   const t = await getTranslations('home');
 
-  // Pull the most recent release for the "what's new" section.
-  const releases = getChangelog();
-  const latest = releases[0];
+  // Most recent release reduced to user-facing sections — security, schema,
+  // and protocol notes stay in the full /changelog but don't headline the
+  // landing page.
+  const latest = getLatestUserFacingRelease();
 
   // Read the FAQ array from translations (next-intl returns the raw value
   // for non-string keys via t.raw). Used both for visible rendering and the
@@ -102,6 +104,39 @@ export default async function HomePage({ params }: Props) {
             {t('hero.ctaGallery')}
           </Link>
         </div>
+
+        {/* Product shot — gives the text-only hero a real glimpse of the
+            editor, framed as a browser window. Lazy-loaded: the LCP is the
+            headline above, and on most viewports this sits below the fold. */}
+        <figure className="mt-12 mx-auto max-w-2xl">
+          <div
+            className="rounded-xl overflow-hidden"
+            style={{ border: '1px solid var(--border-subtle)', boxShadow: '0 12px 48px rgba(0,0,0,0.5)' }}
+          >
+            <div
+              className="flex items-center gap-1.5 px-3 py-2"
+              style={{ background: 'var(--bg-surface-raised)', borderBottom: '1px solid var(--border-subtle)' }}
+            >
+              <span className="w-2.5 h-2.5 rounded-full" style={{ background: 'var(--accent-red)' }} aria-hidden />
+              <span className="w-2.5 h-2.5 rounded-full" style={{ background: 'var(--accent-amber)' }} aria-hidden />
+              <span className="w-2.5 h-2.5 rounded-full" style={{ background: 'var(--accent-green)' }} aria-hidden />
+              <span
+                className="ml-3 font-mono-display text-[10px] tracking-wider"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                preset-forge.com/editor
+              </span>
+            </div>
+            <Image
+              src="/editor-preview.webp"
+              alt={t('hero.previewAlt')}
+              width={880}
+              height={963}
+              sizes="(max-width: 672px) 100vw, 672px"
+              className="block w-full h-auto"
+            />
+          </div>
+        </figure>
       </section>
 
       {/* ───────── Features grid ───────── */}

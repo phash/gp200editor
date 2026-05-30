@@ -29,7 +29,8 @@
         "adFree": "Ad-free",
         "openSource": "Open Source",
         "linux": "Linux / Windows / macOS"
-      }
+      },
+      "previewAlt": "Screenshot of the Preset Forge editor showing the GP-200 signal chain with effect slots and parameter knobs."
     },
     "features": {
       "heading": "What you can do here",
@@ -119,7 +120,8 @@
   "footer": {
     "disclaimer": "Preset Forge — Unofficial tool. Not affiliated with Valeton.",
     "legal": "Legal & Privacy",
-    "poweredBy": "powered by"
+    "poweredBy": "powered by",
+    "guides": "Guides"
   },
   "editor": {
     "title": "Edit Preset",
@@ -183,7 +185,8 @@
       "bypass": "FX Loop bypass (Send = Return)",
       "ariaSend": "FX Loop Send position, currently between effects {prev} and {next}",
       "ariaReturn": "FX Loop Return position, currently between effects {prev} and {next}"
-    }
+    },
+    "mobileNotice": "The editor works best on a desktop or large tablet — drag-and-drop reordering and the fine parameter sliders are tricky on small touch screens."
   },
   "auth": {
     "loginTitle": "Sign In",
@@ -708,5 +711,23 @@
     "title": "Something went wrong",
     "body": "We logged the error automatically. Try again, or head back to the homepage.",
     "retry": "Try again"
+  },
+  "amp": {
+    "metaTitle": "{name} – Free Valeton GP-200 Presets | Preset Forge",
+    "metaDescription": "Browse free Valeton GP-200 presets modelled on the {name}. Download any preset and open it in the browser editor — works on Linux, Windows, and macOS.",
+    "introCount": "{count, plural, one {# free Valeton GP-200 preset modelled on the {name}.} other {# free Valeton GP-200 presets modelled on the {name}.}}",
+    "introEmpty": "No presets yet for this amp. Be the first to upload one!",
+    "valetonModels": "{count, plural, one {Valeton model:} other {Valeton models:}}",
+    "breadcrumbAmp": "Amp",
+    "by": "by"
+  },
+  "guides": {
+    "title": "Guides",
+    "subtitle": "In-depth guides to get more out of your Valeton GP-200.",
+    "readGuide": "Read guide",
+    "inEnglish": "English",
+    "allGuides": "All guides",
+    "updated": "Updated",
+    "ctaEditor": "Open the editor"
   }
 }

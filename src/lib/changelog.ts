@@ -99,3 +99,41 @@ export function parseChangelog(markdown: string): ChangelogRelease[] {
 
   return releases;
 }
+
+/** Heading tokens that mark a section as internal/developer-facing. A heading
+ *  is hidden from the marketing surface if ANY of its whitespace/punctuation
+ *  separated tokens is in this set — so combined headings like
+ *  "Performance + Security" or "Schema / Performance" still count as internal
+ *  and security notes never lead the landing page. */
+const INTERNAL_HEADING_TOKENS = new Set([
+  'security', 'schema', 'protocol', 'storage', 'validation',
+  'ci', 'chore', 'refactor', 'internal', 'deps', 'dependency',
+  'dependencies', 'test', 'tests', 'infra', 'build',
+]);
+
+/** True when a changelog section heading is worth showing to end users on the
+ *  landing "what's new" block. Everything that isn't explicitly internal
+ *  (Features, Bugfixes, Fix, UI, i18n, Performance, …) qualifies. */
+export function isUserFacingHeading(heading: string): boolean {
+  const tokens = heading.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+  return tokens.length > 0 && !tokens.some((tok) => INTERNAL_HEADING_TOKENS.has(tok));
+}
+
+/** Reduce a release list to the most recent release that has at least one
+ *  user-facing section, keeping only those sections. Scans newest→oldest so a
+ *  release that's purely internal (e.g. a security-only hotfix) doesn't blank
+ *  out the landing block — we fall through to the last release users care
+ *  about. Returns null if nothing user-facing exists. Pure, so it's unit
+ *  testable without touching the filesystem. */
+export function pickLatestUserFacing(releases: ChangelogRelease[]): ChangelogRelease | null {
+  for (const release of releases) {
+    const sections = release.sections.filter((s) => isUserFacingHeading(s.heading));
+    if (sections.length > 0) return { ...release, sections };
+  }
+  return null;
+}
+
+/** Convenience wrapper around pickLatestUserFacing over the parsed CHANGELOG. */
+export function getLatestUserFacingRelease(): ChangelogRelease | null {
+  return pickLatestUserFacing(getChangelog());
+}

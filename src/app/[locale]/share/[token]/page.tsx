@@ -172,7 +172,6 @@ export default async function SharePage({ params }: Props) {
   // for long-tail amp-based queries like "Marshall JCM800 GP-200 preset".
   const brand = guessBrand(json?.highlights.amp?.realName ?? null);
   const productJsonLd: Record<string, unknown> = {
-    '@context': 'https://schema.org',
     '@type': 'Product',
     name: preset.name,
     description: preset.description ?? `Valeton GP-200 preset by @${preset.user.username}`,
@@ -196,11 +195,37 @@ export default async function SharePage({ params }: Props) {
       worstRating: '1',
     };
   }
+  // Breadcrumb trail Home › Gallery › [Amp] › Preset. The amp rung only
+  // appears when we could decode the amp model, and it deep-links to the same
+  // /amp/[slug] landing page the visible "More … presets" link points to.
+  const shareBase = `${BASE_URL}/${locale}`;
+  const ampRealName = json?.highlights.amp?.realName ?? null;
+  const breadcrumbItems: Array<Record<string, unknown>> = [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: shareBase },
+    { '@type': 'ListItem', position: 2, name: 'Gallery', item: `${shareBase}/gallery` },
+  ];
+  if (ampRealName) {
+    breadcrumbItems.push({
+      '@type': 'ListItem',
+      position: breadcrumbItems.length + 1,
+      name: ampRealName,
+      item: `${shareBase}/amp/${slugifyAmpName(ampRealName)}`,
+    });
+  }
+  breadcrumbItems.push({
+    '@type': 'ListItem',
+    position: breadcrumbItems.length + 1,
+    name: preset.name,
+    item: `${shareBase}/share/${token}`,
+  });
+
   // Use the shared serializer — escapes `<` (stops `</script>` injection)
   // AND U+2028/U+2029 (line/paragraph separators, valid JSON but break
-  // older JS parsers). Inline `.replace(/</g, ...)` alone would miss the
-  // LS/PS case.
-  const productJsonLdString = serializeJsonLd(productJsonLd);
+  // older JS parsers). Product + BreadcrumbList share one @graph.
+  const productJsonLdString = serializeJsonLd({
+    '@context': 'https://schema.org',
+    '@graph': [productJsonLd, { '@type': 'BreadcrumbList', itemListElement: breadcrumbItems }],
+  });
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-8">

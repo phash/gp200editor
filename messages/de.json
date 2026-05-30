@@ -29,7 +29,8 @@
         "adFree": "Werbefrei",
         "openSource": "Open Source",
         "linux": "Linux / Windows / macOS"
-      }
+      },
+      "previewAlt": "Screenshot des Preset-Forge-Editors mit der GP-200-Signalkette, Effekt-Slots und Parameter-Reglern."
     },
     "features": {
       "heading": "Was du hier alles machen kannst",
@@ -119,7 +120,8 @@
   "footer": {
     "disclaimer": "Preset Forge — Inoffizielles Tool. Nicht von Valeton.",
     "legal": "Impressum & Datenschutz",
-    "poweredBy": "powered by"
+    "poweredBy": "powered by",
+    "guides": "Anleitungen"
   },
   "editor": {
     "title": "Preset bearbeiten",
@@ -183,7 +185,8 @@
     },
     "audioSnippet": "Audio-Schnipsel (optional)",
     "audioHint": "MP3 oder M4A, max 30 s und 2 MB. Kann später auf der Share-Seite bearbeitet werden.",
-    "audioFailedRetryOnSharePage": "Preset gespeichert, aber Audio-Upload fehlgeschlagen. Auf der Share-Seite erneut versuchen."
+    "audioFailedRetryOnSharePage": "Preset gespeichert, aber Audio-Upload fehlgeschlagen. Auf der Share-Seite erneut versuchen.",
+    "mobileNotice": "Der Editor funktioniert am besten auf Desktop oder großem Tablet — Drag-and-drop und die feinen Regler sind auf kleinen Touchscreens schwierig zu bedienen."
   },
   "auth": {
     "loginTitle": "Anmelden",
@@ -708,5 +711,23 @@
     "title": "Da ist etwas schiefgegangen",
     "body": "Wir haben den Fehler automatisch protokolliert. Versuch es erneut oder kehre zur Startseite zurück.",
     "retry": "Erneut versuchen"
+  },
+  "amp": {
+    "metaTitle": "{name} – Kostenlose Valeton-GP-200-Presets | Preset Forge",
+    "metaDescription": "Kostenlose Valeton-GP-200-Presets nach dem Vorbild des {name}. Lade ein Preset herunter und öffne es im Browser-Editor – funktioniert unter Linux, Windows und macOS.",
+    "introCount": "{count, plural, one {# kostenloses Valeton-GP-200-Preset nach dem Vorbild des {name}.} other {# kostenlose Valeton-GP-200-Presets nach dem Vorbild des {name}.}}",
+    "introEmpty": "Noch keine Presets für diesen Amp. Lade als Erste:r eines hoch!",
+    "valetonModels": "{count, plural, one {Valeton-Modell:} other {Valeton-Modelle:}}",
+    "breadcrumbAmp": "Amp",
+    "by": "von"
+  },
+  "guides": {
+    "title": "Anleitungen",
+    "subtitle": "Ausführliche Anleitungen, um mehr aus deinem Valeton GP-200 herauszuholen.",
+    "readGuide": "Anleitung lesen",
+    "inEnglish": "Englisch",
+    "allGuides": "Alle Anleitungen",
+    "updated": "Aktualisiert",
+    "ctaEditor": "Editor öffnen"
   }
 }

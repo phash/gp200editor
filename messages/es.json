@@ -29,7 +29,8 @@
         "adFree": "Sin anuncios",
         "openSource": "Código Abierto",
         "linux": "Linux / Windows / macOS"
-      }
+      },
+      "previewAlt": "Captura del editor de Preset Forge mostrando la cadena de señal del GP-200 con slots de efectos y controles de parámetros."
     },
     "features": {
       "heading": "Qué puedes hacer aquí",
@@ -119,7 +120,8 @@
   "footer": {
     "disclaimer": "Preset Forge — Herramienta no oficial. No afiliada con Valeton.",
     "legal": "Aviso legal y privacidad",
-    "poweredBy": "powered by"
+    "poweredBy": "powered by",
+    "guides": "Guías"
   },
   "editor": {
     "title": "Editar Preset",
@@ -183,7 +185,8 @@
     },
     "audioSnippet": "Clip de audio (opcional)",
     "audioHint": "MP3 o M4A, máx 30 s y 2 MB. Se puede añadir/editar después en la página de compartir.",
-    "audioFailedRetryOnSharePage": "Preset guardado, pero el audio falló. Vuelve a intentarlo en la página de compartir."
+    "audioFailedRetryOnSharePage": "Preset guardado, pero el audio falló. Vuelve a intentarlo en la página de compartir.",
+    "mobileNotice": "El editor funciona mejor en un ordenador o tableta grande: arrastrar para reordenar y los controles finos son difíciles en pantallas táctiles pequeñas."
   },
   "auth": {
     "loginTitle": "Iniciar sesión",
@@ -708,5 +711,23 @@
     "title": "Algo salió mal",
     "body": "Hemos registrado el error automáticamente. Inténtalo de nuevo o vuelve a la página de inicio.",
     "retry": "Reintentar"
+  },
+  "amp": {
+    "metaTitle": "{name} – Presets gratuitos para Valeton GP-200 | Preset Forge",
+    "metaDescription": "Explora presets gratuitos para Valeton GP-200 basados en el {name}. Descarga cualquiera y ábrelo en el editor del navegador: funciona en Linux, Windows y macOS.",
+    "introCount": "{count, plural, one {# preset gratuito para Valeton GP-200 basado en el {name}.} other {# presets gratuitos para Valeton GP-200 basados en el {name}.}}",
+    "introEmpty": "Aún no hay presets para este amplificador. ¡Sé el primero en subir uno!",
+    "valetonModels": "{count, plural, one {Modelo Valeton:} other {Modelos Valeton:}}",
+    "breadcrumbAmp": "Amplificador",
+    "by": "por"
+  },
+  "guides": {
+    "title": "Guías",
+    "subtitle": "Guías detalladas para sacar más partido a tu Valeton GP-200.",
+    "readGuide": "Leer guía",
+    "inEnglish": "Inglés",
+    "allGuides": "Todas las guías",
+    "updated": "Actualizado",
+    "ctaEditor": "Abrir el editor"
   }
 }

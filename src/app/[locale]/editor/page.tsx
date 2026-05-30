@@ -492,20 +492,27 @@ export default function EditorPage() {
     setDragOverIndex(index);
   }, []);
 
-  const handleDrop = useCallback((toIndex: number) => {
-    if (dragIndex !== null) {
-      reorderEffects(dragIndex, toIndex);
-      // Send reorder to device: build new order array
-      if (midiDevice.status === 'connected' && preset) {
-        const order = preset.effects.map(e => e.slotIndex);
-        const [moved] = order.splice(dragIndex, 1);
-        order.splice(toIndex, 0, moved);
-        midiDevice.sendReorder(order, preset.fxLoopSend, preset.fxLoopReturn);
-      }
+  // Shared by drag-and-drop and keyboard reordering. Moves the slot at
+  // fromIndex to toIndex and mirrors the new order to the device. slotIndex
+  // (the immutable PRST block identity) is preserved by reorderEffects — only
+  // the array order changes.
+  const moveSlot = useCallback((fromIndex: number, toIndex: number) => {
+    if (!preset) return;
+    if (fromIndex === toIndex || toIndex < 0 || toIndex >= preset.effects.length) return;
+    reorderEffects(fromIndex, toIndex);
+    if (midiDevice.status === 'connected') {
+      const order = preset.effects.map(e => e.slotIndex);
+      const [moved] = order.splice(fromIndex, 1);
+      order.splice(toIndex, 0, moved);
+      midiDevice.sendReorder(order, preset.fxLoopSend, preset.fxLoopReturn);
     }
+  }, [preset, reorderEffects, midiDevice]);
+
+  const handleDrop = useCallback((toIndex: number) => {
+    if (dragIndex !== null) moveSlot(dragIndex, toIndex);
     setDragIndex(null);
     setDragOverIndex(null);
-  }, [dragIndex, reorderEffects, midiDevice, preset]);
+  }, [dragIndex, moveSlot]);
 
   const td = useTranslations('device');
 
@@ -690,6 +697,7 @@ export default function EditorPage() {
                 value={preset.patchName}
                 onChange={(e) => setPatchName(e.target.value)}
                 maxLength={16}
+                aria-label={t('patchName')}
                 data-testid="patch-name-input"
                 className="font-mono-display text-lg font-bold tracking-tight bg-transparent border-none outline-none min-w-0 flex-1"
                 style={{ color: 'var(--accent-amber)' }}
@@ -967,6 +975,16 @@ export default function EditorPage() {
         />
       )}
 
+      {/* Editor is desktop-first; flag the limitation to touch users (hidden
+          from md: up) before they hit drag-and-drop and the fine sliders. */}
+      <p
+        role="note"
+        className="md:hidden text-xs rounded-lg px-3 py-2 mb-3"
+        style={{ color: 'var(--text-secondary)', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}
+      >
+        {t('mobileNotice')}
+      </p>
+
       {/* Signal chain */}
       <div
         ref={viewMode === 'pedals' ? pedalGridRef : undefined}
@@ -984,7 +1002,11 @@ export default function EditorPage() {
           />
         )}
         {preset.effects.map((slot, i) => {
-          const slotKey = `${i}-${slot.effectId}`;
+          // Key on the immutable slotIndex, not the array position, so a
+          // reorder moves the existing DOM node instead of remounting it:
+          // keyboard focus follows the slot and the enter animation doesn't
+          // replay on every move.
+          const slotKey = `slot-${slot.slotIndex}`;
           const slotProps = {
             slot,
             index: i,
@@ -1012,6 +1034,10 @@ export default function EditorPage() {
             onDragOver: handleDragOver,
             onDrop: handleDrop,
             isDragOver: dragOverIndex === i && dragIndex !== i,
+            onMoveUp: (index: number) => moveSlot(index, index - 1),
+            onMoveDown: (index: number) => moveSlot(index, index + 1),
+            canMoveUp: i > 0,
+            canMoveDown: i < preset.effects.length - 1,
           };
           return viewMode === 'pedals'
             ? <EffectSlotCard key={slotKey} {...slotProps} />
