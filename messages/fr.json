@@ -710,5 +710,14 @@
     "title": "Une erreur est survenue",
     "body": "Nous avons enregistré l’erreur automatiquement. Réessaie ou retourne à l’accueil.",
     "retry": "Réessayer"
+  },
+  "amp": {
+    "metaTitle": "{name} – Presets gratuits pour Valeton GP-200 | Preset Forge",
+    "metaDescription": "Parcourez des presets gratuits pour Valeton GP-200 inspirés du {name}. Téléchargez-en un et ouvrez-le dans l'éditeur du navigateur : fonctionne sous Linux, Windows et macOS.",
+    "introCount": "{count, plural, one {# preset gratuit pour Valeton GP-200 inspiré du {name}.} other {# presets gratuits pour Valeton GP-200 inspirés du {name}.}}",
+    "introEmpty": "Aucun preset pour cet ampli pour l'instant. Soyez le premier à en partager un !",
+    "valetonModels": "{count, plural, one {Modèle Valeton :} other {Modèles Valeton :}}",
+    "breadcrumbAmp": "Ampli",
+    "by": "par"
   }
 }

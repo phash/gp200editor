@@ -710,5 +710,14 @@
     "title": "Da ist etwas schiefgegangen",
     "body": "Wir haben den Fehler automatisch protokolliert. Versuch es erneut oder kehre zur Startseite zurück.",
     "retry": "Erneut versuchen"
+  },
+  "amp": {
+    "metaTitle": "{name} – Kostenlose Valeton-GP-200-Presets | Preset Forge",
+    "metaDescription": "Kostenlose Valeton-GP-200-Presets nach dem Vorbild des {name}. Lade ein Preset herunter und öffne es im Browser-Editor – funktioniert unter Linux, Windows und macOS.",
+    "introCount": "{count, plural, one {# kostenloses Valeton-GP-200-Preset nach dem Vorbild des {name}.} other {# kostenlose Valeton-GP-200-Presets nach dem Vorbild des {name}.}}",
+    "introEmpty": "Noch keine Presets für diesen Amp. Lade als Erste:r eines hoch!",
+    "valetonModels": "{count, plural, one {Valeton-Modell:} other {Valeton-Modelle:}}",
+    "breadcrumbAmp": "Amp",
+    "by": "von"
   }
 }
