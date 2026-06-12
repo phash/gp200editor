@@ -40,6 +40,11 @@ function getTransporter(): CachedTransporter {
   const port = Number(process.env.MAIL_PORT ?? process.env.EMAIL_SMTP_PORT ?? 1025);
   const user = process.env.MAIL_USERNAME ?? process.env.EMAIL_SMTP_USER;
   const pass = process.env.MAIL_PASSWORD ?? process.env.EMAIL_SMTP_PASS;
+  // When the SMTP host resolves to the right server but the TLS cert is issued
+  // for a different hostname (e.g. preset-forge.com → 82.165.40.140, cert for
+  // mail.mr-development.de), set EMAIL_SMTP_TLS_SERVERNAME to the cert hostname
+  // so nodemailer sends the correct SNI and validation succeeds.
+  const tlsServername = process.env.EMAIL_SMTP_TLS_SERVERNAME;
 
   // Cast the pool-transporter to the non-pool Transporter shape we cache.
   // The two share the sendMail surface we use; the pool variant adds a
@@ -49,7 +54,10 @@ function getTransporter(): CachedTransporter {
     port,
     secure: port === 465,
     auth: user ? { user, pass } : undefined,
-    tls: { rejectUnauthorized: process.env.NODE_ENV === 'production' },
+    tls: {
+      rejectUnauthorized: process.env.NODE_ENV === 'production',
+      ...(tlsServername ? { servername: tlsServername } : {}),
+    },
     pool: true,
     maxConnections: 3,
     connectionTimeout: 10_000,
