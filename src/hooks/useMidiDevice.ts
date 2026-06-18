@@ -515,20 +515,24 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     output.send(SysExCodec.buildPresetChange(slot));
     await new Promise(r => setTimeout(r, 200));
 
-    // Step 2: Send all effects via live editing (toggle + params for each slot)
-    // Note: this can modify params and toggle state but NOT change effect IDs.
-    // Effect IDs require buildEffectChange (sub=0x14) which is not yet implemented.
+    // Step 2: Send all effects via live editing for each slot.
+    // Per block: set the effect TYPE first (buildEffectChange, sub=0x14), then
+    // params, then on/off state. Without the effect change the device keeps the
+    // algorithm it already had loaded and the params/toggle apply to the wrong
+    // effect, so the saved slot ends up as "whatever was already there" (#80).
     // IMPORTANT: Use array index i (block index 0-10), NOT eff.slotIndex (routing position).
     for (let i = 0; i < preset.effects.length; i++) {
       const eff = preset.effects[i];
-      output.send(SysExCodec.buildToggleEffect(i, eff.enabled));
-      await new Promise(r => setTimeout(r, 15));
+      output.send(SysExCodec.buildEffectChange(i, eff.effectId));
+      await new Promise(r => setTimeout(r, 30));
       for (let p = 0; p < eff.params.length; p++) {
         if (eff.params[p] !== undefined) {
           output.send(SysExCodec.buildParamChange(i, p, eff.effectId, eff.params[p]));
           await new Promise(r => setTimeout(r, 8));
         }
       }
+      output.send(SysExCodec.buildToggleEffect(i, eff.enabled));
+      await new Promise(r => setTimeout(r, 15));
     }
 
     // Step 3: Send author + save-commit to persist

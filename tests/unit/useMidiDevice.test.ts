@@ -276,4 +276,39 @@ describe('useMidiDevice', () => {
     expect(toggles[0].block).toBe(7);
     expect(toggles[0].enabled).toBe(true);
   });
+
+  // Regression for #80: loading/saving a preset must set each block's effect
+  // TYPE (sub=0x14), otherwise toggles + params land on whatever effect the
+  // device already had loaded and nothing transfers.
+  it('writePresetToSlot sends an effect-change (sub=0x14) for every block (#80)', async () => {
+    const { result } = renderHook(() => useMidiDevice());
+    await act(async () => { result.current.connect(); });
+    await waitFor(() => expect(result.current.status).toBe('connected'));
+
+    const preset = {
+      version: '1',
+      patchName: 'LoadTest',
+      author: 'Tester',
+      effects: Array.from({ length: 11 }, (_, i) => ({
+        slotIndex: i,
+        effectId: 0x07000055, // AMP Mess4 LD — module byte 0x07
+        enabled: true,
+        params: [50, 50],
+      })),
+      checksum: 0,
+      fxLoopSend: 4,
+      fxLoopReturn: 4,
+    };
+
+    const before = mockMidi.sentMessages.length;
+    await act(async () => { await result.current.writePresetToSlot(preset, 5); });
+
+    const sent = mockMidi.sentMessages.slice(before);
+    // Effect-change = CMD=0x12, sub=0x14, 54 bytes, block at [38], module at [52].
+    // Within writePresetToSlot this sub/length is unique to buildEffectChange.
+    const effectChanges = sent.filter(m => m.length === 54 && m[8] === 0x12 && m[9] === 0x14);
+    const blocks = effectChanges.map(m => m[38]).sort((a, b) => a - b);
+    expect(blocks).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(effectChanges.every(m => m[52] === 0x07)).toBe(true);
+  });
 });

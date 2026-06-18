@@ -93,7 +93,7 @@ export default function EditorPage() {
           setPresetNote(info.description ?? '');
         }
         // Send to device if connected (live preview, not saved)
-        sendPresetToDevice(decoded);
+        void sendPresetToDevice(decoded);
       })
       .catch(() => {
         setLoadError(t('loadError'));
@@ -202,18 +202,28 @@ export default function EditorPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [midiDevice.status]);
 
-  // Send all effect data to device for live preview (no save)
+  // Send all effect data to device for live preview (no save).
   // IMPORTANT: Use array index i (block index 0-10), NOT eff.slotIndex (routing position).
-  const sendPresetToDevice = useCallback((decoded: GP200Preset) => {
+  // Order per block matters: set the effect TYPE first (sub=0x14), then params,
+  // then the on/off state. Without the effect change the device keeps whatever
+  // algorithm it already had loaded and every param/toggle below lands on the
+  // wrong effect — i.e. nothing from the loaded file transfers (#80). Small
+  // settling delays mirror the proven writePresetToSlot flow so the device has
+  // time to switch algorithm before the params arrive.
+  const sendPresetToDevice = useCallback(async (decoded: GP200Preset) => {
     if (midiDevice.status !== 'connected') return;
     for (let i = 0; i < decoded.effects.length; i++) {
       const eff = decoded.effects[i];
-      midiDevice.sendToggle(i, eff.enabled);
+      midiDevice.sendEffectChange(i, eff.effectId);
+      await new Promise(r => setTimeout(r, 30));
       for (let p = 0; p < eff.params.length; p++) {
         if (eff.params[p] !== undefined) {
           midiDevice.sendParamChange(i, p, eff.effectId, eff.params[p]);
+          await new Promise(r => setTimeout(r, 8));
         }
       }
+      midiDevice.sendToggle(i, eff.enabled);
+      await new Promise(r => setTimeout(r, 10));
     }
     if (decoded.author) midiDevice.sendAuthor(decoded.author);
   }, [midiDevice]);
@@ -233,7 +243,7 @@ export default function EditorPage() {
         setImportedFromHLX(false);
       }
       loadPreset(decoded);
-      sendPresetToDevice(decoded);
+      void sendPresetToDevice(decoded);
       setLoadError(null);
       setSourcePreset(null);
     } catch (err) {

@@ -399,9 +399,9 @@ Typical flow after live edits: Save Commit -> Preset Change (re-select slot to c
 
 Swap an effect in a slot to a different algorithm. Also used for Controller/EXP assignments.
 
-**Status: Not yet implemented.** Capture TODO exists at `docs/capture-todo.md`. The format is known to be 54 bytes raw (not nibble-encoded). Byte[28] distinguishes effect change (0x00) from controller assignment (0x01).
+**Status: Implemented and hardware-verified** (`buildEffectChange`, captures 134828 COMP→COMP4→AC Boost + 143107 AMP→SnapTone). The format is 54 bytes raw (not nibble-encoded): raw[38]=block, raw[45:46]=variant nibble pair, raw[52]=module type. Sub-category byte (bits 16-23, e.g. 0x10 for User IR) position is still unknown — only regular effects (sub-category=0x00) are confirmed. Byte[28] distinguishes effect change (0x00) from controller assignment (0x01).
 
-Device responds with sub=0x0C (38 bytes) confirming the change.
+Sent per block (before params + toggle) when syncing a full preset to the device — both for live preview on load (`sendPresetToDevice`) and on save (`writePresetToSlot`). Device responds with sub=0x0C (38 bytes) confirming the change.
 
 ### 6.20 Reorder Response (CMD=0x12, sub=0x14, 54 bytes, D->H)
 
@@ -844,7 +844,7 @@ python scripts/analyze-sysex.py <capture.pcap>
 
 ## 16. Known Gaps / TODO
 
-- [ ] **Effect Change (sub=0x14, H->D):** Not implemented. Required to swap effect algorithms on a slot (e.g., Green OD -> Force). See `docs/capture-todo.md`.
+- [x] ~~**Effect Change (sub=0x14, H->D):**~~ Implemented + hardware-verified (`buildEffectChange`, captures 134828/143107) and now sent per block when syncing a full preset to the device (load + save). Sub-category byte (bits 16-23, e.g. User IR 0x10) position still unconfirmed.
 - [ ] **State Dump slot decoding:** sub=0x4E chunks received during handshake. Byte[10]=0x06 is NOT the slot. Actual slot position in nibble payload unknown. Currently defaults to slot 0.
 - [ ] **Header metadata bytes [14:28]:** Exact semantics in read format (BPM? Scene? Category?).
 - [ ] **Pre-name metadata bytes [24:36]:** Category/subcategory fields in write format.
