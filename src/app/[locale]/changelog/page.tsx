@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Link } from '@/i18n/routing';
 import { getChangelog } from '@/lib/changelog';
+import { ChangelogItemContent } from '@/components/ChangelogItemContent';
 import { buildAlternates, BASE_URL } from '@/lib/hreflang';
 import type { Locale } from '@/i18n/locales';
 
@@ -83,18 +84,10 @@ export default async function ChangelogPage({ params }: Props) {
                 </h3>
                 <ul className="space-y-2 text-sm">
                   {section.items.map((item, i) => (
-                    <li key={i} className="flex gap-2">
+                    <li key={i} className="flex gap-2 leading-relaxed">
                       <span style={{ color: 'var(--accent-amber)' }}>·</span>
                       <span>
-                        {item.title && (
-                          <strong style={{ color: 'var(--text-secondary)' }}>{item.title}</strong>
-                        )}
-                        {item.title && item.body && (
-                          <span style={{ color: 'var(--text-muted)' }}> — {item.body}</span>
-                        )}
-                        {!item.title && (
-                          <span style={{ color: 'var(--text-muted)' }}>{item.body}</span>
-                        )}
+                        <ChangelogItemContent item={item} />
                       </span>
                     </li>
                   ))}

@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/routing';
 import { getLatestUserFacingRelease } from '@/lib/changelog';
+import { ChangelogItemContent } from '@/components/ChangelogItemContent';
 import { serializeJsonLd } from '@/lib/jsonLd';
 import { FeaturedPresetBlock } from '@/components/FeaturedPresetBlock';
 import type { Locale } from '@/i18n/locales';
@@ -235,13 +236,7 @@ export default async function HomePage({ params }: Props) {
                     <li key={i} className="flex gap-2">
                       <span style={{ color: 'var(--accent-amber)' }}>·</span>
                       <span>
-                        {item.title && (
-                          <strong style={{ color: 'var(--text-secondary)' }}>{item.title}</strong>
-                        )}
-                        {item.title && item.body && (
-                          <span style={{ color: 'var(--text-muted)' }}> — {item.body}</span>
-                        )}
-                        {!item.title && <span style={{ color: 'var(--text-muted)' }}>{item.body}</span>}
+                        <ChangelogItemContent item={item} />
                       </span>
                     </li>
                   ))}
