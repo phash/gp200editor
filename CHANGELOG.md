@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-06-18
+
+### Fix
+- **Preset-Laden überträgt jetzt den Effekt-Typ ans Gerät (#80).** Beim Laden einer `.prst`-Datei – und beim Speichern in einen Slot – sendete der Editor nur Toggle, Parameter und Author per USB-MIDI, aber nie den Effekt-*Typ* selbst (SysEx `sub=0x14`). Das Gerät behielt dadurch seinen zuvor geladenen Algorithmus pro Block, sodass Parameter und An/Aus-Zustand auf dem falschen Effekt landeten (die App zeigte z. B. „UK 800", während das Gerät noch „Tweedy" hatte und keine Werte übernahm). Beide Sync-Pfade senden jetzt pro Block in der Reihenfolge Effektwechsel → Parameter → Toggle, mit kurzer Settling-Pause, damit das Gerät den Algorithmus umschalten kann, bevor die Parameter ankommen.
+
 ## 2026-05-19
 
 ### Security
