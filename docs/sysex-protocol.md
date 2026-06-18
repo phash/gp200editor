@@ -834,10 +834,18 @@ Large payloads indicate preset write data, not reorder/author.
 | 143029 | -- | Author "Manuel", Style "Green Day", Note "TestNote" |
 | 222343 | -- | Preset Change (slot switch) |
 
-Captures are located in `scripts/gp200-capture-*.pcap`. Analyze with:
+Captures are located in `scripts/gp200-capture-*.pcap`. Analyze a single file with:
 
 ```bash
 python scripts/analyze-sysex.py <capture.pcap>
+```
+
+A **full auto-generated catalog of every local capture** (categorised by SysEx
+content, plus a protocol fingerprint of all undecoded sub-commands) is at
+[`capture-catalog.md`](capture-catalog.md). Regenerate it with:
+
+```bash
+python scripts/build-capture-catalog.py
 ```
 
 ---

@@ -15,6 +15,9 @@ Dieses Format brauchen wir für:
 
 ### Capture-Anleitung
 
+> Einfachste Variante: das GUI-Tool `scripts/gp200-capture-gui.py` —
+> siehe [`capture-tool.md`](capture-tool.md). Manuell mit Wireshark:
+
 1. Wireshark + USBPcap starten (wie bei den anderen Captures)
 2. GP-200 per USB verbinden
 3. Valeton GP-200 Editor öffnen

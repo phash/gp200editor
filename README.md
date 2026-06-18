@@ -23,6 +23,25 @@ Preset Forge is the **only GP-200 editor that runs on Linux**. Tested on Linux M
 
 For USB MIDI on Linux: install Chrome or Chromium, connect the GP-200 via USB, and grant MIDI permission when the browser asks.
 
+## Reporting a USB problem (send a capture)
+
+Hit a bug with live USB editing — an effect won't switch, a preset won't save, an
+IR/NAM won't load? You can record the USB-MIDI traffic between your PC and the
+GP-200 and send it to us. That capture lets us reproduce and fix the issue.
+
+A small GUI tool makes this easy — no command line required:
+
+```bash
+python scripts/gp200-capture-gui.py        # Windows: run as Administrator
+```
+
+Connect the GP-200, pick the USB interface, click **Start**, reproduce the
+problem, click **Stop**, then attach the resulting `.pcap` file to a
+[GitHub issue](https://github.com/phash/gp200editor/issues).
+
+Full setup (Wireshark + USBPcap + Python/Tkinter), step-by-step instructions and
+troubleshooting: **[docs/capture-tool.md](docs/capture-tool.md)**.
+
 ## Features
 
 - **Preset Editor** — `.prst` files (1224 bytes, 11 slots, 305 effects, 15 parameters per effect). Pedalboard view with patch cables
