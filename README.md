@@ -17,6 +17,34 @@ Preset Forge lets you edit Valeton GP-200 multi-effects pedal presets (`.prst` f
 - **Share and discover presets** — community gallery with per-effect filtering across all 305 effects
 - **Admin dashboard** — user/preset management, error console with GitHub issue creation, audit log
 
+## Browser Compatibility
+
+**Editing presets** (loading, editing, and downloading `.prst` files) works in **any modern browser** on any OS — no special requirements.
+
+**Live USB MIDI editing** uses the [Web MIDI API with SysEx](https://developer.mozilla.org/en-US/docs/Web/API/Web_MIDI_API). The entire GP-200 protocol is SysEx, so a browser needs *Web MIDI **with** SysEx* support — which narrows it down to Chromium-based browsers:
+
+| Browser | Edit presets | Live USB MIDI (SysEx) |
+|---|---|---|
+| **Google Chrome / Chromium** (desktop) | ✅ | ✅ **Recommended** (since v43) |
+| **Microsoft Edge** (desktop) | ✅ | ✅ (since v79) |
+| **Brave / Opera / Vivaldi** (desktop) | ✅ | ✅ Chromium-based |
+| **Chrome / Chromium** (Android) | ✅ | ⚠️ Possible with a USB-OTG adapter, but unreliable |
+| **Firefox** (desktop, v108+) | ✅ | ⚠️ Not out of the box — requires installing a Mozilla [Site Permission Add-on](https://blog.karimratib.me/2022/04/23/firefox-webmidi.html), triggered by a user click. Not currently supported by Preset Forge. |
+| **Firefox** (Android) | ✅ | ❌ No Web MIDI |
+| **Safari** (macOS) | ✅ | ❌ No Web MIDI (any version) |
+| **Any browser on iOS / iPadOS** | ✅ | ❌ No Web MIDI — all iOS browsers use WebKit |
+
+**Short version: for live USB editing, use Chrome, Edge, or another Chromium-based browser on desktop.**
+
+### What you need for live USB MIDI to work
+
+1. **A Chromium-based desktop browser** — Chrome, Edge, Brave, Opera, or Chromium.
+2. **A secure connection (HTTPS).** Web MIDI only works on secure origins. [preset-forge.com](https://preset-forge.com) is served over HTTPS; `localhost` also counts for local development.
+3. **Allow the MIDI permission prompt.** Preset Forge requests **SysEx** access — click **Allow** when the browser asks. Without SysEx the GP-200 cannot be controlled.
+4. **A USB *data* cable** (not a charge-only cable) and the GP-200 powered on.
+5. **No other app holding the device.** Close the official Valeton editor, any DAW, or other MIDI software first — only one application can own the USB-MIDI port at a time.
+6. **Per OS:** Linux works via ALSA in Chrome/Chromium with no extra driver; Windows and macOS use the device's class-compliant USB-MIDI driver (no install needed). Safari is excluded on every OS.
+
 ## Linux Support
 
 Preset Forge is the **only GP-200 editor that runs on Linux**. Tested on Linux Mint with Chrome. The official Valeton software requires Windows.
