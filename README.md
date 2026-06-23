@@ -29,7 +29,7 @@ Preset Forge lets you edit Valeton GP-200 multi-effects pedal presets (`.prst` f
 | **Microsoft Edge** (desktop) | ✅ | ✅ (since v79) |
 | **Brave / Opera / Vivaldi** (desktop) | ✅ | ✅ Chromium-based |
 | **Chrome / Chromium** (Android) | ✅ | ⚠️ Possible with a USB-OTG adapter, but unreliable |
-| **Firefox** (desktop, v108+) | ✅ | ⚠️ Not out of the box — requires installing a Mozilla [Site Permission Add-on](https://blog.karimratib.me/2022/04/23/firefox-webmidi.html), triggered by a user click. Not currently supported by Preset Forge. |
+| **Firefox** (desktop, v108+) | ✅ | ✅ Works — on first use Firefox auto-prompts you to install its generated [MIDI site-permission add-on](https://developer.mozilla.org/en-US/docs/Web/API/Web_MIDI_API#browser_compatibility), then asks for MIDI permission like Chromium. Needs a secure context (HTTPS). |
 | **Firefox** (Android) | ✅ | ❌ No Web MIDI |
 | **Safari** (macOS) | ✅ | ❌ No Web MIDI (any version) |
 | **Any browser on iOS / iPadOS** | ✅ | ❌ No Web MIDI — all iOS browsers use WebKit |
@@ -38,7 +38,7 @@ Preset Forge lets you edit Valeton GP-200 multi-effects pedal presets (`.prst` f
 
 ### What you need for live USB MIDI to work
 
-1. **A Chromium-based desktop browser** — Chrome, Edge, Brave, Opera, or Chromium.
+1. **A Chromium-based desktop browser** — Chrome, Edge, Brave, Opera, or Chromium — **or Firefox 108+** (it auto-prompts a one-time MIDI add-on on first use).
 2. **A secure connection (HTTPS).** Web MIDI only works on secure origins. [preset-forge.com](https://preset-forge.com) is served over HTTPS; `localhost` also counts for local development.
 3. **Allow the MIDI permission prompt.** Preset Forge requests **SysEx** access — click **Allow** when the browser asks. Without SysEx the GP-200 cannot be controlled.
 4. **A USB *data* cable** (not a charge-only cable) and the GP-200 powered on.
