@@ -249,8 +249,7 @@ export default function EditorPage() {
     } catch (err) {
       setLoadError(`${t('loadError')}: ${err instanceof Error ? err.message : String(err)}`);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadPreset, t]);
+  }, [loadPreset, sendPresetToDevice, t]);
 
   // Local thin wrappers over the pure helpers in src/lib/presetDownload —
   // the editor page already has a preset in scope so callers don't need
