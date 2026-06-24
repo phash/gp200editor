@@ -137,6 +137,7 @@ export function useMidiSend(opts: UseMidiSendOpts): UseMidiSendReturn {
       if (!outputRef.current) return;
       suppressFxBriefly();
       const msg = SysExCodec.buildParamChange(blockIndex, paramIndex, effectId, value);
+      console.log(`[GP-200] param change: block=${blockIndex} param=${paramIndex} value=${value} effectId=0x${effectId.toString(16).padStart(8, '0')}`);
       outputRef.current.send(msg);
       // eslint-disable-next-line react-hooks/exhaustive-deps
     },

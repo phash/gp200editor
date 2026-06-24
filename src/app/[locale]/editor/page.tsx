@@ -207,15 +207,22 @@ export default function EditorPage() {
   // Order per block matters: set the effect TYPE first (sub=0x14), then params,
   // then the on/off state. Without the effect change the device keeps whatever
   // algorithm it already had loaded and every param/toggle below lands on the
-  // wrong effect — i.e. nothing from the loaded file transfers (#80). Small
-  // settling delays mirror the proven writePresetToSlot flow so the device has
-  // time to switch algorithm before the params arrive.
+  // wrong effect — i.e. nothing from the loaded file transfers (#80).
+  //
+  // #80 follow-up: after the stale-closure fix the effect-change + toggle landed
+  // but params did NOT — the freshly switched block sat on its default params.
+  // The block-level sub=0x14/0x10 messages apply instantly, but a param write
+  // (sub=0x18) targets a parameter *inside* the just-selected algorithm; if it
+  // arrives before the device has finished loading that algorithm it is dropped
+  // and the defaults remain. 30ms was too short. Give the device a generous
+  // settle after the effect change before writing its params.
+  const EFFECT_CHANGE_SETTLE_MS = 250;
   const sendPresetToDevice = useCallback(async (decoded: GP200Preset) => {
     if (midiDevice.status !== 'connected') return;
     for (let i = 0; i < decoded.effects.length; i++) {
       const eff = decoded.effects[i];
       midiDevice.sendEffectChange(i, eff.effectId);
-      await new Promise(r => setTimeout(r, 30));
+      await new Promise(r => setTimeout(r, EFFECT_CHANGE_SETTLE_MS));
       for (let p = 0; p < eff.params.length; p++) {
         if (eff.params[p] !== undefined) {
           midiDevice.sendParamChange(i, p, eff.effectId, eff.params[p]);

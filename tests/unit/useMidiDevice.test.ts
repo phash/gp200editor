@@ -311,4 +311,27 @@ describe('useMidiDevice', () => {
     expect(blocks).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     expect(effectChanges.every(m => m[52] === 0x07)).toBe(true);
   });
+
+  // Diagnostic instrumentation for #80: sendParamChange was the ONLY send helper
+  // without a console.log, so when a loaded preset's params failed to land the
+  // console showed effect-change + toggle but nothing for params — making it
+  // impossible to tell "not sent" from "sent but ignored by device". Guard the
+  // log so it can't silently regress again.
+  it('sendParamChange logs a [GP-200] param line (#80 diagnostic)', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const { result } = renderHook(() => useMidiDevice());
+    await act(async () => { result.current.connect(); });
+    await waitFor(() => expect(result.current.status).toBe('connected'));
+
+    logSpy.mockClear();
+    act(() => { result.current.sendParamChange(8, 0, 0x0B000004, 50.0); });
+
+    const paramLogs = logSpy.mock.calls
+      .map((c) => String(c[0]))
+      .filter((s) => s.includes('[GP-200] param'));
+    expect(paramLogs).toHaveLength(1);
+    expect(paramLogs[0]).toContain('block=8');
+    expect(paramLogs[0]).toContain('param=0');
+    logSpy.mockRestore();
+  });
 });
