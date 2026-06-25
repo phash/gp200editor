@@ -25,6 +25,7 @@ import { AddToPlaylistDialog } from '@/components/AddToPlaylistDialog';
 import { GuitarRating } from '@/components/GuitarRating';
 import { SysExCodec } from '@/core/SysExCodec';
 import { convertHLX } from '@/core/HLXConverter';
+import { pushPresetToDevice } from '@/core/devicePush';
 import type { GP200Preset } from '@/core/types';
 
 const PRESET_STYLES = [
@@ -202,37 +203,18 @@ export default function EditorPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [midiDevice.status]);
 
-  // Send all effect data to device for live preview (no save).
-  // IMPORTANT: Use array index i (block index 0-10), NOT eff.slotIndex (routing position).
-  // Order per block matters: set the effect TYPE first (sub=0x14), then params,
-  // then the on/off state. Without the effect change the device keeps whatever
-  // algorithm it already had loaded and every param/toggle below lands on the
-  // wrong effect — i.e. nothing from the loaded file transfers (#80).
-  //
-  // #80 follow-up: after the stale-closure fix the effect-change + toggle landed
-  // but params did NOT — the freshly switched block sat on its default params.
-  // The block-level sub=0x14/0x10 messages apply instantly, but a param write
-  // (sub=0x18) targets a parameter *inside* the just-selected algorithm; if it
-  // arrives before the device has finished loading that algorithm it is dropped
-  // and the defaults remain. 30ms was too short. Give the device a generous
-  // settle after the effect change before writing its params.
-  const EFFECT_CHANGE_SETTLE_MS = 250;
+  // Send all effect data to device for live preview (no save). The per-block
+  // sequence (effect type → settle → params → toggle) and the #80 timing/
+  // second-pass logic live in the unit-tested core helper. Block index i (0-10)
+  // is used as the device block, NOT eff.slotIndex (routing position).
   const sendPresetToDevice = useCallback(async (decoded: GP200Preset) => {
     if (midiDevice.status !== 'connected') return;
-    for (let i = 0; i < decoded.effects.length; i++) {
-      const eff = decoded.effects[i];
-      midiDevice.sendEffectChange(i, eff.effectId);
-      await new Promise(r => setTimeout(r, EFFECT_CHANGE_SETTLE_MS));
-      for (let p = 0; p < eff.params.length; p++) {
-        if (eff.params[p] !== undefined) {
-          midiDevice.sendParamChange(i, p, eff.effectId, eff.params[p]);
-          await new Promise(r => setTimeout(r, 8));
-        }
-      }
-      midiDevice.sendToggle(i, eff.enabled);
-      await new Promise(r => setTimeout(r, 10));
-    }
-    if (decoded.author) midiDevice.sendAuthor(decoded.author);
+    await pushPresetToDevice(decoded, {
+      sendEffectChange: midiDevice.sendEffectChange,
+      sendParamChange: midiDevice.sendParamChange,
+      sendToggle: midiDevice.sendToggle,
+      sendAuthor: midiDevice.sendAuthor,
+    });
   }, [midiDevice]);
 
   const handleFile = useCallback((buffer: Uint8Array, filename: string) => {
