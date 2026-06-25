@@ -5,7 +5,15 @@ Preset Forge kann jetzt Presets auf dem GP-200 speichern (Save-Commit),
 aber **nicht vollständig auf andere Slots schreiben** (Write-Chunks gehen,
 aber Effekt-IDs können nicht geändert werden).
 
-## Was fehlt: buildEffectChange (sub=0x14)
+## ✅ Erledigt: buildEffectChange (sub=0x14)
+
+> **Status: implementiert & hardware-verifiziert** (Issue #58 geschlossen 2026-06-25).
+> Decodiert als `SysExCodec.buildEffectChange` (`src/core/SysExCodec.ts`), gesendet via
+> `sendEffectChange` (`src/hooks/useMidiSend.ts`) und im Write-to-Slot-Pfad
+> (`src/hooks/useMidiDevice.ts`). Unit-Tests in `tests/unit/SysExCodec.test.ts` +
+> `tests/unit/useMidiDevice.test.ts`. Format: raw[38]=block, raw[45:47]=variant
+> (nibble), raw[52]=module type. Am Gerät bestätigt (#80: „manual effect changes work").
+> Die folgende Capture-Anleitung ist nur noch historische Referenz.
 
 Wenn man am Gerät oder in der Valeton-Software einen Effekt in einem Slot
 **austauscht** (z.B. Green OD → Force), sendet die Software sub=0x14 (54 Bytes, raw).
@@ -13,7 +21,7 @@ Dieses Format brauchen wir für:
 - Preset von Datei auf Gerät laden (alle Effekte setzen)
 - Slot-Tausch in der Bank (verschiedene Effekte)
 
-### Capture-Anleitung
+### Capture-Anleitung (historisch)
 
 > Einfachste Variante: das GUI-Tool `scripts/gp200-capture-gui.py` —
 > siehe [`capture-tool.md`](capture-tool.md). Manuell mit Wireshark:
