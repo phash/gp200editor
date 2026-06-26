@@ -49,14 +49,15 @@ describe('pushPresetToDevice', () => {
 
     const nonSleep = events.filter((e) => !e.startsWith('sleep:'));
 
-    // Pass 1 sends fx + params + toggle per block; pass 2 re-sends only params.
-    // Each param must therefore appear exactly twice.
+    // Per block, params go 0..N then param 0 is re-sent at the end (see the
+    // param-0 test below). Both passes do this. So for block 0 ([5,6]) each pass
+    // emits 0,1,0 and for block 1 ([7]) each pass emits 0,0.
     const paramEvents = nonSleep.filter((e) => e.startsWith('param:'));
     expect(paramEvents).toEqual([
-      'param:0:0:5', 'param:0:1:6', // block 0, pass 1
-      'param:1:0:7',                // block 1, pass 1
-      'param:0:0:5', 'param:0:1:6', // block 0, pass 2
-      'param:1:0:7',                // block 1, pass 2
+      'param:0:0:5', 'param:0:1:6', 'param:0:0:5', // block 0, pass 1 (+ re-send p0)
+      'param:1:0:7', 'param:1:0:7',                // block 1, pass 1 (+ re-send p0)
+      'param:0:0:5', 'param:0:1:6', 'param:0:0:5', // block 0, pass 2
+      'param:1:0:7', 'param:1:0:7',                // block 1, pass 2
     ]);
 
     // The whole second pass must come AFTER every effect-change and toggle,
@@ -64,9 +65,25 @@ describe('pushPresetToDevice', () => {
     const lastToggleIdx = nonSleep.map((e) => e.startsWith('toggle:')).lastIndexOf(true);
     const afterToggles = nonSleep.slice(lastToggleIdx + 1);
     expect(afterToggles.filter((e) => e.startsWith('param:'))).toEqual([
-      'param:0:0:5', 'param:0:1:6', 'param:1:0:7',
+      'param:0:0:5', 'param:0:1:6', 'param:0:0:5', 'param:1:0:7', 'param:1:0:7',
     ]);
     expect(afterToggles.some((e) => e.startsWith('fx:') || e.startsWith('toggle:'))).toBe(false);
+  });
+
+  it('re-sends param 0 at the end of each block so it is never the swallowed first message', async () => {
+    const { events, sender, sleep } = makeRecorder();
+    await pushPresetToDevice(twoBlockPreset(), sender, { sleep });
+    const nonSleep = events.filter((e) => !e.startsWith('sleep:'));
+
+    // The device swallows the FIRST param-change of a block's burst (it opens the
+    // block's edit context), so param 0 — always sent first — never lands unless
+    // re-sent. Within block 0's pass-1 params, the sequence must be 0,1,0.
+    const fx0 = nonSleep.indexOf('fx:0:17');
+    const toggle0 = nonSleep.indexOf('toggle:0:true');
+    const block0Params = nonSleep.slice(fx0 + 1, toggle0);
+    expect(block0Params).toEqual(['param:0:0:5', 'param:0:1:6', 'param:0:0:5']);
+    // ...and the last param of that block's burst is param 0 (not param 1).
+    expect(block0Params[block0Params.length - 1]).toBe('param:0:0:5');
   });
 
   it('sends the author last, after both param passes', async () => {
