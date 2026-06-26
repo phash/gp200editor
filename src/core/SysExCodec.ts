@@ -2,6 +2,30 @@ import type { GP200Preset } from './types';
 import { GP200PresetSchema } from './types';
 
 export const SysExCodec = {
+  /**
+   * Encode a parameter value into the 2-byte logarithmic "display value" field
+   * that lives at decoded[14:16] of a Param Change message (#80).
+   *
+   * Reverse-engineered from the Valeton knob-sweep capture
+   * (gp200-capture-20260412-143552.pcap): the field is a custom log encoding,
+   * identical across params for the same value, fit (±1 LSB) by
+   *   u16 = round(16367 + 16 * log2(value))
+   * with value <= 0 mapping to 0. Returns [lowByte, highByte] (LE) for
+   * decoded[14], decoded[15].
+   *
+   * The device reads THIS field (not the float32 at [20:24]) for the first
+   * parameter of a block, which is why hardcoding 0x6F there zeroed param 0.
+   */
+  encodeDisplayValue(value: number): Uint8Array {
+    let u16 = 0;
+    if (value > 0) {
+      u16 = Math.round(16367 + 16 * Math.log2(value));
+      if (u16 < 0) u16 = 0;
+      if (u16 > 0xFFFF) u16 = 0xFFFF;
+    }
+    return new Uint8Array([u16 & 0xFF, (u16 >> 8) & 0xFF]);
+  },
+
   nibbleDecode(data: Uint8Array): Uint8Array {
     const out = new Uint8Array(Math.floor(data.length / 2));
     for (let i = 0; i < out.length; i++) {
@@ -478,7 +502,12 @@ export const SysExCodec = {
     decoded[10] = 0x0C;                         // constant
     decoded[12] = blockIndex;                   // 0-10
     decoded[13] = paramIndex;                   // 0-14
-    decoded[14] = 0x6F;                         // marker (0xFA for Combox controls)
+    // decoded[14:16] = logarithmic display-value field. The device reads this
+    // (not the float32 below) for a block's FIRST parameter, so the old constant
+    // 0x6F made param 0 of every effect land at 0 (#80). Encode the real value.
+    const disp = this.encodeDisplayValue(value);
+    decoded[14] = disp[0];
+    decoded[15] = disp[1];
     view.setUint32(16, effectId, true);         // effect code LE
     view.setFloat32(20, value, true);           // parameter value
 
