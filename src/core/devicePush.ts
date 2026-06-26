@@ -60,6 +60,15 @@ export async function pushPresetToDevice(
         await sleep(paramGap);
       }
     }
+    // Re-send param 0 at the end of the block's burst. The device swallows the
+    // FIRST param-change of a block (it opens the block's edit context), so
+    // param 0 — always sent first — never lands during a load, even though the
+    // identical message works when sent alone (manual knob edit). Re-sending it
+    // after the others, when the context is already open, makes it stick (#80).
+    if (eff.params.length > 0 && eff.params[0] !== undefined) {
+      sender.sendParamChange(i, 0, eff.effectId, eff.params[0]);
+      await sleep(paramGap);
+    }
   };
 
   // Pass 1: per block — effect type, settle, params, toggle.
