@@ -670,7 +670,10 @@ describe('SysExCodec: buildParamChange', () => {
     expect(decoded[2]).toBe(0x04);
     expect(decoded[8]).toBe(0x05);
     expect(decoded[10]).toBe(0x0C);
-    expect(decoded[14]).toBe(0x6F);
+    // decoded[14:16] = logarithmic display-value field for value 43.0 (#80),
+    // no longer a constant 0x6F marker.
+    expect(decoded[14]).toBe(0x46);
+    expect(decoded[15]).toBe(0x40);
     // Block + param
     expect(decoded[12]).toBe(8);   // DLY
     expect(decoded[13]).toBe(0);   // Mix
@@ -1108,5 +1111,48 @@ describe('SysExCodec: buildWriteChunks fxLoop', () => {
     const decoded = SysExCodec.nibbleDecode(new Uint8Array(allNibbles));
     expect(decoded[114]).toBe(6);
     expect(decoded[115]).toBe(7);
+  });
+});
+
+/**
+ * Param Change display-value field (decoded[14:16]) — #80.
+ *
+ * Decoding the real Valeton knob-sweep capture (gp200-capture-20260412-143552.pcap,
+ * 1086 param writes) showed decoded[14:16] is NOT a constant 0x6F "marker" — it is a
+ * logarithmic display-value field that the device reads for the *first* parameter of a
+ * block. The fit, verified across params 1/5/6 and value range 0..19929 (±1 LSB):
+ *
+ *   u16 = round(16367 + 16 * log2(value)) ; decoded[14]=u16&0xFF, decoded[15]=u16>>8
+ *   value <= 0  ->  u16 = 0
+ *
+ * Hardcoding 0x6F (~value 256 on this scale, which the device remaps toward 0) is why
+ * param 0 of every effect landed at 0 while params 1-14 (read from float32 at [20:24])
+ * were correct.
+ */
+function decodeParamMessage(msg: Uint8Array): Uint8Array {
+  // header is 13 bytes, trailing 0xF7; the rest is nibble-encoded payload
+  return SysExCodec.nibbleDecode(msg.slice(13, msg.length - 1));
+}
+
+describe('SysExCodec: param-change display-value field (#80)', () => {
+  it('encodeDisplayValue matches captured Valeton values', () => {
+    expect(Array.from(SysExCodec.encodeDisplayValue(0))).toEqual([0x00, 0x00]);
+    expect(Array.from(SysExCodec.encodeDisplayValue(27))).toEqual([0x3b, 0x40]);
+    expect(Array.from(SysExCodec.encodeDisplayValue(100))).toEqual([0x59, 0x40]);
+    expect(Array.from(SysExCodec.encodeDisplayValue(56))).toEqual([0x4c, 0x40]);
+  });
+
+  it('encodeDisplayValue falls back to 0x0000 for non-positive values', () => {
+    expect(Array.from(SysExCodec.encodeDisplayValue(-3))).toEqual([0x00, 0x00]);
+    expect(Array.from(SysExCodec.encodeDisplayValue(0))).toEqual([0x00, 0x00]);
+  });
+
+  it('buildParamChange writes the display-value field at decoded[14:16], not a 0x6F marker', () => {
+    const msg = SysExCodec.buildParamChange(0, 0, 0x00000003, 27);
+    const dec = decodeParamMessage(msg);
+    expect(dec[13]).toBe(0);         // param index preserved
+    expect(dec[14]).toBe(0x3b);      // display-value low byte (was hardcoded 0x6F)
+    expect(dec[15]).toBe(0x40);      // display-value high byte (was 0x00)
+    expect(new DataView(dec.buffer).getFloat32(20, true)).toBe(27); // float32 still set
   });
 });
