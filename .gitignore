@@ -50,12 +50,13 @@ next-env.d.ts
 
 # Third-party/external files
 /others
-caps/
 
 # Large binary/data directories
 official/
 others/
 caps/
+scripts/*.pcap
+__pycache__/
 screens/
 .playwright-mcp/
 planung/
