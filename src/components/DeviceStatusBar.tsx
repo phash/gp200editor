@@ -1,6 +1,7 @@
 'use client';
 import { useTranslations } from 'next-intl';
 import type { UseMidiDeviceReturn } from '@/hooks/useMidiDevice';
+import type { PushProgress } from '@/core/devicePush';
 import { SysExCodec } from '@/core/SysExCodec';
 // Firmware compat uses versionAccepted from handshake, not string matching
 import { useState, useEffect } from 'react';
@@ -13,6 +14,8 @@ interface DeviceStatusBarProps {
   onPushRequest: () => void;
   onSaveToActiveSlot?: () => Promise<void>;
   onPresetNameChange?: (name: string) => void;
+  /** Live-push progress while a freshly loaded preset is sent to the device. */
+  pushProgress?: PushProgress | null;
 }
 
 export function DeviceStatusBar({
@@ -23,6 +26,7 @@ export function DeviceStatusBar({
   onPushRequest,
   onSaveToActiveSlot,
   onPresetNameChange,
+  pushProgress,
 }: DeviceStatusBarProps) {
   const t = useTranslations('device');
   const { status, errorMessage, currentSlot, connect, disconnect } = midiDevice;
@@ -139,6 +143,38 @@ export function DeviceStatusBar({
         <span className="font-mono-display" style={{ color: 'var(--accent-red)', fontSize: '0.8em' }}>
           {errorMessage ?? t('error')}
         </span>
+      )}
+
+      {/* Live-push progress (non-blocking — user can keep editing) */}
+      {pushProgress && (
+        <div
+          className="flex items-center gap-2 font-mono-display"
+          style={{ fontSize: '0.75em', color: pushProgress.phase === 'done' ? 'var(--accent-green)' : 'var(--accent-amber)' }}
+          data-testid="push-progress"
+          role="status"
+          aria-live="polite"
+        >
+          {pushProgress.phase === 'done' ? (
+            <span>✓ {t('pushDone')}</span>
+          ) : (
+            <>
+              <span>{t('pushing')}</span>
+              <span
+                aria-hidden
+                style={{ position: 'relative', width: 56, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}
+              >
+                <span
+                  style={{
+                    position: 'absolute', insetBlock: 0, left: 0,
+                    width: `${pushProgress.total > 0 ? Math.round((pushProgress.completed / pushProgress.total) * 100) : 0}%`,
+                    background: 'var(--accent-amber)', transition: 'width 0.2s linear',
+                  }}
+                />
+              </span>
+              <span style={{ color: 'var(--text-muted)' }}>{pushProgress.completed}/{pushProgress.total}</span>
+            </>
+          )}
+        </div>
       )}
 
       {/* Actions */}

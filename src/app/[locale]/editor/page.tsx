@@ -25,7 +25,7 @@ import { AddToPlaylistDialog } from '@/components/AddToPlaylistDialog';
 import { GuitarRating } from '@/components/GuitarRating';
 import { SysExCodec } from '@/core/SysExCodec';
 import { convertHLX } from '@/core/HLXConverter';
-import { pushPresetToDevice } from '@/core/devicePush';
+import { pushPresetToDevice, type PushProgress } from '@/core/devicePush';
 import type { GP200Preset } from '@/core/types';
 
 const PRESET_STYLES = [
@@ -64,6 +64,11 @@ export default function EditorPage() {
   const [showPresetInfo, setShowPresetInfo] = useState(true);
   const [showController, setShowController] = useState(false);
   const pedalGridRef = useRef<HTMLDivElement>(null);
+  // Live-push to device: progress for the UI + an abort handle so loading a new
+  // preset cancels the in-flight push (a full push takes ~15s — two overlapping
+  // pushes would interleave their param writes and corrupt the device).
+  const [pushProgress, setPushProgress] = useState<PushProgress | null>(null);
+  const pushAbortRef = useRef<AbortController | null>(null);
   // Track source preset when loaded from gallery (for update vs save-as-new)
   const [sourcePreset, setSourcePreset] = useState<{ id: string; username: string; author: string; style: string; description: string } | null>(null);
   const [importedFromHLX, setImportedFromHLX] = useState(false);
@@ -209,13 +214,46 @@ export default function EditorPage() {
   // is used as the device block, NOT eff.slotIndex (routing position).
   const sendPresetToDevice = useCallback(async (decoded: GP200Preset) => {
     if (midiDevice.status !== 'connected') return;
-    await pushPresetToDevice(decoded, {
-      sendEffectChange: midiDevice.sendEffectChange,
-      sendParamChange: midiDevice.sendParamChange,
-      sendToggle: midiDevice.sendToggle,
-      sendAuthor: midiDevice.sendAuthor,
-    });
+    // Cancel any push still in flight so two loads never interleave on the device.
+    pushAbortRef.current?.abort();
+    const ac = new AbortController();
+    pushAbortRef.current = ac;
+    setPushProgress({ completed: 0, total: decoded.effects.length * 2, phase: 'configuring' });
+    try {
+      await pushPresetToDevice(
+        decoded,
+        {
+          sendEffectChange: midiDevice.sendEffectChange,
+          sendParamChange: midiDevice.sendParamChange,
+          sendToggle: midiDevice.sendToggle,
+          sendAuthor: midiDevice.sendAuthor,
+        },
+        {
+          signal: ac.signal,
+          // Ignore late callbacks from a push that has since been superseded.
+          onProgress: (p: PushProgress) => { if (!ac.signal.aborted) setPushProgress(p); },
+        },
+      );
+    } finally {
+      if (pushAbortRef.current === ac) pushAbortRef.current = null;
+    }
   }, [midiDevice]);
+
+  // Clear the "done" indicator a moment after a push finishes.
+  useEffect(() => {
+    if (pushProgress?.phase !== 'done') return;
+    const id = setTimeout(() => setPushProgress(null), 2000);
+    return () => clearTimeout(id);
+  }, [pushProgress]);
+
+  // Abort an in-flight push (and hide the indicator) the moment the device drops.
+  useEffect(() => {
+    if (midiDevice.status !== 'connected') {
+      pushAbortRef.current?.abort();
+      pushAbortRef.current = null;
+      setPushProgress(null);
+    }
+  }, [midiDevice.status]);
 
   const handleFile = useCallback((buffer: Uint8Array, filename: string) => {
     try {
@@ -597,6 +635,7 @@ export default function EditorPage() {
           onPushRequest={() => handleOpenBrowser('push')}
           onSaveToActiveSlot={midiDevice.status === 'connected' ? handleSaveToActiveSlot : undefined}
           onPresetNameChange={preset ? (name: string) => setPatchName(name) : undefined}
+          pushProgress={pushProgress}
         />
       </div>
 

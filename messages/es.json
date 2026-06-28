@@ -343,7 +343,9 @@
     "confirmSaveToSlot": "¿Guardar »{name}« en el slot {slot}?",
     "savingToSlot": "Guardando en {slot}…",
     "confirmSave": "Guardar",
-    "cancelSave": "Cancelar"
+    "cancelSave": "Cancelar",
+    "pushing": "Enviando al dispositivo…",
+    "pushDone": "Enviado al dispositivo"
   },
   "help": {
     "title": "Ayuda",

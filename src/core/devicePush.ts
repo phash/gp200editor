@@ -11,6 +11,15 @@ export interface PresetPushSender {
   sendAuthor: (author: string) => void;
 }
 
+export interface PushProgress {
+  /** completed work units — one per block per pass */
+  completed: number;
+  /** total work units = blocks × 2 passes */
+  total: number;
+  /** 'configuring' = pass 1, 'finalizing' = pass 2, 'done' = fully sent */
+  phase: 'configuring' | 'finalizing' | 'done';
+}
+
 export interface PresetPushOptions {
   /** ms to wait after an effect change before writing that block's params */
   effectChangeSettleMs?: number;
@@ -20,6 +29,14 @@ export interface PresetPushOptions {
   interBlockDelayMs?: number;
   /** Injectable sleep — overridden in tests to record timing without waiting. */
   sleep?: (ms: number) => Promise<void>;
+  /**
+   * Aborts the push mid-flight. A full push takes ~15s; if the user loads
+   * another preset meanwhile the caller aborts the in-flight one so two pushes
+   * never interleave their param writes on the device.
+   */
+  signal?: AbortSignal;
+  /** Progress callback, fired after each block and once more when done. */
+  onProgress?: (progress: PushProgress) => void;
 }
 
 const defaultSleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -58,6 +75,10 @@ export async function pushPresetToDevice(
   const paramGap = options.interParamDelayMs ?? 40;
   const blockGap = options.interBlockDelayMs ?? 10;
   const sleep = options.sleep ?? defaultSleep;
+  const { signal, onProgress } = options;
+
+  const total = decoded.effects.length * 2; // pass 1 + pass 2
+  let completed = 0;
 
   const sendBlockParams = async (i: number, eff: GP200Preset['effects'][number]) => {
     for (let p = 0; p < eff.params.length; p++) {
@@ -79,19 +100,28 @@ export async function pushPresetToDevice(
 
   // Pass 1: per block — effect type, settle, params, toggle.
   for (let i = 0; i < decoded.effects.length; i++) {
+    if (signal?.aborted) return;
     const eff = decoded.effects[i];
     sender.sendEffectChange(i, eff.effectId);
     await sleep(settle);
+    if (signal?.aborted) return;
     await sendBlockParams(i, eff);
     sender.sendToggle(i, eff.enabled);
     await sleep(blockGap);
+    completed += 1;
+    onProgress?.({ completed, total, phase: 'configuring' });
   }
 
   // Pass 2: every algorithm is loaded now — re-send all params so writes that
   // raced a still-loading block in pass 1 are applied (#80).
   for (let i = 0; i < decoded.effects.length; i++) {
+    if (signal?.aborted) return;
     await sendBlockParams(i, decoded.effects[i]);
+    completed += 1;
+    onProgress?.({ completed, total, phase: 'finalizing' });
   }
 
+  if (signal?.aborted) return;
   if (decoded.author) sender.sendAuthor(decoded.author);
+  onProgress?.({ completed: total, total, phase: 'done' });
 }
