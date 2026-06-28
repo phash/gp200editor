@@ -49,7 +49,13 @@ export async function pushPresetToDevice(
   options: PresetPushOptions = {},
 ): Promise<void> {
   const settle = options.effectChangeSettleMs ?? 400;
-  const paramGap = options.interParamDelayMs ?? 8;
+  // 40ms between param writes. USB captures of real device/editor traffic show
+  // the GP-200 never receives two *different* params closer than ~124ms apart,
+  // and even same-target knob sweeps never drop below ~19ms. Our former 8ms
+  // burst is a cadence the device never sees in the wild and it swallows it
+  // (the dropped first-param-of-block was the #80 symptom). 40ms sits clear of
+  // the device's processing window while keeping a full load reasonably fast.
+  const paramGap = options.interParamDelayMs ?? 40;
   const blockGap = options.interBlockDelayMs ?? 10;
   const sleep = options.sleep ?? defaultSleep;
 
