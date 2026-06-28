@@ -86,6 +86,22 @@ describe('pushPresetToDevice', () => {
     expect(block0Params[block0Params.length - 1]).toBe('param:0:0:5');
   });
 
+  it('spaces consecutive param writes by 40ms so the device does not drop the burst (#80)', async () => {
+    const { events, sender, sleep } = makeRecorder();
+    await pushPresetToDevice(twoBlockPreset(), sender, { sleep });
+
+    // Real USB captures show the GP-200 never receives two *different* params
+    // closer than ~124ms, and even same-target knob sweeps never go below ~19ms.
+    // Our former 8ms burst is a pattern the device never sees in the wild — it
+    // swallows it. Each param write is now followed by a 40ms gap by default,
+    // comfortably above the device's processing window (#80).
+    events.forEach((e, i) => {
+      if (e.startsWith('param:')) {
+        expect(events[i + 1]).toBe('sleep:40');
+      }
+    });
+  });
+
   it('sends the author last, after both param passes', async () => {
     const { events, sender, sleep } = makeRecorder();
     await pushPresetToDevice(twoBlockPreset(), sender, { sleep });
