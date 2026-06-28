@@ -86,6 +86,7 @@ src/
 
 - **Status:** SysEx-Protokoll reverse-engineered ✓, Web MIDI Live-Editing hardware-verifiziert ✓
 - **Code:** `src/core/SysExCodec.ts`, `src/hooks/useMidiDevice.ts`, `src/hooks/useMidiSend.ts`
+- **Live-Push beim Preset-Laden:** `src/core/devicePush.ts` — Sequenz effect-change→400ms settle→params (40ms gespaced)→toggle, 2 Pässe, param0-Re-Send, abbrechbar via `AbortSignal` + `onProgress` (#80)
 - **Vollständiges SysEx-Protokoll:** **`docs/sysex-protocol.md`**
 - Web MIDI nur in Chrome/Edge (kein Firefox/Safari)
 - **Nie `loadPresetNames` ohne Abbruchmechanismus** — kann Firmware-Update-Popup auslösen
@@ -105,6 +106,7 @@ src/
 | Library / Preset-Ingest | [`docs/library-ingest.md`](docs/library-ingest.md) |
 | SysEx-Protokoll (USB MIDI) | [`docs/sysex-protocol.md`](docs/sysex-protocol.md) |
 | Deployment + Docker + Hardware | [`docs/deployment.md`](docs/deployment.md) |
+| USB-Capture-Analyse (SysEx RE) | [`docs/capture-catalog.md`](docs/capture-catalog.md) · `scripts/analyze-sysex.py <cap.pcap>` · `scripts/build-capture-catalog.py` (Rohdaten in `caps/`, gitignored) |
 
 ---
 
@@ -142,6 +144,7 @@ src/
 - `next-intl` `requireVerifiedUser` ohne `refreshSessionCookie` — ist intern schon drin
 - `z.instanceof(Uint8Array)` mit einem Node `Buffer` füttern — `fs.readFileSync()` gibt `Buffer` zurück, Zod v4 lehnt das ab. Immer `new Uint8Array(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength))`
 - `slotIndex` in Reorder-Operationen überschreiben — `slotIndex` ist die PRST-Block-Identität (0=PRE, …10=VOL), unveränderlich. Drag&Drop ändert nur Array-Order, nie `slotIndex`
+- `interParamDelayMs` in `devicePush.ts` unter ~40ms setzen — das Gerät schluckt schnelle Param-Bursts (erste Param-Change je Block geht verloren); echte Captures zeigen nie <19ms zwischen Param-Writes (#80)
 - `@import url('https://fonts.googleapis.com/...')` oder andere externe Font-CDNs — Fonts laufen via `next/font/google` (Build-Time self-host); externe Imports brechen DSGVO-Compliance (LG München 3 O 17493/20)
 - Matomo-Script ohne `_paq.push(["disableCookies"])` + `_paq.push(["setDoNotTrack", true])` deployen — beide Flags MÜSSEN vor `trackPageView` stehen, sonst widerspricht der Code der Datenschutzerklärung
 - `youtube.com/embed/...` für Iframes verwenden — IMMER `youtube-nocookie.com/embed/...` (CSP `frame-src` erlaubt nur die nocookie-Domain)
