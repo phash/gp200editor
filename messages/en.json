@@ -343,7 +343,9 @@
     "confirmSaveToSlot": "Save »{name}« to slot {slot}?",
     "savingToSlot": "Saving to {slot}…",
     "confirmSave": "Save",
-    "cancelSave": "Cancel"
+    "cancelSave": "Cancel",
+    "pushing": "Sending to device…",
+    "pushDone": "Sent to device"
   },
   "help": {
     "title": "Help",

@@ -108,4 +108,40 @@ describe('pushPresetToDevice', () => {
     const nonSleep = events.filter((e) => !e.startsWith('sleep:'));
     expect(nonSleep[nonSleep.length - 1]).toBe('author:Tester');
   });
+
+  it('stops sending once the abort signal fires (no overlapping pushes)', async () => {
+    const { events, sender } = makeRecorder();
+    const ac = new AbortController();
+    // Abort during the very first effect-change settle.
+    let sleeps = 0;
+    const sleep = async () => {
+      sleeps += 1;
+      if (sleeps === 1) ac.abort();
+    };
+    await pushPresetToDevice(twoBlockPreset(), sender, { sleep, signal: ac.signal });
+
+    // Block 0's effect-change was sent before the abort; nothing after it should be.
+    expect(events).toContain('fx:0:17');
+    expect(events.some((e) => e.startsWith('param:'))).toBe(false);
+    expect(events.some((e) => e.startsWith('toggle:'))).toBe(false);
+    expect(events.some((e) => e.startsWith('author:'))).toBe(false);
+    expect(events.some((e) => e === 'fx:1:34')).toBe(false);
+  });
+
+  it('reports progress per block across both passes, ending with a done phase', async () => {
+    const { sender, sleep } = makeRecorder();
+    const updates: string[] = [];
+    await pushPresetToDevice(twoBlockPreset(), sender, {
+      sleep,
+      onProgress: (p) => updates.push(`${p.phase}:${p.completed}/${p.total}`),
+    });
+    // 2 blocks × 2 passes = 4 work units; pass 1 = configuring, pass 2 = finalizing.
+    expect(updates).toEqual([
+      'configuring:1/4',
+      'configuring:2/4',
+      'finalizing:3/4',
+      'finalizing:4/4',
+      'done:4/4',
+    ]);
+  });
 });
