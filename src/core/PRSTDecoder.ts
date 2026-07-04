@@ -74,11 +74,19 @@ export class PRSTDecoder {
       byBlock.push({ slotIndex, enabled, effectId, params });
     }
 
-    // Re-order the array by playback order (routing bytes). When the
-    // routing is identity (0..10) this is a no-op; when the user had
-    // dragged effects in the Valeton editor, it reflects their chosen
-    // playback sequence. Invalid routing bytes (>10 or duplicates) fall
-    // back to identity order so we never lose a block.
+    // Re-order the array by playback order (routing bytes). Each byte is the
+    // slotIndex that plays at position i. When the routing is identity (0..10)
+    // this is a no-op; when the user reordered the chain it reflects their
+    // chosen sequence.
+    //
+    // Defensive reconstruction: keep every valid, in-range, non-duplicate byte
+    // in file order, then append any slots the routing left out (from
+    // out-of-range or duplicated bytes) in canonical order. The result is
+    // ALWAYS a complete 0..10 permutation — no block is dropped or duplicated.
+    // Previously a single corrupt byte failed the strict all-11 check and
+    // collapsed the WHOLE reorder back to default order, silently losing a
+    // real reordering for atypical files (#90). Recovering the valid portion
+    // preserves as much of the stored order as possible instead.
     const routing: number[] = [];
     const seen = new Set<number>();
     for (let i = 0; i < EFFECT_BLOCK_COUNT; i++) {
@@ -88,10 +96,10 @@ export class PRSTDecoder {
         seen.add(v);
       }
     }
-    const effects: GP200Preset['effects'] =
-      routing.length === EFFECT_BLOCK_COUNT
-        ? routing.map((si) => byBlock[si])
-        : byBlock;
+    for (let si = 0; si < EFFECT_BLOCK_COUNT; si++) {
+      if (!seen.has(si)) routing.push(si);
+    }
+    const effects: GP200Preset['effects'] = routing.map((si) => byBlock[si]);
 
     const rawSend = this.parser.readUint8(OFFSET_FX_SEND);
     const rawReturn = this.parser.readUint8(OFFSET_FX_RETURN);
