@@ -8,6 +8,8 @@ export interface PresetPushSender {
   sendEffectChange: (blockIndex: number, effectId: number) => void;
   sendParamChange: (blockIndex: number, paramIndex: number, effectId: number, value: number) => void;
   sendToggle: (blockIndex: number, enabled: boolean) => void;
+  /** Mirror the signal-chain order to the device (order = slotIndices in playback order). */
+  sendReorder: (order: number[], send: number, ret: number) => void;
   sendAuthor: (author: string) => void;
 }
 
@@ -49,6 +51,14 @@ const defaultSleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
  * then the on/off state (sub=0x10). Without the effect change the device keeps
  * whatever algorithm it had and every param/toggle lands on the wrong effect (#80).
  *
+ * Block addressing uses each effect's fixed slotIndex (0=PRE..10=VOL), NOT the
+ * array/loop position. PRSTDecoder returns effects in playback (routing) order,
+ * so for a reordered preset the array position diverges from slotIndex; the
+ * device addresses live edits by the fixed block identity, so sending the array
+ * position lands every write on the wrong physical block (#90). The chain ORDER
+ * itself is a separate concern: sendReorder mirrors the routing so the device's
+ * signal path matches the loaded preset (#90).
+ *
  * #80 follow-up: a fixed settle alone cannot win the race. A param write targets
  * a parameter *inside* the algorithm the effect-change just selected; if it
  * arrives before the device finished loading that algorithm it is dropped and
@@ -80,10 +90,11 @@ export async function pushPresetToDevice(
   const total = decoded.effects.length * 2; // pass 1 + pass 2
   let completed = 0;
 
-  const sendBlockParams = async (i: number, eff: GP200Preset['effects'][number]) => {
+  const sendBlockParams = async (eff: GP200Preset['effects'][number]) => {
+    const block = eff.slotIndex; // fixed block identity, not the array position (#90)
     for (let p = 0; p < eff.params.length; p++) {
       if (eff.params[p] !== undefined) {
-        sender.sendParamChange(i, p, eff.effectId, eff.params[p]);
+        sender.sendParamChange(block, p, eff.effectId, eff.params[p]);
         await sleep(paramGap);
       }
     }
@@ -93,7 +104,7 @@ export async function pushPresetToDevice(
     // identical message works when sent alone (manual knob edit). Re-sending it
     // after the others, when the context is already open, makes it stick (#80).
     if (eff.params.length > 0 && eff.params[0] !== undefined) {
-      sender.sendParamChange(i, 0, eff.effectId, eff.params[0]);
+      sender.sendParamChange(block, 0, eff.effectId, eff.params[0]);
       await sleep(paramGap);
     }
   };
@@ -102,11 +113,11 @@ export async function pushPresetToDevice(
   for (let i = 0; i < decoded.effects.length; i++) {
     if (signal?.aborted) return;
     const eff = decoded.effects[i];
-    sender.sendEffectChange(i, eff.effectId);
+    sender.sendEffectChange(eff.slotIndex, eff.effectId);
     await sleep(settle);
     if (signal?.aborted) return;
-    await sendBlockParams(i, eff);
-    sender.sendToggle(i, eff.enabled);
+    await sendBlockParams(eff);
+    sender.sendToggle(eff.slotIndex, eff.enabled);
     await sleep(blockGap);
     completed += 1;
     onProgress?.({ completed, total, phase: 'configuring' });
@@ -116,12 +127,17 @@ export async function pushPresetToDevice(
   // raced a still-loading block in pass 1 are applied (#80).
   for (let i = 0; i < decoded.effects.length; i++) {
     if (signal?.aborted) return;
-    await sendBlockParams(i, decoded.effects[i]);
+    await sendBlockParams(decoded.effects[i]);
     completed += 1;
     onProgress?.({ completed, total, phase: 'finalizing' });
   }
 
   if (signal?.aborted) return;
+  // Mirror the signal-chain order last: block writes above are slot-addressed
+  // (order-independent), so a single reorder after them applies the preset's
+  // routing without racing the per-block edits. Sent standalone (like the
+  // author) to dodge the device's first-message-of-a-burst swallow (#90).
+  sender.sendReorder(decoded.effects.map((e) => e.slotIndex), decoded.fxLoopSend, decoded.fxLoopReturn);
   if (decoded.author) sender.sendAuthor(decoded.author);
   onProgress?.({ completed: total, total, phase: 'done' });
 }

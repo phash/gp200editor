@@ -10,6 +10,7 @@ function makeRecorder() {
     sendEffectChange: (b, e) => events.push(`fx:${b}:${e}`),
     sendParamChange: (b, p, _e, v) => events.push(`param:${b}:${p}:${v}`),
     sendToggle: (b, on) => events.push(`toggle:${b}:${on}`),
+    sendReorder: (order, send, ret) => events.push(`reorder:${order.join(',')}:${send}:${ret}`),
     sendAuthor: (a) => events.push(`author:${a}`),
   };
   const sleep = async (ms: number) => {
@@ -25,6 +26,23 @@ function twoBlockPreset(): GP200Preset {
       { slotIndex: 0, enabled: true, effectId: 0x11, params: [5, 6] },
       { slotIndex: 1, enabled: false, effectId: 0x22, params: [7] },
     ],
+    author: 'Tester',
+  } as unknown as GP200Preset;
+}
+
+// A REORDERED preset: PRSTDecoder returns effects in playback order, so the
+// array position (loop index) diverges from each block's fixed slotIndex.
+// Here playback position 0 holds block-identity 3 (e.g. AMP) and position 1
+// holds block-identity 0 (e.g. PRE). The device addresses blocks by their
+// fixed slotIndex, so every send must carry slotIndex, NOT the array index (#90).
+function reorderedPreset(): GP200Preset {
+  return {
+    effects: [
+      { slotIndex: 3, enabled: true, effectId: 0x11, params: [5, 6] },
+      { slotIndex: 0, enabled: false, effectId: 0x22, params: [7] },
+    ],
+    fxLoopSend: 4,
+    fxLoopReturn: 4,
     author: 'Tester',
   } as unknown as GP200Preset;
 }
@@ -126,6 +144,46 @@ describe('pushPresetToDevice', () => {
     expect(events.some((e) => e.startsWith('toggle:'))).toBe(false);
     expect(events.some((e) => e.startsWith('author:'))).toBe(false);
     expect(events.some((e) => e === 'fx:1:34')).toBe(false);
+  });
+
+  it('addresses each block by its slotIndex, not array position, for a reordered preset (#90)', async () => {
+    const { events, sender, sleep } = makeRecorder();
+    await pushPresetToDevice(reorderedPreset(), sender, { sleep });
+    const nonSleep = events.filter((e) => !e.startsWith('sleep:'));
+
+    // Playback position 0 carries block-identity 3 → every send for it must use 3.
+    expect(nonSleep).toContain('fx:3:17');
+    expect(nonSleep).toContain('param:3:0:5');
+    expect(nonSleep).toContain('param:3:1:6');
+    expect(nonSleep).toContain('toggle:3:true');
+    // Playback position 1 carries block-identity 0 → sends must use 0.
+    expect(nonSleep).toContain('fx:0:34');
+    expect(nonSleep).toContain('param:0:0:7');
+    expect(nonSleep).toContain('toggle:0:false');
+
+    // The buggy array-index addressing (position 0 → block 0, position 1 → block 1)
+    // must NOT appear: the AMP would land on PRE and vice-versa.
+    expect(nonSleep).not.toContain('fx:0:17'); // block-3 effect wrongly sent to block 0
+    expect(nonSleep).not.toContain('fx:1:34'); // block-0 effect wrongly sent to block 1
+    expect(nonSleep.some((e) => e.startsWith('toggle:1:'))).toBe(false);
+  });
+
+  it('sends the chain routing order once, after the block writes and before the author (#90)', async () => {
+    const { events, sender, sleep } = makeRecorder();
+    await pushPresetToDevice(reorderedPreset(), sender, { sleep });
+    const nonSleep = events.filter((e) => !e.startsWith('sleep:'));
+
+    // Exactly one reorder, carrying the effects' slotIndex order (playback order)
+    // plus the FX-loop send/return positions.
+    const reorders = nonSleep.filter((e) => e.startsWith('reorder:'));
+    expect(reorders).toEqual(['reorder:3,0:4:4']);
+
+    // It comes after every effect/param/toggle write (block addressing is
+    // slot-fixed, so this only fixes the audio chain order) and before author.
+    const reorderIdx = nonSleep.indexOf('reorder:3,0:4:4');
+    const afterReorder = nonSleep.slice(reorderIdx + 1);
+    expect(afterReorder.some((e) => e.startsWith('fx:') || e.startsWith('param:') || e.startsWith('toggle:'))).toBe(false);
+    expect(afterReorder).toContain('author:Tester');
   });
 
   it('reports progress per block across both passes, ending with a done phase', async () => {

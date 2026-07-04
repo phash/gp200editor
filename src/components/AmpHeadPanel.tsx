@@ -98,7 +98,7 @@ export function AmpHeadPanel({ preset, onParamChange }: AmpHeadPanelProps) {
               key={p.idx}
               def={p}
               value={ampEffect.params[p.idx] ?? 0}
-              onValueChange={(v) => onParamChange(ampBlockIndex, p.idx, v)}
+              onValueChange={(v) => onParamChange(ampEffect.slotIndex, p.idx, v)}
             />
           ))}
         </div>
@@ -108,7 +108,7 @@ export function AmpHeadPanel({ preset, onParamChange }: AmpHeadPanelProps) {
               key={p.idx}
               def={p}
               value={ampEffect.params[p.idx] ?? 0}
-              onValueChange={(v) => onParamChange(ampBlockIndex, p.idx, v)}
+              onValueChange={(v) => onParamChange(ampEffect.slotIndex, p.idx, v)}
             />
           ))}
         </div>

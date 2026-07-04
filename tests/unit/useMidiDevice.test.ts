@@ -334,4 +334,50 @@ describe('useMidiDevice', () => {
     expect(paramLogs[0]).toContain('param=0');
     logSpy.mockRestore();
   });
+
+  // #90: writePresetToSlot addresses blocks by array position, so saving a
+  // reordered preset writes each effect to the wrong physical block and never
+  // mirrors the chain order. A reordered preset here has playback position 0
+  // holding block-identity 3 and position 1 holding identity 0.
+  it('writePresetToSlot addresses each effect by its slotIndex and sends the routing order (#90)', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const { result } = renderHook(() => useMidiDevice());
+    await act(async () => { result.current.connect(); });
+    await waitFor(() => expect(result.current.status).toBe('connected'));
+
+    const reordered = {
+      version: '1',
+      patchName: 'RO',
+      effects: [
+        { slotIndex: 3, enabled: true, effectId: 0x11, params: [5] },
+        { slotIndex: 0, enabled: false, effectId: 0x22, params: [] },
+      ],
+      fxLoopSend: 4,
+      fxLoopReturn: 4,
+      checksum: 0,
+    } as unknown as import('@/core/types').GP200Preset;
+
+    mockMidi.sentMessages.length = 0;
+    await act(async () => { await result.current.writePresetToSlot(reordered, 0); });
+
+    // Effect-change messages (sub=0x14): block byte at raw[38] must follow the
+    // effects' slotIndex order [3, 0], NOT the array position [0, 1].
+    const effectChangeBlocks = mockMidi.sentMessages
+      .filter((m) => m[8] === 0x12 && m[9] === 0x14)
+      .map((m) => m[38]);
+    expect(effectChangeBlocks).toEqual([3, 0]);
+
+    // Toggle messages (sub=0x10 with the toggle constant at [29:31]=0x01,0x05):
+    // block byte at raw[38] must also be [3, 0].
+    const toggleBlocks = mockMidi.sentMessages
+      .filter((m) => m[8] === 0x12 && m[9] === 0x10 && m[29] === 0x01 && m[30] === 0x05)
+      .map((m) => m[38]);
+    expect(toggleBlocks).toEqual([3, 0]);
+
+    // Defect B: exactly one reorder message (sub=0x20) mirrors the chain order.
+    const reorderMsgs = mockMidi.sentMessages.filter((m) => m[8] === 0x12 && m[9] === 0x20);
+    expect(reorderMsgs).toHaveLength(1);
+
+    logSpy.mockRestore();
+  });
 });
