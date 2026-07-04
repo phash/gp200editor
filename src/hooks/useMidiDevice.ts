@@ -520,23 +520,32 @@ export function useMidiDevice(): UseMidiDeviceReturn {
     // params, then on/off state. Without the effect change the device keeps the
     // algorithm it already had loaded and the params/toggle apply to the wrong
     // effect, so the saved slot ends up as "whatever was already there" (#80).
-    // IMPORTANT: Use array index i (block index 0-10), NOT eff.slotIndex (routing position).
+    // IMPORTANT: address each block by its fixed slotIndex (0=PRE..10=VOL), NOT
+    // the array position. PRSTDecoder returns effects in playback order, so for
+    // a reordered preset the array position diverges from slotIndex and array
+    // addressing writes every effect to the wrong physical block (#90).
     for (let i = 0; i < preset.effects.length; i++) {
       const eff = preset.effects[i];
-      output.send(SysExCodec.buildEffectChange(i, eff.effectId));
+      output.send(SysExCodec.buildEffectChange(eff.slotIndex, eff.effectId));
       await new Promise(r => setTimeout(r, 30));
       for (let p = 0; p < eff.params.length; p++) {
         if (eff.params[p] !== undefined) {
-          output.send(SysExCodec.buildParamChange(i, p, eff.effectId, eff.params[p]));
+          output.send(SysExCodec.buildParamChange(eff.slotIndex, p, eff.effectId, eff.params[p]));
           await new Promise(r => setTimeout(r, 8));
         }
       }
-      output.send(SysExCodec.buildToggleEffect(i, eff.enabled));
+      output.send(SysExCodec.buildToggleEffect(eff.slotIndex, eff.enabled));
       await new Promise(r => setTimeout(r, 15));
     }
 
-    // Step 3: Send author + save-commit to persist
+    // Step 3: mirror the signal-chain order so the saved slot keeps the preset's
+    // routing (the block writes above are slot-addressed and order-independent),
+    // then send author + save-commit to persist (#90).
     await new Promise(r => setTimeout(r, 50));
+    output.send(SysExCodec.buildReorderEffects(
+      preset.effects.map(e => e.slotIndex), preset.fxLoopSend, preset.fxLoopReturn,
+    ));
+    await new Promise(r => setTimeout(r, 30));
     if (preset.author) {
       output.send(SysExCodec.buildAuthorName(preset.author));
       await new Promise(r => setTimeout(r, 30));

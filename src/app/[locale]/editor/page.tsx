@@ -209,9 +209,10 @@ export default function EditorPage() {
   }, [midiDevice.status]);
 
   // Send all effect data to device for live preview (no save). The per-block
-  // sequence (effect type → settle → params → toggle) and the #80 timing/
-  // second-pass logic live in the unit-tested core helper. Block index i (0-10)
-  // is used as the device block, NOT eff.slotIndex (routing position).
+  // sequence (effect type → settle → params → toggle), the #80 timing/second-
+  // pass logic, and the routing mirror live in the unit-tested core helper.
+  // Each block is addressed by its fixed slotIndex (0=PRE..10=VOL); the array
+  // position is only the playback order the routing message carries (#90).
   const sendPresetToDevice = useCallback(async (decoded: GP200Preset) => {
     if (midiDevice.status !== 'connected') return;
     // Cancel any push still in flight so two loads never interleave on the device.
@@ -226,6 +227,7 @@ export default function EditorPage() {
           sendEffectChange: midiDevice.sendEffectChange,
           sendParamChange: midiDevice.sendParamChange,
           sendToggle: midiDevice.sendToggle,
+          sendReorder: midiDevice.sendReorder,
           sendAuthor: midiDevice.sendAuthor,
         },
         {
@@ -703,11 +705,13 @@ export default function EditorPage() {
       {showAmpHead && (
         <AmpHeadPanel
           preset={preset}
-          onParamChange={(blockIndex, paramIndex, value) => {
-            setParam(blockIndex, paramIndex, value);
+          onParamChange={(slotIndex, paramIndex, value) => {
+            // AmpHeadPanel passes the AMP block's fixed slotIndex, not its array
+            // position — both local state and the device address by slotIndex (#90).
+            setParam(slotIndex, paramIndex, value);
             if (midiDevice.status === 'connected') {
-              const eff = preset.effects[blockIndex];
-              if (eff) midiDevice.sendParamChange(blockIndex, paramIndex, eff.effectId, value);
+              const eff = preset.effects.find((e) => e.slotIndex === slotIndex);
+              if (eff) midiDevice.sendParamChange(slotIndex, paramIndex, eff.effectId, value);
             }
           }}
         />
@@ -1047,24 +1051,26 @@ export default function EditorPage() {
           const slotProps = {
             slot,
             index: i,
-            onToggle: (index: number) => {
-              toggleEffect(index);
-              if (midiDevice.status === 'connected' && preset) {
-                const eff = preset.effects[index];
-                midiDevice.sendToggle(index, !eff.enabled);
-              }
-            },
-            onChangeEffect: (blockIndex: number, effectId: number) => {
-              changeEffect(blockIndex, effectId);
+            // EffectSlot passes the array position; both local state (usePreset
+            // matches by slotIndex) and the device address the fixed block
+            // identity, so use slot.slotIndex from the map closure, never the
+            // array index — otherwise edits hit the wrong block after a reorder (#90).
+            onToggle: () => {
+              toggleEffect(slot.slotIndex);
               if (midiDevice.status === 'connected') {
-                midiDevice.sendEffectChange(blockIndex, effectId);
+                midiDevice.sendToggle(slot.slotIndex, !slot.enabled);
               }
             },
-            onParamChange: (blockIndex: number, paramIndex: number, value: number) => {
-              setParam(blockIndex, paramIndex, value);
-              if (midiDevice.status === 'connected' && preset) {
-                const eff = preset.effects[blockIndex];
-                if (eff) midiDevice.sendParamChange(blockIndex, paramIndex, eff.effectId, value);
+            onChangeEffect: (_index: number, effectId: number) => {
+              changeEffect(slot.slotIndex, effectId);
+              if (midiDevice.status === 'connected') {
+                midiDevice.sendEffectChange(slot.slotIndex, effectId);
+              }
+            },
+            onParamChange: (_index: number, paramIndex: number, value: number) => {
+              setParam(slot.slotIndex, paramIndex, value);
+              if (midiDevice.status === 'connected') {
+                midiDevice.sendParamChange(slot.slotIndex, paramIndex, slot.effectId, value);
               }
             },
             onDragStart: handleDragStart,
