@@ -22,6 +22,13 @@ function buildTestBuffer(): Uint8Array {
   return buf;
 }
 
+/** Builds a test buffer with explicit routing-order bytes at 0x94..0x9E */
+function buildTestBufferWithRouting(routing: number[]): Uint8Array {
+  const buf = buildTestBuffer();
+  for (let i = 0; i < 11; i++) buf[0x94 + i] = routing[i] ?? 0;
+  return buf;
+}
+
 /** Builds a buffer with known float32 param values at slot 0 */
 function buildTestBufferWithParams(): Uint8Array {
   const buf = buildTestBuffer();
@@ -141,6 +148,36 @@ describe('PRSTDecoder', () => {
     const decoded = new PRSTDecoder(buf).decode();
     expect(decoded.fxLoopSend).toBe(4);
     expect(decoded.fxLoopReturn).toBe(4);
+  });
+
+  it('keeps a full valid routing permutation intact', () => {
+    const routing = [10, 1, 4, 2, 3, 5, 0, 6, 7, 8, 9];
+    const decoded = new PRSTDecoder(buildTestBufferWithRouting(routing)).decode();
+    expect(decoded.effects.map((e) => e.slotIndex)).toEqual(routing);
+  });
+
+  it('recovers a partial routing order when one byte is corrupt, instead of collapsing to default order (#90)', () => {
+    // A valid reorder [3,1,4,0,2,5,6,7,8,9,10] but position 0 is corrupted to 0xFF.
+    // The old all-or-nothing check discarded the WHOLE reorder on a single bad
+    // byte and fell back to default order — the #90 symptom for atypical files.
+    const routing = [0xff, 1, 4, 0, 2, 5, 6, 7, 8, 9, 10];
+    const decoded = new PRSTDecoder(buildTestBufferWithRouting(routing)).decode();
+    // Valid entries kept in file order; the one omitted slot (3) appended last.
+    // No block dropped or duplicated — a full 0..10 permutation is guaranteed.
+    expect(decoded.effects.map((e) => e.slotIndex)).toEqual([1, 4, 0, 2, 5, 6, 7, 8, 9, 10, 3]);
+  });
+
+  it('recovers partial routing that has a duplicate byte', () => {
+    // Position 10 duplicates slot 9; slot 10 is therefore missing and appended.
+    const routing = [1, 4, 0, 2, 3, 5, 6, 7, 8, 9, 9];
+    const decoded = new PRSTDecoder(buildTestBufferWithRouting(routing)).decode();
+    expect(decoded.effects.map((e) => e.slotIndex)).toEqual([1, 4, 0, 2, 3, 5, 6, 7, 8, 9, 10]);
+  });
+
+  it('falls back to default order when the routing region is entirely invalid', () => {
+    const routing = new Array(11).fill(0xff);
+    const decoded = new PRSTDecoder(buildTestBufferWithRouting(routing)).decode();
+    expect(decoded.effects.map((e) => e.slotIndex)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
   });
 });
 
