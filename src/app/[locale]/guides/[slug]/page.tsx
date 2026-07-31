@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
 import { Link } from '@/i18n/routing';
-import { BASE_URL, type Locale } from '@/lib/hreflang';
+import { BASE_URL, localeUrl, DEFAULT_LOCALE, type Locale } from '@/lib/hreflang';
 import { serializeJsonLd } from '@/lib/jsonLd';
 import { getGuide, guideLocales, allGuideParams } from '@/content/guides';
 
@@ -18,13 +18,14 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
   const guide = getGuide(locale, slug);
   if (!guide) return {};
 
-  const canonical = `${BASE_URL}/${locale}/guides/${slug}`;
+  const path = `/guides/${slug}`;
+  const canonical = localeUrl(locale, path);
   // hreflang covers only the locales that actually have this guide, plus
   // x-default → English. Listing all 7 would point alternates at 404s.
   const languages: Record<string, string> = {};
   const locales = guideLocales(slug);
-  for (const l of locales) languages[l] = `${BASE_URL}/${l}/guides/${slug}`;
-  if (locales.includes('en')) languages['x-default'] = `${BASE_URL}/en/guides/${slug}`;
+  for (const l of locales) languages[l] = localeUrl(l, path);
+  if (locales.includes(DEFAULT_LOCALE)) languages['x-default'] = localeUrl(DEFAULT_LOCALE, path);
 
   const title = `${guide.title} | Preset Forge`;
   return {
@@ -50,8 +51,8 @@ export default async function GuidePage({ params }: { params: Promise<{ locale: 
 
   const t = await getTranslations({ locale, namespace: 'guides' });
   const nav = await getTranslations({ locale, namespace: 'nav' });
-  const canonical = `${BASE_URL}/${locale}/guides/${slug}`;
-  const base = `${BASE_URL}/${locale}`;
+  const canonical = localeUrl(locale, `/guides/${slug}`);
+  const base = localeUrl(locale, '/');
 
   // TechArticle + BreadcrumbList. Static, author-controlled content, but still
   // routed through serializeJsonLd per project convention.

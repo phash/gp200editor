@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { listAmpCategories } from '@/core/ampCategories';
 import { getActiveAmpSlugs } from '@/lib/ampActivity';
-import { LOCALES, BASE_URL } from '@/lib/hreflang';
+import { LOCALES, localeUrl, DEFAULT_LOCALE } from '@/lib/hreflang';
 import { GUIDE_SLUGS, guideLocales, getGuide } from '@/content/guides';
 
 // Force dynamic generation — the default sitemap.ts output is baked at build
@@ -27,15 +27,27 @@ const STATIC_PAGES: Array<{
   { path: '/gallery',    changeFrequency: 'daily',   priority: 0.8 },
   { path: '/help',       changeFrequency: 'monthly', priority: 0.6 },
   { path: '/guides',     changeFrequency: 'monthly', priority: 0.6 },
-  { path: '/changelog',  changeFrequency: 'weekly',  priority: 0.5 },
+  // /changelog is deliberately absent — it is noindex (see its
+  // generateMetadata). 2 100 words of release notes pulled 180 impressions
+  // and 1 click over Q2/2026 (CTR 0.56%, the worst on the site) by ranking
+  // for long-tail queries it cannot answer. Advertising it for crawl would
+  // contradict the noindex.
 ];
+
+// The single locale whose share URLs go into the sitemap. The other six
+// variants of a share page carry identical preset data — same name, same
+// amp, same parameter values — with only the chrome translated, so listing
+// all seven made /share 1 190 of 1 712 sitemap URLs (70%) while the amp and
+// guide pages that actually earn non-brand clicks got 9. The localized
+// variants stay live, self-canonical and reachable via hreflang.
+const SHARE_SITEMAP_LOCALE = DEFAULT_LOCALE;
 
 export default async function sitemap(): Promise<SitemapEntry[]> {
   const now = new Date();
 
   const staticPages: SitemapEntry[] = STATIC_PAGES.flatMap((page) =>
     LOCALES.map((locale) => ({
-      url: `${BASE_URL}/${locale}${page.path}`,
+      url: localeUrl(locale, page.path || '/'),
       lastModified: now,
       changeFrequency: page.changeFrequency,
       priority: page.priority,
@@ -60,21 +72,19 @@ export default async function sitemap(): Promise<SitemapEntry[]> {
     .filter((cat) => activeAmpSlugs.has(cat.slug))
     .flatMap((cat) =>
       LOCALES.map((locale) => ({
-        url: `${BASE_URL}/${locale}/amp/${cat.slug}`,
+        url: localeUrl(locale, `/amp/${cat.slug}`),
         lastModified: now,
         changeFrequency: 'weekly' as const,
         priority: 0.7,
       })),
     );
 
-  // Public preset share pages — 6 locale variants + 1 JSON endpoint per preset.
-  // Sitemap.xml has a hard limit of 50 000 URLs. With 6 locales + 1 JSON per
-  // preset we get 7 entries per preset, so cap well below that.
-  // Each preset emits 6 locale variants + 1 JSON endpoint = 7 entries. At
-  // 5000 presets that's 35k URLs, leaving ~14k headroom under Google's 50k
-  // sitemap cap for the static + amp-category entries. If we hit this limit
-  // on a production build, we've silently started dropping presets from the
-  // index — that's ops-visible via console.warn + needs a sitemap-index split.
+  // Public preset share pages — one entry per preset (see
+  // SHARE_SITEMAP_LOCALE). Sitemap.xml has a hard limit of 50 000 URLs; at
+  // one entry per preset the cap below leaves ample headroom for the static,
+  // amp and guide entries. If we ever hit the limit on a production build
+  // we've silently started dropping presets from the index — that's
+  // ops-visible via console.warn + needs a sitemap-index split.
   const SITEMAP_PRESET_LIMIT = 5000;
   let presetPages: SitemapEntry[] = [];
   try {
@@ -95,22 +105,15 @@ export default async function sitemap(): Promise<SitemapEntry[]> {
       );
     }
 
-    presetPages = publicPresets.flatMap((preset) => {
-      const entries: SitemapEntry[] = LOCALES.map((locale) => ({
-        url: `${BASE_URL}/${locale}/share/${preset.shareToken}`,
-        lastModified: preset.updatedAt,
-        changeFrequency: 'weekly' as const,
-        priority: 0.6,
-      }));
-      // One locale-less JSON endpoint per preset (API route, not locale-scoped)
-      entries.push({
-        url: `${BASE_URL}/api/share/${preset.shareToken}/json`,
-        lastModified: preset.updatedAt,
-        changeFrequency: 'yearly' as const,
-        priority: 0.3,
-      });
-      return entries;
-    });
+    // The /api/share/<token>/json endpoints used to be listed here. They are
+    // API responses, not pages — 170 URLs of crawl budget spent on something
+    // Google can only index as raw JSON. They are now robots-disallowed.
+    presetPages = publicPresets.map((preset) => ({
+      url: localeUrl(SHARE_SITEMAP_LOCALE, `/share/${preset.shareToken}`),
+      lastModified: preset.updatedAt,
+      changeFrequency: 'weekly' as const,
+      priority: 0.6,
+    }));
   } catch (err) {
     // Database unavailable during build — skip dynamic pages. Log so ops
     // can see if this is happening in production (was previously silent
@@ -125,7 +128,7 @@ export default async function sitemap(): Promise<SitemapEntry[]> {
   // translation of each slug (others 404 and must stay out of the sitemap).
   const guidePages: SitemapEntry[] = GUIDE_SLUGS.flatMap((slug) =>
     guideLocales(slug).map((locale) => ({
-      url: `${BASE_URL}/${locale}/guides/${slug}`,
+      url: localeUrl(locale, `/guides/${slug}`),
       lastModified: new Date(getGuide(locale, slug)!.updated),
       changeFrequency: 'monthly' as const,
       priority: 0.7,

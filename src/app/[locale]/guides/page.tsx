@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
 import { Link } from '@/i18n/routing';
-import { buildAlternates, BASE_URL, type Locale } from '@/lib/hreflang';
+import { buildAlternates, localeUrl, BASE_URL, type Locale } from '@/lib/hreflang';
 import { listGuidesForIndex } from '@/content/guides';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     openGraph: {
       title,
       description,
-      url: `${BASE_URL}/${locale}/guides`,
+      url: localeUrl(locale as Locale, '/guides'),
       type: 'website',
       siteName: 'Preset Forge',
       images: [{ url: `${BASE_URL}/og-image.png`, width: 1200, height: 630 }],

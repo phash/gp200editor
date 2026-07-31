@@ -27,19 +27,39 @@ export const LOCALE_META: Record<Locale, { flag: string; code: string }> = {
 // so future tests (e.g. sitemap-priority lowering) can read the same set.
 export const BETA_LOCALES = new Set<Locale>(['es', 'fr', 'it', 'pt', 'pt-BR']);
 
+// The default locale. Routing runs with localePrefix 'as-needed', so this
+// one locale is served from the unprefixed path and its /en/... form only
+// redirects there. Keep in sync with defaultLocale in src/i18n/routing.ts —
+// the unit tests assert both ends.
+export const DEFAULT_LOCALE: Locale = 'en';
+
+/**
+ * Absolute URL of `path` in `locale`, using the form the server actually
+ * serves. English is unprefixed; every other locale carries its prefix.
+ *
+ * This distinction is the whole point: handing Google `/en/help` as a
+ * canonical or hreflang target names a URL that only 307-redirects, which
+ * is how the index ended up split between prefixed and unprefixed forms
+ * of the same page.
+ */
+export function localeUrl(locale: Locale, path: string): string {
+  const normalized = path === '/' ? '' : path;
+  const prefix = locale === DEFAULT_LOCALE ? '' : `/${locale}`;
+  return `${BASE_URL}${prefix}${normalized}`;
+}
+
 /**
  * Build an hreflang `languages` map for next.js Metadata.alternates.
  * The path should be the locale-less segment — e.g. "/editor" or
- * "/share/abc123". The helper prefixes every locale + serves x-default
+ * "/share/abc123". The helper covers every locale + serves x-default
  * from English.
  */
 export function buildHreflang(path: string): Record<string, string> {
-  const normalized = path === '/' ? '' : path;
   const out: Record<string, string> = {};
   for (const locale of LOCALES) {
-    out[locale] = `${BASE_URL}/${locale}${normalized}`;
+    out[locale] = localeUrl(locale, path);
   }
-  out['x-default'] = `${BASE_URL}/en${normalized}`;
+  out['x-default'] = localeUrl(DEFAULT_LOCALE, path);
   return out;
 }
 
@@ -51,9 +71,8 @@ export function buildAlternates(
   path: string,
   currentLocale: Locale,
 ): NonNullable<Metadata['alternates']> {
-  const normalized = path === '/' ? '' : path;
   return {
-    canonical: `${BASE_URL}/${currentLocale}${normalized}`,
+    canonical: localeUrl(currentLocale, path),
     languages: buildHreflang(path),
   };
 }

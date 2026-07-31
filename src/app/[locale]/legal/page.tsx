@@ -6,6 +6,9 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   return {
     title: 'Legal & Privacy — Preset Forge',
+    // Impressum and privacy policy exist for legal compliance, not for
+    // search. 21 impressions and 0 clicks in Q2/2026.
+    robots: { index: false, follow: true },
     alternates: buildAlternates('/legal', locale as Locale),
   };
 }

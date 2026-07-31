@@ -13,19 +13,25 @@ const SESSION_COOKIE = 'auth_session';
 // dash (e.g. pt-BR), so escape regex meta-characters.
 const LOCALE_ALT = LOCALES.map((l) => l.replace(/[-]/g, '\\-')).join('|');
 
-const PROTECTED_ROUTE_PATTERN = new RegExp(
-  `^/(?:${LOCALE_ALT})/(?:profile|presets|admin)(?:/|$)`,
+// The locale prefix is optional: routing runs with localePrefix 'as-needed',
+// so the default locale is served from the unprefixed path and /profile is
+// as real a URL as /de/profile. Requiring the prefix here would let the
+// unprefixed form walk past the guard entirely.
+export const PROTECTED_ROUTE_PATTERN = new RegExp(
+  `^(?:/(?:${LOCALE_ALT}))?/(?:profile|presets|admin)(?:/|$)`,
 );
 
-// Extract the locale prefix from a pathname, falling back to en if the path
-// doesn't start with a known locale. Used for login-redirect so a user on
-// /fr/profile without a session gets redirected to /fr/auth/login, not /de.
-const LOCALE_PREFIX_PATTERN = new RegExp(`^/(${LOCALE_ALT})(?=/|$)`);
+// Extract the locale prefix from a pathname. Used for login-redirect so a
+// user on /fr/profile without a session gets redirected to /fr/auth/login,
+// not /de. Returns null for an unprefixed path — that's the default locale,
+// which is served without a prefix, so the login URL stays unprefixed too
+// rather than bouncing through a redirect.
+export const LOCALE_PREFIX_PATTERN = new RegExp(`^/(${LOCALE_ALT})(?=/|$)`);
 
 function loginRedirect(request: NextRequest, pathname: string) {
   const match = LOCALE_PREFIX_PATTERN.exec(pathname);
-  const locale = match ? match[1] : 'en';
-  return NextResponse.redirect(new URL(`/${locale}/auth/login`, request.url));
+  const prefix = match ? `/${match[1]}` : '';
+  return NextResponse.redirect(new URL(`${prefix}/auth/login`, request.url));
 }
 
 export async function middleware(request: NextRequest) {
