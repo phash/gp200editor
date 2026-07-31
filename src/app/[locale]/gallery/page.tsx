@@ -4,7 +4,7 @@ import { Link } from '@/i18n/routing';
 import { prisma } from '@/lib/prisma';
 import { GalleryClient } from './GalleryClient';
 import { HelpButton } from '@/components/HelpButton';
-import { buildAlternates, BASE_URL, type Locale } from '@/lib/hreflang';
+import { buildAlternates, localeUrl, BASE_URL, type Locale } from '@/lib/hreflang';
 import { serializeJsonLd } from '@/lib/jsonLd';
 
 // The interactive GalleryClient renders fully client-side — Googlebot sees
@@ -79,7 +79,7 @@ export default async function GalleryPage({ params }: Props) {
     itemListElement: recent.map((p, i) => ({
       '@type': 'ListItem',
       position: i + 1,
-      url: `${BASE_URL}/${locale}/share/${p.shareToken}`,
+      url: localeUrl(locale as Locale, `/share/${p.shareToken}`),
       name: p.name,
     })),
   });

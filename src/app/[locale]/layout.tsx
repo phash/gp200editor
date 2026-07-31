@@ -9,7 +9,7 @@ import '../globals.css'; // globals.css stays in src/app/, so relative path goes
 import { Footer } from '@/components/Footer';
 import { Navbar } from '@/components/Navbar';
 import { ClientProviders } from './ClientProviders';
-import { buildAlternates, BASE_URL, type Locale } from '@/lib/hreflang';
+import { buildAlternates, localeUrl, BASE_URL, type Locale } from '@/lib/hreflang';
 import { serializeJsonLd } from '@/lib/jsonLd';
 
 // Fonts are self-hosted at build time — no runtime request to fonts.googleapis.com,
@@ -57,7 +57,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       description: 'GP-200 preset editor that runs on Linux, Mac, and Windows. Import HX Stomp .hlx presets, build timed setlists with cue points for live gigs, browse 305 effects in the gallery. USB MIDI, offline PWA.',
       siteName: 'Preset Forge',
       type: 'website',
-      url: `${BASE_URL}/${locale}`,
+      url: localeUrl(locale as Locale, '/'),
       images: [{ url: `${BASE_URL}/og-image.png`, width: 1200, height: 630, alt: 'Preset Forge — GP-200 Preset Editor' }],
     },
     twitter: {

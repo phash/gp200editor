@@ -7,7 +7,7 @@ import {
   findAmpCategoryBySlug,
   listAmpCategories,
 } from '@/core/ampCategories';
-import { buildAlternates, BASE_URL } from '@/lib/hreflang';
+import { buildAlternates, localeUrl } from '@/lib/hreflang';
 import { serializeJsonLd } from '@/lib/jsonLd';
 import { LOCALES, type Locale } from '@/i18n/locales';
 
@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const t = await getTranslations({ locale });
   const title = t('amp.metaTitle', { name: cat.realName });
   const description = t('amp.metaDescription', { name: cat.realName });
-  const canonical = `${BASE_URL}/${locale}/amp/${slug}`;
+  const canonical = localeUrl(locale, `/amp/${slug}`);
 
   // Empty amp pages (no community presets) are noindex'd to avoid being
   // flagged as thin content. Crawl is still allowed so Google reaches the
@@ -78,7 +78,7 @@ function buildCollectionJsonLd(opts: {
   homeLabel: string;
   galleryLabel: string;
 }) {
-  const base = `${BASE_URL}/${opts.locale}`;
+  const base = localeUrl(opts.locale, '/');
   const data = {
     '@context': 'https://schema.org',
     '@graph': [

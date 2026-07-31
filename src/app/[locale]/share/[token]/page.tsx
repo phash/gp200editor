@@ -13,7 +13,7 @@ import { encodeToJson } from '@/core/PRSTJsonCodec';
 import { SignalChainSection } from './SignalChainSection';
 import { slugifyAmpName } from '@/core/ampCategories';
 import { Link } from '@/i18n/routing';
-import { buildAlternates, BASE_URL } from '@/lib/hreflang';
+import { buildAlternates, localeUrl } from '@/lib/hreflang';
 import { serializeJsonLd } from '@/lib/jsonLd';
 import type { Locale } from '@/i18n/locales';
 
@@ -77,7 +77,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       .filter(Boolean)
       .join(' · ') + ' — Free Valeton GP-200 preset, open in browser editor.';
 
-  const canonical = `${BASE_URL}/${locale}/share/${token}`;
+  const canonical = localeUrl(locale, `/share/${token}`);
 
   return {
     title,
@@ -177,13 +177,13 @@ export default async function SharePage({ params }: Props) {
     description: preset.description ?? `Valeton GP-200 preset by @${preset.user.username}`,
     brand: { '@type': 'Brand', name: brand },
     category: 'Guitar effect preset',
-    url: `${BASE_URL}/${locale}/share/${token}`,
+    url: localeUrl(locale, `/share/${token}`),
     offers: {
       '@type': 'Offer',
       price: '0',
       priceCurrency: 'USD',
       availability: 'https://schema.org/InStock',
-      url: `${BASE_URL}/${locale}/share/${token}`,
+      url: localeUrl(locale, `/share/${token}`),
     },
   };
   if (preset.ratingCount > 0 && preset.ratingAverage > 0) {
@@ -198,7 +198,7 @@ export default async function SharePage({ params }: Props) {
   // Breadcrumb trail Home › Gallery › [Amp] › Preset. The amp rung only
   // appears when we could decode the amp model, and it deep-links to the same
   // /amp/[slug] landing page the visible "More … presets" link points to.
-  const shareBase = `${BASE_URL}/${locale}`;
+  const shareBase = localeUrl(locale, '/');
   const ampRealName = json?.highlights.amp?.realName ?? null;
   const breadcrumbItems: Array<Record<string, unknown>> = [
     { '@type': 'ListItem', position: 1, name: 'Home', item: shareBase },

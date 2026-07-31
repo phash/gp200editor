@@ -18,24 +18,24 @@ Key facts:
 
 ## Editor
 
-- [GP-200 Preset Editor](https://www.preset-forge.com/en/editor): Load .prst files, edit all 11 effect slots, adjust parameters, drag-and-drop reorder the signal chain. Push changes live to the device via USB MIDI. Works on Linux, Windows, macOS.
+- [GP-200 Preset Editor](https://www.preset-forge.com/editor): Load .prst files, edit all 11 effect slots, adjust parameters, drag-and-drop reorder the signal chain. Push changes live to the device via USB MIDI. Works on Linux, Windows, macOS.
 
 ## Help & Documentation
 
-- [Help & FAQ](https://www.preset-forge.com/en/help): Getting started, USB MIDI setup (Linux/Windows/macOS), HX Stomp import guide, playlist and cue point documentation, keyboard shortcuts, and FAQ including Linux support details.
+- [Help & FAQ](https://www.preset-forge.com/help): Getting started, USB MIDI setup (Linux/Windows/macOS), HX Stomp import guide, playlist and cue point documentation, keyboard shortcuts, and FAQ including Linux support details.
 
 ## Community
 
-- [Preset Gallery](https://www.preset-forge.com/en/gallery): Browse, download, and share GP-200 presets. Filter by module type and individual effect across all 305 supported effects.
+- [Preset Gallery](https://www.preset-forge.com/gallery): Browse, download, and share GP-200 presets. Filter by module type and individual effect across all 305 supported effects.
 
 ## Presets by Amp Model
 
 Each real-world amp that community presets are modelled on has its own landing page listing every matching GP-200 preset, with the Valeton model name mapped back to the original gear it emulates.
 
-- [Marshall JCM800 presets](https://www.preset-forge.com/en/amp/marshall-jcm800)
-- [Fender '65 Twin Reverb presets](https://www.preset-forge.com/en/amp/fender-65-twin-reverb)
-- [Mesa/Boogie Dual Rectifier presets](https://www.preset-forge.com/en/amp/mesa-boogie-dual-rectifier-modern-mode)
-- [Roland JC-120 Jazz Chorus presets](https://www.preset-forge.com/en/amp/roland-jc-120-jazz-chorus-solid-state-combo)
+- [Marshall JCM800 presets](https://www.preset-forge.com/amp/marshall-jcm800)
+- [Fender '65 Twin Reverb presets](https://www.preset-forge.com/amp/fender-65-twin-reverb)
+- [Mesa/Boogie Dual Rectifier presets](https://www.preset-forge.com/amp/mesa-boogie-dual-rectifier-modern-mode)
+- [Roland JC-120 Jazz Chorus presets](https://www.preset-forge.com/amp/roland-jc-120-jazz-chorus-solid-state-combo)
 
 ## Technical
 
@@ -43,6 +43,6 @@ Each real-world amp that community presets are modelled on has its own landing p
 
 ## Optional
 
-- [Legal Notice](https://www.preset-forge.com/en/legal): Impressum / legal information.
+- [Legal Notice](https://www.preset-forge.com/legal): Impressum / legal information.
 - [Preset Gallery (German)](https://www.preset-forge.com/de/gallery): German-language gallery.
 - [Help (German)](https://www.preset-forge.com/de/help): German-language help and FAQ.

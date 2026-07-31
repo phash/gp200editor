@@ -26,10 +26,18 @@ describe('intl middleware alternate links', () => {
     expect(link).not.toContain('hreflang');
   });
 
-  it('still redirects an unprefixed path to a locale', async () => {
+  it('serves the unprefixed path directly instead of redirecting', async () => {
+    // localePrefix 'as-needed': English lives here. No hop, and no
+    // temporary redirect for Google to keep in the index.
     const res = await middleware(new NextRequest('https://www.preset-forge.com/help'));
 
+    expect(res?.status).toBe(200);
+  });
+
+  it('redirects the /en/ form onto the unprefixed path', async () => {
+    const res = await middleware(new NextRequest('https://www.preset-forge.com/en/help'));
+
     expect(res?.status).toBe(307);
-    expect(res?.headers.get('location')).toContain('/help');
+    expect(new URL(res!.headers.get('location')!).pathname).toBe('/help');
   });
 });

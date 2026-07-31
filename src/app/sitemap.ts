@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { listAmpCategories } from '@/core/ampCategories';
 import { getActiveAmpSlugs } from '@/lib/ampActivity';
-import { LOCALES, BASE_URL } from '@/lib/hreflang';
+import { LOCALES, localeUrl, DEFAULT_LOCALE } from '@/lib/hreflang';
 import { GUIDE_SLUGS, guideLocales, getGuide } from '@/content/guides';
 
 // Force dynamic generation — the default sitemap.ts output is baked at build
@@ -40,14 +40,14 @@ const STATIC_PAGES: Array<{
 // all seven made /share 1 190 of 1 712 sitemap URLs (70%) while the amp and
 // guide pages that actually earn non-brand clicks got 9. The localized
 // variants stay live, self-canonical and reachable via hreflang.
-const SHARE_SITEMAP_LOCALE = 'en';
+const SHARE_SITEMAP_LOCALE = DEFAULT_LOCALE;
 
 export default async function sitemap(): Promise<SitemapEntry[]> {
   const now = new Date();
 
   const staticPages: SitemapEntry[] = STATIC_PAGES.flatMap((page) =>
     LOCALES.map((locale) => ({
-      url: `${BASE_URL}/${locale}${page.path}`,
+      url: localeUrl(locale, page.path || '/'),
       lastModified: now,
       changeFrequency: page.changeFrequency,
       priority: page.priority,
@@ -72,7 +72,7 @@ export default async function sitemap(): Promise<SitemapEntry[]> {
     .filter((cat) => activeAmpSlugs.has(cat.slug))
     .flatMap((cat) =>
       LOCALES.map((locale) => ({
-        url: `${BASE_URL}/${locale}/amp/${cat.slug}`,
+        url: localeUrl(locale, `/amp/${cat.slug}`),
         lastModified: now,
         changeFrequency: 'weekly' as const,
         priority: 0.7,
@@ -109,7 +109,7 @@ export default async function sitemap(): Promise<SitemapEntry[]> {
     // API responses, not pages — 170 URLs of crawl budget spent on something
     // Google can only index as raw JSON. They are now robots-disallowed.
     presetPages = publicPresets.map((preset) => ({
-      url: `${BASE_URL}/${SHARE_SITEMAP_LOCALE}/share/${preset.shareToken}`,
+      url: localeUrl(SHARE_SITEMAP_LOCALE, `/share/${preset.shareToken}`),
       lastModified: preset.updatedAt,
       changeFrequency: 'weekly' as const,
       priority: 0.6,
@@ -128,7 +128,7 @@ export default async function sitemap(): Promise<SitemapEntry[]> {
   // translation of each slug (others 404 and must stay out of the sitemap).
   const guidePages: SitemapEntry[] = GUIDE_SLUGS.flatMap((slug) =>
     guideLocales(slug).map((locale) => ({
-      url: `${BASE_URL}/${locale}/guides/${slug}`,
+      url: localeUrl(locale, `/guides/${slug}`),
       lastModified: new Date(getGuide(locale, slug)!.updated),
       changeFrequency: 'monthly' as const,
       priority: 0.7,

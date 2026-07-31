@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Link } from '@/i18n/routing';
 import { getChangelog } from '@/lib/changelog';
 import { ChangelogItemContent } from '@/components/ChangelogItemContent';
-import { buildAlternates, BASE_URL } from '@/lib/hreflang';
+import { buildAlternates, localeUrl } from '@/lib/hreflang';
 import type { Locale } from '@/i18n/locales';
 
 export const revalidate = 3600;
@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = 'Changelog — Preset Forge';
   const description =
     'Every release of the Preset Forge Valeton GP-200 editor. Features, bug fixes, protocol discoveries, SEO improvements.';
-  const canonical = `${BASE_URL}/${locale}/changelog`;
+  const canonical = localeUrl(locale, '/changelog');
   return {
     title,
     description,

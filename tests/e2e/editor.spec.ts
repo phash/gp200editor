@@ -16,7 +16,9 @@ test.describe('Home Page', () => {
   test('Sprache wechseln zu EN', async ({ page }) => {
     await page.goto('/de');
     await page.getByTestId('nav-locale-switcher').click();
-    await expect(page).toHaveURL(/\/en/);
+    // English is the default locale and routing runs with localePrefix
+    // 'as-needed', so switching to EN lands on the unprefixed root.
+    await expect(page).toHaveURL(/\/$/);
     await expect(page.locator('h1')).toContainText('Preset');
   });
 });

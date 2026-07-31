@@ -15,6 +15,7 @@ vi.mock('@/lib/ampActivity', () => ({
 import sitemap from '@/app/sitemap';
 import { prisma } from '@/lib/prisma';
 import { getActiveAmpSlugs } from '@/lib/ampActivity';
+import { LOCALES, localeUrl } from '@/lib/hreflang';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -23,14 +24,35 @@ beforeEach(() => {
 });
 
 describe('sitemap', () => {
-  it('emits only the x-default (en) share URL per public preset', async () => {
+  it('never lists a /en/ URL — those only redirect under as-needed prefixing', async () => {
+    (prisma.preset.findMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+      { shareToken: 'abc', updatedAt: new Date('2026-04-01') },
+    ]);
+    (getActiveAmpSlugs as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+      new Set(['fender-65-twin-reverb']),
+    );
+
+    const entries = await sitemap();
+    const prefixed = entries.filter((e) => /preset-forge\.com\/en(\/|$)/.test(e.url));
+    expect(prefixed).toEqual([]);
+  });
+
+  it('lists the unprefixed English home page', async () => {
+    (prisma.preset.findMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce([]);
+
+    const urls = (await sitemap()).map((e) => e.url);
+    expect(urls).toContain('https://www.preset-forge.com');
+    expect(urls).toContain('https://www.preset-forge.com/de');
+  });
+
+  it('emits only the x-default (English) share URL per public preset', async () => {
     (prisma.preset.findMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
       { shareToken: 'abc', updatedAt: new Date('2026-04-01') },
     ]);
 
     const entries = await sitemap();
     const urls = entries.map((e) => e.url);
-    expect(urls).toContain('https://www.preset-forge.com/en/share/abc');
+    expect(urls).toContain('https://www.preset-forge.com/share/abc');
     // The other six locales are near-duplicates — the preset name, amp and
     // parameter values are identical, only the surrounding chrome is
     // translated. They stay reachable and self-canonical, but listing all
@@ -79,8 +101,10 @@ describe('sitemap', () => {
     (getActiveAmpSlugs as ReturnType<typeof vi.fn>).mockResolvedValueOnce(activeSlugs);
 
     const entries = await sitemap();
-    const perLocale = ['de', 'en', 'es', 'fr', 'it', 'pt', 'pt-BR'].map((l) =>
-      entries.filter((e) => e.url.match(new RegExp(`/${l}/amp/[a-z0-9-]+$`))),
+    // English is unprefixed under localePrefix 'as-needed', so match on the
+    // URL each locale is actually served from rather than assuming a prefix.
+    const perLocale = LOCALES.map((l) =>
+      entries.filter((e) => e.url.startsWith(localeUrl(l, '/amp/'))),
     );
 
     // Every locale should have one URL per active slug that exists in the
