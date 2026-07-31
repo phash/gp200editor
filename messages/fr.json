@@ -115,7 +115,8 @@
       "recentComments": "Commentaires récents",
       "openPreset": "Ouvrir le preset →",
       "noFeatured": "Aucun preset en vedette pour l'instant"
-    }
+    },
+    "uploadCta": "Charger le preset depuis le disque"
   },
   "footer": {
     "disclaimer": "Preset Forge — Outil non officiel. Non affilié à Valeton.",

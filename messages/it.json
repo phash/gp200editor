@@ -115,7 +115,8 @@
       "recentComments": "Commenti recenti",
       "openPreset": "Apri preset →",
       "noFeatured": "Nessun preset in primo piano"
-    }
+    },
+    "uploadCta": "Carica preset dal disco"
   },
   "footer": {
     "disclaimer": "Preset Forge — Strumento non ufficiale. Non affiliato a Valeton.",
