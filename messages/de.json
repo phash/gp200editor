@@ -115,7 +115,8 @@
       "recentComments": "Aktuelle Kommentare",
       "openPreset": "Preset öffnen →",
       "noFeatured": "Noch kein Featured-Preset"
-    }
+    },
+    "uploadCta": "Preset von Festplatte laden"
   },
   "footer": {
     "disclaimer": "Preset Forge — Inoffizielles Tool. Nicht von Valeton.",

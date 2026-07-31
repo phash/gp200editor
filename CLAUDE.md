@@ -25,6 +25,7 @@ npm run test                     # Vitest Unit-Tests
 npm run test:e2e                 # Playwright E2E (App muss laufen + Garage + DB)
 npm run lint                     # ESLint
 npm run build                    # Production Build
+npx next start -p 3123           # Prod-Build lokal servieren — Header, Canonicals, Redirects prüfen ohne Docker
 npm run ci                       # Lokale CI: lint + typecheck + test + build (ersetzt GH Actions)
 bash scripts/local-ci.sh lint typecheck   # Einzelne Stages
 npx vitest run path/test.ts -t "pattern"  # Single-File + Test-Name-Grep (schnelles TDD-Iterate)
@@ -78,6 +79,9 @@ src/
 - Nie `next/link` oder `next/navigation` direkt importieren (Ausnahme: `redirect()` in Server Components)
 - Alle UI-Strings über `useTranslations()` / `getTranslations()` (kein Hardcoding)
 - Translations in `messages/{de,en,es,fr,it,pt,pt-BR}.json` — 7 Locales, Key-Parität per Unit-Test erzwungen
+- `messages-parity` prüft nur Locales gegeneinander — ein überall fehlender Key sähe wie perfekte Parität aus; `messages-usage` schließt die Lücke und prüft jeden literalen `t('…')`-Aufruf in `src/` gegen `en.json`
+- `localePrefix: 'as-needed'` — EN läuft unpräfigiert (`/help`), `/en/help` 307t dorthin; alle anderen Locales behalten ihr Präfix
+- Public URLs immer über `localeUrl(locale, path)` aus `@/lib/hreflang` — kennt die EN-Ausnahme; `tests/unit/canonical-urls.test.ts` erzwingt es
 - Hreflang: `src/lib/hreflang.ts` mit `buildAlternates(path, locale)` — nie inline schreiben
 
 ---
@@ -148,3 +152,6 @@ src/
 - `@import url('https://fonts.googleapis.com/...')` oder andere externe Font-CDNs — Fonts laufen via `next/font/google` (Build-Time self-host); externe Imports brechen DSGVO-Compliance (LG München 3 O 17493/20)
 - Matomo-Script ohne `_paq.push(["disableCookies"])` + `_paq.push(["setDoNotTrack", true])` deployen — beide Flags MÜSSEN vor `trackPageView` stehen, sonst widerspricht der Code der Datenschutzerklärung
 - `youtube.com/embed/...` für Iframes verwenden — IMMER `youtube-nocookie.com/embed/...` (CSP `frame-src` erlaubt nur die nocookie-Domain)
+- `${BASE_URL}/${locale}/...` von Hand bauen — unter `as-needed` zeigt der Canonical dann auf einen Redirect statt auf ein Dokument; immer `localeUrl(locale, path)`
+- `alternateLinks` in `defineRouting` wieder aktivieren — next-intl setzt dann einen `Link:`-hreflang-Header, dessen x-default der HTML-Metadata widerspricht; Google verwirft das ganze Cluster
+- Locale-Präfix in `PROTECTED_ROUTE_PATTERN` (`middleware.ts`) zur Pflicht machen — unter `as-needed` sind `/profile`, `/presets`, `/admin` eigenständige URLs und liefen sonst am Auth-Guard vorbei
