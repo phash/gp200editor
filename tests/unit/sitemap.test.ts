@@ -23,26 +23,34 @@ beforeEach(() => {
 });
 
 describe('sitemap', () => {
-  it('emits HTML + JSON URLs for each public preset', async () => {
+  it('emits only the x-default (en) share URL per public preset', async () => {
     (prisma.preset.findMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
       { shareToken: 'abc', updatedAt: new Date('2026-04-01') },
     ]);
 
     const entries = await sitemap();
     const urls = entries.map((e) => e.url);
-    // All 7 locale variants
-    expect(urls).toContain('https://www.preset-forge.com/de/share/abc');
     expect(urls).toContain('https://www.preset-forge.com/en/share/abc');
-    expect(urls).toContain('https://www.preset-forge.com/es/share/abc');
-    expect(urls).toContain('https://www.preset-forge.com/fr/share/abc');
-    expect(urls).toContain('https://www.preset-forge.com/it/share/abc');
-    expect(urls).toContain('https://www.preset-forge.com/pt/share/abc');
-    expect(urls).toContain('https://www.preset-forge.com/pt-BR/share/abc');
-    // Plus the JSON endpoint
-    expect(urls).toContain('https://www.preset-forge.com/api/share/abc/json');
+    // The other six locales are near-duplicates — the preset name, amp and
+    // parameter values are identical, only the surrounding chrome is
+    // translated. They stay reachable and self-canonical, but listing all
+    // seven made share pages 70% of the sitemap and starved the amp and
+    // guide pages of crawl budget. Google finds the rest via hreflang.
+    for (const locale of ['de', 'es', 'fr', 'it', 'pt', 'pt-BR']) {
+      expect(urls).not.toContain(`https://www.preset-forge.com/${locale}/share/abc`);
+    }
   });
 
-  it('emits eight entries per preset (7 locale HTML + 1 JSON)', async () => {
+  it('emits no /api/ URLs — the sitemap is for pages, not JSON endpoints', async () => {
+    (prisma.preset.findMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+      { shareToken: 'abc', updatedAt: new Date('2026-04-01') },
+    ]);
+
+    const entries = await sitemap();
+    expect(entries.filter((e) => e.url.includes('/api/'))).toHaveLength(0);
+  });
+
+  it('emits exactly one entry per preset', async () => {
     (prisma.preset.findMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
       Array.from({ length: 10 }, (_, i) => ({
         shareToken: `tok${i}`,
@@ -52,11 +60,16 @@ describe('sitemap', () => {
 
     const entries = await sitemap();
     const presetEntries = entries.filter(
-      (e) =>
-        (e.url.includes('/share/') || e.url.includes('/api/share/')) &&
-        !e.url.includes('/amp/'),
+      (e) => e.url.includes('/share/') && !e.url.includes('/amp/'),
     );
-    expect(presetEntries).toHaveLength(80);
+    expect(presetEntries).toHaveLength(10);
+  });
+
+  it('omits /changelog — it is noindex and must not be advertised for crawl', async () => {
+    (prisma.preset.findMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce([]);
+
+    const entries = await sitemap();
+    expect(entries.filter((e) => e.url.includes('/changelog'))).toHaveLength(0);
   });
 
   it('emits amp category URLs for all 7 locales (only for active slugs)', async () => {

@@ -11,6 +11,15 @@ export const routing = defineRouting({
   locales: LOCALES,
   defaultLocale: 'en',
   localeDetection: true,
+  // Off: next-intl would otherwise emit its own `Link: <...>;
+  // rel="alternate"` hreflang set from the middleware, deriving x-default
+  // from the *unprefixed* path. Next.js metadata already emits an HTML
+  // hreflang set (src/lib/hreflang.ts) whose x-default is the /en/ URL, so
+  // every page shipped two contradicting x-default declarations. Google
+  // consolidated on the unprefixed URL — which only 307-redirects and holds
+  // no content (GSC Q2/2026: /help 577 impressions, /en/help 3).
+  // buildAlternates() is the single source of truth for hreflang.
+  alternateLinks: false,
 });
 
 // Typed navigation helpers — import Link, useRouter, usePathname from this module

@@ -1,3 +1,9 @@
 User-agent: *
 Allow: /
+
+# API routes return JSON or binary payloads, not pages. The
+# /api/share/<token>/json endpoints used to sit in the sitemap (170 URLs)
+# and were being crawled as if they were documents.
+Disallow: /api/
+
 Sitemap: https://www.preset-forge.com/sitemap.xml

@@ -20,6 +20,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title,
     description,
+    // Release notes are for users who already found us, not for search. Over
+    // 2026-04-30..2026-07-29 this page pulled 180 impressions and 1 click
+    // (CTR 0.56%) by ranking on long-tail queries it cannot answer — enough
+    // volume to drag the site-wide CTR and average position down. `follow`
+    // stays on so the links out of it still pass signal.
+    robots: { index: false, follow: true },
     alternates: buildAlternates('/changelog', locale),
     openGraph: { title, description, url: canonical, type: 'website', siteName: 'Preset Forge' },
     twitter: { card: 'summary', title, description },
