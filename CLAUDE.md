@@ -31,7 +31,7 @@ bash scripts/local-ci.sh lint typecheck   # Einzelne Stages
 npx vitest run path/test.ts -t "pattern"  # Single-File + Test-Name-Grep (schnelles TDD-Iterate)
 ```
 
-**Prod-Deploy:** `ssh musikersuche@musikersuche.org` → `cd /opt/gp200editor && bash scripts/deploy-update.sh`
+**Prod-Deploy:** `ssh musikersuche@musikersuche.org` → `cd /opt/gp200editor && bash scripts/deploy-update.sh` — Script macht `git pull` auf **master** (prod ist dort ausgecheckt), PR also vorher mergen
 **Prod-SQL:** `source .env.prod && docker compose -f docker-compose.prod.yml -f docker-compose.caddy.yml exec -T postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"`
 
 ---
@@ -155,3 +155,4 @@ src/
 - `${BASE_URL}/${locale}/...` von Hand bauen — unter `as-needed` zeigt der Canonical dann auf einen Redirect statt auf ein Dokument; immer `localeUrl(locale, path)`
 - `alternateLinks` in `defineRouting` wieder aktivieren — next-intl setzt dann einen `Link:`-hreflang-Header, dessen x-default der HTML-Metadata widerspricht; Google verwirft das ganze Cluster
 - Locale-Präfix in `PROTECTED_ROUTE_PATTERN` (`middleware.ts`) zur Pflicht machen — unter `as-needed` sind `/profile`, `/presets`, `/admin` eigenständige URLs und liefen sonst am Auth-Guard vorbei
+- `TypeError: controller[kState].transformAlgorithm is not a function` im App-Log nachjagen — erscheint 1–2× direkt nach Container-Start (Health-Check-Warmup) und reproduziert sich unter Last nicht, auch nicht über die S3-Streaming-Endpoints
