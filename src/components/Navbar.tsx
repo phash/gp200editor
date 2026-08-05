@@ -66,6 +66,22 @@ export function Navbar() {
           FW 1.8.0
         </span>
       </div>
+      {/* Support CTA — sits centered between logo and links via justify-between; in-flow, so it can never overlap the nav links */}
+      <a
+        href="https://buymeacoffee.com/phash"
+        target="_blank"
+        rel="noopener noreferrer"
+        data-testid="nav-support-cta"
+        className="hidden xl:flex items-center gap-2 font-mono-display text-sm font-bold px-4 py-1.5 rounded transition-all bg-[rgba(255,221,51,0.08)] hover:bg-[rgba(255,221,51,0.2)] hover:shadow-[0_0_12px_rgba(255,221,51,0.4)]"
+        style={{
+          border: '1px solid rgba(255,221,51,0.4)',
+          color: '#ffdd33',
+          textDecoration: 'none',
+        }}
+      >
+        <span aria-hidden="true">🎸</span>
+        {t('supportCta')}
+      </a>
       {/* Hamburger button — mobile only */}
       <button
         className="md:hidden flex flex-col gap-1 p-1"
@@ -152,14 +168,15 @@ export function Navbar() {
           href="https://buymeacoffee.com/phash"
           target="_blank"
           rel="noopener noreferrer"
-          className="font-mono-display text-xs px-2.5 py-1 rounded transition-all bg-[rgba(255,221,51,0.08)] hover:bg-[rgba(255,221,51,0.2)] hover:shadow-[0_0_8px_rgba(255,221,51,0.3)]"
+          title={t('supportCta')}
+          className="xl:hidden font-mono-display text-xs px-2.5 py-1 rounded transition-all bg-[rgba(255,221,51,0.08)] hover:bg-[rgba(255,221,51,0.2)] hover:shadow-[0_0_8px_rgba(255,221,51,0.3)]"
           style={{
             border: '1px solid rgba(255,221,51,0.3)',
             color: '#ffdd33',
             textDecoration: 'none',
           }}
         >
-          ☕
+          🎸
         </a>
         <LocaleSwitcher />
         {role === 'ADMIN' && (
@@ -251,6 +268,19 @@ export function Navbar() {
               {tAuth('login')}
             </Link>
           )}
+          <a
+            href="https://buymeacoffee.com/phash"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-mono-display text-sm font-bold px-3 py-2 rounded text-center bg-[rgba(255,221,51,0.08)]"
+            style={{
+              border: '1px solid rgba(255,221,51,0.4)',
+              color: '#ffdd33',
+              textDecoration: 'none',
+            }}
+          >
+            <span aria-hidden="true">🎸</span> {t('supportCta')}
+          </a>
           <div
             className="flex gap-2 items-center pt-3 flex-wrap"
             style={{ borderTop: '1px solid var(--border-subtle)' }}

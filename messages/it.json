@@ -15,7 +15,8 @@
     "changelog": "Changelog",
     "menuAria": "Menu",
     "discordTitle": "Feedback & Community",
-    "helpAria": "Aiuto"
+    "helpAria": "Aiuto",
+    "supportCta": "Buy me a guitar"
   },
   "home": {
     "hero": {
@@ -122,7 +123,8 @@
     "disclaimer": "Preset Forge — Strumento non ufficiale. Non affiliato a Valeton.",
     "legal": "Note legali e Privacy",
     "poweredBy": "powered by",
-    "guides": "Guide"
+    "guides": "Guide",
+    "supportCta": "Buy me a guitar"
   },
   "editor": {
     "title": "Modifica Preset",
