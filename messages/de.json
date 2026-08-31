@@ -549,7 +549,8 @@
     "badges": {
       "admin": "ADMIN",
       "suspended": "GESPERRT",
-      "flagged": "GEMELDET"
+      "flagged": "GEMELDET",
+      "unverified": "UNBESTÄTIGT"
     },
     "confirm": {
       "deleteUser": "Diesen Benutzer wirklich löschen? Alle Presets und Daten werden entfernt.",

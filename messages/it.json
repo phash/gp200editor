@@ -549,7 +549,8 @@
     "badges": {
       "admin": "ADMIN",
       "suspended": "SOSPESO",
-      "flagged": "SEGNALATO"
+      "flagged": "SEGNALATO",
+      "unverified": "NON VERIFICATO"
     },
     "confirm": {
       "deleteUser": "Eliminare davvero questo utente? Tutti i preset e i dati verranno rimossi.",

@@ -9,7 +9,7 @@ import { AdminCommentsTab } from './admin/AdminCommentsTab';
 type Tab = 'users' | 'presets' | 'errors' | 'auditLog' | 'comments';
 
 interface Stats { userCount: number; presetCount: number; errorCount: number; suspendedCount: number; }
-interface AdminUser { id: string; username: string; email: string; role: string; suspended: boolean; avatarUrl: string | null; createdAt: string; presetCount: number; }
+interface AdminUser { id: string; username: string; email: string; role: string; suspended: boolean; emailVerified: boolean; createdAt: string; presetCount: number; }
 interface AdminPreset { id: string; name: string; author: string | null; style: string | null; public: boolean; flagged: boolean; modules: string[]; downloadCount: number; ratingAverage: number; createdAt: string; ownerUsername: string; }
 interface ErrorEntry {
   id: string;
@@ -267,6 +267,7 @@ export function AdminDashboard() {
                   {u.username}
                   {u.role === 'ADMIN' && <span className="ml-2 text-[11px] px-1.5 py-0.5 rounded" style={{ color: 'var(--accent-amber)', background: 'rgba(245,158,11,0.12)' }}>{t('badges.admin')}</span>}
                   {u.suspended && <span className="ml-2 text-[11px] px-1.5 py-0.5 rounded" style={{ color: '#ef4444', background: 'rgba(239,68,68,0.12)' }}>{t('badges.suspended')}</span>}
+                  {!u.emailVerified && <span className="ml-2 text-[11px] px-1.5 py-0.5 rounded" style={{ color: '#f59e0b', background: 'rgba(245,158,11,0.12)' }}>{t('badges.unverified')}</span>}
                 </div>
                 <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
                   {u.email} · {t('presetCount', { count: u.presetCount })} · {t('memberSince', { date: new Date(u.createdAt).toLocaleDateString() })}
