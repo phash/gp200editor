@@ -47,8 +47,16 @@ export const GET = withAdminAuth(async (request) => {
     prisma.user.count({ where }),
   ]);
 
+  // Flatten Prisma's `_count` into the flat `presetCount` the admin UI reads —
+  // leaking the raw relation-count shape means the client silently renders
+  // `undefined` for every user.
+  const serialized = users.map(({ _count, ...user }) => ({
+    ...user,
+    presetCount: _count.presets,
+  }));
+
   return NextResponse.json({
-    users,
+    users: serialized,
     total,
     page,
     limit,
