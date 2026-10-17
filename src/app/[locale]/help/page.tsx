@@ -5,13 +5,16 @@ import { serializeJsonLd } from '@/lib/jsonLd';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'help' });
+  const title = t('metaTitle');
+  const description = t('metaDescription');
   return {
-    title: 'Help & FAQ — GP-200 Editor, Linux Support, USB MIDI | Preset Forge',
-    description: 'How to use Preset Forge: load and edit GP-200 presets, connect via USB MIDI, import HX Stomp presets, build live setlists. Works on Linux (tested on Linux Mint), Windows, and macOS.',
+    title,
+    description,
     alternates: buildAlternates('/help', locale as Locale),
     openGraph: {
-      title: 'Help & FAQ — GP-200 Preset Editor | Preset Forge',
-      description: 'Complete guide to Preset Forge: GP-200 preset editing, Linux support (Linux Mint tested), USB MIDI live editing, HX Stomp import, live setlists with cue points.',
+      title,
+      description,
       images: [{ url: `${BASE_URL}/og-image.png`, width: 1200, height: 630 }],
     },
   };

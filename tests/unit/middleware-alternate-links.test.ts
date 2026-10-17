@@ -34,10 +34,45 @@ describe('intl middleware alternate links', () => {
     expect(res?.status).toBe(200);
   });
 
-  it('redirects the /en/ form onto the unprefixed path', async () => {
+  it('redirects the /en/ form onto the unprefixed path permanently', async () => {
+    // next-intl answers with a temporary 307, and Google kept the /en/ URLs
+    // in the index (GSC Oct 2026: /en/* still 655 impressions). A 308 tells
+    // it to consolidate onto the target.
     const res = await middleware(new NextRequest('https://www.preset-forge.com/en/help'));
 
-    expect(res?.status).toBe(307);
+    expect(res?.status).toBe(308);
     expect(new URL(res!.headers.get('location')!).pathname).toBe('/help');
+  });
+
+  it('keeps the query string and the locale cookie on the permanent redirect', async () => {
+    const res = await middleware(
+      new NextRequest('https://www.preset-forge.com/en/editor?share=abc'),
+    );
+
+    expect(res?.status).toBe(308);
+    const location = new URL(res!.headers.get('location')!);
+    expect(location.pathname).toBe('/editor');
+    expect(location.search).toBe('?share=abc');
+    // Not cached by the browser: /en/... must keep reaching the middleware so
+    // an explicit English URL still overrides a stored non-English cookie.
+    expect(res!.headers.get('cache-control')).toContain('no-store');
+  });
+
+  it('redirects bare /en permanently onto /', async () => {
+    const res = await middleware(new NextRequest('https://www.preset-forge.com/en'));
+
+    expect(res?.status).toBe(308);
+    expect(new URL(res!.headers.get('location')!).pathname).toBe('/');
+  });
+
+  it('leaves locale-detection redirects temporary', async () => {
+    // Unprefixed path + German cookie → /de/help depends on the visitor,
+    // so it must not become a permanent redirect.
+    const req = new NextRequest('https://www.preset-forge.com/help', {
+      headers: { cookie: 'NEXT_LOCALE=de' },
+    });
+    const res = await middleware(req);
+
+    expect(res?.status).toBe(307);
   });
 });

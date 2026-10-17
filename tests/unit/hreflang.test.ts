@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildHreflang, buildAlternates, localeUrl } from '@/lib/hreflang';
+import { buildHreflang, buildAlternates, localeUrl, localePath } from '@/lib/hreflang';
 
 // English is the default locale and routing runs with localePrefix
 // 'as-needed', so English lives at the unprefixed path and /en/... only
@@ -98,5 +98,17 @@ describe('buildHreflang edge cases', () => {
     expect(Object.keys(result).sort()).toEqual(
       ['de', 'en', 'es', 'fr', 'it', 'pt', 'pt-BR', 'x-default'].sort(),
     );
+  });
+});
+
+describe('localePath', () => {
+  it('leaves the default locale unprefixed', () => {
+    expect(localePath('en', '/share/abc')).toBe('/share/abc');
+    expect(localePath('en', '/')).toBe('/');
+  });
+
+  it('prefixes every other locale', () => {
+    expect(localePath('pt-BR', '/share/abc')).toBe('/pt-BR/share/abc');
+    expect(localePath('de', '/')).toBe('/de');
   });
 });

@@ -3,6 +3,7 @@ import type { GP200Preset } from '@/core/types';
 import { EFFECT_MAP } from '@/core/effectNames';
 import { EFFECT_DESCRIPTIONS } from '@/core/effectDescriptions';
 import type { Locale } from '@/i18n/locales';
+import { localePath } from '@/lib/hreflang';
 
 export const PRESET_JSON_SCHEMA_VERSION = 1;
 
@@ -187,8 +188,8 @@ export function encodeToJson(preset: GP200Preset, opts: EncodeOpts): PresetJson 
     },
     urls: {
       download: `/api/share/${opts.shareToken}/download`,
-      openInEditor: `/${opts.locale}/editor?share=${opts.shareToken}`,
-      html: `/${opts.locale}/share/${opts.shareToken}`,
+      openInEditor: localePath(opts.locale, `/editor?share=${opts.shareToken}`),
+      html: localePath(opts.locale, `/share/${opts.shareToken}`),
     },
   };
 }

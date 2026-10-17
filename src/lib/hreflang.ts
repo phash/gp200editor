@@ -43,9 +43,18 @@ export const DEFAULT_LOCALE: Locale = 'en';
  * of the same page.
  */
 export function localeUrl(locale: Locale, path: string): string {
+  return `${BASE_URL}${prefixedPath(locale, path)}`;
+}
+
+/** Site-relative form of localeUrl — for links that stay on this origin. */
+export function localePath(locale: Locale, path: string): string {
+  return prefixedPath(locale, path) || '/';
+}
+
+function prefixedPath(locale: Locale, path: string): string {
   const normalized = path === '/' ? '' : path;
   const prefix = locale === DEFAULT_LOCALE ? '' : `/${locale}`;
-  return `${BASE_URL}${prefix}${normalized}`;
+  return `${prefix}${normalized}`;
 }
 
 /**

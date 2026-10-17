@@ -80,7 +80,7 @@ src/
 - Alle UI-Strings über `useTranslations()` / `getTranslations()` (kein Hardcoding)
 - Translations in `messages/{de,en,es,fr,it,pt,pt-BR}.json` — 7 Locales, Key-Parität per Unit-Test erzwungen
 - `messages-parity` prüft nur Locales gegeneinander — ein überall fehlender Key sähe wie perfekte Parität aus; `messages-usage` schließt die Lücke und prüft jeden literalen `t('…')`-Aufruf in `src/` gegen `en.json`
-- `localePrefix: 'as-needed'` — EN läuft unpräfigiert (`/help`), `/en/help` 307t dorthin; alle anderen Locales behalten ihr Präfix
+- `localePrefix: 'as-needed'` — EN läuft unpräfigiert (`/help`), `/en/help` 308t dorthin (Middleware macht aus next-intls 307 ein 308 mit `no-store`); alle anderen Locales behalten ihr Präfix
 - Public URLs immer über `localeUrl(locale, path)` aus `@/lib/hreflang` — kennt die EN-Ausnahme; `tests/unit/canonical-urls.test.ts` erzwingt es
 - Hreflang: `src/lib/hreflang.ts` mit `buildAlternates(path, locale)` — nie inline schreiben
 

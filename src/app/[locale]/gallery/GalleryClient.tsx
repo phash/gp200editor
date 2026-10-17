@@ -283,7 +283,11 @@ export function GalleryClient() {
                   className="font-mono-display font-bold text-base truncate"
                   style={{ color: 'var(--text-primary)' }}
                 >
-                  {preset.name}
+                  {/* The share page is the indexable home of a preset; the
+                      editor link below is a tool action and stays nofollow. */}
+                  <Link href={`/share/${preset.shareToken}`} className="hover:underline">
+                    {preset.name}
+                  </Link>
                 </h2>
                 <span
                   className="font-mono-display text-[11px] flex-shrink-0"
@@ -364,6 +368,7 @@ export function GalleryClient() {
                 <div className="flex gap-2 shrink-0">
                   <Link
                     href={`/editor?share=${preset.shareToken}`}
+                    rel="nofollow"
                     className="font-mono-display text-[10px] font-bold tracking-wider uppercase px-3 py-1 rounded transition-all duration-150 hover:!bg-[var(--accent-amber)] hover:!text-[var(--bg-primary)]"
                     style={{
                       border: '1px solid var(--border-active)',

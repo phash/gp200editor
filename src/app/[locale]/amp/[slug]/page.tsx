@@ -10,6 +10,7 @@ import {
 import { buildAlternates, localeUrl } from '@/lib/hreflang';
 import { serializeJsonLd } from '@/lib/jsonLd';
 import { LOCALES, type Locale } from '@/i18n/locales';
+import { plainAmpName } from '@/lib/presetMeta';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,11 +30,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const cat = findAmpCategoryBySlug(slug);
   if (!cat) return {};
 
-  const t = await getTranslations({ locale });
-  const title = t('amp.metaTitle', { name: cat.realName });
-  const description = t('amp.metaDescription', { name: cat.realName });
-  const canonical = localeUrl(locale, `/amp/${slug}`);
-
   // Empty amp pages (no community presets) are noindex'd to avoid being
   // flagged as thin content. Crawl is still allowed so Google reaches the
   // breadcrumb back to /gallery. Count is an index-only lookup — cheap
@@ -42,6 +38,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     where: { public: true, effects: { hasSome: cat.valetonNames } },
   });
   const isEmpty = presetCount === 0;
+
+  const t = await getTranslations({ locale });
+  // Search results show the title without trademark noise; the count is the
+  // concrete promise that lifts it above a generic "free presets" line.
+  const title = t('amp.metaTitle', { name: plainAmpName(cat.realName), count: presetCount });
+  const description = t('amp.metaDescription', { name: cat.realName });
+  const canonical = localeUrl(locale, `/amp/${slug}`);
 
   return {
     title,
