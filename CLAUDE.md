@@ -25,7 +25,7 @@ npm run test                     # Vitest Unit-Tests
 npm run test:e2e                 # Playwright E2E (App muss laufen + Garage + DB)
 npm run lint                     # ESLint
 npm run build                    # Production Build
-npx next start -p 3123           # Prod-Build lokal servieren — Header, Canonicals, Redirects prüfen ohne Docker
+npx next start -p 3123           # Prod-Build lokal servieren — Header, Canonicals, Redirects prüfen; Amp/Share-Seiten brauchen vorher `docker compose up -d postgres garage`
 npm run ci                       # Lokale CI: lint + typecheck + test + build (ersetzt GH Actions)
 bash scripts/local-ci.sh lint typecheck   # Einzelne Stages
 npx vitest run path/test.ts -t "pattern"  # Single-File + Test-Name-Grep (schnelles TDD-Iterate)
@@ -81,7 +81,7 @@ src/
 - Translations in `messages/{de,en,es,fr,it,pt,pt-BR}.json` — 7 Locales, Key-Parität per Unit-Test erzwungen
 - `messages-parity` prüft nur Locales gegeneinander — ein überall fehlender Key sähe wie perfekte Parität aus; `messages-usage` schließt die Lücke und prüft jeden literalen `t('…')`-Aufruf in `src/` gegen `en.json`
 - `localePrefix: 'as-needed'` — EN läuft unpräfigiert (`/help`), `/en/help` 308t dorthin (Middleware macht aus next-intls 307 ein 308 mit `no-store`); alle anderen Locales behalten ihr Präfix
-- Public URLs immer über `localeUrl(locale, path)` aus `@/lib/hreflang` — kennt die EN-Ausnahme; `tests/unit/canonical-urls.test.ts` erzwingt es
+- Public URLs immer über `localeUrl(locale, path)` aus `@/lib/hreflang` (site-relativ: `localePath()`) — kennt die EN-Ausnahme; `tests/unit/canonical-urls.test.ts` erzwingt es
 - Hreflang: `src/lib/hreflang.ts` mit `buildAlternates(path, locale)` — nie inline schreiben
 
 ---
@@ -110,6 +110,8 @@ src/
 | Library / Preset-Ingest | [`docs/library-ingest.md`](docs/library-ingest.md) |
 | SysEx-Protokoll (USB MIDI) | [`docs/sysex-protocol.md`](docs/sysex-protocol.md) |
 | Deployment + Docker + Hardware | [`docs/deployment.md`](docs/deployment.md) |
+| Guides (Long-Form, pro Locale) | `src/content/guides/{en,de,es,pt-BR}.ts` · Struktur-Parität per `tests/unit/guides-content.test.ts` · Roadmap `docs/content-roadmap.md` |
+| SEO-Meta | Seiten: `metaTitle`/`metaDescription` in `messages/*.json` · Share-Seiten: `src/lib/presetMeta.ts` |
 | USB-Capture-Analyse (SysEx RE) | [`docs/capture-catalog.md`](docs/capture-catalog.md) · `scripts/analyze-sysex.py <cap.pcap>` · `scripts/build-capture-catalog.py` (Rohdaten in `caps/`, gitignored) |
 
 ---
@@ -156,3 +158,5 @@ src/
 - `alternateLinks` in `defineRouting` wieder aktivieren — next-intl setzt dann einen `Link:`-hreflang-Header, dessen x-default der HTML-Metadata widerspricht; Google verwirft das ganze Cluster
 - Locale-Präfix in `PROTECTED_ROUTE_PATTERN` (`middleware.ts`) zur Pflicht machen — unter `as-needed` sind `/profile`, `/presets`, `/admin` eigenständige URLs und liefen sonst am Auth-Guard vorbei
 - `TypeError: controller[kState].transformAlgorithm is not a function` im App-Log nachjagen — erscheint 1–2× direkt nach Container-Start (Health-Check-Warmup) und reproduziert sich unter Last nicht, auch nicht über die S3-Streaming-Endpoints
+- `/en/*`-Redirect nach `next.config` `redirects()` verlagern — läuft vor der Middleware, das `NEXT_LOCALE=en`-Cookie wird nie gesetzt, Wechsel auf Englisch springt zurück auf die Cookie-Locale; 307→308 passiert in `middleware.ts` (`no-store`)
+- `Preset.description` ungefiltert in Meta-Descriptions — Ingest schreibt dort eine Auto-Kette („Valeton GP-200 preset: …“), die den Amp doppelt nennt; `buildShareMeta()` filtert das
