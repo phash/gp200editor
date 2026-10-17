@@ -28,6 +28,21 @@ export const PROTECTED_ROUTE_PATTERN = new RegExp(
 // rather than bouncing through a redirect.
 export const LOCALE_PREFIX_PATTERN = new RegExp(`^/(${LOCALE_ALT})(?=/|$)`);
 
+// English is served unprefixed, so /en/... only ever redirects there. That
+// redirect does not depend on the visitor, but next-intl issues it as a
+// temporary 307 — and Google kept the /en/ URLs in its index (GSC Oct 2026:
+// 655 impressions on /en/*). Locale-detection redirects stay 307: those
+// depend on cookie and Accept-Language.
+const DEFAULT_LOCALE_PREFIX_PATTERN = new RegExp(`^/${routing.defaultLocale}(?=/|$)`);
+
+function makePermanent(response: NextResponse) {
+  const permanent = new NextResponse(null, { status: 308, headers: response.headers });
+  // Keep it out of the browser cache: a cached hop would skip the middleware,
+  // which sets the English locale cookie on this request.
+  permanent.headers.set('Cache-Control', 'no-store');
+  return permanent;
+}
+
 function loginRedirect(request: NextRequest, pathname: string) {
   const match = LOCALE_PREFIX_PATTERN.exec(pathname);
   const prefix = match ? `/${match[1]}` : '';
@@ -47,7 +62,11 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  return intlMiddleware(request);
+  const response = intlMiddleware(request);
+  if (DEFAULT_LOCALE_PREFIX_PATTERN.test(pathname) && response.status === 307) {
+    return makePermanent(response);
+  }
+  return response;
 }
 
 export const config = {

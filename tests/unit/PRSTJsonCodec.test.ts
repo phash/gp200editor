@@ -169,10 +169,23 @@ describe('encodeToJson', () => {
     expect(json.raw.fileSize).toBe(1224);
   });
 
-  it('builds urls with the configured locale', () => {
+  it('builds unprefixed urls for the default locale', () => {
+    // English is served unprefixed; /en/... only redirects there.
     expect(json.urls.download).toBe('/api/share/abc123/download');
-    expect(json.urls.openInEditor).toBe('/en/editor?share=abc123');
-    expect(json.urls.html).toBe('/en/share/abc123');
+    expect(json.urls.openInEditor).toBe('/editor?share=abc123');
+    expect(json.urls.html).toBe('/share/abc123');
+  });
+
+  it('builds prefixed urls for other locales', () => {
+    const de = encodeToJson(preset, {
+      shareToken: 'abc123',
+      locale: 'de',
+      sourceUrl: null,
+      sourceLabel: null,
+      description: null,
+    });
+    expect(de.urls.openInEditor).toBe('/de/editor?share=abc123');
+    expect(de.urls.html).toBe('/de/share/abc123');
   });
 
   it('passes Zod validation end to end', () => {

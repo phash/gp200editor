@@ -117,7 +117,9 @@
       "openPreset": "Apri preset →",
       "noFeatured": "Nessun preset in primo piano"
     },
-    "uploadCta": "Carica preset dal disco"
+    "uploadCta": "Carica preset dal disco",
+    "metaTitle": "Preset Forge — Editor gratuito per Valeton GP-200 su Linux, Mac e Windows",
+    "metaDescription": "Editor gratuito nel browser per i preset del Valeton GP-200 su Linux, Mac e Windows. Editing live via USB MIDI, import HX Stomp, galleria. Nessuna installazione."
   },
   "footer": {
     "disclaimer": "Preset Forge — Strumento non ufficiale. Non affiliato a Valeton.",
@@ -409,7 +411,9 @@
     "changelog20260319": "19 marzo 2026",
     "changelog20260319Items": "Live USB MIDI: attiva/disattiva effetti, modifica parametri, riordina signal chain — tutto in tempo reale · Navigazione bank con tab A/B/C/D · Carica/Salva preset · Auto-reconnect alla disconnessione USB",
     "changelog20260316": "16 marzo 2026",
-    "changelog20260316Items": "Galleria Presets: caricamento, link di condivisione, download, valutazioni · Profilo con avatar e bio · Playlists con cue point e count-in · Importazione HX Stomp (sperimentale)"
+    "changelog20260316Items": "Galleria Presets: caricamento, link di condivisione, download, valutazioni · Profilo con avatar e bio · Playlists con cue point e count-in · Importazione HX Stomp (sperimentale)",
+    "metaTitle": "Aiuto editor Valeton GP-200: USB MIDI, Linux e FAQ | Preset Forge",
+    "metaDescription": "Collega il GP-200 via USB MIDI, carica e salva preset .prst, importa file HX Stomp, crea setlist. Risposte passo passo per Linux, Mac e Windows."
   },
   "legal": {
     "impressumTitle": "Note Legali",
@@ -719,7 +723,7 @@
     "retry": "Riprova"
   },
   "amp": {
-    "metaTitle": "{name} – Preset gratuiti per Valeton GP-200 | Preset Forge",
+    "metaTitle": "{name} – {count, plural, =0 {Preset gratuiti per Valeton GP-200} one {# preset gratuito per Valeton GP-200} other {# preset gratuiti per Valeton GP-200}} | Preset Forge",
     "metaDescription": "Esplora preset gratuiti per Valeton GP-200 ispirati al {name}. Scaricane uno e aprilo nell'editor del browser: funziona su Linux, Windows e macOS.",
     "introCount": "{count, plural, one {# preset gratuito per Valeton GP-200 ispirato al {name}.} other {# preset gratuiti per Valeton GP-200 ispirati al {name}.}}",
     "introEmpty": "Ancora nessun preset per questo ampli. Sii il primo a caricarne uno!",
@@ -734,6 +738,8 @@
     "inEnglish": "Inglese",
     "allGuides": "Tutte le guide",
     "updated": "Aggiornato",
-    "ctaEditor": "Apri l'editor"
+    "ctaEditor": "Apri l'editor",
+    "metaTitle": "Guide Valeton GP-200: Linux, USB MIDI e preset | Preset Forge",
+    "metaDescription": "Guide passo passo per il Valeton GP-200: usare la pedaliera su Linux, modificare i preset via USB MIDI, aprire i file .prst."
   }
 }

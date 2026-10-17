@@ -1,5 +1,5 @@
 import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
+import { getMessages, getTranslations } from 'next-intl/server';
 import { routing } from '@/i18n/routing';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
@@ -30,6 +30,9 @@ const dmSans = DM_Sans({
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'home' });
+  const title = t('metaTitle');
+  const description = t('metaDescription');
   return {
     // metadataBase makes every relative image/URL in downstream metadata
     // resolve to the production origin. Without it, dynamic opengraph-image
@@ -37,8 +40,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     // Next.js default when rendered inside a prod container that doesn't
     // know its own external host.
     metadataBase: new URL(BASE_URL),
-    title: 'Preset Forge — GP-200 Preset Editor | Linux, Mac & Windows | HX Stomp Import',
-    description: 'Free browser-based editor for Valeton GP-200 guitar presets — runs on Linux, Mac, and Windows (the official Valeton app is Windows-only). Import Line6 HX Stomp .hlx files, live USB MIDI editing, timed preset switching for gigs, 305 effects with per-effect gallery filtering, community sharing. No install needed — works offline as PWA.',
+    title,
+    description,
     keywords: [
       'Valeton GP-200', 'GP-200 preset editor', 'GP-200 Linux', 'GP-200 Linux Mint',
       'GP-200 editor Linux', 'Valeton GP-200 Linux', 'GP-200 Ubuntu', 'GP-200 editor alternative',
@@ -53,8 +56,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     manifest: '/manifest.json',
     alternates: buildAlternates('/', locale as Locale),
     openGraph: {
-      title: 'Preset Forge — GP-200 Preset Editor | Linux, Mac & Windows | HX Stomp Import',
-      description: 'GP-200 preset editor that runs on Linux, Mac, and Windows. Import HX Stomp .hlx presets, build timed setlists with cue points for live gigs, browse 305 effects in the gallery. USB MIDI, offline PWA.',
+      title,
+      description,
       siteName: 'Preset Forge',
       type: 'website',
       url: localeUrl(locale as Locale, '/'),

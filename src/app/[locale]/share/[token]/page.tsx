@@ -15,6 +15,7 @@ import { slugifyAmpName } from '@/core/ampCategories';
 import { Link } from '@/i18n/routing';
 import { buildAlternates, localeUrl } from '@/lib/hreflang';
 import { serializeJsonLd } from '@/lib/jsonLd';
+import { buildShareMeta } from '@/lib/presetMeta';
 import type { Locale } from '@/i18n/locales';
 
 export const revalidate = 3600;
@@ -39,9 +40,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     select: {
       name: true,
       description: true,
+      style: true,
       presetKey: true,
       public: true,
-      user: { select: { username: true } },
     },
   });
   if (!preset || !preset.public) return {};
@@ -66,16 +67,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // On S3 / decode error, fall back to plain metadata.
   }
 
-  const title = `${preset.name}${amp ? ` — ${amp} preset` : ''} by @${preset.user.username} | Preset Forge`;
-  const description =
-    [
-      preset.description,
-      amp,
-      cab && `through ${cab}`,
-      drive && `with ${drive}`,
-    ]
-      .filter(Boolean)
-      .join(' · ') + ' — Free Valeton GP-200 preset, open in browser editor.';
+  const { title, description } = buildShareMeta({
+    name: preset.name,
+    style: preset.style,
+    description: preset.description,
+    amp,
+    cab,
+    drive,
+  });
 
   const canonical = localeUrl(locale, `/share/${token}`);
 

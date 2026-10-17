@@ -7,8 +7,8 @@ import { listGuidesForIndex } from '@/content/guides';
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'guides' });
-  const title = `${t('title')} — Preset Forge`;
-  const description = t('subtitle');
+  const title = t('metaTitle');
+  const description = t('metaDescription');
   return {
     title,
     description,
