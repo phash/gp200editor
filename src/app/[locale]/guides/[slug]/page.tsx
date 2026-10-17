@@ -129,6 +129,17 @@ export default async function GuidePage({ params }: { params: Promise<{ locale: 
                 ))}
               </ol>
             )}
+            {section.links && (
+              <ul className="flex flex-wrap gap-x-4 gap-y-1 mt-3">
+                {section.links.map((link) => (
+                  <li key={link.href} className="text-sm">
+                    <Link href={link.href} className="hover:underline" style={{ color: 'var(--accent-amber)' }}>
+                      {link.label} →
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
         ))}
 

@@ -7,6 +7,19 @@ review. **Shipped** in that pass:
   BreadcrumbList JSON-LD, hreflang limited to translated locales, in the sitemap.
 - All `/amp/[slug]` category pages localized across the 7 locales.
 
+**Shipped 2026-10-17** (from the October GSC report, see PR #101 for the
+metadata side):
+
+- `/guides/valeton-gp-200-editor`: landing page for the main non-brand
+  query "gp 200 editor" (about 65 impressions, position 5, CTR 3%). It
+  compares the official Valeton editor with Preset Forge.
+- `/guides/prst-file`: what a .prst file is and how to open it. The query
+  "prst file" ranked at position 12 with no page that matched it.
+- All three guides in EN, DE, ES and PT-BR. Brazil sends the most search
+  clicks of any country (85 in 3 months), and the Spanish-speaking countries
+  together send about as many. Guide sections can now carry internal
+  `links`.
+
 ## Deferred — next content batch
 
 ### New guides (author EN + DE first, then translate)
@@ -19,9 +32,15 @@ review. **Shipped** in that pass:
   section into a standalone how-to.
 
 ### Translations
-- Translate the `src/content/guides.ts` entries into ES / FR / IT / PT / PT-BR.
+- Translate the `src/content/guides/` entries into FR / IT / PT (ES and PT-BR done).
   Adding a locale to `GUIDES` auto-joins it to hreflang + the sitemap, and the
   index drops the "English" fallback badge for that locale.
+
+### Brazil
+- Curate a gallery collection of presets that match what Brazilian players
+  search for (for example, styles popular in Brazilian rock and worship
+  music). This needs input from someone who knows the scene; the data alone
+  does not say which presets to pick.
 
 ### Infra (only when needed)
 - **Sitemap-index split** — `src/app/sitemap.ts` caps at 5000 presets
