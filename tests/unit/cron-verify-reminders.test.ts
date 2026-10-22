@@ -14,7 +14,10 @@ vi.mock('@/lib/prisma', () => ({
   },
 }));
 vi.mock('@/lib/email', () => ({ sendVerifyReminderEmail: vi.fn() }));
-vi.mock('@/lib/errorLog', () => ({ logError: vi.fn().mockResolvedValue(undefined) }));
+vi.mock('@/lib/errorLog', () => ({
+  logError: vi.fn().mockResolvedValue(undefined),
+  pruneErrorLogs: vi.fn().mockResolvedValue(3),
+}));
 // rateLimit is module-scoped (in-memory map). Mock it so each test controls
 // the gate cleanly without state bleeding between tests.
 vi.mock('@/lib/rateLimit', () => ({
@@ -25,6 +28,7 @@ import { POST } from '@/app/api/cron/verify-reminders/route';
 import { prisma } from '@/lib/prisma';
 import { sendVerifyReminderEmail } from '@/lib/email';
 import { rateLimit } from '@/lib/rateLimit';
+import { pruneErrorLogs } from '@/lib/errorLog';
 
 function makeReq(headers: Record<string, string> = {}) {
   return new Request('http://localhost/api/cron/verify-reminders', {
@@ -66,6 +70,7 @@ describe('cron verify-reminders — auth guard', () => {
     expect(json).toEqual({
       d2: { sent: 0, failed: 0, skippedByRace: 0 },
       d7: { sent: 0, failed: 0, skippedByRace: 0 },
+      prunedErrorLogs: 3,
     });
   });
 });
@@ -268,5 +273,26 @@ describe('cron verify-reminders — locale validation', () => {
     expect(call[2]).toBe('en');
     // verifyUrl must also use 'en'
     expect(call[1]).toMatch(/\/en\/auth\/verify-email/);
+  });
+});
+
+describe('cron verify-reminders — error log retention', () => {
+  beforeEach(() => {
+    process.env.CRON_SECRET = 'test-secret-value';
+    vi.mocked(rateLimit).mockReturnValue({ allowed: true, remaining: 5 });
+    vi.mocked(pruneErrorLogs).mockClear();
+  });
+
+  it('prunes expired error log rows on every authorized run', async () => {
+    const res = await POST(makeReq({ authorization: 'Bearer test-secret-value' }));
+    expect(res.status).toBe(200);
+    expect(pruneErrorLogs).toHaveBeenCalledTimes(1);
+    const body = await res.json();
+    expect(body.prunedErrorLogs).toBe(3);
+  });
+
+  it('does not prune when the request is unauthorized', async () => {
+    await POST(makeReq({ authorization: 'Bearer wrong' }));
+    expect(pruneErrorLogs).not.toHaveBeenCalled();
   });
 });

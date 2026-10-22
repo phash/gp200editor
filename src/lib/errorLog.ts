@@ -32,6 +32,10 @@ export interface LogErrorOpts {
 
 const EMAIL_THROTTLE_MS = 60 * 60 * 1000; // 1h per fingerprint
 
+/** Rows hold IP + userId, so they must not live forever. The privacy policy
+ *  (legal.privacyErrorLogText) promises this window — change both together. */
+export const ERROR_LOG_RETENTION_DAYS = 30;
+
 /** SHA-256(category|message), first 32 hex chars. Stable identity for grouping. */
 export function computeFingerprint(category: string, message: string): string {
   return createHash('sha256').update(`${category}|${message}`).digest('hex').slice(0, 32);
@@ -154,5 +158,20 @@ async function maybeSendCriticalEmail(
     await sendCriticalErrorEmail({ id, fingerprint, ...body });
   } catch (err) {
     console.error('[ErrorLog] critical-email send failed', err);
+  }
+}
+
+/**
+ * Deletes error rows whose last occurrence is older than the retention window.
+ * Called from the hourly cron. Never throws; returns the number of deleted rows.
+ */
+export async function pruneErrorLogs(now: Date = new Date()): Promise<number> {
+  const cutoff = new Date(now.getTime() - ERROR_LOG_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+  try {
+    const { count } = await prisma.errorLog.deleteMany({ where: { lastSeenAt: { lt: cutoff } } });
+    return count;
+  } catch (err) {
+    console.error('[ErrorLog] failed to prune old rows', err);
+    return 0;
   }
 }

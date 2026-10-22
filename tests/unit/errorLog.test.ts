@@ -9,6 +9,7 @@ const { prismaMock, emailMock } = vi.hoisted(() => ({
       findFirst: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
+      deleteMany: vi.fn(),
     },
   },
   emailMock: vi.fn().mockResolvedValue(undefined),
@@ -17,12 +18,13 @@ const { prismaMock, emailMock } = vi.hoisted(() => ({
 vi.mock('@/lib/prisma', () => ({ prisma: prismaMock }));
 vi.mock('@/lib/criticalErrorEmail', () => ({ sendCriticalErrorEmail: emailMock }));
 
-import { logError, computeFingerprint } from '@/lib/errorLog';
+import { logError, computeFingerprint, pruneErrorLogs, ERROR_LOG_RETENTION_DAYS } from '@/lib/errorLog';
 
 beforeEach(() => {
   prismaMock.errorLog.findFirst.mockReset();
   prismaMock.errorLog.create.mockReset();
   prismaMock.errorLog.update.mockReset();
+  prismaMock.errorLog.deleteMany.mockReset();
   emailMock.mockReset();
   emailMock.mockResolvedValue(undefined);
 });
@@ -161,5 +163,31 @@ describe('logError - critical email trigger', () => {
     await logError({ message: 'normal', severity: 'info' });
 
     expect(emailMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('pruneErrorLogs', () => {
+  it('deletes rows whose last occurrence is older than the retention window', async () => {
+    prismaMock.errorLog.deleteMany.mockResolvedValue({ count: 4 });
+    const now = new Date('2026-10-22T12:00:00Z');
+
+    const deleted = await pruneErrorLogs(now);
+
+    expect(deleted).toBe(4);
+    const where = prismaMock.errorLog.deleteMany.mock.calls[0][0].where;
+    const cutoff = new Date(now.getTime() - ERROR_LOG_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+    expect(where).toEqual({ lastSeenAt: { lt: cutoff } });
+  });
+
+  it('keeps the retention window at 30 days, as the privacy policy states', () => {
+    expect(ERROR_LOG_RETENTION_DAYS).toBe(30);
+  });
+
+  it('returns 0 instead of throwing when the delete fails', async () => {
+    prismaMock.errorLog.deleteMany.mockRejectedValue(new Error('db down'));
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await expect(pruneErrorLogs(new Date())).resolves.toBe(0);
+    spy.mockRestore();
   });
 });
