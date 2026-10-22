@@ -8,9 +8,16 @@ npm run test:e2e          # Playwright E2E (App + Garage + DB erforderlich)
 
 ## Unit-Tests (`tests/unit/`)
 
+Stand 2026-10-22: 846 Tests in 78 Dateien (inkl. Unterordner `api/`, `components/`, `hooks/`, `lib/`). Auswahl:
+
 - `BinaryParser.test.ts`, `BufferGenerator.test.ts`, `types.test.ts`
 - `PRSTDecoder.test.ts`, `PRSTEncoder.test.ts` — inkl. Tests gegen echte .prst-Dateien + Dateigröße + Checksum-Roundtrip
-- `SysExCodec.test.ts` — Toggle, ParamChange, Reorder, Handshake, EXP, EffectChange, PatchSetting (88 Tests)
+- `SysExCodec.test.ts` — Toggle, ParamChange, Reorder, Handshake, EXP, EffectChange, PatchSetting
+- `devicePush.test.ts` — Live-Push-Sequenz beim Preset-Laden (Reihenfolge, Timing, 2. Pass, Abort, Progress)
+- `HLXConverter.test.ts`, `PRSTJsonCodec.test.ts`, `ampCategories.test.ts`
+- `messages-parity.test.ts` + `messages-usage.test.ts` — Key-Parität der 7 Locales + jeder literale `t('…')`-Key existiert in `en.json`
+- `guides-content.test.ts` — Guides: Metadaten-Längen, EN/DE/ES/pt-BR vorhanden, Struktur-Parität (Sections/Steps/Links)
+- `canonical-urls.test.ts`, `hreflang.test.ts`, `sitemap.test.ts`, `seo-noindex.test.ts`, `middleware-*.test.ts` — SEO/Locale-Routing/Auth-Guard
 - `effectNames.test.ts` — Effekt-ID→Name Auflösung
 - `effectParams.test.ts` — Parameter-Definitionen
 - `useMidiDevice.test.ts` — MIDI Hook Tests
@@ -29,6 +36,10 @@ npm run test:e2e          # Playwright E2E (App + Garage + DB erforderlich)
 - `presets.spec.ts` – Preset hochladen, teilen, bearbeiten, löschen, Link widerrufen
 - `save-and-gallery.spec.ts` – Save-Dialog, Galerie-Suche/Filter, Gallery→Editor Link
 - `ratings.spec.ts` – Preset-Ratings: Anzeige, Bewerten, Persistenz, Editor-Widget
+- `comments-flow.spec.ts` – Kommentar posten → antworten → bearbeiten → soft-delete (Antwort bleibt)
+- `audio-upload.spec.ts` – Audio-Snippet im Save-Dialog hochladen, erscheint auf der Share-Seite
+- `playlists.spec.ts`, `gallery*.spec.ts`, `i18n-locales.spec.ts`, `offline.spec.ts`, `library-share-seo.spec.ts`, `verify-reminder.spec.ts`, `firmware-compat.spec.ts`
+- `midi-*.spec.ts` – MIDI-Handshake/Diagnose; `midi-hardware.spec.ts` braucht echtes Gerät (`playwright-hw.config.ts`)
 
 ## E2E-Konventionen (wichtig für parallele Tests)
 

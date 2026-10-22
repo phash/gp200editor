@@ -125,6 +125,7 @@ export default async function LegalPage() {
           { title: t('privacyRightsTitle'), text: t('privacyRightsText') },
           { title: t('privacyHostingTitle'), text: t('privacyHostingText') },
           { title: t('privacyServerLogsTitle'), text: t('privacyServerLogsText') },
+          { title: t('privacyErrorLogTitle'), text: t('privacyErrorLogText') },
           { title: t('privacyCookiesTitle'), text: t('privacyCookiesText') },
           { title: t('privacyAccountTitle'), text: t('privacyAccountText') },
           { title: t('privacyStorageTitle'), text: t('privacyStorageText') },

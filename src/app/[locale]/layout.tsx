@@ -87,8 +87,8 @@ const jsonLd = {
     price: '0',
     priceCurrency: 'USD',
   },
-  browserRequirements: 'Requires Chrome or Edge for USB MIDI features',
-  featureList: 'GP-200 preset editing, Linux support (Linux Mint tested), Line6 HX Stomp .hlx import, USB MIDI live editing, timed cue points for live setlists, 3-2-1 count-in, auto-reconnect, preset gallery with per-effect filtering (305 effects), pedalboard view, offline PWA, community sharing',
+  browserRequirements: 'USB MIDI features require a Chromium-based desktop browser (Chrome, Edge) or Firefox 108+',
+  featureList: 'GP-200 preset editing, Linux support (Linux Mint tested), Line6 HX Stomp .hlx import, USB MIDI live editing, timed cue points for live setlists, 3-2-1 count-in, auto-reconnect, preset gallery with per-effect filtering (305 effects), pedalboard view, offline PWA, community sharing, 30-second audio snippets, comments and ratings, EXP controller assignments',
 };
 
 type Props = {

@@ -2,7 +2,7 @@
 
 **The only browser-based Valeton GP-200 preset editor. Works on Linux, Windows, macOS, and Chrome OS — no installation required.**
 
-The official Valeton GP-200 editor software is Windows-only. Preset Forge runs in any modern browser (Chrome/Chromium recommended for USB MIDI). Tested on Linux Mint, Windows 11, and macOS.
+The official Valeton GP-200 editor software is Windows-only. Preset Forge runs in any modern browser (Chrome/Chromium, Edge or Firefox 108+ for USB MIDI). Tested on Linux Mint, Windows 11, and macOS.
 
 **https://preset-forge.com** · Supports GP-200 firmware 1.8.0 · Open source · Free
 
@@ -21,7 +21,7 @@ Preset Forge lets you edit Valeton GP-200 multi-effects pedal presets (`.prst` f
 
 **Editing presets** (loading, editing, and downloading `.prst` files) works in **any modern browser** on any OS — no special requirements.
 
-**Live USB MIDI editing** uses the [Web MIDI API with SysEx](https://developer.mozilla.org/en-US/docs/Web/API/Web_MIDI_API). The entire GP-200 protocol is SysEx, so a browser needs *Web MIDI **with** SysEx* support — which narrows it down to Chromium-based browsers:
+**Live USB MIDI editing** uses the [Web MIDI API with SysEx](https://developer.mozilla.org/en-US/docs/Web/API/Web_MIDI_API). The entire GP-200 protocol is SysEx, so a browser needs *Web MIDI **with** SysEx* support — which means Chromium-based browsers or Firefox 108+ on the desktop:
 
 | Browser | Edit presets | Live USB MIDI (SysEx) |
 |---|---|---|
@@ -34,7 +34,7 @@ Preset Forge lets you edit Valeton GP-200 multi-effects pedal presets (`.prst` f
 | **Safari** (macOS) | ✅ | ❌ No Web MIDI (any version) |
 | **Any browser on iOS / iPadOS** | ✅ | ❌ No Web MIDI — all iOS browsers use WebKit |
 
-**Short version: for live USB editing, use Chrome, Edge, or another Chromium-based browser on desktop.**
+**Short version: for live USB editing, use Chrome, Edge, another Chromium-based browser, or Firefox 108+ on desktop. Safari and mobile browsers are not supported.**
 
 ### What you need for live USB MIDI to work
 
@@ -43,13 +43,13 @@ Preset Forge lets you edit Valeton GP-200 multi-effects pedal presets (`.prst` f
 3. **Allow the MIDI permission prompt.** Preset Forge requests **SysEx** access — click **Allow** when the browser asks. Without SysEx the GP-200 cannot be controlled.
 4. **A USB *data* cable** (not a charge-only cable) and the GP-200 powered on.
 5. **No other app holding the device.** Close the official Valeton editor, any DAW, or other MIDI software first — only one application can own the USB-MIDI port at a time.
-6. **Per OS:** Linux works via ALSA in Chrome/Chromium with no extra driver; Windows and macOS use the device's class-compliant USB-MIDI driver (no install needed). Safari is excluded on every OS.
+6. **Per OS:** Linux works via ALSA in Chrome/Chromium or Firefox with no extra driver; Windows and macOS use the device's class-compliant USB-MIDI driver (no install needed). Safari is excluded on every OS.
 
 ## Linux Support
 
 Preset Forge is the **only GP-200 editor that runs on Linux**. Tested on Linux Mint with Chrome. The official Valeton software requires Windows.
 
-For USB MIDI on Linux: install Chrome or Chromium, connect the GP-200 via USB, and grant MIDI permission when the browser asks.
+For USB MIDI on Linux: use Chrome, Chromium or Firefox 108+, connect the GP-200 via USB, and grant MIDI permission when the browser asks (Firefox installs a one-time MIDI site-permission add-on first).
 
 ## Reporting a USB problem (send a capture)
 
@@ -75,25 +75,32 @@ troubleshooting: **[docs/capture-tool.md](docs/capture-tool.md)**.
 - **Preset Editor** — `.prst` files (1224 bytes, 11 slots, 305 effects, 15 parameters per effect). Pedalboard view with patch cables
 - **305 Effects** — names and parameters extracted from the official Valeton `algorithm.xml`
 - **Live USB MIDI** — SysEx protocol reverse-engineered and hardware-verified with firmware 1.8.0 (14 message types)
+- **Live push on load** — loading a `.prst` while the GP-200 is connected sends the whole preset to the device block by block, with a progress indicator; loading another preset or disconnecting cancels a running push
+- **EXP / Controller assignments** — EXP 1 (Mode A/B) and EXP 2 parameter assignments with min/max ranges
+- **FX Loop** — drag SEND/RETURN arrows to place the effects loop in the signal chain
 - **HX Stomp Import** (experimental) — Line6 HX Stomp `.hlx` → GP-200 format
 - **Playlists & Cue Points** — timed setlists for live gigs, slot-based preset switching, 3-2-1 count-in
-- **Preset Gallery** — community sharing, per-effect filtering (305 effects × 12 modules)
+- **Preset Gallery** — community sharing, per-effect filtering (305 effects × 12 modules), amp category pages
+- **Audio snippets** — attach a 30 s audio clip to a shared preset, played back in gallery and share pages
+- **Comments & ratings** — threaded comments and 1–5 guitar ratings on public presets
+- **Guides** — long-form how-tos (GP-200 editor, .prst files, GP-200 on Linux) in EN/DE/ES/pt-BR
 - **MIDI Auto-Reconnect** — 3 automatic reconnect attempts on USB disconnect
 - **PWA / Offline** — editor works offline; gallery requires internet
 - **Admin Area** — user management (suspend/warn/delete), preset moderation (flag/unpublish/delete), error console with GH issue creation, audit log
 - Account system with profile, avatar, email verification, login via email or username
 - Role-based access (USER/ADMIN)
-- Fully bilingual (DE/EN) · WCAG 2.1 AA
+- 7 locales (DE, EN, ES, FR, IT, PT, pt-BR) · WCAG 2.1 AA
 
 ## Stack
 
-- **Next.js 15** App Router + React 19 + TypeScript strict
+- **Next.js 15.5** App Router + React 19.3 + TypeScript strict · Node 22
 - **Tailwind CSS** (Dark theme, JetBrains Mono + DM Sans)
 - **Prisma 5** + PostgreSQL 16
 - **Lucia v3** (Session-Auth, Argon2id)
-- **Garage** (S3-kompatibler Object Store) für Avatare und Presets
-- **next-intl 4** (DE/EN)
-- **Vitest** (346 Unit-Tests, 76% Coverage) + **Playwright** (E2E + A11y)
+- **Garage** (S3-kompatibler Object Store) für Avatare, Presets und Audio-Snippets
+- **next-intl 4.14** (DE, EN, ES, FR, IT, PT, pt-BR)
+- **Zod 4.6** · **nodemailer 10** · **sharp 0.35**
+- **Vitest** (846 Unit-Tests in 78 Dateien) + **Playwright** (E2E + A11y)
 
 ## Entwicklung
 
@@ -130,8 +137,8 @@ npm run dev       # http://localhost:3000
 ### Tests
 
 ```bash
-npm run test          # 346 Unit-Tests (Vitest)
-npm run test:coverage # Coverage-Report (76% Statements)
+npm run test          # 846 Unit-Tests in 78 Dateien (Vitest)
+npm run test:coverage # Coverage-Report
 npm run test:e2e      # Playwright E2E (App + Garage + DB erforderlich)
 ```
 
@@ -150,7 +157,9 @@ docker run -d -p 3000:3000 gp200editor
 ```bash
 # Erstmalig:
 cd /opt && git clone https://github.com/phash/gp200editor.git && cd gp200editor
-bash scripts/deploy-vps.sh    # Setup: Build, Garage, SSL, Nginx
+# Reverse Proxy ist der zentrale Caddy auf dem VPS (Docker-Network `caddy-proxy`, TLS automatisch)
+# → vhost für preset-forge.com im Caddyfile, Details: CADDY-MIGRATION.md + docs/deployment.md
+# (scripts/deploy-vps.sh stammt noch aus dem alten Nginx/Certbot-Setup)
 
 # Updates:
 bash scripts/deploy-update.sh # git pull → build → restart (Migrations laufen automatisch)
@@ -166,7 +175,7 @@ Alle User-Presets sind exakt **1224 Bytes**. Das Format wurde per Reverse Engine
 - 11 Effekt-Blöcke à 72 Bytes mit Effekt-Code (uint32), Active-Flag und 15× float32 Parametern
 - 305 Effekte mit Namen und Parameter-Definitionen aus der offiziellen Valeton GP-200 Editor Software (`algorithm.xml`)
 
-Details: [CLAUDE.md](./CLAUDE.md#prst-binärformat-reverse-engineered-2026-03-16)
+Details: [docs/prst-format.md](./docs/prst-format.md)
 
 ## Umgebungsvariablen
 
@@ -180,6 +189,7 @@ GARAGE_ACCESS_KEY_ID=<from garage-init.sh>
 GARAGE_SECRET_ACCESS_KEY=<from garage-init.sh>
 GARAGE_BUCKET=avatars
 GARAGE_PRESET_BUCKET=presets
+GARAGE_AUDIO_BUCKET=gp200editor-audio-dev
 
 EMAIL_FROM=noreply@gp200editor.local
 EMAIL_SMTP_HOST=localhost

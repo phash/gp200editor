@@ -2,6 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
 import { buildAlternates, BASE_URL, type Locale } from '@/lib/hreflang';
 import { serializeJsonLd } from '@/lib/jsonLd';
+import { Link } from '@/i18n/routing';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -51,8 +52,16 @@ export default async function HelpPage() {
         t('usbMidiBrowser'),
         t('usbMidiConnect'),
         t('usbMidiLive'),
+        t('usbMidiLoadPush'),
         t('usbMidiPullPush'),
         t('usbMidiNameEdit'),
+      ],
+    },
+    {
+      id: 'controllers',
+      title: t('controllersTitle'),
+      items: [
+        t('controllersDesc'),
       ],
     },
     {
@@ -62,6 +71,8 @@ export default async function HelpPage() {
         t('galleryUpload'),
         t('galleryShare'),
         t('galleryDownload'),
+        t('galleryAudio'),
+        t('galleryComments'),
       ],
     },
     {
@@ -89,6 +100,7 @@ export default async function HelpPage() {
       items: [
         t('shortcutsPlaylistUpDown'),
         t('shortcutsPlaylistLeftRight'),
+        t('shortcutsEffectReorder'),
       ],
     },
   ];
@@ -102,12 +114,12 @@ export default async function HelpPage() {
     { q: t('faqHxStompQ'), a: t('faqHxStompA') },
   ];
 
-  const changelog = [
-    { date: t('changelog20260323'), items: t('changelog20260323Items') },
-    { date: t('changelog20260320'), items: t('changelog20260320Items') },
-    { date: t('changelog20260319'), items: t('changelog20260319Items') },
-    { date: t('changelog20260316'), items: t('changelog20260316Items') },
-  ];
+  // Pointer sections to standalone pages (guides, changelog) — rendered after
+  // the FAQ with a link instead of duplicating their content here.
+  const pointers = [
+    { id: 'guides', title: t('guidesTitle'), desc: t('guidesDesc'), href: '/guides', label: t('guidesLink') },
+    { id: 'changelog', title: t('changelogTitle'), desc: t('changelogDesc'), href: '/changelog', label: t('changelogLink') },
+  ] as const;
 
   // JSON-LD: static translation strings only. Emitted as a single @graph with
   // the FAQPage plus one HowTo per procedural section, so answer engines / LLMs
@@ -202,40 +214,26 @@ export default async function HelpPage() {
         </div>
       </section>
 
-      <section className="mb-8">
-        <h2
-          className="font-mono-display text-lg font-bold tracking-tight mb-4"
-          style={{ color: 'var(--accent-amber)' }}
-        >
-          {t('changelogTitle')}
-        </h2>
-        <div className="space-y-4">
-          {changelog.map((entry) => (
-            <div key={entry.date}>
-              <h3
-                className="font-mono-display text-sm font-bold mb-1"
-                style={{ color: 'var(--text-primary)' }}
-              >
-                {entry.date}
-              </h3>
-              <ul className="space-y-1">
-                {entry.items.split(' · ').map((item) => (
-                  <li
-                    key={item}
-                    className="text-sm pl-4"
-                    style={{
-                      color: 'var(--text-secondary)',
-                      borderLeft: '2px solid var(--border-active)',
-                    }}
-                  >
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </section>
+      {pointers.map((p) => (
+        <section key={p.id} id={p.id} className="mb-8">
+          <h2
+            className="font-mono-display text-lg font-bold tracking-tight mb-3"
+            style={{ color: 'var(--accent-amber)' }}
+          >
+            {p.title}
+          </h2>
+          <p className="text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>
+            {p.desc}
+          </p>
+          <Link
+            href={p.href}
+            className="font-mono-display text-sm font-bold underline underline-offset-2 hover:opacity-80"
+            style={{ color: 'var(--accent-amber)' }}
+          >
+            {p.label} <span aria-hidden="true">→</span>
+          </Link>
+        </section>
+      ))}
     </div>
   );
 }
