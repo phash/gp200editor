@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { sendVerifyReminderEmail } from '@/lib/email';
-import { logError } from '@/lib/errorLog';
+import { logError, pruneErrorLogs } from '@/lib/errorLog';
 import { rateLimit } from '@/lib/rateLimit';
 import { getClientIp } from '@/lib/getClientIp';
 import { LOCALES, type Locale } from '@/i18n/locales';
@@ -150,7 +150,10 @@ export async function POST(request: NextRequest) {
       bucket: result.d7,
     });
 
-    return NextResponse.json(result);
+    // Piggybacks on this hourly job so error-log retention needs no extra cron entry.
+    const prunedErrorLogs = await pruneErrorLogs();
+
+    return NextResponse.json({ ...result, prunedErrorLogs });
   } finally {
     cronInFlight = false;
   }

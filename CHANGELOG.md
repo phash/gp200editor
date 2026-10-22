@@ -1,5 +1,61 @@
 # Changelog
 
+## 2026-10-22
+
+### Security
+- **Next.js 15.5.28.** Schließt u. a. eine kritische Remote-Code-Execution-Lücke in der Bildoptimierung (SVG/AVIF), DoS/SSRF über Server Actions und Cache-Poisoning bei SSG/ISR-Seiten.
+- **sharp 0.35.5.** Aktualisiert libvips, libheif und librsvg — relevant, weil hochgeladene Avatare mit sharp verarbeitet werden.
+- **music-metadata 11.16.1.** Behebt mehrere Parser-DoS-Lücken, die über präparierte Audio-Schnipsel erreichbar waren.
+- **nodemailer 10.** Behebt Header-Injection, DoS im Adress-Parser und einen prozessweiten TLS-Servername-Cache.
+
+### Inhalte
+- **Firefox wird als unterstützter Browser genannt.** Hilfe, FAQ und Guides sagten noch, Live-MIDI laufe nur in Chrome/Edge. Firefox 108+ funktioniert: Beim ersten Verbinden bietet Firefox ein einmaliges MIDI-Add-on an, danach fragt es die MIDI-Berechtigung ab.
+- **Hilfe-Seite erklärt aktuelle Funktionen.** Neu: Live-Übertragung beim Preset-Laden, EXP-/Controller-Zuweisungen, Umsortieren per Tastatur, Audio-Schnipsel, Kommentare und Bewertungen, Guides. Der veraltete Mini-Changelog auf der Hilfe-Seite verweist jetzt auf diese Seite.
+
+### Datenschutz
+- **Fehlerprotokoll mit Löschfrist.** Einträge im Fehlerprotokoll enthalten IP-Adresse und ggf. Benutzer-ID. Sie werden jetzt 30 Tage nach dem letzten Auftreten automatisch gelöscht; ältere IP-Adressen werden nicht mehr in neue Einträge übernommen.
+- **Datenschutzerklärung ergänzt** um Fehlerprotokoll, Sprach-Cookie, Audio-Schnipsel sowie öffentliche Kommentare und Bewertungen. Die Aussage „verschlüsselt gespeichert“ wurde entfernt, weil sie technisch nicht zutraf.
+
+## 2026-10-17
+
+### Features
+- **Guides in EN, DE, ES und PT-BR.** Ausführliche Anleitungen zum GP-200-Editor und zum `.prst`-Format unter `/guides`.
+
+### SEO
+- **`/en/…` leitet dauerhaft (308) auf die englische URL ohne Präfix um.** Galerie-Karten verlinken direkt die Share-Seite. Share- und Amp-Seiten haben kürzere, aussagekräftigere Titel und Beschreibungen in allen 7 Sprachen.
+
+## 2026-08-31
+
+### Fix
+- **Admin-Nutzerliste** zeigt die echte Preset-Anzahl und markiert unbestätigte E-Mail-Adressen.
+
+## 2026-08-05
+
+### Features
+- **Unterstützen-Button** ist in Navigation und Footer deutlicher sichtbar.
+
+## 2026-07-31
+
+### SEO
+- **Englisch läuft ohne Sprachpräfix** (`/help` statt `/en/help`). Canonicals zeigen jetzt auf echte Seiten statt auf Weiterleitungen; die Sitemap enthält nur noch Seiten mit eigenem Inhalt.
+
+### Fix
+- **Fehlender Upload-Button-Text** auf der Startseite in allen 7 Sprachen ergänzt.
+
+## 2026-07-04
+
+### Fix
+- **Umsortierte Presets landen korrekt auf dem Gerät (#90).** Live-Push und Save-to-Slot adressierten Blöcke nach Listenposition statt nach fester Block-Identität (PRE…VOL). Bei umsortierten Presets landeten Effekte, Parameter und An/Aus-Zustand deshalb auf dem falschen Block. Die Reihenfolge wird jetzt separat ans Gerät gesendet.
+- **Routing-Reihenfolge geht beim Laden nicht mehr verloren.** Ein einzelnes ungültiges Routing-Byte setzte bisher die ganze Kette auf Standard-Reihenfolge zurück. Gültige Einträge bleiben jetzt erhalten, fehlende werden angehängt.
+
+## 2026-06-28
+
+### Fix
+- **Preset-Laden überträgt alle Parameter zuverlässig (#80).** Beim Laden einer `.prst`-Datei mit verbundenem Gerät wird das Preset jetzt tatsächlich gesendet. Nach jedem Effektwechsel wartet der Editor, bis das Gerät umgeschaltet hat. Parameter gehen mit 40 ms Abstand und in zwei Durchgängen raus, weil das Gerät schnelle Bursts teilweise verwirft.
+
+### Features
+- **Fortschrittsanzeige beim Übertragen.** Die Übertragung blockiert die Oberfläche nicht mehr. Wer währenddessen ein anderes Preset lädt, bricht die laufende Übertragung ab.
+
 ## 2026-06-18
 
 ### Fix

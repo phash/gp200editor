@@ -5,7 +5,7 @@ export const GP200_EDITOR_ES: Guide = {
   title: 'Editor Valeton GP-200 para Windows, Mac y Linux',
   description:
     'Edita los presets de tu Valeton GP-200 en cualquier computadora: qué hace el editor oficial, dónde se queda corto y cómo lo complementa Preset Forge, gratis.',
-  updated: '2026-10-17',
+  updated: '2026-10-22',
   intro:
     'Ajustar las perillas de la GP-200 directamente funciona, pero armar un preset en una pantalla tan pequeña es lento. Un editor en la computadora te muestra toda la cadena de señal de un vistazo y te permite guardar los presets como archivos y compartirlos. Esta guía compara las dos formas de editar la pedalera desde la PC: la app oficial de escritorio de Valeton y Preset Forge, un editor Valeton GP-200 gratuito que funciona en el navegador.',
   sections: [
@@ -30,7 +30,7 @@ export const GP200_EDITOR_ES: Guide = {
       ],
       steps: [
         'Carga un archivo .prst arrastrándolo al editor, edita cada bloque y cada parámetro, y vuelve a guardarlo como archivo .prst.',
-        'Conecta la GP-200 por USB para editar en vivo: cada cambio se envía a la pedalera al instante (Chrome o Edge).',
+        'Conecta la GP-200 por USB para editar en vivo: cada cambio se envía a la pedalera al instante (Chrome, Edge o Firefox).',
         'Trae un preset desde la pedalera con “Cargar” y escríbelo de vuelta en un slot con “Guardar en [Slot]”.',
         'Importa presets .hlx de Line6 HX Stomp y conviértelos al formato de la GP-200 (experimental).',
         'Explora la galería de la comunidad y descarga presets filtrados por modelo de amplificador, efecto o estilo.',
@@ -51,9 +51,9 @@ export const GP200_EDITOR_ES: Guide = {
     {
       heading: 'Empieza en cinco minutos',
       steps: [
-        'Abre preset-forge.com/editor en Chrome o Edge.',
+        'Abre preset-forge.com/editor en un navegador de escritorio con Web MIDI: Chrome, Edge o Firefox 108+.',
         'Conecta la GP-200 con un cable USB y haz clic en “Conectar GP-200”. Permite el acceso MIDI cuando el navegador lo pida.',
-        'Haz clic en “Cargar” para traer el preset actual de la pedalera, o suelta un archivo .prst en la página.',
+        'Haz clic en “Cargar” para traer el preset actual de la pedalera, o suelta un archivo .prst en la página: se envía automáticamente a la pedalera conectada.',
         'Cambia efectos y parámetros: con la pedalera conectada escuchas cada cambio de inmediato.',
         'Guarda con “Guardar en [Slot]” en la pedalera, o con “Guardar preset como archivo” en tu computadora.',
       ],
@@ -70,7 +70,7 @@ export const PRST_FILE_ES: Guide = {
   title: '¿Qué es un archivo .prst? Cómo abrir presets de la Valeton GP-200',
   description:
     'Un archivo .prst es un preset de la Valeton GP-200. Descubre qué contiene, cómo abrirlo y editarlo en el navegador y cómo cargarlo en tu pedalera.',
-  updated: '2026-10-17',
+  updated: '2026-10-22',
   intro:
     'Si descargas un preset para la GP-200 de un foro, de un amigo o de un sitio de presets, recibes un archivo que termina en .prst. Tu computadora no sabrá qué hacer con él, y si lo abres en un editor de texto solo verás caracteres sin sentido. Esta guía explica qué hay dentro de un archivo .prst y cómo abrir un archivo .prst, editarlo y usarlo.',
   sections: [
@@ -106,7 +106,7 @@ export const PRST_FILE_ES: Guide = {
       heading: 'Cómo cargar un archivo .prst en la GP-200',
       steps: [
         'Abre el archivo .prst en el editor como se describe arriba.',
-        'Conecta la GP-200 por USB y haz clic en “Conectar GP-200” (Chrome o Edge).',
+        'Conecta la GP-200 por USB y haz clic en “Conectar GP-200” (Chrome, Edge o Firefox).',
         'Elige el slot de destino en la pedalera y haz clic en “Guardar en [Slot]”. El preset se escribe en la GP-200 y queda listo para tocar.',
       ],
     },
@@ -136,8 +136,8 @@ export const GP200_ON_LINUX_ES: Guide = {
   slug: 'gp-200-on-linux',
   title: 'Cómo usar la Valeton GP-200 en Linux',
   description:
-    'El editor oficial de la Valeton GP-200 solo funciona en Windows. Así puedes editar y controlar en vivo tu GP-200 en Linux con Preset Forge y Chrome o Chromium.',
-  updated: '2026-05-30',
+    'El editor oficial de la Valeton GP-200 solo funciona en Windows. Así puedes editar y controlar en vivo tu GP-200 en Linux con Preset Forge en Chrome, Chromium o Firefox.',
+  updated: '2026-10-22',
   intro:
     'La Valeton GP-200 es una pedalera multiefectos muy completa, pero su editor oficial solo funciona en Windows. Si usas Linux (Mint, Ubuntu, Fedora, Arch o cualquier otra distro), no necesitas un arranque dual ni una máquina virtual con Windows solo para ajustar tu tono. Preset Forge funciona completamente en el navegador y es el único editor para la GP-200 con soporte real para Linux. Esta guía cubre todo el flujo de trabajo para usar la GP-200 en Linux: editar presets y controlar la pedalera en vivo por USB MIDI directamente desde tu PC.',
   sections: [
@@ -151,11 +151,11 @@ export const GP200_ON_LINUX_ES: Guide = {
     {
       heading: 'Qué necesitas',
       body: [
-        'La edición de presets funciona en cualquier navegador moderno en Linux. El control en vivo por USB MIDI, es decir, enviar los cambios a la pedalera en tiempo real, necesita la API Web MIDI, que en Linux solo está disponible en navegadores basados en Chromium (Chrome, Chromium, Brave, Edge). Firefox y los navegadores basados en WebKit no implementan Web MIDI.',
+        'La edición de presets funciona en cualquier navegador moderno en Linux. El control en vivo por USB MIDI, es decir, enviar los cambios a la pedalera en tiempo real, necesita la API Web MIDI. En Linux eso significa un navegador basado en Chromium (Chrome, Chromium, Brave, Edge) o Firefox 108 o posterior. La primera vez que conectas, Firefox ofrece instalar un pequeño complemento de permisos del sitio para MIDI; acéptalo una vez y a partir de ahí Firefox pide el acceso MIDI igual que Chrome. Los navegadores basados en WebKit, como GNOME Web, no implementan Web MIDI.',
       ],
       steps: [
-        'Una PC con Linux (probado en Linux Mint; funciona cualquier distro con un Chromium actualizado).',
-        'Google Chrome, Chromium, Brave o Edge para el MIDI en vivo; para editar sin conexión sirve cualquier navegador.',
+        'Una PC con Linux (probado en Linux Mint; funciona cualquier distro con un Chromium o Firefox actualizado).',
+        'Chrome, Chromium, Brave, Edge o Firefox 108+ para el MIDI en vivo; para editar sin conexión sirve cualquier navegador.',
         'Un cable USB para conectar la GP-200 (solo necesario para editar en vivo).',
         'Opcionalmente, tus archivos de presets .prst.',
       ],
@@ -177,16 +177,17 @@ export const GP200_ON_LINUX_ES: Guide = {
       ],
       steps: [
         'Conecta la GP-200 a tu computadora con un cable USB y enciéndela.',
-        'Abre el editor en Chrome o Chromium y haz clic en “Conectar GP-200”.',
-        'El navegador pide permiso para acceder a dispositivos MIDI (incluido SysEx). Haz clic en Permitir: eso es lo que deja que Preset Forge se comunique con la pedalera.',
+        'Abre el editor en Chrome, Chromium o Firefox y haz clic en “Conectar GP-200”.',
+        'El navegador pide permiso para acceder a dispositivos MIDI (incluido SysEx). Haz clic en Permitir: eso es lo que deja que Preset Forge se comunique con la pedalera. En Firefox, la primera conexión instala antes, una sola vez, un complemento de permisos MIDI.',
         'Preset Forge pasa por Identity, comprobación de firmware y nombres de slots; luego la barra del dispositivo, arriba, muestra la pedalera conectada.',
         'Edita como siempre: activar efectos, cambiar parámetros y reordenar la cadena se envía a la GP-200 al instante. Usa “Cargar” para traer un preset del dispositivo y “Guardar en [Slot]” para escribir tus cambios de vuelta.',
+        'Si cargas un archivo .prst con la pedalera conectada, Preset Forge envía el preset completo a la GP-200 automáticamente, bloque por bloque, con una barra de progreso en la barra del dispositivo. Puedes seguir editando mientras tanto; cargar otro preset o desconectar cancela el envío en curso. El preset enviado es una vista previa en vivo hasta que lo guardes en un slot.',
       ],
     },
     {
       heading: 'Solución de problemas en Linux',
       steps: [
-        '“Conectar GP-200” no hace nada o no aparece la solicitud de permiso: probablemente estás en Firefox o Safari. Cambia a Chrome, Chromium, Brave o Edge; Web MIDI no está disponible en otros navegadores.',
+        '“Conectar GP-200” no hace nada o no aparece la solicitud de permiso: probablemente estás en Safari u otro navegador WebKit, o en un móvil o tablet: los navegadores móviles no admiten Web MIDI. Usa Chrome, Chromium, Brave, Edge o Firefox 108+ en el escritorio. En Firefox, comprueba que aceptaste el complemento de permisos MIDI.',
         'La pedalera no aparece en la lista: asegúrate de que ninguna otra aplicación (un DAW, otra pestaña del navegador o una herramienta MIDI) esté usando el dispositivo, porque ALSA da acceso exclusivo. Ciérrala y vuelve a conectar.',
         'Se bloqueó el permiso: haz clic en el ícono del candado / MIDI en la barra de direcciones, vuelve a habilitar MIDI para preset-forge.com y recarga la página.',
         'Diferencias de firmware: Preset Forge está verificado con el firmware 1.8.0. Otras versiones suelen funcionar, pero si algo se comporta de forma extraña, revisa primero tu versión de firmware.',

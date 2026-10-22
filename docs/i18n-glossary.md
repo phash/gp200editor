@@ -1,6 +1,6 @@
 # i18n Glossary — Preset Forge
 
-Domain-specific term translations used to keep the 6 locale files consistent.
+Domain-specific term translations used to keep the 7 locale files consistent.
 Used as reference input when (re)generating translations and as a lookup for
 community contributors editing `messages/*.json` by hand.
 

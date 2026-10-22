@@ -2,9 +2,9 @@
 
 ## Storage (Garage S3)
 
-- Zwei getrennte Buckets: `avatars` (GARAGE_BUCKET) und `presets` (GARAGE_PRESET_BUCKET)
-- **Wichtig:** `presetBucket()` und `bucket()` in `storage.ts` lesen verschiedene Env-Vars — nie zusammenführen
-- Avatar-Proxy: `/api/avatar/[key]` — Garage-Credentials nie dem Client exponieren
+- Drei getrennte Buckets: `avatars` (GARAGE_BUCKET), `presets` (GARAGE_PRESET_BUCKET) und Audio-Snippets (GARAGE_AUDIO_BUCKET, prod `gp200editor-audio`)
+- **Wichtig:** `bucket()`, `presetBucket()` und `audioBucket()` in `storage.ts` lesen verschiedene Env-Vars — nie zusammenführen
+- Proxies: `/api/avatar/[key]` und `/api/preset-audio/[key]` — Garage-Credentials nie dem Client exponieren
 - Dateiersatz-Reihenfolge: neues File uploaden → DB updaten → altes File löschen (`.catch(() => {})`)
 
 ## Preset-API
@@ -17,10 +17,36 @@
 | `DELETE /api/presets/[id]` | Ja (Owner) | Löschen |
 | `GET /api/presets/[id]/download` | Ja (Owner) | Download |
 | `POST /api/presets/[id]/share/revoke` | Ja (Owner) | Share-Link widerrufen |
+| `POST /api/presets/[id]/publish` | Ja (Owner, verifiziert) | `public` umschalten (Toggle) |
+| `POST /api/presets/[id]/audio` | Ja (Owner/Admin, verifiziert) | Audio-Snippet hochladen (max. 2 MB, max. 30 s) |
+| `DELETE /api/presets/[id]/audio` | Ja (Owner/Admin) | Audio-Snippet löschen |
+| `GET /api/preset-audio/[key]` | Nein* | Audio-Stream; *nur wenn Preset public + nicht geflaggt (Owner/Admin immer) |
 | `GET /api/share/[token]` | Nein | Öffentliche Preset-Info |
 | `GET /api/share/[token]/download` | Nein | Öffentlicher Download (zählt downloadCount) |
+| `GET /api/share/[token]/json` | Nein | Round-trip `PresetJson` (nur public, nicht geflaggt) |
 | `POST /api/presets/[id]/rate` | Ja | Rating abgeben (1-5) — kein eigenes Preset |
 | `GET /api/gallery` | Nein | Galerie-Presets (sort: newest/popular/top-rated, filter: style/modules/effects) |
+
+## Kommentar-API
+
+Mutierende Routen prüfen CSRF (`verifyCsrf`); Kommentieren nur auf public + nicht geflaggten Presets.
+
+| Route | Auth | Beschreibung |
+|-------|------|--------------|
+| `GET /api/presets/[id]/comments` | Nein | Kommentar-Threads eines Presets |
+| `POST /api/presets/[id]/comments` | Ja (verifiziert) | Top-Level-Kommentar (max. 1000 Zeichen) |
+| `POST /api/comments/[id]/reply` | Ja (verifiziert) | Antwort auf Kommentar |
+| `PATCH /api/comments/[id]` | Ja (Autor, verifiziert) | Bearbeiten (Rate-Limit 30/h) |
+| `DELETE /api/comments/[id]` | Ja (Autor/Admin) | Soft-Delete (`body=null`, `deletedAt`, `deletedBy`) |
+
+## Sonstige
+
+| Route | Auth | Beschreibung |
+|-------|------|--------------|
+| `GET/PATCH /api/profile`, `POST /api/profile/avatar` | Ja | Profil + Avatar-Upload |
+| `POST /api/errors/client` | Nein | Client-Render-Fehler aus `error.tsx` → `ErrorLog` (Rate-Limit 30/min/IP) |
+| `POST /api/cron/verify-reminders` | Bearer `CRON_SECRET` | Verify-Reminder D2/D7 (siehe deployment.md) |
+| `POST /api/test/backdate-user` | nur dev/test (`NODE_ENV`) | E2E-Hilfsroute |
 
 ## Admin-API
 
@@ -36,10 +62,12 @@ Alle Routen unter `/api/admin/` — jede beginnt mit `requireAdmin()`.
 | `/api/admin/presets` | GET | Preset-Liste (paginiert, durchsuchbar, filterbar) |
 | `/api/admin/presets/[id]` | PATCH | Unpublish/Flag/Edit |
 | `/api/admin/presets/[id]` | DELETE | Preset + S3-File löschen |
-| `/api/admin/errors` | GET | Error-Liste (paginiert, Level-Filter) |
+| `/api/admin/errors` | GET | Error-Liste (paginiert; Filter: q, severity, category, resolved) |
+| `/api/admin/errors` | PATCH | Als gelöst/ungelöst markieren (per `fingerprint` oder `ids`) |
 | `/api/admin/errors/[id]` | DELETE | Einzelnen Fehler löschen |
 | `/api/admin/errors` | DELETE | Alle Fehler löschen |
 | `/api/admin/actions` | GET | Audit-Log (paginiert) |
+| `/api/admin/comments` | GET | Kommentar-Moderationsliste |
 
 ### Error-Logging
 
@@ -49,6 +77,6 @@ Alle Routen unter `/api/admin/` — jede beginnt mit `requireAdmin()`.
 ### Admin-Dashboard UI
 
 - `/[locale]/admin` — Server Component mit DB-Rollen-Check
-- Tabs: Users | Presets | Errors | Audit Log
+- Tabs: Users | Presets | Errors | Audit Log | Comments
 - Kontextuelle Admin-Actions auf Profilen + Galerie-Karten (`AdminActions` Component)
 - Navbar: Admin-Link ganz rechts, roter Dot bei Error-Count > 0

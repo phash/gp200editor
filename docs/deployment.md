@@ -32,6 +32,7 @@ GARAGE_ACCESS_KEY_ID=<from garage-init.sh output>
 GARAGE_SECRET_ACCESS_KEY=<from garage-init.sh output>
 GARAGE_BUCKET=avatars
 GARAGE_PRESET_BUCKET=presets
+GARAGE_AUDIO_BUCKET=gp200editor-audio-dev
 
 # Email (Mailhog in dev)
 EMAIL_FROM=noreply@gp200editor.local
@@ -50,7 +51,9 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 cd /opt
 git clone https://github.com/phash/gp200editor.git
 cd gp200editor
-bash scripts/deploy-vps.sh    # Einmaliges Setup: Build, Migrate, Garage, SSL, Nginx
+cp .env.prod.example .env.prod   # Secrets eintragen
+# Reverse Proxy: vhost für preset-forge.com im zentralen Caddyfile anlegen (siehe unten)
+# Hinweis: scripts/deploy-vps.sh stammt aus dem alten Nginx/Certbot-Setup und ist veraltet
 
 # Updates deployen:
 cd /opt/gp200editor
@@ -59,16 +62,16 @@ bash scripts/deploy-update.sh    # git pull → build → restart (Migrations la
 
 ### VPS-Architektur
 
-- GP-200 Stack (Postgres, Garage, Mailhog, App) auf Port 3320
-- Musikersuche-Nginx (ports 80/443) proxied `preset-forge.com` → `172.17.0.1:3320`
-- SSL via Musikersuche's Certbot-Container
-- `scripts/deploy-vps.sh` macht alles automatisch (erster Start)
+- GP-200 Stack aus `docker-compose.prod.yml`: `app` (Container `gp200editor-app`), `postgres`, `garage` — **kein Host-Port** (seit der Caddy-Migration, siehe `CADDY-MIGRATION.md`)
+- Zentraler **Caddy** Reverse Proxy (Container `caddy-proxy`, ports 80/443) erreicht die App über das externe Docker-Network `caddy-proxy` per Service-Namen; TLS-Zertifikate holt Caddy automatisch
+- Caddy-Config: `/opt/caddyserver/Caddyfile` (Reload: `docker restart caddy-proxy`); `preset-forge.com` leitet per 301 auf `www.preset-forge.com` weiter. Security-Header für Preset Forge stehen inline im `www.preset-forge.com`-Block (nicht im shared Snippet); **CSP setzt ausschließlich Next.js**
+- `docker-compose.caddy.yml` (nur auf dem VPS, nicht im Repo) wird von `deploy-update.sh` automatisch mitgenommen, falls vorhanden
 - `scripts/deploy-update.sh` für Updates (git pull → build → restart)
 - `scripts/backup.sh` / `scripts/restore.sh` für DB + S3 Backups
 
 ### Dockerfile-Details
 
-- Basis-Image: `node:23-alpine` (drei Stages: deps → builder → runner)
+- Basis-Image: `node:22-alpine` (drei Stages: deps → builder → runner)
 - `output: 'standalone'` in `next.config.mjs` für Docker-kompatiblen Build
 - `@node-rs/argon2` in `serverComponentsExternalPackages` (native binary)
 - Non-root User `nextjs:nodejs` (UID/GID 1001)
