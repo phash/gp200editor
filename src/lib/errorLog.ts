@@ -85,8 +85,10 @@ export async function logError(opts: LogErrorOpts): Promise<string | null> {
           route: opts.route ?? existing.route,
           method: opts.method ?? existing.method,
           url: opts.url ?? existing.url,
-          userId: opts.userId ?? existing.userId,
-          ip: opts.ip ?? existing.ip,
+          // Personal data is never carried forward: a row kept alive by new
+          // occurrences must not hold an IP/userId older than the retention window.
+          userId: opts.userId ?? null,
+          ip: opts.ip ?? null,
           severity, // allow upgrading severity if the same fingerprint reoccurs harder
         },
       });

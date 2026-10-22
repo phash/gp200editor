@@ -166,6 +166,22 @@ describe('logError - critical email trigger', () => {
   });
 });
 
+describe('logError - personal data on repeat occurrences', () => {
+  it('does not carry an older ip/userId forward when the new occurrence has none', async () => {
+    prismaMock.errorLog.findFirst.mockResolvedValue({
+      id: 'old-id', count: 3, stack: null, route: null, method: null, url: null,
+      userId: 'user-from-60-days-ago', ip: '203.0.113.7', lastEmailedAt: null,
+    });
+    prismaMock.errorLog.update.mockResolvedValue({ id: 'old-id', count: 4, lastEmailedAt: null });
+
+    await logError({ message: 'Repeat', category: 'api' });
+
+    const data = prismaMock.errorLog.update.mock.calls[0][0].data;
+    expect(data.ip).toBeNull();
+    expect(data.userId).toBeNull();
+  });
+});
+
 describe('pruneErrorLogs', () => {
   it('deletes rows whose last occurrence is older than the retention window', async () => {
     prismaMock.errorLog.deleteMany.mockResolvedValue({ count: 4 });
