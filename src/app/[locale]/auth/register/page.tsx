@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { PasswordInput } from '@/components/PasswordInput';
@@ -11,6 +11,10 @@ const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 export default function RegisterPage() {
   const t = useTranslations('auth');
   const locale = useLocale();
+  // Until React hydrates, a click would submit the native form and put the
+  // credentials into the URL. Keep the button disabled until then.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -42,7 +46,9 @@ export default function RegisterPage() {
           password,
           // Stored on the user so verification/reminder mails use their language.
           locale,
-          turnstileToken,
+          // Only sent when the widget is configured. Without a site key (dev, E2E)
+          // a `null` token would make the server reject the registration.
+          turnstileToken: TURNSTILE_SITE_KEY ? turnstileToken : undefined,
           // Honeypot — bots fill this, humans don't see it
           company_url: formData.get('company_url') || undefined,
         }),
@@ -101,7 +107,7 @@ export default function RegisterPage() {
         >
           {t('registerTitle')}
         </h1>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form method="post" onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
             <label
               className="block font-mono-display text-[11px] font-medium tracking-wider uppercase mb-1.5"
@@ -211,7 +217,7 @@ export default function RegisterPage() {
           )}
           <button
             type="submit"
-            disabled={loading}
+            disabled={!hydrated || loading}
             className="w-full font-mono-display text-sm font-bold tracking-wider uppercase rounded py-2.5 transition-all duration-150 disabled:opacity-50 bg-[var(--glow-amber)] border border-accent-amber text-accent-amber shadow-glow-amber hover:bg-accent-amber hover:text-bg-primary hover:shadow-[0_0_20px_var(--glow-amber)] disabled:hover:bg-[var(--glow-amber)] disabled:hover:text-accent-amber disabled:hover:shadow-glow-amber"
           >
             {loading ? t('loading') : t('registerButton')}

@@ -1,9 +1,25 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import path from 'path';
 import { registerAndVerify } from './helpers';
 
 // Use real .prst files that pass the PRSTDecoder
 const PRST_FILE = path.resolve(__dirname, '../../prst/63-C claude1.prst');
+
+// Share links only resolve for published presets (since #76). Publish the
+// user's newest preset so the anonymous share page and API can see it.
+async function publishByShareToken(userPage: Page, shareToken: string): Promise<void> {
+  const list = await userPage.request.get('/api/presets');
+  expect(list.ok()).toBeTruthy();
+  const { presets } = (await list.json()) as { presets: Array<{ id: string; shareToken: string }> };
+  const preset = presets.find((p) => p.shareToken === shareToken);
+  expect(preset).toBeDefined();
+  // Mutating routes check CSRF; API requests from Playwright send no Origin.
+  const res = await userPage.request.post(`/api/presets/${preset!.id}/publish`, {
+    headers: { origin: new URL(userPage.url()).origin },
+  });
+  expect(res.ok()).toBeTruthy();
+  expect((await res.json()).public).toBe(true);
+}
 
 test.describe('Preset sharing flows', () => {
   test('unauthenticated user is redirected from /presets to /auth/login', async ({ page }) => {
@@ -55,6 +71,7 @@ test.describe('Preset sharing flows', () => {
       .first()
       .getAttribute('data-share-token');
     expect(shareToken).toBeTruthy();
+    await publishByShareToken(userPage, shareToken!);
 
     // Access share page without login (new incognito-like context)
     await page.goto(`/en/share/${shareToken}`);
@@ -77,6 +94,7 @@ test.describe('Preset sharing flows', () => {
       .first()
       .getAttribute('data-share-token');
     expect(shareToken).toBeTruthy();
+    await publishByShareToken(userPage, shareToken!);
 
     // GET share info before download
     const before = await request.get(`/api/share/${shareToken}`);
@@ -139,6 +157,8 @@ test.describe('Preset sharing flows', () => {
       .first()
       .getAttribute('data-share-token');
     expect(oldToken).toBeTruthy();
+    await publishByShareToken(page, oldToken!);
+    expect((await request.get(`/api/share/${oldToken}`)).status()).toBe(200);
 
     // Revoke share link
     page.once('dialog', (dialog) => dialog.accept());

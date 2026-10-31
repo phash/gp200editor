@@ -334,7 +334,6 @@ export default async function SharePage({ params }: Props) {
             <AudioUploadField
               presetId={preset.id}
               hasAudio={!!preset.audioKey}
-              onChange={() => { /* server component — user reloads to see new state */ }}
             />
           </div>
         )}

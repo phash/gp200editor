@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link, useRouter } from '@/i18n/routing';
 import { PasswordInput } from '@/components/PasswordInput';
@@ -8,6 +8,10 @@ import { PasswordInput } from '@/components/PasswordInput';
 export default function LoginPage() {
   const t = useTranslations('auth');
   const router = useRouter();
+  // Until React hydrates, a click would submit the native form and put the
+  // credentials into the URL. Keep the button disabled until then.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -62,7 +66,7 @@ export default function LoginPage() {
         >
           {t('loginTitle')}
         </h1>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form method="post" onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
             <label
               className="block font-mono-display text-[11px] font-medium tracking-wider uppercase mb-1.5"
@@ -139,7 +143,7 @@ export default function LoginPage() {
           )}
           <button
             type="submit"
-            disabled={loading}
+            disabled={!hydrated || loading}
             className="w-full font-mono-display text-sm font-bold tracking-wider uppercase rounded py-2.5 transition-all duration-150 disabled:opacity-50 bg-[var(--glow-amber)] border border-accent-amber text-accent-amber shadow-glow-amber hover:bg-accent-amber hover:text-bg-primary hover:shadow-[0_0_20px_var(--glow-amber)] disabled:hover:bg-[var(--glow-amber)] disabled:hover:text-accent-amber disabled:hover:shadow-glow-amber"
           >
             {loading ? t('loading') : t('loginButton')}
