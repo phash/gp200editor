@@ -3,6 +3,7 @@ import {
   PutObjectCommand,
   DeleteObjectCommand,
   GetObjectCommand,
+  HeadBucketCommand,
 } from '@aws-sdk/client-s3';
 import type { Readable } from 'stream';
 
@@ -52,6 +53,11 @@ export async function getAvatarStream(key: string): Promise<Readable> {
 
 function presetBucket() {
   return process.env.GARAGE_PRESET_BUCKET!;
+}
+
+/** Health check: throws unless the preset bucket is reachable with our credentials. */
+export async function pingStorage(): Promise<void> {
+  await getClient().send(new HeadBucketCommand({ Bucket: presetBucket() }));
 }
 
 export async function uploadPreset(key: string, buffer: Buffer): Promise<void> {
