@@ -1,20 +1,37 @@
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import { buildAlternates, BASE_URL, type Locale } from '@/lib/hreflang';
+import { EditorAbout } from '@/components/EditorAbout';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'editorAbout' });
+  const title = t('metaTitle');
+  const description = t('metaDescription');
   return {
-    title: 'GP-200 Preset Editor for Mac, Linux & Windows — Live USB MIDI | Preset Forge',
-    description: 'Edit Valeton GP-200 presets in the browser on Mac, Linux, or Windows. Load .prst files, tweak 305 effects with real parameters, send changes live via USB MIDI. No install needed.',
+    title,
+    description,
     alternates: buildAlternates('/editor', locale as Locale),
     openGraph: {
-      title: 'GP-200 Preset Editor for Mac, Linux & Windows | Preset Forge',
-      description: 'GP-200 editor that runs on Mac, Linux, and Windows. Load presets, edit all 11 effect slots with real parameters, push changes live to your device via USB MIDI. Free, browser-based, offline PWA.',
+      title,
+      description,
       images: [{ url: `${BASE_URL}/og-image.png`, width: 1200, height: 630 }],
     },
   };
 }
 
-export default function EditorLayout({ children }: { children: React.ReactNode }) {
-  return children;
+export default async function EditorLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  return (
+    <>
+      {children}
+      <EditorAbout locale={locale as Locale} />
+    </>
+  );
 }
