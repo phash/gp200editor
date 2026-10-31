@@ -46,7 +46,7 @@ function ResetPasswordForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form method="post" onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div>
         <label
           className="block font-mono-display text-[11px] font-medium tracking-wider uppercase mb-1.5"

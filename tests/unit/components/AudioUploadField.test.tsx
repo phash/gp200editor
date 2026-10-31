@@ -4,6 +4,11 @@ import { NextIntlClientProvider } from 'next-intl';
 import messages from '../../../messages/en.json';
 import { AudioUploadField } from '@/components/audio/AudioUploadField';
 
+const refresh = vi.fn();
+vi.mock('@/i18n/routing', () => ({
+  useRouter: () => ({ refresh }),
+}));
+
 function wrap(node: React.ReactNode) {
   return <NextIntlClientProvider locale="en" messages={messages}>{node}</NextIntlClientProvider>;
 }
@@ -29,6 +34,22 @@ describe('AudioUploadField', () => {
     fireEvent.change(input);
     await waitFor(() => expect(fetchSpy).toHaveBeenCalledWith('/api/presets/p1/audio', expect.objectContaining({ method: 'POST' })));
     await waitFor(() => expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ audioKey: 'k' })));
+    fetchSpy.mockRestore();
+  });
+
+  // The share page is a Server Component and cannot pass a function prop
+  // (doing so 500'd the page for owners). Without onChange the field
+  // refreshes the route so the server-rendered player shows the new state.
+  it('refreshes the route after upload when no onChange is given', async () => {
+    refresh.mockClear();
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue(new Response(JSON.stringify({
+      audioKey: 'k', audioUrl: '/api/preset-audio/k', audioMimeType: 'audio/mpeg', audioDurationMs: 5000,
+    }), { status: 200 }));
+    render(wrap(<AudioUploadField presetId="p1" hasAudio={false} />));
+    const input = screen.getByLabelText(/audio snippet/i, { selector: 'input[type="file"]' }) as HTMLInputElement;
+    Object.defineProperty(input, 'files', { value: [fakeFile()] });
+    fireEvent.change(input);
+    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
     fetchSpy.mockRestore();
   });
 

@@ -48,3 +48,8 @@ Stand 2026-10-22: 846 Tests in 78 Dateien (inkl. Unterordner `api/`, `components
 - Rate Limiting ist in `NODE_ENV !== 'production'` deaktiviert (für parallele Test-Registrierungen)
 - `.prst`-Dateien für Tests: `prst/63-B American Idiot.prst` (author=Galtone Studio, DST aktiv), `prst/63-C claude1.prst` (author leer, DST aktiv aber Round-Trip verliert DST — Bug #53)
 - Gallery-Locators: immer `.first()` — mehrere Presets gleichen Namens akkumulieren im Test-DB
+- Laufenden Server nutzen: `PLAYWRIGHT_BASE_URL=http://localhost:3101 npx playwright test` — dann startet Playwright keinen eigenen Dev-Server; Helper-URLs sind relativ
+- Formulare (Login, Register, Passwort vergessen, Feedback) erst nach der Hydration füllen: `gotoForm(page, url)` wartet, bis der Submit-Button aktiv ist. Davor gesetzte Werte überschreibt React beim Hydrieren
+- Mutierende API-Calls über `page.request` brauchen einen `origin`-Header (CSRF-Check), z. B. `headers: { origin: new URL(page.url()).origin }`
+- Share-Links lösen nur für veröffentlichte Presets auf — Share-Tests veröffentlichen das Preset vorher
+- Wenig RAM (Dev-Server + Chromium): `--workers=1`, sonst „Page crashed“ bzw. OOM-Kill des Dev-Servers

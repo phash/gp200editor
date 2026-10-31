@@ -1,4 +1,14 @@
-import type { Page, APIRequestContext } from '@playwright/test';
+import { expect, type Page, type APIRequestContext } from '@playwright/test';
+
+/**
+ * Open a page with a form and wait until React has hydrated it. The auth and
+ * feedback forms keep their submit button disabled until hydration; filling
+ * inputs earlier loses the values when React takes over the controlled inputs.
+ */
+export async function gotoForm(page: Page, url: string): Promise<void> {
+  await page.goto(url, { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('form [type="submit"]').first()).toBeEnabled();
+}
 
 export const UNIQUE = () => `user_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
@@ -56,7 +66,7 @@ async function extractVerificationToken(
  * Works with the email verification flow:
  *   1. POST /api/auth/register → creates unverified user + sends verification email
  *   2. Fetch email from Mailhog → extract verification token
- *   3. GET /api/auth/verify-email?token=... → verifies email + creates session (auto-login)
+ *   3. POST /api/auth/verify-email { token } → verifies email + creates session (auto-login)
  *   4. Navigate to profile to confirm logged-in state
  */
 export async function registerAndVerify(
@@ -68,7 +78,7 @@ export async function registerAndVerify(
   const password = 'testpass123';
 
   // 1. Register via UI
-  await page.goto('/en/auth/register');
+  await gotoForm(page, '/en/auth/register');
   await page.fill('[name="email"]', email);
   await page.fill('[name="username"]', username);
   await page.fill('[name="password"]', password);
@@ -81,10 +91,11 @@ export async function registerAndVerify(
   const apiCtx = request || page.request;
   const token = await extractVerificationToken(apiCtx, email);
 
-  // 4. Verify email via API (this auto-logs in via session cookie)
-  const verifyRes = await page.request.get(
-    `http://localhost:3000/api/auth/verify-email?token=${token}`,
-  );
+  // 4. Verify email via API (this auto-logs in via session cookie). POST-only
+  // since the confirm-button step; the relative URL resolves against baseURL.
+  const verifyRes = await page.request.post('/api/auth/verify-email', {
+    data: { token },
+  });
   if (!verifyRes.ok()) {
     throw new Error(`Email verification failed: ${verifyRes.status()}`);
   }
@@ -99,10 +110,11 @@ export async function registerAndVerify(
 /**
  * Register a user via API and verify email via Mailhog (no browser UI).
  * Returns the credentials for subsequent API-based login.
+ * `baseUrl` defaults to '' so URLs resolve against the Playwright baseURL.
  */
 export async function registerAndVerifyViaAPI(
   request: APIRequestContext,
-  baseUrl = 'http://localhost:3000',
+  baseUrl = '',
 ): Promise<{ username: string; email: string; password: string }> {
   const username = UNIQUE();
   const email = `${username}@test.com`;

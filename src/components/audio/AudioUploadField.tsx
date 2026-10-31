@@ -1,6 +1,7 @@
 'use client';
 import { useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useRouter } from '@/i18n/routing';
 
 interface UploadResult {
   audioKey: string;
@@ -12,7 +13,12 @@ interface UploadResult {
 interface Props {
   presetId: string;
   hasAudio: boolean;
-  onChange: (result: UploadResult | null) => void;
+  /**
+   * Called after an upload or delete. Optional: Server Components cannot pass
+   * functions to Client Components, so without it the field refreshes the
+   * route to re-render the server-side audio player.
+   */
+  onChange?: (result: UploadResult | null) => void;
 }
 
 const ERROR_KEYS = new Set(['tooLong', 'tooBig', 'wrongType', 'notAuthorized']);
@@ -23,6 +29,11 @@ export function AudioUploadField({ presetId, hasAudio, onChange }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [present, setPresent] = useState(hasAudio);
+  const router = useRouter();
+  const notify = (result: UploadResult | null) => {
+    if (onChange) onChange(result);
+    else router.refresh();
+  };
 
   async function handlePick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -38,7 +49,7 @@ export function AudioUploadField({ presetId, hasAudio, onChange }: Props) {
       if (res.ok) {
         const data = (await res.json()) as UploadResult;
         setPresent(true);
-        onChange(data);
+        notify(data);
       } else if (res.status === 401 || res.status === 403) {
         setError(t('notAuthorized'));
       } else if (res.status === 400) {
@@ -63,7 +74,7 @@ export function AudioUploadField({ presetId, hasAudio, onChange }: Props) {
       const res = await fetch(`/api/presets/${presetId}/audio`, { method: 'DELETE' });
       if (res.ok) {
         setPresent(false);
-        onChange(null);
+        notify(null);
       } else {
         setError(t('genericError'));
       }

@@ -8,6 +8,8 @@
 ### Fix
 - **E-Mails kommen in der richtigen Sprache.** Die Registrierung hat die gewählte Sprache nicht gespeichert, deshalb gingen Bestätigungs- und Erinnerungsmails immer auf Englisch raus.
 - **Navigation läuft auf schmalen Bildschirmen nicht mehr über.** Unter 1280 px Breite gibt es jetzt das Hamburger-Menü statt einer abgeschnittenen Linkzeile.
+- **Eigene Share-Seite lädt wieder.** Wer die Share-Seite des eigenen Presets aufrief, bekam seit Einführung der Audio-Schnipsel eine Fehlerseite.
+- **Login- und Registrierungsdaten landen nicht mehr in der URL.** Wer das Formular abschickte, bevor die Seite fertig geladen war, schickte die Eingaben als URL-Parameter. Der Button ist jetzt bis dahin gesperrt.
 
 ## 2026-10-22
 
