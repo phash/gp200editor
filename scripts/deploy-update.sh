@@ -50,12 +50,12 @@ docker compose $COMPOSE_FILES --env-file .env.prod up -d app
 info "Waiting for app..."
 APP_CONTAINER=$(docker compose $COMPOSE_FILES ps -q app 2>/dev/null | head -1)
 for i in $(seq 1 60); do
-  # Check via docker exec using node (always available in node:alpine)
-  if docker exec "$APP_CONTAINER" node -e "require('http').get('http://localhost:3000/',r=>{process.exit(r.statusCode<400?0:1)}).on('error',()=>process.exit(1))" 2>/dev/null; then break; fi
+  # /api/health is 200 only when the app answers AND reaches Postgres + Garage
+  if docker exec "$APP_CONTAINER" node -e "require('http').get('http://localhost:3000/api/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))" 2>/dev/null; then break; fi
   sleep 1
 done
 
-if docker exec "$APP_CONTAINER" node -e "require('http').get('http://localhost:3000/',r=>{process.exit(r.statusCode<400?0:1)}).on('error',()=>process.exit(1))" 2>/dev/null; then
+if docker exec "$APP_CONTAINER" node -e "require('http').get('http://localhost:3000/api/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))" 2>/dev/null; then
   info "App is running."
 else
   error "App not responding after 60s!"

@@ -66,7 +66,8 @@ bash scripts/deploy-update.sh    # git pull → build → restart (Migrations la
 - Zentraler **Caddy** Reverse Proxy (Container `caddy-proxy`, ports 80/443) erreicht die App über das externe Docker-Network `caddy-proxy` per Service-Namen; TLS-Zertifikate holt Caddy automatisch
 - Caddy-Config: `/opt/caddyserver/Caddyfile` (Reload: `docker restart caddy-proxy`); `preset-forge.com` leitet per 301 auf `www.preset-forge.com` weiter. Security-Header für Preset Forge stehen inline im `www.preset-forge.com`-Block (nicht im shared Snippet); **CSP setzt ausschließlich Next.js**
 - `docker-compose.caddy.yml` (nur auf dem VPS, nicht im Repo) wird von `deploy-update.sh` automatisch mitgenommen, falls vorhanden
-- `scripts/deploy-update.sh` für Updates (git pull → build → restart)
+- `scripts/deploy-update.sh` für Updates (git pull → build → restart); wartet bis 60 s auf `GET /api/health` = 200, sonst Rollback auf `gp200editor-app:previous`
+- Healthcheck: Docker prüft `app` alle 30 s über `/api/health` (DB + Garage) — Status in `docker compose ps` (`healthy`/`unhealthy`). Extern: `curl -fsS https://www.preset-forge.com/api/health`
 - `scripts/backup.sh` / `scripts/restore.sh` für DB + S3 Backups
 
 ### Dockerfile-Details

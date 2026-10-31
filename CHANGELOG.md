@@ -5,6 +5,9 @@
 ### Features
 - **Feedback-Formular.** Unter `/feedback` können angemeldete Nutzer mit bestätigter E-Mail-Adresse Bugs melden, Features vorschlagen oder allgemeines Feedback geben. Der Button sitzt gut sichtbar in der Navigation und ist auf der Startseite sowie im Footer verlinkt. Bei Bug-Reports werden die Seite, von der man kommt, und die Browser-Version mitgeschickt.
 
+### Betrieb
+- **Health-Check.** `/api/health` meldet, ob App, Datenbank und Dateispeicher erreichbar sind. Docker und das Deploy-Skript nutzen ihn; ein Deploy, bei dem DB oder Speicher nicht erreichbar sind, wird zurückgerollt.
+
 ### Fix
 - **E-Mails kommen in der richtigen Sprache.** Die Registrierung hat die gewählte Sprache nicht gespeichert, deshalb gingen Bestätigungs- und Erinnerungsmails immer auf Englisch raus.
 - **Navigation läuft auf schmalen Bildschirmen nicht mehr über.** Unter 1280 px Breite gibt es jetzt das Hamburger-Menü statt einer abgeschnittenen Linkzeile.

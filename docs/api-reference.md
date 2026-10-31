@@ -50,6 +50,7 @@ Mutierende Routen prüfen CSRF (`verifyCsrf`); Kommentieren nur auf public + nic
 | Route | Auth | Beschreibung |
 |-------|------|--------------|
 | `GET/PATCH /api/profile`, `POST /api/profile/avatar` | Ja | Profil + Avatar-Upload |
+| `GET /api/health` | Nein | Readiness: `SELECT 1` gegen Postgres + `HeadBucket` auf den Preset-Bucket (je 3 s Timeout). 200 `{status:'ok', checks:{database,storage}}` oder 503 `status:'error'`; nur ok/ms, keine Fehlertexte; `no-store`. Genutzt von Docker-Healthcheck, `deploy-update.sh`, Uptime-Monitoren |
 | `POST /api/errors/client` | Nein | Client-Render-Fehler aus `error.tsx` → `ErrorLog` (Rate-Limit 30/min/IP) |
 | `POST /api/cron/verify-reminders` | Bearer `CRON_SECRET` | Verify-Reminder D2/D7 (siehe deployment.md) |
 | `POST /api/test/backdate-user` | nur dev/test (`NODE_ENV`) | E2E-Hilfsroute |
