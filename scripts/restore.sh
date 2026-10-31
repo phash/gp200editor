@@ -4,7 +4,7 @@ cd "$(dirname "$0")/.."
 
 COMPOSE="docker compose -f docker-compose.prod.yml"
 ENV_FILE=".env.prod"
-BACKUP_DIR="./backups"
+BACKUP_DIR="/opt/backup/gp200editor"
 
 # ── Colors ───────────────────────────────────────────────────────────────────
 RED='\033[0;31m'; GREEN='\033[0;32m'; AMBER='\033[0;33m'; NC='\033[0m'
@@ -81,7 +81,7 @@ if [ -f "$S3_BACKUP" ]; then
   docker run --rm \
     -v gp200editor_garage_data:/data \
     -v gp200editor_garage_meta:/meta \
-    -v "$(pwd)/$BACKUP_DIR":/backup \
+    -v "$BACKUP_DIR":/backup \
     alpine sh -c "rm -rf /data/* /meta/* && tar xzf /backup/gp200-garage-${TIMESTAMP}.tar.gz -C /"
   $COMPOSE start garage
   info "Garage data restored."
