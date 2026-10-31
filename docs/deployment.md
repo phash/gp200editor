@@ -68,6 +68,9 @@ bash scripts/deploy-update.sh    # git pull → build → restart (Migrations la
 - `docker-compose.caddy.yml` (nur auf dem VPS, nicht im Repo) wird von `deploy-update.sh` automatisch mitgenommen, falls vorhanden
 - `scripts/deploy-update.sh` für Updates (git pull → build → restart)
 - `scripts/backup.sh` / `scripts/restore.sh` für DB + S3 Backups
+  - Ziel: `/opt/gp200editor/backups/` (DB-Dump, Garage-Tarball, `.env.prod`), behält die letzten 7 je Typ. Garage stoppt für den Snapshot ein paar Sekunden
+  - Cron (User `musikersuche`): `30 4 * * * bash /opt/gp200editor/scripts/backup.sh >> /opt/backup/gp200editor/backup.log 2>&1` — mit `bash` aufrufen, nicht direkt: `git pull` setzt die Dateirechte auf den Repo-Stand, und bis 2026-10-31 war `backup.sh` dort nicht ausführbar (165 Läufe mit `Permission denied`, kein einziges DB-Backup)
+  - Prüfen: `ls -lt /opt/gp200editor/backups | head` und `tail /opt/backup/gp200editor/backup.log`
 
 ### Dockerfile-Details
 
