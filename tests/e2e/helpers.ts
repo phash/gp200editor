@@ -122,10 +122,11 @@ export async function registerAndVerifyViaAPI(
   // Extract and verify token
   const token = await extractVerificationToken(request, email);
 
-  // Verify email via API (also creates session)
-  const verifyRes = await request.get(
-    `${baseUrl}/api/auth/verify-email?token=${token}`,
-  );
+  // Verify email via API (also creates session). POST-only since the
+  // confirm-button step that protects tokens from link scanners.
+  const verifyRes = await request.post(`${baseUrl}/api/auth/verify-email`, {
+    data: { token },
+  });
   if (!verifyRes.ok()) {
     throw new Error(`Verification failed: ${verifyRes.status()}`);
   }

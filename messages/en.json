@@ -16,7 +16,9 @@
     "menuAria": "Menu",
     "discordTitle": "Feedback & Community",
     "helpAria": "Help",
-    "supportCta": "Buy me a guitar"
+    "supportCta": "Buy me a guitar",
+    "feedback": "Feedback",
+    "feedbackTitle": "Send feedback: bugs, ideas, opinions"
   },
   "home": {
     "hero": {
@@ -126,7 +128,8 @@
     "legal": "Legal & Privacy",
     "poweredBy": "powered by",
     "guides": "Guides",
-    "supportCta": "Buy me a guitar"
+    "supportCta": "Buy me a guitar",
+    "feedback": "Feedback"
   },
   "editor": {
     "title": "Edit Preset",
@@ -441,6 +444,8 @@
     "privacyServerLogsText": "The hosting provider automatically collects and stores information in server log files: browser type, operating system, referrer URL, hostname, time of request, and IP address. This data is collected on the basis of Art. 6(1)(f) GDPR (legitimate interest in stability and security), is not merged with other data sources, and is automatically deleted after no more than 14 days.",
     "privacyErrorLogTitle": "Error Log",
     "privacyErrorLogText": "When an error occurs in the application, we store the error message, technical details, the requested address, the time, your IP address and – if you are signed in – your user ID in our database. For severe errors the operator is notified by email. The purpose is the stability and security of the website (Art. 6(1)(f) GDPR). Entries are deleted automatically 30 days after the error last occurred.",
+    "privacyFeedbackTitle": "Feedback form",
+    "privacyFeedbackText": "Signed-in users with a confirmed email address can send us feedback. We store the category, your message, your user ID, your language, the page you came from and your browser identification (user agent), and notify the operator by email. The purpose is answering your request and improving the website (Art. 6(1)(f) GDPR). Feedback is deleted together with your account; on request we delete individual messages earlier.",
     "privacyHostingTitle": "Hosting",
     "privacyHostingText": "The website is hosted on a dedicated server with IONOS SE (Elgendorfer Straße 57, 56410 Montabaur, Germany) located in Germany. A data processing agreement under Art. 28 GDPR is in place with the hosting provider.",
     "privacyCookiesTitle": "Cookies",
@@ -597,6 +602,26 @@
       "confirmDelete": "Delete",
       "cancel": "Cancel",
       "loadMore": "Load more"
+    },
+    "feedback": {
+      "tabTitle": "Feedback",
+      "all": "All",
+      "columnCategory": "Category",
+      "columnUser": "User",
+      "columnMessage": "Message",
+      "columnContext": "Context",
+      "columnDate": "Date",
+      "columnStatus": "Status",
+      "status": {
+        "NEW": "New",
+        "READ": "Read",
+        "DONE": "Done"
+      },
+      "markRead": "Mark read",
+      "markDone": "Done",
+      "reopen": "Reopen",
+      "empty": "No feedback yet.",
+      "loadMore": "Load more"
     }
   },
   "email": {
@@ -742,5 +767,60 @@
     "ctaEditor": "Open the editor",
     "metaTitle": "Valeton GP-200 Guides: Linux, USB MIDI & Presets | Preset Forge",
     "metaDescription": "Step-by-step Valeton GP-200 guides: use the pedal on Linux, edit presets over USB MIDI, open .prst files and get more out of your tones."
+  },
+  "feedback": {
+    "metaTitle": "Feedback — Preset Forge",
+    "metaDescription": "Report a bug, suggest a feature or tell us what you think about Preset Forge, the free Valeton GP-200 editor.",
+    "title": "Feedback",
+    "intro": "Found a bug? Missing a feature? Or just want to say what you think? Preset Forge is built by one guitarist in his spare time — every message is read, and many features started as a user request.",
+    "categoryLabel": "What is it about?",
+    "categories": {
+      "BUG": {
+        "label": "Bug / something doesn't work",
+        "hint": "Something broke, behaves oddly, or your GP-200 is not detected."
+      },
+      "IDEA": {
+        "label": "Feature request / idea",
+        "hint": "Something you are missing in the editor, gallery or playlists."
+      },
+      "GENERAL": {
+        "label": "General feedback",
+        "hint": "Praise, criticism, or anything else about the website."
+      }
+    },
+    "messageLabel": "Your message",
+    "placeholders": {
+      "BUG": "What did you do, what happened, and what did you expect? Which operating system and firmware version?",
+      "IDEA": "What would you like to be able to do — and what would it help you with?",
+      "GENERAL": "What do you like, what bugs you?"
+    },
+    "charCount": "{count} / {max}",
+    "contextNote": "To help reproduce bugs, the page you came from and your browser version are sent along with your message.",
+    "privacyNote": "Your feedback is stored with your username and only read by the operator. Details in the",
+    "privacyLink": "privacy policy",
+    "submit": "Send feedback",
+    "submitting": "Sending…",
+    "successTitle": "Thank you!",
+    "successBody": "Your feedback has arrived. If there are questions, you will get a reply to your account email address.",
+    "sendAnother": "Send more feedback",
+    "errors": {
+      "tooShort": "Please write at least {min} characters.",
+      "tooMany": "You have sent a lot of feedback recently. Please try again later.",
+      "duplicate": "You have already sent exactly this message.",
+      "generic": "Sending failed. Please try again."
+    },
+    "loginTitle": "Sign in to send feedback",
+    "loginBody": "To keep spam bots out, only signed-in users with a confirmed email address can send feedback. An account is free and takes a minute.",
+    "loginCta": "Sign in",
+    "registerCta": "Create free account",
+    "verifyTitle": "Please confirm your email address",
+    "verifyBody": "To keep spam bots out, feedback is only open to confirmed accounts. Click the link in the email we sent you — or request a new one.",
+    "promo": {
+      "heading": "Help shape Preset Forge",
+      "body": "Bug, feature idea or opinion — tell us. Every message is read, and many features started as a user request.",
+      "cta": "Send feedback",
+      "bugChip": "Report a bug",
+      "ideaChip": "Suggest an idea"
+    }
   }
 }

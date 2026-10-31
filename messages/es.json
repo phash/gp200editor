@@ -16,7 +16,9 @@
     "menuAria": "Menú",
     "discordTitle": "Comentarios & Comunidad",
     "helpAria": "Ayuda",
-    "supportCta": "Buy me a guitar"
+    "supportCta": "Buy me a guitar",
+    "feedback": "Feedback",
+    "feedbackTitle": "Enviar feedback: bugs, ideas, opiniones"
   },
   "home": {
     "hero": {
@@ -126,7 +128,8 @@
     "legal": "Aviso legal y privacidad",
     "poweredBy": "powered by",
     "guides": "Guías",
-    "supportCta": "Buy me a guitar"
+    "supportCta": "Buy me a guitar",
+    "feedback": "Feedback"
   },
   "editor": {
     "title": "Editar Preset",
@@ -441,6 +444,8 @@
     "privacyServerLogsText": "El proveedor de alojamiento recopila y almacena automáticamente información en archivos de registro del servidor: tipo de navegador, sistema operativo, URL de referencia, nombre de host, hora de la solicitud y dirección IP. Estos datos se recopilan sobre la base del Art. 6 párr. 1 lit. f RGPD (interés legítimo en estabilidad y seguridad), no se combinan con otras fuentes de datos y se eliminan automáticamente después de 14 días como máximo.",
     "privacyErrorLogTitle": "Registro de errores",
     "privacyErrorLogText": "Cuando se produce un error en la aplicación, guardamos en nuestra base de datos el mensaje de error, detalles técnicos, la dirección solicitada, la hora, tu dirección IP y, si has iniciado sesión, tu ID de usuario. En caso de errores graves, el operador recibe un aviso por correo electrónico. La finalidad es la estabilidad y seguridad del sitio web (Art. 6 párr. 1 lit. f RGPD). Las entradas se eliminan automáticamente 30 días después de la última vez que ocurrió el error.",
+    "privacyFeedbackTitle": "Formulario de feedback",
+    "privacyFeedbackText": "Los usuarios con sesión iniciada y correo confirmado pueden enviarnos feedback. Guardamos la categoría, tu mensaje, tu ID de usuario, tu idioma, la página de la que vienes y la identificación de tu navegador (user agent), y avisamos al operador por correo. La finalidad es responder a tu solicitud y mejorar la web (art. 6.1.f RGPD). El feedback se elimina junto con tu cuenta; si lo pides, eliminamos mensajes concretos antes.",
     "privacyHostingTitle": "Alojamiento",
     "privacyHostingText": "El sitio web está alojado en un servidor dedicado de IONOS SE (Elgendorfer Straße 57, 56410 Montabaur, Alemania) ubicado en Alemania. Existe un contrato de encargado del tratamiento conforme al Art. 28 RGPD con el proveedor de alojamiento.",
     "privacyCookiesTitle": "Cookies",
@@ -597,6 +602,26 @@
       "confirmDelete": "Eliminar",
       "cancel": "Cancelar",
       "loadMore": "Cargar más"
+    },
+    "feedback": {
+      "tabTitle": "Feedback",
+      "all": "Todos",
+      "columnCategory": "Categoría",
+      "columnUser": "Usuario",
+      "columnMessage": "Mensaje",
+      "columnContext": "Contexto",
+      "columnDate": "Fecha",
+      "columnStatus": "Estado",
+      "status": {
+        "NEW": "Nuevo",
+        "READ": "Leído",
+        "DONE": "Hecho"
+      },
+      "markRead": "Marcar leído",
+      "markDone": "Hecho",
+      "reopen": "Reabrir",
+      "empty": "Todavía no hay feedback.",
+      "loadMore": "Cargar más"
     }
   },
   "email": {
@@ -742,5 +767,60 @@
     "ctaEditor": "Abrir el editor",
     "metaTitle": "Guías del Valeton GP-200: Linux, USB MIDI y presets | Preset Forge",
     "metaDescription": "Guías paso a paso del Valeton GP-200: usa la pedalera en Linux, edita presets por USB MIDI, abre archivos .prst y saca más de tu sonido."
+  },
+  "feedback": {
+    "metaTitle": "Feedback — Preset Forge",
+    "metaDescription": "Reporta un bug, sugiere una función o dinos qué opinas de Preset Forge, el editor gratuito para Valeton GP-200.",
+    "title": "Feedback",
+    "intro": "¿Encontraste un bug? ¿Te falta una función? ¿O solo quieres decir lo que piensas? Preset Forge lo hace un solo guitarrista en su tiempo libre — cada mensaje se lee, y muchas funciones empezaron como petición de un usuario.",
+    "categoryLabel": "¿De qué se trata?",
+    "categories": {
+      "BUG": {
+        "label": "Bug / algo no funciona",
+        "hint": "Algo se rompió, se comporta raro o tu GP-200 no se detecta."
+      },
+      "IDEA": {
+        "label": "Petición de función / idea",
+        "hint": "Algo que te falta en el editor, la galería o las playlists."
+      },
+      "GENERAL": {
+        "label": "Feedback general",
+        "hint": "Elogios, críticas o cualquier otra cosa sobre la web."
+      }
+    },
+    "messageLabel": "Tu mensaje",
+    "placeholders": {
+      "BUG": "¿Qué hiciste, qué pasó y qué esperabas? ¿Qué sistema operativo y qué versión de firmware?",
+      "IDEA": "¿Qué te gustaría poder hacer — y en qué te ayudaría?",
+      "GENERAL": "¿Qué te gusta y qué te molesta?"
+    },
+    "charCount": "{count} / {max}",
+    "contextNote": "Para poder reproducir bugs, se envían junto con tu mensaje la página de la que vienes y la versión de tu navegador.",
+    "privacyNote": "Tu feedback se guarda con tu nombre de usuario y solo lo lee el operador. Detalles en la",
+    "privacyLink": "política de privacidad",
+    "submit": "Enviar feedback",
+    "submitting": "Enviando…",
+    "successTitle": "¡Gracias!",
+    "successBody": "Tu feedback ha llegado. Si hay preguntas, recibirás una respuesta en el correo de tu cuenta.",
+    "sendAnother": "Enviar más feedback",
+    "errors": {
+      "tooShort": "Escribe al menos {min} caracteres.",
+      "tooMany": "Has enviado mucho feedback últimamente. Inténtalo de nuevo más tarde.",
+      "duplicate": "Ya enviaste exactamente este mensaje.",
+      "generic": "No se pudo enviar. Inténtalo de nuevo."
+    },
+    "loginTitle": "Inicia sesión para enviar feedback",
+    "loginBody": "Para mantener fuera a los bots de spam, solo los usuarios con sesión iniciada y correo confirmado pueden enviar feedback. Una cuenta es gratis y se crea en un minuto.",
+    "loginCta": "Iniciar sesión",
+    "registerCta": "Crear cuenta gratis",
+    "verifyTitle": "Confirma tu dirección de correo",
+    "verifyBody": "Para mantener fuera a los bots de spam, el feedback solo está abierto a cuentas confirmadas. Haz clic en el enlace del correo que te enviamos — o pide uno nuevo.",
+    "promo": {
+      "heading": "Ayuda a dar forma a Preset Forge",
+      "body": "Bug, idea de función u opinión — cuéntanos. Cada mensaje se lee, y muchas funciones empezaron como petición de un usuario.",
+      "cta": "Enviar feedback",
+      "bugChip": "Reportar un bug",
+      "ideaChip": "Proponer una idea"
+    }
   }
 }

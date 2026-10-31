@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { PasswordInput } from '@/components/PasswordInput';
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
@@ -10,6 +10,7 @@ const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 export default function RegisterPage() {
   const t = useTranslations('auth');
+  const locale = useLocale();
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -39,6 +40,8 @@ export default function RegisterPage() {
           email,
           username,
           password,
+          // Stored on the user so verification/reminder mails use their language.
+          locale,
           turnstileToken,
           // Honeypot — bots fill this, humans don't see it
           company_url: formData.get('company_url') || undefined,

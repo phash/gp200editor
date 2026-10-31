@@ -42,6 +42,10 @@ export function Navbar() {
   const badgeCount = unresolvedCritical > 0 ? unresolvedCritical : unresolvedError;
   const badgeColor = unresolvedCritical > 0 ? '#ef4444' : '#f97316';
 
+  // Pass the current page along so bug reports carry their context —
+  // document.referrer does not change on client-side navigation.
+  const feedbackHref = pathname === '/feedback' ? '/feedback' : `/feedback?from=${encodeURIComponent(pathname)}`;
+
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' });
     setUsername(null);
@@ -57,11 +61,11 @@ export function Navbar() {
       style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
     >
       <div className="flex items-center gap-3">
-        <Link href="/" className="font-mono-display text-lg font-bold tracking-tight" data-testid="nav-home-link"
+        <Link href="/" className="font-mono-display text-lg font-bold tracking-tight whitespace-nowrap" data-testid="nav-home-link"
           style={{ color: 'var(--accent-amber)' }}>
           {t('title')}
         </Link>
-        <span className="hidden sm:inline font-mono-display text-[10px] tracking-wider uppercase px-1.5 py-0.5 rounded"
+        <span className="hidden lg:inline whitespace-nowrap font-mono-display text-[10px] tracking-wider uppercase px-1.5 py-0.5 rounded"
           style={{ color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}>
           FW 1.8.0
         </span>
@@ -72,7 +76,7 @@ export function Navbar() {
         target="_blank"
         rel="noopener noreferrer"
         data-testid="nav-support-cta"
-        className="hidden xl:flex items-center gap-2 font-mono-display text-sm font-bold px-4 py-1.5 rounded transition-all bg-[rgba(255,221,51,0.08)] hover:bg-[rgba(255,221,51,0.2)] hover:shadow-[0_0_12px_rgba(255,221,51,0.4)]"
+        className="hidden 2xl:flex items-center gap-2 whitespace-nowrap font-mono-display text-sm font-bold px-4 py-1.5 rounded transition-all bg-[rgba(255,221,51,0.08)] hover:bg-[rgba(255,221,51,0.2)] hover:shadow-[0_0_12px_rgba(255,221,51,0.4)]"
         style={{
           border: '1px solid rgba(255,221,51,0.4)',
           color: '#ffdd33',
@@ -82,9 +86,21 @@ export function Navbar() {
         <span aria-hidden="true">🎸</span>
         {t('supportCta')}
       </a>
-      {/* Hamburger button — mobile only */}
+      {/* Feedback CTA — below xl, always visible next to the hamburger */}
+      <Link href={feedbackHref} title={t('feedbackTitle')} data-testid="nav-feedback-cta-mobile"
+        className="xl:hidden ml-auto mr-3 flex items-center gap-1 font-mono-display text-xs font-bold px-2.5 py-1 rounded"
+        style={{
+          border: '1px solid var(--accent-amber)',
+          color: 'var(--accent-amber)',
+          background: 'rgba(212,162,78,0.12)',
+          textDecoration: 'none',
+        }}>
+        <span aria-hidden="true">💬</span>
+        {t('feedback')}
+      </Link>
+      {/* Hamburger button — below xl (the full link row needs ~1200px) */}
       <button
-        className="md:hidden flex flex-col gap-1 p-1"
+        className="xl:hidden flex flex-col gap-1 p-1"
         onClick={() => setMobileOpen(!mobileOpen)}
         aria-label={t('menuAria')}
         style={{ color: 'var(--text-secondary)' }}
@@ -95,7 +111,7 @@ export function Navbar() {
       </button>
 
       {/* Desktop nav links */}
-      <div className="hidden md:flex gap-5 items-center text-sm">
+      <div className="hidden xl:flex gap-5 items-center text-sm whitespace-nowrap">
         <Link href="/" className="transition-colors hover:text-[var(--accent-amber)]"
           style={{ color: pathname === '/' ? 'var(--accent-amber)' : 'var(--text-secondary)' }}
           data-testid="nav-link-home">
@@ -125,6 +141,17 @@ export function Navbar() {
           style={{ color: pathname === '/changelog' ? 'var(--accent-amber)' : 'var(--text-secondary)' }}
           data-testid="nav-link-changelog">
           {t('changelog')}
+        </Link>
+        <Link href={feedbackHref} title={t('feedbackTitle')} data-testid="nav-feedback-cta"
+          className="flex items-center gap-1.5 whitespace-nowrap font-mono-display text-sm font-bold px-3.5 py-1.5 rounded transition-all hover:bg-[rgba(212,162,78,0.28)] hover:shadow-[0_0_12px_rgba(212,162,78,0.45)]"
+          style={{
+            border: '1px solid var(--accent-amber)',
+            color: 'var(--accent-amber)',
+            background: pathname === '/feedback' ? 'rgba(212,162,78,0.28)' : 'rgba(212,162,78,0.12)',
+            textDecoration: 'none',
+          }}>
+          <span aria-hidden="true">💬</span>
+          {t('feedback')}
         </Link>
         {username ? (
           <>
@@ -169,7 +196,7 @@ export function Navbar() {
           target="_blank"
           rel="noopener noreferrer"
           title={t('supportCta')}
-          className="xl:hidden font-mono-display text-xs px-2.5 py-1 rounded transition-all bg-[rgba(255,221,51,0.08)] hover:bg-[rgba(255,221,51,0.2)] hover:shadow-[0_0_8px_rgba(255,221,51,0.3)]"
+          className="2xl:hidden font-mono-display text-xs px-2.5 py-1 rounded transition-all bg-[rgba(255,221,51,0.08)] hover:bg-[rgba(255,221,51,0.2)] hover:shadow-[0_0_8px_rgba(255,221,51,0.3)]"
           style={{
             border: '1px solid rgba(255,221,51,0.3)',
             color: '#ffdd33',
@@ -204,7 +231,7 @@ export function Navbar() {
       {/* Mobile nav menu */}
       {mobileOpen && (
         <div
-          className="md:hidden absolute top-full left-0 right-0 flex flex-col gap-3 px-6 py-4 text-sm z-40"
+          className="xl:hidden absolute top-full left-0 right-0 flex flex-col gap-3 px-6 py-4 text-sm z-40"
           style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-subtle)' }}
         >
           <Link href="/" onClick={() => setMobileOpen(false)} className="transition-colors hover:text-[var(--accent-amber)]"
