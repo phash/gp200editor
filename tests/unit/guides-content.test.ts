@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { GUIDES, GUIDE_SLUGS, guideLocales } from '@/content/guides';
+import { GUIDES, GUIDE_SLUGS, guideLocales, guideLinkLocale } from '@/content/guides';
 import type { Locale } from '@/i18n/locales';
 
 const entries = (Object.entries(GUIDES) as [Locale, NonNullable<(typeof GUIDES)[Locale]>][])
@@ -55,5 +55,17 @@ describe('guide content', () => {
         );
       });
     }
+  });
+});
+
+describe('guideLinkLocale', () => {
+  it('keeps the page locale when the guide is translated', () => {
+    expect(guideLinkLocale('de', 'gp-200-on-linux')).toBe('de');
+    expect(guideLinkLocale('pt-BR', 'valeton-gp-200-editor')).toBe('pt-BR');
+  });
+
+  it('falls back to English for locales without a translation', () => {
+    expect(guideLinkLocale('fr', 'gp-200-on-linux')).toBe('en');
+    expect(guideLinkLocale('it', 'valeton-gp-200-editor')).toBe('en');
   });
 });

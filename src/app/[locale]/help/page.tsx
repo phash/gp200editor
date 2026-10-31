@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { buildAlternates, BASE_URL, type Locale } from '@/lib/hreflang';
 import { serializeJsonLd } from '@/lib/jsonLd';
 import { Link } from '@/i18n/routing';
+import { guideLinkLocale } from '@/content/guides';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -21,8 +22,9 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   };
 }
 
-export default async function HelpPage() {
-  const t = await getTranslations('help');
+export default async function HelpPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'help' });
 
   const sections: { id: string; title: string; items: string[] }[] = [
     {
@@ -105,9 +107,26 @@ export default async function HelpPage() {
     },
   ];
 
-  const faq = [
-    { q: t('faqLinuxQ'), a: t('faqLinuxA') },
+  // Platform answers first: GSC (Oct 2026) shows /help ranking mostly for
+  // conversational follow-ups ("what about android?", "chromebook?",
+  // "i'm using linux", "it still doesn't work"). Each gets a direct answer
+  // that is also emitted verbatim as FAQPage JSON-LD below.
+  const linuxGuide = '/guides/gp-200-on-linux';
+  const faq: { q: string; a: string; link?: { href: string; label: string; locale: Locale } }[] = [
+    { q: t('faqNotDetectedQ'), a: t('faqNotDetectedA') },
+    {
+      q: t('faqLinuxQ'),
+      a: t('faqLinuxA'),
+      link: { href: linuxGuide, label: t('faqLinuxLink'), locale: guideLinkLocale(locale as Locale, 'gp-200-on-linux') },
+    },
+    { q: t('faqWindowsQ'), a: t('faqWindowsA') },
+    { q: t('faqMacQ'), a: t('faqMacA') },
+    { q: t('faqChromebookQ'), a: t('faqChromebookA') },
+    { q: t('faqAndroidQ'), a: t('faqAndroidA') },
+    { q: t('faqIosQ'), a: t('faqIosA') },
+    { q: t('faqFirefoxQ'), a: t('faqFirefoxA') },
     { q: t('faqBrowserQ'), a: t('faqBrowserA') },
+    { q: t('faqLanguagesQ'), a: t('faqLanguagesA') },
     { q: t('faqFirmwareQ'), a: t('faqFirmwareA') },
     { q: t('faqFormatQ'), a: t('faqFormatA') },
     { q: t('faqOfflineQ'), a: t('faqOfflineA') },
@@ -209,6 +228,16 @@ export default async function HelpPage() {
               <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                 {entry.a}
               </p>
+              {entry.link && (
+                <Link
+                  href={entry.link.href}
+                  locale={entry.link.locale}
+                  className="inline-block mt-2 font-mono-display text-sm font-bold underline underline-offset-2 hover:opacity-80"
+                  style={{ color: 'var(--accent-amber)' }}
+                >
+                  {entry.link.label} <span aria-hidden="true">→</span>
+                </Link>
+              )}
             </div>
           ))}
         </div>
