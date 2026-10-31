@@ -365,31 +365,37 @@ export function GalleryClient() {
                     />
                   )}
                 </div>
-                <div className="flex gap-2 shrink-0">
-                  <Link
-                    href={`/editor?share=${preset.shareToken}`}
-                    rel="nofollow"
-                    className="font-mono-display text-[10px] font-bold tracking-wider uppercase px-3 py-1 rounded transition-all duration-150 hover:!bg-[var(--accent-amber)] hover:!text-[var(--bg-primary)]"
-                    style={{
-                      border: '1px solid var(--border-active)',
-                      color: 'var(--text-secondary)',
-                      background: 'transparent',
-                    }}
-                  >
-                    {t('openInEditor')}
-                  </Link>
-                  <a
-                    href={`/api/share/${preset.shareToken}/download`}
-                    className="font-mono-display text-[10px] font-bold tracking-wider uppercase px-3 py-1 rounded transition-all duration-150 hover:!bg-[var(--accent-amber)] hover:!text-[var(--bg-primary)]"
-                    style={{
-                      border: '1px solid var(--accent-amber)',
-                      color: 'var(--accent-amber)',
-                      background: 'var(--glow-amber)',
-                    }}
-                  >
-                    {t('download')}
-                  </a>
-                </div>
+                {/* No token, no links: a missing token once rendered as
+                    /editor?share=undefined and got indexed. nofollow: the
+                    ?share= variants are noindex (middleware) duplicates of
+                    /editor, not pages worth a crawl. */}
+                {preset.shareToken && (
+                  <div className="flex gap-2 shrink-0">
+                    <Link
+                      href={`/editor?share=${encodeURIComponent(preset.shareToken)}`}
+                      rel="nofollow"
+                      className="font-mono-display text-[10px] font-bold tracking-wider uppercase px-3 py-1 rounded transition-all duration-150 hover:!bg-[var(--accent-amber)] hover:!text-[var(--bg-primary)]"
+                      style={{
+                        border: '1px solid var(--border-active)',
+                        color: 'var(--text-secondary)',
+                        background: 'transparent',
+                      }}
+                    >
+                      {t('openInEditor')}
+                    </Link>
+                    <a
+                      href={`/api/share/${preset.shareToken}/download`}
+                      className="font-mono-display text-[10px] font-bold tracking-wider uppercase px-3 py-1 rounded transition-all duration-150 hover:!bg-[var(--accent-amber)] hover:!text-[var(--bg-primary)]"
+                      style={{
+                        border: '1px solid var(--accent-amber)',
+                        color: 'var(--accent-amber)',
+                        background: 'var(--glow-amber)',
+                      }}
+                    >
+                      {t('download')}
+                    </a>
+                  </div>
+                )}
               </div>
 
               {userRole === 'ADMIN' && (

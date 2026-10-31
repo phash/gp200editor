@@ -2,9 +2,9 @@ import type { Guide } from './types';
 
 export const GP200_ON_LINUX_EN: Guide = {
   slug: 'gp-200-on-linux',
-  title: 'How to use the Valeton GP-200 on Linux',
+  title: 'Valeton GP-200 on Linux: Edit Presets & Live USB MIDI',
   description:
-    "The official Valeton GP-200 editor is Windows-only. Here's how to edit, organise, and live-control your GP-200 presets on Linux with Preset Forge in Chrome, Chromium or Firefox.",
+    'The official GP-200 editor is Windows-only. Edit presets and control your GP-200 live over USB MIDI on Ubuntu, Fedora, Mint or Arch – no Wine, no VM.',
   updated: '2026-10-22',
   intro:
     "The Valeton GP-200 is a capable multi-effects floor unit, but its official editor only runs on Windows. If you're on Linux — Mint, Ubuntu, Fedora, Arch, or anything else — you don't have to dual-boot or spin up a Windows VM just to tweak your tone. Preset Forge runs entirely in the browser and is the only GP-200 editor with real Linux support. This guide covers the whole workflow: editing presets, and live USB-MIDI control straight from a Linux machine.",
@@ -72,9 +72,9 @@ export const GP200_ON_LINUX_EN: Guide = {
 
 export const GP200_EDITOR_EN: Guide = {
   slug: 'valeton-gp-200-editor',
-  title: 'Valeton GP-200 Editor for Windows, Mac and Linux',
+  title: 'Valeton GP-200 Editor for Windows, Mac & Linux – Free, No Install',
   description:
-    'Edit Valeton GP-200 presets on any computer: what the official editor does, where it stops, and how the free Preset Forge browser editor fills the gaps.',
+    'Official Valeton app or free browser editor? Edit GP-200 presets on Windows, Mac, Linux or Chromebook, live over USB MIDI. Set up in five minutes.',
   updated: '2026-10-22',
   intro:
     'Turning knobs on the GP-200 itself works, but building a preset on a small screen is slow. A software editor shows the whole signal chain at once, lets you save presets as files and share them. This guide compares the two ways to edit the GP-200 from a computer: Valeton’s official desktop app and Preset Forge, a free editor that runs in the browser.',
@@ -137,12 +137,12 @@ export const GP200_EDITOR_EN: Guide = {
 
 export const PRST_FILE_EN: Guide = {
   slug: 'prst-file',
-  title: 'What is a .prst file? Opening Valeton GP-200 presets',
+  title: 'What is a .prst file? The Valeton GP-200 preset format',
   description:
-    'A .prst file is a Valeton GP-200 preset. Learn what it contains, how to open and edit one in the browser, and how to load it onto your pedal.',
-  updated: '2026-10-22',
+    'A .prst file is one Valeton GP-200 preset: a 1224-byte binary file with the patch name and all 11 effect blocks. Open and edit it free in your browser.',
+  updated: '2026-10-31',
   intro:
-    'If you download a GP-200 preset from a forum, a friend or a preset site, you get a file ending in .prst. Your computer will not know what to do with it, and opening it in a text editor shows only gibberish. This guide explains what is inside a .prst file and how to open, edit and use one.',
+    'A .prst file is a single preset for the Valeton GP-200 multi-effects pedal. It is a small binary file — 1224 bytes for a user preset — that stores the preset name, the author and the settings of all eleven effect blocks. You open it with a GP-200 editor: Valeton’s own software, or Preset Forge, which opens .prst files directly in the browser. A text editor only shows gibberish because the file is binary. This guide explains what is inside, how to open and edit a .prst file, and how to get it onto your pedal.',
   sections: [
     {
       heading: 'What a .prst file is',
@@ -158,6 +158,20 @@ export const PRST_FILE_EN: Guide = {
         'For each block: whether it is on or off, which effect it uses, and up to fifteen parameter values.',
         'The order of the signal chain, plus the expression pedal and controller assignments.',
         'A checksum at the end, which the pedal uses to reject damaged files.',
+      ],
+    },
+    {
+      heading: 'The technical layout of a .prst file',
+      body: [
+        'For the curious: the format is not published by Valeton, but it has been worked out byte by byte. All numbers in the effect blocks are little-endian; the checksum at the end is stored big-endian.',
+        'Factory presets are slightly shorter — 1176 bytes — and have no checksum footer. Preset Forge opens both kinds and writes standard 1224-byte user presets.',
+      ],
+      steps: [
+        'The file starts with the four characters TSRP — “PRST” backwards — which mark it as a preset. A little later comes the device ID 2-PG (“GP-2” backwards) and a format version.',
+        'The preset name and the author follow at fixed positions, 16 ASCII characters each.',
+        'A routing section stores the order of the signal chain and the FX loop send and return positions.',
+        'Then come eleven effect blocks of 72 bytes each: the slot number, an on/off flag, a 32-bit effect code whose high byte names the module (for example AMP, DLY or RVB), and fifteen parameter values stored as 32-bit floating-point numbers.',
+        'The last two bytes are a checksum: the sum of all preceding bytes. The pedal uses it to reject damaged files, and Preset Forge recalculates it every time you save.',
       ],
     },
     {

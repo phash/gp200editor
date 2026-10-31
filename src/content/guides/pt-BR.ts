@@ -2,9 +2,9 @@ import type { Guide } from './types';
 
 export const GP200_EDITOR_PT_BR: Guide = {
   slug: 'valeton-gp-200-editor',
-  title: 'Editor Valeton GP-200 para Windows, Mac e Linux',
+  title: 'Editor Valeton GP-200 para Windows, Mac e Linux, grátis',
   description:
-    'Edite presets da Valeton GP-200 em qualquer computador: o que o editor oficial faz, onde ele para e como o Preset Forge, grátis no navegador, cobre o resto.',
+    'App oficial da Valeton ou editor grátis no navegador? Edite presets da GP-200 no Windows, Mac, Linux ou Chromebook, ao vivo por USB MIDI.',
   updated: '2026-10-22',
   intro:
     'Dá para montar timbres girando os knobs da própria GP-200, mas criar um preset naquela tela pequena é lento. Um editor no computador mostra a cadeia de sinal inteira de uma vez, salva presets como arquivo e facilita o compartilhamento. Este guia compara as duas formas de usar um editor Valeton GP-200 no computador: o aplicativo oficial da Valeton e o Preset Forge, um editor grátis que roda direto no navegador.',
@@ -67,12 +67,12 @@ export const GP200_EDITOR_PT_BR: Guide = {
 
 export const PRST_FILE_PT_BR: Guide = {
   slug: 'prst-file',
-  title: 'O que é um arquivo .prst? Como abrir presets da Valeton GP-200',
+  title: 'O que é um arquivo .prst? Presets da Valeton GP-200',
   description:
-    'Um arquivo .prst é um preset da Valeton GP-200. Veja o que ele contém, como abrir e editar no navegador e como carregar na sua pedaleira.',
-  updated: '2026-10-22',
+    'Um arquivo .prst é um preset da Valeton GP-200: 1224 bytes binários com o nome e os 11 blocos de efeito. Abra e edite grátis no navegador.',
+  updated: '2026-10-31',
   intro:
-    'Quando você baixa um preset da GP-200 num fórum, de um amigo ou num site de presets GP-200 grátis, recebe um arquivo terminado em .prst. O computador não sabe o que fazer com ele, e abrir num editor de texto só mostra caracteres sem sentido. Este guia explica o que tem dentro de um arquivo .prst e como abrir, editar e usar esse arquivo.',
+    'Um arquivo .prst é um único preset da pedaleira multiefeitos Valeton GP-200. É um arquivo binário pequeno (1224 bytes em um preset de usuário) que guarda o nome do preset, o autor e os ajustes dos onze blocos de efeito. Ele é aberto com um editor da GP-200: o software oficial da Valeton ou o Preset Forge, que abre arquivos .prst direto no navegador. Um editor de texto só mostra caracteres sem sentido porque o arquivo é binário. Este guia explica o que tem dentro, como abrir e editar um arquivo .prst e como passá-lo para a sua pedaleira.',
   sections: [
     {
       heading: 'O que é um arquivo .prst',
@@ -88,6 +88,20 @@ export const PRST_FILE_PT_BR: Guide = {
         'Para cada bloco: se está ligado ou desligado, qual efeito usa e até quinze valores de parâmetro.',
         'A ordem da cadeia de sinal, além das atribuições do pedal de expressão e dos controladores.',
         'Um checksum no final, que a pedaleira usa para rejeitar arquivos corrompidos.',
+      ],
+    },
+    {
+      heading: 'A estrutura técnica de um arquivo .prst',
+      body: [
+        'Para os curiosos: a Valeton não publica o formato, mas ele foi decifrado byte a byte. Todos os números dos blocos de efeito estão em little-endian; o checksum do final é gravado em big-endian.',
+        'Presets de fábrica são um pouco menores (1176 bytes) e não têm checksum no final. O Preset Forge abre os dois tipos e grava presets de usuário padrão de 1224 bytes.',
+      ],
+      steps: [
+        'O arquivo começa com os quatro caracteres TSRP ("PRST" ao contrário), que o identificam como preset. Um pouco depois vêm o ID do dispositivo 2-PG ("GP-2" ao contrário) e uma versão de formato.',
+        'O nome do preset e o autor ficam em posições fixas, com 16 caracteres ASCII cada.',
+        'Uma seção de roteamento guarda a ordem da cadeia de sinal e as posições de send e return do FX loop.',
+        'Depois vêm onze blocos de efeito de 72 bytes cada: o número do slot, um indicador de ligado/desligado, um código de efeito de 32 bits cujo byte mais alto indica o módulo (por exemplo AMP, DLY ou RVB) e quinze valores de parâmetro gravados como números de ponto flutuante de 32 bits.',
+        'Os dois últimos bytes são um checksum: a soma de todos os bytes anteriores. A pedaleira usa esse valor para rejeitar arquivos corrompidos, e o Preset Forge recalcula o checksum toda vez que você salva.',
       ],
     },
     {
@@ -134,9 +148,9 @@ export const PRST_FILE_PT_BR: Guide = {
 
 export const GP200_ON_LINUX_PT_BR: Guide = {
   slug: 'gp-200-on-linux',
-  title: 'Como usar a Valeton GP-200 no Linux',
+  title: 'Valeton GP-200 no Linux: edite presets e use USB MIDI ao vivo',
   description:
-    'O editor oficial da Valeton GP-200 é só para Windows. Veja como editar, organizar e controlar ao vivo seus presets da GP-200 no Linux com o Preset Forge.',
+    'O editor oficial da GP-200 é só para Windows. Edite presets e controle sua GP-200 ao vivo por USB MIDI no Ubuntu, Fedora, Mint ou Arch, sem Wine.',
   updated: '2026-10-22',
   intro:
     'A Valeton GP-200 é uma pedaleira multiefeitos muito competente, mas o editor oficial só roda no Windows. Se você usa Linux — Mint, Ubuntu, Fedora, Arch ou qualquer outra distro — não precisa de dual boot nem de uma máquina virtual com Windows só para ajustar seu timbre. O Preset Forge roda inteiro no navegador e é o único editor da GP-200 com suporte de verdade ao Linux. Este guia mostra o fluxo completo para usar a GP-200 no Linux: editar presets e controlar a pedaleira ao vivo via USB MIDI.',

@@ -65,3 +65,11 @@ export function listGuidesForIndex(preferred: Locale): GuideIndexRow[] {
     return fallback ? [{ slug, guide: fallback, localized: false }] : [];
   });
 }
+
+/** Locale to link a guide in from a page rendered in `preferred`: the page's
+ *  own locale when the guide is translated, otherwise English. Untranslated
+ *  guide URLs 404, so a plain locale-relative link would break on fr/it/pt. */
+export function guideLinkLocale(preferred: Locale, slug: string): Locale {
+  // English is the original every listed slug ships in (guides-content test).
+  return GUIDES[preferred]?.[slug] ? preferred : 'en';
+}
