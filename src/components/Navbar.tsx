@@ -17,6 +17,7 @@ export function Navbar() {
   const [role, setRole] = useState<string | null>(null);
   const [unresolvedCritical, setUnresolvedCritical] = useState(0);
   const [unresolvedError, setUnresolvedError] = useState(0);
+  const [newFeedback, setNewFeedback] = useState(0);
 
   useEffect(() => {
     fetch('/api/profile')
@@ -27,11 +28,12 @@ export function Navbar() {
         if (data?.role === 'ADMIN') {
           fetch('/api/admin/stats')
             .then((r) => (r.ok ? r.json() : null))
-            .then((stats: { unresolvedCritical?: number; unresolvedError?: number } | null) => {
+            .then((stats: { unresolvedCritical?: number; unresolvedError?: number; newFeedback?: number } | null) => {
               setUnresolvedCritical(stats?.unresolvedCritical ?? 0);
               setUnresolvedError(stats?.unresolvedError ?? 0);
+              setNewFeedback(stats?.newFeedback ?? 0);
             })
-            .catch(() => { setUnresolvedCritical(0); setUnresolvedError(0); });
+            .catch(() => { setUnresolvedCritical(0); setUnresolvedError(0); setNewFeedback(0); });
         }
       })
       .catch(() => { setUsername(null); setRole(null); });
@@ -215,6 +217,16 @@ export function Navbar() {
             }}
             data-testid="nav-link-admin">
             {t('admin')}
+            {newFeedback > 0 && (
+              <span
+                className="absolute -top-1.5 -left-1.5 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center font-mono-display text-[9px] font-bold leading-none"
+                style={{ background: 'var(--accent-amber)', color: '#111' }}
+                title={t('newFeedback', { count: newFeedback })}
+                data-testid="nav-admin-feedback-badge"
+              >
+                💬{newFeedback > 99 ? '99+' : newFeedback}
+              </span>
+            )}
             {badgeCount > 0 && (
               <span
                 className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center font-mono-display text-[9px] font-bold leading-none"
@@ -263,6 +275,14 @@ export function Navbar() {
               className="transition-colors hover:text-[var(--accent-amber)] relative"
               style={{ color: pathname === '/admin' ? 'var(--accent-amber)' : 'var(--text-secondary)' }}>
               {t('admin')}
+              {newFeedback > 0 && (
+                <span
+                  className="inline-block min-w-[16px] h-4 px-1 rounded-full ml-2 font-mono-display text-[9px] font-bold leading-none text-center"
+                  style={{ background: 'var(--accent-amber)', color: '#111', lineHeight: '16px' }}
+                >
+                  💬{newFeedback > 99 ? '99+' : newFeedback}
+                </span>
+              )}
               {badgeCount > 0 && (
                 <span
                   className="inline-block min-w-[16px] h-4 px-1 rounded-full ml-2 font-mono-display text-[9px] font-bold leading-none text-center"

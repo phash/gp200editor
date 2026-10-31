@@ -18,7 +18,8 @@
     "helpAria": "Hilfe",
     "supportCta": "Buy me a guitar",
     "feedback": "Feedback",
-    "feedbackTitle": "Feedback senden: Bugs, Ideen, Meinung"
+    "feedbackTitle": "Feedback senden: Bugs, Ideen, Meinung",
+    "newFeedback": "{count, plural, one {# neues Feedback} other {# neue Feedbacks}}"
   },
   "home": {
     "hero": {
@@ -665,7 +666,9 @@
       "markDone": "Erledigt",
       "reopen": "Wieder öffnen",
       "empty": "Noch kein Feedback.",
-      "loadMore": "Mehr laden"
+      "loadMore": "Mehr laden",
+      "banner": "{count, plural, one {# neues Feedback} other {# neue Feedbacks}}",
+      "bannerCta": "Anzeigen"
     }
   },
   "email": {
