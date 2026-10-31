@@ -11,7 +11,7 @@ export const GET = withAdminAuth(
     // unresolvedCritical/unresolvedError feed the sidebar severity badge from
     // issue #70 — only unresolved rows count, so resolving a fingerprint
     // immediately clears the badge.
-    const [userCount, presetCount, errorCount, suspendedCount, unresolvedCritical, unresolvedError] =
+    const [userCount, presetCount, errorCount, suspendedCount, unresolvedCritical, unresolvedError, newFeedback] =
       await Promise.all([
         prisma.user.count(),
         prisma.preset.count(),
@@ -19,6 +19,8 @@ export const GET = withAdminAuth(
         prisma.user.count({ where: { suspended: true } }),
         prisma.errorLog.count({ where: { severity: 'critical', resolvedAt: null } }),
         prisma.errorLog.count({ where: { severity: 'error', resolvedAt: null } }),
+        // Unread /feedback submissions — drives the admin tab/banner/navbar badge.
+        prisma.feedback.count({ where: { status: 'NEW' } }),
       ]);
     return NextResponse.json({
       userCount,
@@ -27,6 +29,7 @@ export const GET = withAdminAuth(
       suspendedCount,
       unresolvedCritical,
       unresolvedError,
+      newFeedback,
     });
   },
   { csrf: false },

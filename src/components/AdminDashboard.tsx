@@ -9,7 +9,7 @@ import { AdminFeedbackTab } from './admin/AdminFeedbackTab';
 
 type Tab = 'users' | 'presets' | 'errors' | 'auditLog' | 'comments' | 'feedback';
 
-interface Stats { userCount: number; presetCount: number; errorCount: number; suspendedCount: number; }
+interface Stats { userCount: number; presetCount: number; errorCount: number; suspendedCount: number; newFeedback?: number; }
 interface AdminUser { id: string; username: string; email: string; role: string; suspended: boolean; emailVerified: boolean; createdAt: string; presetCount: number; }
 interface AdminPreset { id: string; name: string; author: string | null; style: string | null; public: boolean; flagged: boolean; modules: string[]; downloadCount: number; ratingAverage: number; createdAt: string; ownerUsername: string; }
 interface ErrorEntry {
@@ -196,6 +196,18 @@ export function AdminDashboard() {
 
   return (
     <div>
+      {/* New feedback banner — the feedback tab is easy to miss behind 'users' */}
+      {(stats.newFeedback ?? 0) > 0 && tab !== 'feedback' && (
+        <button onClick={() => setTab('feedback')} data-testid="admin-feedback-banner"
+          className="w-full mb-4 flex items-center justify-between gap-3 rounded-lg px-4 py-3 text-left transition-all hover:shadow-[0_0_12px_rgba(212,162,78,0.35)]"
+          style={{ background: 'rgba(212,162,78,0.12)', border: '1px solid var(--accent-amber)' }}>
+          <span className="font-mono-display text-sm font-bold" style={{ color: 'var(--accent-amber)' }}>
+            <span aria-hidden="true">💬 </span>{t('feedback.banner', { count: stats.newFeedback ?? 0 })}
+          </span>
+          <span className="font-mono-display text-xs underline" style={{ color: 'var(--accent-amber)' }}>{t('feedback.bannerCta')} →</span>
+        </button>
+      )}
+
       {/* Tab Navigation */}
       <div className="flex border-b mb-4" style={{ borderColor: 'var(--border-subtle)' }}>
         {tabs.map((t_) => (
@@ -208,6 +220,10 @@ export function AdminDashboard() {
             {tabLabels[t_]}
             {t_ === 'errors' && stats.errorCount > 0 && (
               <span className="absolute top-2 -right-0 text-[10px] px-1.5 rounded-full" style={{ background: '#ef4444', color: '#fff' }}>{stats.errorCount}</span>
+            )}
+            {t_ === 'feedback' && (stats.newFeedback ?? 0) > 0 && (
+              <span className="absolute top-2 -right-0 text-[10px] px-1.5 rounded-full font-bold" style={{ background: 'var(--accent-amber)', color: '#111' }}
+                data-testid="admin-feedback-tab-badge">{stats.newFeedback}</span>
             )}
           </button>
         ))}
@@ -429,7 +445,7 @@ export function AdminDashboard() {
       {tab === 'comments' && <AdminCommentsTab />}
 
       {/* Feedback Tab */}
-      {tab === 'feedback' && <AdminFeedbackTab />}
+      {tab === 'feedback' && <AdminFeedbackTab onChange={fetchStats} />}
 
       {/* Pagination */}
       {totalPages > 1 && tab !== 'comments' && tab !== 'feedback' && (

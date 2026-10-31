@@ -22,7 +22,7 @@ const STATUS_COLOR: Record<FeedbackStatus, string> = {
   DONE: 'var(--accent-green)',
 };
 
-export function AdminFeedbackTab() {
+export function AdminFeedbackTab({ onChange }: { onChange?: () => void } = {}) {
   const t = useTranslations('admin.feedback');
   const tf = useTranslations('feedback');
   const [items, setItems] = useState<AdminFeedback[]>([]);
@@ -56,7 +56,7 @@ export function AdminFeedbackTab() {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ status }),
     });
-    if (res.ok) load(false, null);
+    if (res.ok) { load(false, null); onChange?.(); }
   }
 
   const filters: (FeedbackStatus | 'ALL')[] = [...FEEDBACK_STATUSES, 'ALL'];
