@@ -2,9 +2,9 @@ import type { Guide } from './types';
 
 export const GP200_EDITOR_PT_BR: Guide = {
   slug: 'valeton-gp-200-editor',
-  title: 'Editor Valeton GP-200 para Windows, Mac e Linux',
+  title: 'Editor Valeton GP-200 para Windows, Mac e Linux, grátis',
   description:
-    'Edite presets da Valeton GP-200 em qualquer computador: o que o editor oficial faz, onde ele para e como o Preset Forge, grátis no navegador, cobre o resto.',
+    'App oficial da Valeton ou editor grátis no navegador? Edite presets da GP-200 no Windows, Mac, Linux ou Chromebook, ao vivo por USB MIDI.',
   updated: '2026-10-22',
   intro:
     'Dá para montar timbres girando os knobs da própria GP-200, mas criar um preset naquela tela pequena é lento. Um editor no computador mostra a cadeia de sinal inteira de uma vez, salva presets como arquivo e facilita o compartilhamento. Este guia compara as duas formas de usar um editor Valeton GP-200 no computador: o aplicativo oficial da Valeton e o Preset Forge, um editor grátis que roda direto no navegador.',
@@ -148,9 +148,9 @@ export const PRST_FILE_PT_BR: Guide = {
 
 export const GP200_ON_LINUX_PT_BR: Guide = {
   slug: 'gp-200-on-linux',
-  title: 'Como usar a Valeton GP-200 no Linux',
+  title: 'Valeton GP-200 no Linux: edite presets e use USB MIDI ao vivo',
   description:
-    'O editor oficial da Valeton GP-200 é só para Windows. Veja como editar, organizar e controlar ao vivo seus presets da GP-200 no Linux com o Preset Forge.',
+    'O editor oficial da GP-200 é só para Windows. Edite presets e controle sua GP-200 ao vivo por USB MIDI no Ubuntu, Fedora, Mint ou Arch, sem Wine.',
   updated: '2026-10-22',
   intro:
     'A Valeton GP-200 é uma pedaleira multiefeitos muito competente, mas o editor oficial só roda no Windows. Se você usa Linux — Mint, Ubuntu, Fedora, Arch ou qualquer outra distro — não precisa de dual boot nem de uma máquina virtual com Windows só para ajustar seu timbre. O Preset Forge roda inteiro no navegador e é o único editor da GP-200 com suporte de verdade ao Linux. Este guia mostra o fluxo completo para usar a GP-200 no Linux: editar presets e controlar a pedaleira ao vivo via USB MIDI.',

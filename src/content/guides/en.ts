@@ -2,9 +2,9 @@ import type { Guide } from './types';
 
 export const GP200_ON_LINUX_EN: Guide = {
   slug: 'gp-200-on-linux',
-  title: 'How to use the Valeton GP-200 on Linux',
+  title: 'Valeton GP-200 on Linux: Edit Presets & Live USB MIDI',
   description:
-    "The official Valeton GP-200 editor is Windows-only. Here's how to edit, organise, and live-control your GP-200 presets on Linux with Preset Forge in Chrome, Chromium or Firefox.",
+    'The official GP-200 editor is Windows-only. Edit presets and control your GP-200 live over USB MIDI on Ubuntu, Fedora, Mint or Arch – no Wine, no VM.',
   updated: '2026-10-22',
   intro:
     "The Valeton GP-200 is a capable multi-effects floor unit, but its official editor only runs on Windows. If you're on Linux — Mint, Ubuntu, Fedora, Arch, or anything else — you don't have to dual-boot or spin up a Windows VM just to tweak your tone. Preset Forge runs entirely in the browser and is the only GP-200 editor with real Linux support. This guide covers the whole workflow: editing presets, and live USB-MIDI control straight from a Linux machine.",
@@ -72,9 +72,9 @@ export const GP200_ON_LINUX_EN: Guide = {
 
 export const GP200_EDITOR_EN: Guide = {
   slug: 'valeton-gp-200-editor',
-  title: 'Valeton GP-200 Editor for Windows, Mac and Linux',
+  title: 'Valeton GP-200 Editor for Windows, Mac & Linux – Free, No Install',
   description:
-    'Edit Valeton GP-200 presets on any computer: what the official editor does, where it stops, and how the free Preset Forge browser editor fills the gaps.',
+    'Official Valeton app or free browser editor? Edit GP-200 presets on Windows, Mac, Linux or Chromebook, live over USB MIDI. Set up in five minutes.',
   updated: '2026-10-22',
   intro:
     'Turning knobs on the GP-200 itself works, but building a preset on a small screen is slow. A software editor shows the whole signal chain at once, lets you save presets as files and share them. This guide compares the two ways to edit the GP-200 from a computer: Valeton’s official desktop app and Preset Forge, a free editor that runs in the browser.',

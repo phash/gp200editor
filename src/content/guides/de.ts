@@ -2,9 +2,9 @@ import type { Guide } from './types';
 
 export const GP200_ON_LINUX_DE: Guide = {
   slug: 'gp-200-on-linux',
-  title: 'Valeton GP-200 unter Linux nutzen',
+  title: 'Valeton GP-200 unter Linux: Presets bearbeiten & live per USB MIDI',
   description:
-    'Der offizielle Valeton-GP-200-Editor läuft nur unter Windows. So bearbeitest und steuerst du deine GP-200-Presets unter Linux – live per USB-MIDI, mit Preset Forge in Chrome, Chromium oder Firefox.',
+    'Der offizielle GP-200-Editor läuft nur unter Windows. So bearbeitest du Presets und steuerst das GP-200 live per USB MIDI unter Ubuntu, Fedora, Mint oder Arch.',
   updated: '2026-10-22',
   intro:
     'Der Valeton GP-200 ist ein leistungsfähiges Multieffekt-Bodengerät, doch der offizielle Editor läuft ausschließlich unter Windows. Wenn du Linux nutzt – Mint, Ubuntu, Fedora, Arch oder etwas anderes – brauchst du dafür kein Dual-Boot und keine Windows-VM. Preset Forge läuft komplett im Browser und ist der einzige GP-200-Editor mit echter Linux-Unterstützung. Diese Anleitung deckt den ganzen Ablauf ab: Presets bearbeiten und live per USB-MIDI direkt vom Linux-Rechner steuern.',
@@ -72,9 +72,9 @@ export const GP200_ON_LINUX_DE: Guide = {
 
 export const GP200_EDITOR_DE: Guide = {
   slug: 'valeton-gp-200-editor',
-  title: 'Valeton GP-200 Editor für Windows, Mac und Linux',
+  title: 'Valeton GP-200 Editor für Windows, Mac & Linux – kostenlos',
   description:
-    'GP-200-Presets am Rechner bearbeiten: Was der offizielle Valeton GP-200 Editor kann, wo er endet und wie der kostenlose Browser-Editor Preset Forge hilft.',
+    'Offizielle Valeton-App oder kostenloser Browser-Editor? GP-200-Presets unter Windows, Mac, Linux oder Chromebook bearbeiten, live per USB MIDI.',
   updated: '2026-10-22',
   intro:
     'Am GP-200 selbst an den Reglern zu drehen funktioniert – aber ein Preset auf dem kleinen Display zusammenzubauen dauert. Ein Software-Editor zeigt dir die komplette Signalkette auf einen Blick, speichert Presets als Dateien und macht sie teilbar. Diese Anleitung vergleicht die zwei Wege, den GP-200 vom Rechner aus zu bearbeiten: den offiziellen Valeton GP-200 Editor als Desktop-App und Preset Forge, einen kostenlosen Editor, der im Browser läuft.',
