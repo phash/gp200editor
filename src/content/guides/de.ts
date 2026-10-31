@@ -137,12 +137,12 @@ export const GP200_EDITOR_DE: Guide = {
 
 export const PRST_FILE_DE: Guide = {
   slug: 'prst-file',
-  title: '.prst-Datei öffnen: Valeton-GP-200-Presets erklärt',
+  title: 'Was ist eine .prst-Datei? Valeton-GP-200-Presets erklärt',
   description:
-    'Eine .prst-Datei ist ein Valeton-GP-200-Preset. So erfährst du, was drinsteckt, wie du eine .prst-Datei im Browser öffnest und bearbeitest und aufs Pedal lädst.',
-  updated: '2026-10-22',
+    'Eine .prst-Datei ist ein Valeton-GP-200-Preset: 1224 Bytes binär, mit Name und allen 11 Effektblöcken. Kostenlos im Browser öffnen und bearbeiten.',
+  updated: '2026-10-31',
   intro:
-    'Wenn du ein GP-200-Preset aus einem Forum, von Freund:innen oder einer Preset-Seite herunterlädst, bekommst du eine Datei mit der Endung .prst. Dein Rechner weiß damit nichts anzufangen, und im Texteditor siehst du nur Zeichensalat. Diese Anleitung erklärt, was in einer .prst-Datei steckt und wie du eine .prst-Datei öffnest, bearbeitest und nutzt.',
+    'Eine .prst-Datei ist ein einzelnes Preset für das Multieffektpedal Valeton GP-200. Es ist eine kleine Binärdatei – 1224 Bytes bei einem User-Preset –, die den Preset-Namen, den Autor und die Einstellungen aller elf Effektblöcke speichert. Geöffnet wird sie mit einem GP-200-Editor: Valetons eigener Software oder Preset Forge, das .prst-Dateien direkt im Browser öffnet. Ein Texteditor zeigt nur Zeichensalat, weil die Datei binär ist. Diese Anleitung erklärt, was drinsteckt, wie du eine .prst-Datei öffnest und bearbeitest und wie sie aufs Pedal kommt.',
   sections: [
     {
       heading: 'Was eine .prst-Datei ist',
@@ -158,6 +158,20 @@ export const PRST_FILE_DE: Guide = {
         'Für jeden Block: ob er an oder aus ist, welchen Effekt er nutzt und bis zu fünfzehn Parameterwerte.',
         'Die Reihenfolge der Signalkette sowie die Zuweisungen für Expression-Pedal und Controller.',
         'Eine Prüfsumme am Ende, mit der das Pedal beschädigte Dateien zurückweist.',
+      ],
+    },
+    {
+      heading: 'Der technische Aufbau einer .prst-Datei',
+      body: [
+        'Für Neugierige: Valeton veröffentlicht das Format nicht, es wurde aber Byte für Byte entschlüsselt. Alle Zahlen in den Effektblöcken sind Little-Endian; die Prüfsumme am Ende ist Big-Endian gespeichert.',
+        'Werks-Presets sind etwas kürzer – 1176 Bytes – und haben keine Prüfsumme am Ende. Preset Forge öffnet beide Varianten und schreibt normale User-Presets mit 1224 Bytes.',
+      ],
+      steps: [
+        'Die Datei beginnt mit den vier Zeichen TSRP – „PRST“ rückwärts –, die sie als Preset kennzeichnen. Etwas später folgen die Geräte-ID 2-PG („GP-2“ rückwärts) und eine Formatversion.',
+        'Preset-Name und Autor stehen an festen Positionen, jeweils 16 ASCII-Zeichen.',
+        'Ein Routing-Abschnitt speichert die Reihenfolge der Signalkette und die Positionen von FX-Loop-Send und -Return.',
+        'Dann folgen elf Effektblöcke mit je 72 Bytes: die Slot-Nummer, ein An/Aus-Flag, ein 32-Bit-Effektcode, dessen oberstes Byte das Modul angibt (zum Beispiel AMP, DLY oder RVB), und fünfzehn Parameterwerte als 32-Bit-Gleitkommazahlen.',
+        'Die letzten zwei Bytes sind eine Prüfsumme: die Summe aller vorherigen Bytes. Das Pedal weist damit beschädigte Dateien zurück, und Preset Forge berechnet sie bei jedem Speichern neu.',
       ],
     },
     {

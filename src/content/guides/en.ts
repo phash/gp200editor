@@ -137,12 +137,12 @@ export const GP200_EDITOR_EN: Guide = {
 
 export const PRST_FILE_EN: Guide = {
   slug: 'prst-file',
-  title: 'What is a .prst file? Opening Valeton GP-200 presets',
+  title: 'What is a .prst file? The Valeton GP-200 preset format',
   description:
-    'A .prst file is a Valeton GP-200 preset. Learn what it contains, how to open and edit one in the browser, and how to load it onto your pedal.',
-  updated: '2026-10-22',
+    'A .prst file is one Valeton GP-200 preset: a 1224-byte binary file with the patch name and all 11 effect blocks. Open and edit it free in your browser.',
+  updated: '2026-10-31',
   intro:
-    'If you download a GP-200 preset from a forum, a friend or a preset site, you get a file ending in .prst. Your computer will not know what to do with it, and opening it in a text editor shows only gibberish. This guide explains what is inside a .prst file and how to open, edit and use one.',
+    'A .prst file is a single preset for the Valeton GP-200 multi-effects pedal. It is a small binary file — 1224 bytes for a user preset — that stores the preset name, the author and the settings of all eleven effect blocks. You open it with a GP-200 editor: Valeton’s own software, or Preset Forge, which opens .prst files directly in the browser. A text editor only shows gibberish because the file is binary. This guide explains what is inside, how to open and edit a .prst file, and how to get it onto your pedal.',
   sections: [
     {
       heading: 'What a .prst file is',
@@ -158,6 +158,20 @@ export const PRST_FILE_EN: Guide = {
         'For each block: whether it is on or off, which effect it uses, and up to fifteen parameter values.',
         'The order of the signal chain, plus the expression pedal and controller assignments.',
         'A checksum at the end, which the pedal uses to reject damaged files.',
+      ],
+    },
+    {
+      heading: 'The technical layout of a .prst file',
+      body: [
+        'For the curious: the format is not published by Valeton, but it has been worked out byte by byte. All numbers in the effect blocks are little-endian; the checksum at the end is stored big-endian.',
+        'Factory presets are slightly shorter — 1176 bytes — and have no checksum footer. Preset Forge opens both kinds and writes standard 1224-byte user presets.',
+      ],
+      steps: [
+        'The file starts with the four characters TSRP — “PRST” backwards — which mark it as a preset. A little later comes the device ID 2-PG (“GP-2” backwards) and a format version.',
+        'The preset name and the author follow at fixed positions, 16 ASCII characters each.',
+        'A routing section stores the order of the signal chain and the FX loop send and return positions.',
+        'Then come eleven effect blocks of 72 bytes each: the slot number, an on/off flag, a 32-bit effect code whose high byte names the module (for example AMP, DLY or RVB), and fifteen parameter values stored as 32-bit floating-point numbers.',
+        'The last two bytes are a checksum: the sum of all preceding bytes. The pedal uses it to reject damaged files, and Preset Forge recalculates it every time you save.',
       ],
     },
     {

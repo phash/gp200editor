@@ -58,6 +58,19 @@ describe('guide content', () => {
   });
 });
 
+describe('prst-file guide', () => {
+  // GSC Oct 2026: "prst file" at pos 11.7, "what is prst", ".prst" — the
+  // guide has to answer the definition in its first sentence.
+  it.each(guideLocales('prst-file'))('%s answers "what is a .prst file" up front', (locale) => {
+    const guide = GUIDES[locale]!['prst-file'];
+    expect(guide.title).toMatch(/\.prst/);
+    const firstSentence = guide.intro.split(/(?<=\.)\s/)[0];
+    expect(firstSentence).toMatch(/\.prst/);
+    expect(firstSentence).toContain('GP-200');
+    expect(guide.description).toContain('1224');
+  });
+});
+
 describe('guideLinkLocale', () => {
   it('keeps the page locale when the guide is translated', () => {
     expect(guideLinkLocale('de', 'gp-200-on-linux')).toBe('de');
