@@ -86,3 +86,38 @@ export async function sendCriticalErrorEmail(p: CriticalErrorPayload): Promise<v
 
   await getTransporter().sendMail({ from: from(), to, subject, text });
 }
+
+export interface FeedbackMailPayload {
+  id: string;
+  category: string;
+  username: string;
+  email: string;
+  message: string;
+  pagePath?: string | null;
+  userAgent?: string | null;
+  locale: string;
+}
+
+// Plain-text notice to ADMIN_EMAIL for every new /feedback submission. Same
+// operator-only channel as critical errors; no-op without ADMIN_EMAIL.
+export async function sendFeedbackEmail(p: FeedbackMailPayload): Promise<void> {
+  const to = process.env.ADMIN_EMAIL;
+  if (!to) return;
+
+  const subject = `[Preset Forge FEEDBACK] ${p.category}: ${p.message.replace(/\s+/g, ' ').slice(0, 70)}`;
+  const text = [
+    `Category: ${p.category}`,
+    `From: @${p.username} <${p.email}>`,
+    `Locale: ${p.locale}`,
+    p.pagePath ? `Page: ${appUrl()}${p.pagePath}` : null,
+    p.userAgent ? `Browser: ${p.userAgent}` : null,
+    '',
+    p.message,
+    '',
+    `Admin: ${appUrl()}/admin?tab=feedback`,
+  ]
+    .filter((line) => line !== null)
+    .join('\n');
+
+  await getTransporter().sendMail({ from: from(), to, replyTo: p.email, subject, text });
+}

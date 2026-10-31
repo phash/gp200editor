@@ -5,8 +5,9 @@ import { useTranslations } from 'next-intl';
 import { ConfirmDialog } from './ConfirmDialog';
 import { WarnDialog } from './WarnDialog';
 import { AdminCommentsTab } from './admin/AdminCommentsTab';
+import { AdminFeedbackTab } from './admin/AdminFeedbackTab';
 
-type Tab = 'users' | 'presets' | 'errors' | 'auditLog' | 'comments';
+type Tab = 'users' | 'presets' | 'errors' | 'auditLog' | 'comments' | 'feedback';
 
 interface Stats { userCount: number; presetCount: number; errorCount: number; suspendedCount: number; }
 interface AdminUser { id: string; username: string; email: string; role: string; suspended: boolean; emailVerified: boolean; createdAt: string; presetCount: number; }
@@ -54,6 +55,13 @@ export function AdminDashboard() {
   const t = useTranslations('admin');
 
   const [tab, setTab] = useState<Tab>('users');
+  // Deep links from admin mails (?tab=feedback, ?tab=errors). window.location
+  // instead of useSearchParams — the latter breaks in the production build.
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get('tab');
+    const valid: Tab[] = ['users', 'presets', 'errors', 'auditLog', 'comments', 'feedback'];
+    if (requested && (valid as string[]).includes(requested)) setTab(requested as Tab);
+  }, []);
   const [stats, setStats] = useState<Stats>({ userCount: 0, presetCount: 0, errorCount: 0, suspendedCount: 0 });
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [presets, setPresets] = useState<AdminPreset[]>([]);
@@ -180,8 +188,8 @@ export function AdminDashboard() {
     }
   }
 
-  const tabs: Tab[] = ['users', 'presets', 'errors', 'auditLog', 'comments'];
-  const tabLabels: Record<Tab, string> = { users: t('users'), presets: t('presets'), errors: t('errors'), auditLog: t('auditLog'), comments: t('comments.tabTitle') };
+  const tabs: Tab[] = ['users', 'presets', 'errors', 'auditLog', 'comments', 'feedback'];
+  const tabLabels: Record<Tab, string> = { users: t('users'), presets: t('presets'), errors: t('errors'), auditLog: t('auditLog'), comments: t('comments.tabTitle'), feedback: t('feedback.tabTitle') };
 
   const btnStyle = (color: string) => ({ border: `1px solid ${color}`, color, background: 'transparent' });
   const btnClass = 'px-2.5 py-1 text-xs rounded transition-colors cursor-pointer';
@@ -207,7 +215,7 @@ export function AdminDashboard() {
 
       {/* Search / Filter Bar */}
       <div className="flex gap-3 mb-4 items-center">
-        {tab !== 'auditLog' && tab !== 'comments' && (
+        {tab !== 'auditLog' && tab !== 'comments' && tab !== 'feedback' && (
           <input
             type="text" value={search} onChange={(e) => setSearch(e.target.value)}
             placeholder={tab === 'users' ? t('searchUsers') : tab === 'presets' ? t('searchPresets') : t('searchErrors')}
@@ -420,8 +428,11 @@ export function AdminDashboard() {
       {/* Comments Tab */}
       {tab === 'comments' && <AdminCommentsTab />}
 
+      {/* Feedback Tab */}
+      {tab === 'feedback' && <AdminFeedbackTab />}
+
       {/* Pagination */}
-      {totalPages > 1 && (
+      {totalPages > 1 && tab !== 'comments' && tab !== 'feedback' && (
         <div className="flex justify-center items-center gap-4 mt-6">
           <button disabled={page <= 1} onClick={() => setPage(page - 1)}
             className="px-3 py-1 rounded text-sm" style={{ border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}>

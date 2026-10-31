@@ -43,6 +43,14 @@ export function Footer() {
         {t('guides')}
       </Link>
       <span style={{ margin: '0 8px' }}>·</span>
+      <Link
+        href="/feedback"
+        style={{ color: 'var(--accent-amber)', textDecoration: 'underline' }}
+        data-testid="footer-feedback-link"
+      >
+        {t('feedback')}
+      </Link>
+      <span style={{ margin: '0 8px' }}>·</span>
       {t('poweredBy')}{' '}
       <a
         href="https://phash.de"

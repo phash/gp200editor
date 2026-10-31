@@ -23,6 +23,7 @@ type Props = {
 export default async function HomePage({ params }: Props) {
   const { locale } = await params;
   const t = await getTranslations('home');
+  const tFeedback = await getTranslations('feedback');
 
   // Most recent release reduced to user-facing sections — security, schema,
   // and protocol notes stay in the full /changelog but don't headline the
@@ -180,6 +181,44 @@ export default async function HomePage({ params }: Props) {
             title={t('features.midi.title')}
             body={t('features.midi.body')}
           />
+        </div>
+      </section>
+
+      {/* ───────── Feedback promo ───────── */}
+      <section
+        className="mb-14 rounded-lg p-6 md:p-8 flex flex-col md:flex-row md:items-center gap-5"
+        style={{
+          background: 'linear-gradient(135deg, rgba(212,162,78,0.14), rgba(212,162,78,0.04))',
+          border: '1px solid rgba(212,162,78,0.45)',
+        }}
+        data-testid="home-feedback-promo"
+      >
+        <div className="flex-1">
+          <h2 className="font-mono-display text-lg md:text-xl font-bold mb-2" style={{ color: 'var(--accent-amber)' }}>
+            <span aria-hidden="true">💬 </span>{tFeedback('promo.heading')}
+          </h2>
+          <p className="text-sm md:text-base" style={{ color: 'var(--text-secondary)' }}>
+            {tFeedback('promo.body')}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2 md:flex-col md:items-stretch">
+          <Link
+            href="/feedback"
+            className="font-mono-display text-sm font-bold px-5 py-2.5 rounded text-center transition-all hover:shadow-[0_0_14px_rgba(212,162,78,0.5)]"
+            style={{ background: 'var(--accent-amber)', color: '#111' }}
+          >
+            {tFeedback('promo.cta')}
+          </Link>
+          <div className="flex gap-2 text-xs font-mono-display">
+            <Link href="/feedback?category=BUG" className="px-2 py-1 rounded transition-colors hover:text-[var(--accent-amber)]"
+              style={{ border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}>
+              <span aria-hidden="true">🐞 </span>{tFeedback('promo.bugChip')}
+            </Link>
+            <Link href="/feedback?category=IDEA" className="px-2 py-1 rounded transition-colors hover:text-[var(--accent-amber)]"
+              style={{ border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}>
+              <span aria-hidden="true">💡 </span>{tFeedback('promo.ideaChip')}
+            </Link>
+          </div>
         </div>
       </section>
 

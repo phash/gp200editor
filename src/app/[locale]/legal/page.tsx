@@ -128,6 +128,7 @@ export default async function LegalPage() {
           { title: t('privacyErrorLogTitle'), text: t('privacyErrorLogText') },
           { title: t('privacyCookiesTitle'), text: t('privacyCookiesText') },
           { title: t('privacyAccountTitle'), text: t('privacyAccountText') },
+          { title: t('privacyFeedbackTitle'), text: t('privacyFeedbackText') },
           { title: t('privacyStorageTitle'), text: t('privacyStorageText') },
           { title: t('privacyAnalyticsTitle'), text: t('privacyAnalyticsText') },
           { title: t('privacyYoutubeTitle'), text: t('privacyYoutubeText') },

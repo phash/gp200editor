@@ -2,11 +2,13 @@
 
 ```prisma
 enum Role     { USER, ADMIN }
+enum FeedbackCategory { BUG, IDEA, GENERAL }
+enum FeedbackStatus   { NEW, READ, DONE }
 User          id, email, username, passwordHash, emailVerified, bio, website, avatarKey,
               role(Role @default(USER)), suspended(Boolean @default(false)),
               locale(@default("en")), welcomeReminderD2SentAt?, welcomeReminderD7SentAt?,
               createdAt
-              Relations: sessions, resetTokens, emailVerifyTokens, presets, ratings, comments, adminActions
+              Relations: sessions, resetTokens, emailVerifyTokens, presets, ratings, comments, adminActions, feedback
               @@index([emailVerified, welcomeReminderD2SentAt, createdAt]) (+ D7 analog)
 Session       id, userId, expiresAt  (Lucia v3)
 PasswordResetToken  id, userId, tokenHash, expiresAt, usedAt
@@ -38,4 +40,8 @@ ErrorLog      id, fingerprint, category, severity, message, stack?(Text), route?
 AdminAction   id, adminId?(→User onDelete:SetNull), action, targetType, targetId,
               reason?, metadata(Json?), createdAt
               @@index([adminId]) @@index([createdAt])
+Feedback      id, userId(→User onDelete:Cascade), category(FeedbackCategory), message(VarChar2000),
+              pagePath?(VarChar300), userAgent?(VarChar400), locale(@default("en")),
+              status(FeedbackStatus @default(NEW)), createdAt, updatedAt
+              @@index([status, createdAt desc]) @@index([userId, createdAt])
 ```

@@ -16,7 +16,9 @@
     "menuAria": "Menu",
     "discordTitle": "Feedback & Comunidade",
     "helpAria": "Ajuda",
-    "supportCta": "Buy me a guitar"
+    "supportCta": "Buy me a guitar",
+    "feedback": "Feedback",
+    "feedbackTitle": "Enviar feedback: bugs, ideias, opiniões"
   },
   "home": {
     "hero": {
@@ -126,7 +128,8 @@
     "legal": "Aviso Legal & Privacidade",
     "poweredBy": "desenvolvido com",
     "guides": "Guias",
-    "supportCta": "Buy me a guitar"
+    "supportCta": "Buy me a guitar",
+    "feedback": "Feedback"
   },
   "editor": {
     "title": "Editar Preset",
@@ -441,6 +444,8 @@
     "privacyServerLogsText": "O provedor de hospedagem coleta e armazena automaticamente informações nos ficheiros de log do servidor: tipo de navegador, sistema operacional, URL de referência, nome do host, horário da solicitação e endereço IP. Esses dados são coletados com base no Art. 6, § 1, alínea f do RGPD (interesse legítimo na estabilidade e segurança), não são combinados com outras fontes de dados e são eliminados automaticamente após no máximo 14 dias.",
     "privacyErrorLogTitle": "Registo de erros",
     "privacyErrorLogText": "Quando ocorre um erro na aplicação, guardamos na nossa base de dados a mensagem de erro, detalhes técnicos, o endereço pedido, a hora, o seu endereço IP e, se tiver sessão iniciada, o seu ID de utilizador. Em caso de erros graves, o operador é notificado por e-mail. A finalidade é a estabilidade e a segurança do site (Art. 6, § 1, alínea f do RGPD). As entradas são eliminadas automaticamente 30 dias após a última ocorrência do erro.",
+    "privacyFeedbackTitle": "Formulário de feedback",
+    "privacyFeedbackText": "Utilizadores com sessão iniciada e e-mail confirmado podem enviar-nos feedback. Guardamos a categoria, a sua mensagem, o seu ID de utilizador, o seu idioma, a página de onde vem e a identificação do seu navegador (user agent), e notificamos o operador por e-mail. A finalidade é responder ao seu pedido e melhorar o site (art. 6.º, n.º 1, alínea f) do RGPD). O feedback é apagado juntamente com a sua conta; a pedido, apagamos mensagens individuais mais cedo.",
     "privacyHostingTitle": "Alojamento",
     "privacyHostingText": "O site está alojado num servidor dedicado da IONOS SE (Elgendorfer Straße 57, 56410 Montabaur, Alemanha) localizado na Alemanha. Existe um contrato de subcontratante nos termos do Art. 28 RGPD com o fornecedor de alojamento.",
     "privacyCookiesTitle": "Cookies",
@@ -597,6 +602,26 @@
       "confirmDelete": "Eliminar",
       "cancel": "Cancelar",
       "loadMore": "Carregar mais"
+    },
+    "feedback": {
+      "tabTitle": "Feedback",
+      "all": "Todos",
+      "columnCategory": "Categoria",
+      "columnUser": "Utilizador",
+      "columnMessage": "Mensagem",
+      "columnContext": "Contexto",
+      "columnDate": "Data",
+      "columnStatus": "Estado",
+      "status": {
+        "NEW": "Novo",
+        "READ": "Lido",
+        "DONE": "Concluído"
+      },
+      "markRead": "Marcar como lido",
+      "markDone": "Concluído",
+      "reopen": "Reabrir",
+      "empty": "Ainda não há feedback.",
+      "loadMore": "Carregar mais"
     }
   },
   "email": {
@@ -742,5 +767,60 @@
     "ctaEditor": "Abrir o editor",
     "metaTitle": "Guias do Valeton GP-200: Linux, USB MIDI e presets | Preset Forge",
     "metaDescription": "Guias passo a passo para o Valeton GP-200: usar a pedaleira no Linux, editar presets por USB MIDI, abrir ficheiros .prst."
+  },
+  "feedback": {
+    "metaTitle": "Feedback — Preset Forge",
+    "metaDescription": "Reporte um bug, sugira uma funcionalidade ou diga-nos o que pensa do Preset Forge, o editor gratuito para Valeton GP-200.",
+    "title": "Feedback",
+    "intro": "Encontrou um bug? Falta-lhe uma funcionalidade? Ou quer apenas dizer o que pensa? O Preset Forge é feito por um único guitarrista nos tempos livres — cada mensagem é lida, e muitas funcionalidades começaram como pedido de um utilizador.",
+    "categoryLabel": "Sobre o que é?",
+    "categories": {
+      "BUG": {
+        "label": "Bug / algo não funciona",
+        "hint": "Algo avariou, comporta-se de forma estranha ou a sua GP-200 não é detetada."
+      },
+      "IDEA": {
+        "label": "Pedido de funcionalidade / ideia",
+        "hint": "Algo que lhe faz falta no editor, na galeria ou nas playlists."
+      },
+      "GENERAL": {
+        "label": "Feedback geral",
+        "hint": "Elogios, críticas ou qualquer outra coisa sobre o site."
+      }
+    },
+    "messageLabel": "A sua mensagem",
+    "placeholders": {
+      "BUG": "O que fez, o que aconteceu e o que esperava? Que sistema operativo e que versão de firmware?",
+      "IDEA": "O que gostaria de poder fazer — e em que é que isso o ajudaria?",
+      "GENERAL": "Do que gosta, o que o incomoda?"
+    },
+    "charCount": "{count} / {max}",
+    "contextNote": "Para conseguirmos reproduzir bugs, a página de onde vem e a versão do seu navegador são enviadas com a mensagem.",
+    "privacyNote": "O seu feedback é guardado com o seu nome de utilizador e lido apenas pelo operador. Detalhes na",
+    "privacyLink": "política de privacidade",
+    "submit": "Enviar feedback",
+    "submitting": "A enviar…",
+    "successTitle": "Obrigado!",
+    "successBody": "O seu feedback chegou. Se houver perguntas, receberá uma resposta no e-mail da sua conta.",
+    "sendAnother": "Enviar mais feedback",
+    "errors": {
+      "tooShort": "Escreva pelo menos {min} caracteres.",
+      "tooMany": "Enviou muito feedback recentemente. Tente novamente mais tarde.",
+      "duplicate": "Já enviou exatamente esta mensagem.",
+      "generic": "O envio falhou. Tente novamente."
+    },
+    "loginTitle": "Inicie sessão para enviar feedback",
+    "loginBody": "Para manter os bots de spam afastados, só utilizadores com sessão iniciada e e-mail confirmado podem enviar feedback. Uma conta é gratuita e cria-se num minuto.",
+    "loginCta": "Iniciar sessão",
+    "registerCta": "Criar conta gratuita",
+    "verifyTitle": "Confirme o seu endereço de e-mail",
+    "verifyBody": "Para manter os bots de spam afastados, o feedback só está aberto a contas confirmadas. Clique no link do e-mail que lhe enviámos — ou peça um novo.",
+    "promo": {
+      "heading": "Ajude a moldar o Preset Forge",
+      "body": "Bug, ideia de funcionalidade ou opinião — diga-nos. Cada mensagem é lida, e muitas funcionalidades começaram como pedido de um utilizador.",
+      "cta": "Enviar feedback",
+      "bugChip": "Reportar um bug",
+      "ideaChip": "Sugerir uma ideia"
+    }
   }
 }

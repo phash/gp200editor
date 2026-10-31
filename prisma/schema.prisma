@@ -13,6 +13,18 @@ enum Role {
   ADMIN
 }
 
+enum FeedbackCategory {
+  BUG
+  IDEA
+  GENERAL
+}
+
+enum FeedbackStatus {
+  NEW
+  READ
+  DONE
+}
+
 model User {
   id            String   @id @default(cuid())
   email         String   @unique
@@ -28,49 +40,50 @@ model User {
   welcomeReminderD2SentAt DateTime?
   welcomeReminderD7SentAt DateTime?
 
-  sessions            Session[]
-  resetTokens         PasswordResetToken[]
-  emailVerifyTokens   EmailVerificationToken[]
-  presets             Preset[]
-  ratings             PresetRating[]
-  comments            Comment[]
-  role                Role          @default(USER)
-  suspended           Boolean       @default(false)
-  adminActions        AdminAction[]
+  sessions          Session[]
+  resetTokens       PasswordResetToken[]
+  emailVerifyTokens EmailVerificationToken[]
+  presets           Preset[]
+  ratings           PresetRating[]
+  comments          Comment[]
+  role              Role                     @default(USER)
+  suspended         Boolean                  @default(false)
+  adminActions      AdminAction[]
+  feedback          Feedback[]
 
   @@index([emailVerified, welcomeReminderD2SentAt, createdAt])
   @@index([emailVerified, welcomeReminderD7SentAt, createdAt])
 }
 
 model Preset {
-  id            String   @id @default(cuid())
-  userId        String
-  presetKey     String
-  name          String   @db.VarChar(32)
-  description   String?
-  tags          String[]
-  author        String?
-  style         String?
-  shareToken    String   @unique @default(cuid())
-  downloadCount Int      @default(0)
-  public        Boolean  @default(false)
-  modules       String[]
-  effects       String[]   // individual effect names (e.g. "UK 800", "Green OD")
-  flagged       Boolean  @default(false)
-  ratingAverage Float    @default(0)
-  ratingCount   Int      @default(0)
-  audioKey      String?
-  audioMimeType String?
+  id              String         @id @default(cuid())
+  userId          String
+  presetKey       String
+  name            String         @db.VarChar(32)
+  description     String?
+  tags            String[]
+  author          String?
+  style           String?
+  shareToken      String         @unique @default(cuid())
+  downloadCount   Int            @default(0)
+  public          Boolean        @default(false)
+  modules         String[]
+  effects         String[] // individual effect names (e.g. "UK 800", "Green OD")
+  flagged         Boolean        @default(false)
+  ratingAverage   Float          @default(0)
+  ratingCount     Int            @default(0)
+  audioKey        String?
+  audioMimeType   String?
   audioDurationMs Int?
-  sourceUrl     String?
-  sourceLabel   String?
-  contentHash   String?
-  ingestedAt    DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  ratings       PresetRating[]
-  comments      Comment[]
+  sourceUrl       String?
+  sourceLabel     String?
+  contentHash     String?
+  ingestedAt      DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ratings         PresetRating[]
+  comments        Comment[]
 
   @@index([userId])
   @@index([sourceUrl])
@@ -104,8 +117,8 @@ model PasswordResetToken {
 }
 
 model EmailVerificationToken {
-  id        String   @id @default(cuid())
-  tokenHash String   @unique
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
   userId    String
   expiresAt DateTime
   usedAt    DateTime?
@@ -117,7 +130,7 @@ model PresetRating {
   id        String   @id @default(cuid())
   presetId  String
   userId    String
-  score     Int      // 1–5
+  score     Int // 1–5
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -197,4 +210,26 @@ model AdminAction {
 
   @@index([adminId])
   @@index([createdAt])
+}
+
+// User feedback from the /feedback form. Only verified users can submit
+// (bot protection); deleting the user deletes their feedback (DSGVO).
+model Feedback {
+  id        String           @id @default(cuid())
+  userId    String
+  category  FeedbackCategory
+  message   String           @db.VarChar(2000)
+  // Page the user came from (same-origin path only) — context for bug reports.
+  pagePath  String?          @db.VarChar(300)
+  // Browser user agent — Web MIDI only works in Chromium, so bugs need it.
+  userAgent String?          @db.VarChar(400)
+  locale    String           @default("en")
+  status    FeedbackStatus   @default(NEW)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([userId, createdAt])
 }

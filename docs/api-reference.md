@@ -39,6 +39,12 @@ Mutierende Routen prüfen CSRF (`verifyCsrf`); Kommentieren nur auf public + nic
 | `PATCH /api/comments/[id]` | Ja (Autor, verifiziert) | Bearbeiten (Rate-Limit 30/h) |
 | `DELETE /api/comments/[id]` | Ja (Autor/Admin) | Soft-Delete (`body=null`, `deletedAt`, `deletedBy`) |
 
+## Feedback-API
+
+| Route | Auth | Beschreibung |
+|-------|------|--------------|
+| `POST /api/feedback` | Ja (verifiziert) | Feedback-Formular `/feedback`. Body: `category` (`BUG`/`IDEA`/`GENERAL`), `message` (10–2000 Zeichen), `pagePath?` (nur same-origin Pfad), `locale?`, Honeypot `company_url`. Schutz: CSRF → `requireVerifiedUser` → Rate-Limit 3/h + 10/Tag pro User → Honeypot (stilles 201) → Duplikat derselben Nachricht in 24 h (409). Mail an `ADMIN_EMAIL` (`sendFeedbackEmail`, Reply-To = User), Mail-Fehler blockieren nicht |
+
 ## Sonstige
 
 | Route | Auth | Beschreibung |
@@ -68,6 +74,8 @@ Alle Routen unter `/api/admin/` — jede beginnt mit `requireAdmin()`.
 | `/api/admin/errors` | DELETE | Alle Fehler löschen |
 | `/api/admin/actions` | GET | Audit-Log (paginiert) |
 | `/api/admin/comments` | GET | Kommentar-Moderationsliste |
+| `/api/admin/feedback` | GET | Feedback-Liste (Cursor, Filter `status`/`category`) + Zähler pro Status |
+| `/api/admin/feedback/[id]` | PATCH | Status setzen (`NEW`/`READ`/`DONE`) |
 
 ### Error-Logging
 
@@ -77,6 +85,7 @@ Alle Routen unter `/api/admin/` — jede beginnt mit `requireAdmin()`.
 ### Admin-Dashboard UI
 
 - `/[locale]/admin` — Server Component mit DB-Rollen-Check
-- Tabs: Users | Presets | Errors | Audit Log | Comments
+- Tabs: Users | Presets | Errors | Audit Log | Comments | Feedback
+- Deep-Link per `?tab=<name>` (z. B. aus Feedback-/Fehler-Mails)
 - Kontextuelle Admin-Actions auf Profilen + Galerie-Karten (`AdminActions` Component)
 - Navbar: Admin-Link ganz rechts, roter Dot bei Error-Count > 0
