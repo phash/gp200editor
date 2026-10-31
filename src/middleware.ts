@@ -35,6 +35,16 @@ export const LOCALE_PREFIX_PATTERN = new RegExp(`^/(${LOCALE_ALT})(?=/|$)`);
 // depend on cookie and Accept-Language.
 const DEFAULT_LOCALE_PREFIX_PATTERN = new RegExp(`^/${routing.defaultLocale}(?=/|$)`);
 
+// /editor?share=<token> only tells the client which gallery preset to preload
+// — the document is the plain editor. Google indexed ~25 of these as separate
+// pages despite the canonical (GSC Oct 2026), so they get an explicit
+// noindex. follow keeps the links on the page counting.
+const EDITOR_PATH_PATTERN = new RegExp(`^(?:/(?:${LOCALE_ALT}))?/editor/?$`);
+
+export function isEditorShareLink(url: URL): boolean {
+  return EDITOR_PATH_PATTERN.test(url.pathname) && url.searchParams.has('share');
+}
+
 function makePermanent(response: NextResponse) {
   const permanent = new NextResponse(null, { status: 308, headers: response.headers });
   // Keep it out of the browser cache: a cached hop would skip the middleware,
@@ -62,9 +72,12 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  const response = intlMiddleware(request);
+  let response = intlMiddleware(request);
   if (DEFAULT_LOCALE_PREFIX_PATTERN.test(pathname) && response.status === 307) {
-    return makePermanent(response);
+    response = makePermanent(response);
+  }
+  if (isEditorShareLink(request.nextUrl)) {
+    response.headers.set('X-Robots-Tag', 'noindex, follow');
   }
   return response;
 }
