@@ -348,7 +348,7 @@ export default async function SharePage({ params }: Props) {
         <a
           href={`/api/share/${token}/download`}
           data-testid="share-download-button"
-          className="inline-block font-mono-display text-sm font-bold tracking-wider uppercase px-8 py-3 rounded-lg transition-all duration-150 bg-[var(--glow-amber)] text-[var(--accent-amber)] border border-[var(--accent-amber)] [box-shadow:0_0_12px_var(--glow-amber)] hover:!bg-[var(--accent-amber)] hover:!text-[var(--bg-primary)] hover:[box-shadow:0_0_20px_var(--glow-amber)]"
+          className="matomo_download inline-block font-mono-display text-sm font-bold tracking-wider uppercase px-8 py-3 rounded-lg transition-all duration-150 bg-[var(--glow-amber)] text-[var(--accent-amber)] border border-[var(--accent-amber)] [box-shadow:0_0_12px_var(--glow-amber)] hover:!bg-[var(--accent-amber)] hover:!text-[var(--bg-primary)] hover:[box-shadow:0_0_20px_var(--glow-amber)]"
         >
           {t('download')}
         </a>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
+import { trackEvent } from '@/lib/analytics';
 import {
   FEEDBACK_CATEGORIES,
   FEEDBACK_MAX,
@@ -121,6 +122,7 @@ export function FeedbackForm({ access, email }: { access: FeedbackAccess; email:
       if (res.ok) {
         setState('sent');
         setMessage('');
+        trackEvent('Feedback', 'Send', category);
         return;
       }
       setError(

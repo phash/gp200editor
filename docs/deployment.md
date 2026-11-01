@@ -175,8 +175,10 @@ Add this to the crontab (`crontab -e`):
 ```cron
 # Verify-reminder cron — runs hourly
 CRON_SECRET=<paste the 64-char hex value here>
-0 * * * * curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" https://www.preset-forge.com/api/cron/verify-reminders >> /opt/gp200editor/logs/cron-verify-reminders.log 2>&1
+0 * * * * { date -Iseconds | tr "\n" " "; curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" https://www.preset-forge.com/api/cron/verify-reminders ; echo; } >> /opt/gp200editor/logs/cron-verify-reminders.log 2>&1
 ```
+
+The `{ date …; curl …; echo; }` group writes one line per run, prefixed with a timestamp. A plain `curl >> log` appends the JSON responses without newlines, which leaves one endless line. Do not use `%` in the command: cron turns it into a newline.
 
 Two important details:
 
@@ -186,7 +188,7 @@ Two important details:
 If you prefer not to put the secret in the crontab file, inline the 64-char value directly:
 
 ```cron
-0 * * * * curl -fsS -X POST -H "Authorization: Bearer 72d08e8e9d..." https://www.preset-forge.com/api/cron/verify-reminders >> /opt/gp200editor/logs/cron-verify-reminders.log 2>&1
+0 * * * * { date -Iseconds | tr "\n" " "; curl -fsS -X POST -H "Authorization: Bearer <64-char hex>" https://www.preset-forge.com/api/cron/verify-reminders ; echo; } >> /opt/gp200editor/logs/cron-verify-reminders.log 2>&1
 ```
 
 Also: create the log directory if it doesn't exist yet:

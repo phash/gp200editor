@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-01
+
+### Betrieb
+- **Bessere Nutzungsstatistik.** Matomo zählt jetzt jeden Seitenwechsel innerhalb der App, nicht nur die erste Seite eines Besuchs, und misst die Verweildauer. Dazu kommen anonyme Zähler für Preset laden, herunterladen und veröffentlichen, die MIDI-Verbindung, das Senden ans Gerät, die Registrierung und Feedback. Es bleibt cookielos und respektiert „Do Not Track“.
+
 ## 2026-10-31
 
 ### Features

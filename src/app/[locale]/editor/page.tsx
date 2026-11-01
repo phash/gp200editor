@@ -27,6 +27,7 @@ import { SysExCodec } from '@/core/SysExCodec';
 import { convertHLX } from '@/core/HLXConverter';
 import { pushPresetToDevice, type PushProgress } from '@/core/devicePush';
 import type { GP200Preset } from '@/core/types';
+import { trackEvent } from '@/lib/analytics';
 
 const PRESET_STYLES = [
   'Rock', 'Metal', 'Blues', 'Jazz', 'Country', 'Funk',
@@ -93,6 +94,7 @@ export default function EditorPage() {
         const decoder = new PRSTDecoder(new Uint8Array(ab));
         const decoded = decoder.decode();
         loadPreset(decoded);
+        trackEvent('Editor', 'Load', 'share');
         if (info?.id) {
           setSourcePreset({ id: info.id, username: info.username, author: info.author ?? '', style: info.style ?? '', description: info.description ?? '' });
           setPresetStyle(info.style ?? '');
@@ -236,6 +238,7 @@ export default function EditorPage() {
           onProgress: (p: PushProgress) => { if (!ac.signal.aborted) setPushProgress(p); },
         },
       );
+      if (!ac.signal.aborted) trackEvent('Device', 'Push');
     } finally {
       if (pushAbortRef.current === ac) pushAbortRef.current = null;
     }
@@ -272,6 +275,7 @@ export default function EditorPage() {
         setImportedFromHLX(false);
       }
       loadPreset(decoded);
+      trackEvent('Editor', 'Load', filename.toLowerCase().endsWith('.hlx') ? 'hlx' : 'prst');
       void sendPresetToDevice(decoded);
       setLoadError(null);
       setSourcePreset(null);
@@ -288,7 +292,9 @@ export default function EditorPage() {
     return preset ? encodePresetBuffer(preset) : null;
   }
   function handleDownload() {
-    if (preset) downloadPresetFile(preset);
+    if (!preset) return;
+    downloadPresetFile(preset);
+    trackEvent('Editor', 'Download');
   }
 
   async function handleSaveToPresets(data: { author: string; style: string; note: string; publish: boolean; audioFile: File | null }) {

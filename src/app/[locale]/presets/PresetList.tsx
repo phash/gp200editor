@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
+import { trackEvent } from '@/lib/analytics';
 
 type Preset = {
   id: string;
@@ -141,6 +142,7 @@ export function PresetList({ initialPresets }: Props) {
       setPresets((prev) =>
         prev.map((p) => (p.id === preset.id ? { ...p, public: data.public } : p)),
       );
+      trackEvent('Preset', data.public ? 'Publish' : 'Unpublish');
     }
   }
 
@@ -149,6 +151,7 @@ export function PresetList({ initialPresets }: Props) {
     a.href = `/api/presets/${preset.id}/download`;
     a.download = `${preset.name}.prst`;
     a.click();
+    trackEvent('Preset', 'Download');
   }
 
   const actionBtnClass = "font-mono-display text-[11px] font-medium tracking-wider uppercase px-3 py-1.5 rounded transition-all duration-150";

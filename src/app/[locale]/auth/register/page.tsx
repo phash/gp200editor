@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { PasswordInput } from '@/components/PasswordInput';
+import { trackEvent } from '@/lib/analytics';
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
@@ -55,6 +56,7 @@ export default function RegisterPage() {
       });
       if (res.ok) {
         setRegistered(true);
+        trackEvent('Account', 'Register');
       } else {
         const data = await res.json();
         const apiError = data.error as string | undefined;
