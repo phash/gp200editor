@@ -8,6 +8,7 @@ import { JetBrains_Mono, DM_Sans } from 'next/font/google';
 import '../globals.css'; // globals.css stays in src/app/, so relative path goes up
 import { Footer } from '@/components/Footer';
 import { Navbar } from '@/components/Navbar';
+import { MatomoRouteTracker } from '@/components/MatomoRouteTracker';
 import { ClientProviders } from './ClientProviders';
 import { buildAlternates, localeUrl, BASE_URL, type Locale } from '@/lib/hreflang';
 import { serializeJsonLd } from '@/lib/jsonLd';
@@ -116,14 +117,18 @@ export default async function LocaleLayout({ children, params }: Props) {
             <main className="flex-1">{children}</main>
             <Footer />
           </ClientProviders>
+          <MatomoRouteTracker />
         </NextIntlClientProvider>
         {/* Matomo Analytics — Site ID 2 on musikersuche.org/matomo.
             Cookieless + DNT-respecting configuration so we can omit a cookie banner
-            and stay consistent with the privacy notice's "no tracking cookies" claim. */}
+            and stay consistent with the privacy notice's "no tracking cookies" claim.
+            The heartbeat measures time on page for one-page visits; client-side
+            navigations are tracked by <MatomoRouteTracker />. */}
         <Script id="matomo" strategy="afterInteractive">{`
           var _paq=window._paq=window._paq||[];
           _paq.push(["disableCookies"]);
           _paq.push(["setDoNotTrack", true]);
+          _paq.push(["enableHeartBeatTimer"]);
           _paq.push(["trackPageView"]);
           _paq.push(["enableLinkTracking"]);
           (function(){var u="//musikersuche.org/matomo/";

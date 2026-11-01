@@ -3,6 +3,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { SysExCodec } from '@/core/SysExCodec';
 import type { GP200Preset } from '@/core/types';
 import { useMidiSend } from './useMidiSend';
+import { trackEvent } from '@/lib/analytics';
 
 const READ_TIMEOUT_MS = 3000;
 
@@ -369,6 +370,7 @@ export function useMidiDevice(): UseMidiDeviceReturn {
         // Step 11: Done
         setHandshakeStep(null);
         setStatus('connected');
+        trackEvent('Device', 'Connect');
       } catch (err) {
         setStatus('error');
         setErrorMessage(err instanceof Error ? err.message : 'Handshake failed');
