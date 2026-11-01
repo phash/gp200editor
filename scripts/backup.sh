@@ -4,7 +4,7 @@ cd "$(dirname "$0")/.."
 
 COMPOSE="docker compose -f docker-compose.prod.yml"
 ENV_FILE=".env.prod"
-BACKUP_DIR="./backups"
+BACKUP_DIR="/opt/backup/gp200editor"
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 
 # ── Colors ───────────────────────────────────────────────────────────────────
@@ -45,7 +45,7 @@ $COMPOSE stop garage
 docker run --rm \
   -v gp200editor_garage_data:/data \
   -v gp200editor_garage_meta:/meta \
-  -v "$(pwd)/$BACKUP_DIR":/backup \
+  -v "$BACKUP_DIR":/backup \
   alpine tar czf "/backup/gp200-garage-${TIMESTAMP}.tar.gz" -C / data meta
 $COMPOSE start garage
 
@@ -67,8 +67,8 @@ else
   warn "openssl not found — env backed up as plaintext"
 fi
 
-# ── Cleanup old backups (keep last 7) ────────────────────────────────────────
-KEEP=7
+# ── Cleanup old backups (keep last 14) ───────────────────────────────────────
+KEEP=14
 for prefix in "gp200-db-" "gp200-garage-" "gp200-env-"; do
   COUNT=$(ls -1 "$BACKUP_DIR"/${prefix}* 2>/dev/null | wc -l)
   if [ "$COUNT" -gt "$KEEP" ]; then
