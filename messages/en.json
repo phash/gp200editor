@@ -19,7 +19,8 @@
     "supportCta": "Buy me a guitar",
     "feedback": "Feedback",
     "feedbackTitle": "Send feedback: bugs, ideas, opinions",
-    "newFeedback": "{count, plural, one {# new feedback message} other {# new feedback messages}}"
+    "newFeedback": "{count, plural, one {# new feedback message} other {# new feedback messages}}",
+    "paypalCta": "PayPal"
   },
   "home": {
     "hero": {
@@ -79,7 +80,10 @@
       "bmacCta": "☕ Buy me a coffee",
       "discordTitle": "Join the community",
       "discordBody": "Questions, feature requests, bug reports, preset sharing — the Discord is where everything happens.",
-      "discordCta": "Join Discord"
+      "discordCta": "Join Discord",
+      "paypalTitle": "Donate via PayPal",
+      "paypalBody": "Support the development with a donation — straight through PayPal. Every amount helps.",
+      "paypalCta": "Donate with PayPal"
     },
     "empty": {
       "headline": "Preset Forge",
@@ -130,7 +134,9 @@
     "poweredBy": "powered by",
     "guides": "Guides",
     "supportCta": "Buy me a guitar",
-    "feedback": "Feedback"
+    "feedback": "Feedback",
+    "donateText": "Support the development with a donation",
+    "paypalCta": "PayPal"
   },
   "editor": {
     "title": "Edit Preset",

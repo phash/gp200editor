@@ -10,7 +10,10 @@ export function Footer() {
       style={{ color: 'var(--text-muted)', borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-surface)' }}
       data-testid="footer"
     >
-      <div className="mb-3">
+      <p className="mb-2 text-sm" style={{ color: 'var(--text-secondary)' }} data-testid="footer-donate-text">
+        {t('donateText')}
+      </p>
+      <div className="mb-3 flex flex-wrap items-center justify-center gap-3">
         <a
           href="https://buymeacoffee.com/phash"
           target="_blank"
@@ -25,6 +28,20 @@ export function Footer() {
         >
           <span aria-hidden="true">🎸</span>
           {t('supportCta')}
+        </a>
+        <a
+          href="https://paypal.me/mroedig"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-testid="footer-paypal-cta"
+          className="inline-flex items-center gap-2 font-mono-display text-sm font-bold px-5 py-2 rounded transition-all bg-[rgba(0,156,222,0.08)] hover:bg-[rgba(0,156,222,0.2)] hover:shadow-[0_0_12px_rgba(0,156,222,0.4)]"
+          style={{
+            border: '1px solid rgba(0,156,222,0.4)',
+            color: '#4cc2ff',
+            textDecoration: 'none',
+          }}
+        >
+          {t('paypalCta')}
         </a>
       </div>
       {t('disclaimer')}

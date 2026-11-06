@@ -328,6 +328,19 @@ export function Navbar() {
           >
             <span aria-hidden="true">🎸</span> {t('supportCta')}
           </a>
+          <a
+            href="https://paypal.me/mroedig"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-mono-display text-sm font-bold px-3 py-2 rounded text-center bg-[rgba(0,156,222,0.08)]"
+            style={{
+              border: '1px solid rgba(0,156,222,0.4)',
+              color: '#4cc2ff',
+              textDecoration: 'none',
+            }}
+          >
+            {t('paypalCta')}
+          </a>
           <div
             className="flex gap-2 items-center pt-3 flex-wrap"
             style={{ borderTop: '1px solid var(--border-subtle)' }}
