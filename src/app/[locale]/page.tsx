@@ -349,12 +349,19 @@ export default async function HomePage({ params }: Props) {
           {t('support.body')}
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <SupportCard
             title={t('support.bmacTitle')}
             body={t('support.bmacBody')}
             cta={t('support.bmacCta')}
             href="https://buymeacoffee.com/phash"
+            external
+          />
+          <SupportCard
+            title={t('support.paypalTitle')}
+            body={t('support.paypalBody')}
+            cta={t('support.paypalCta')}
+            href="https://paypal.me/mroedig"
             external
           />
           <SupportCard
